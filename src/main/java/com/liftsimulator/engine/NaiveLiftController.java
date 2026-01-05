@@ -104,8 +104,8 @@ public class NaiveLiftController implements LiftController {
                 doorOpenedAt = currentTick;
             }
 
-            long dwellTime = currentTick - doorOpenedAt;
-            if (dwellTime >= DWELL_TIME_TICKS) {
+            long ticksOpen = currentTick - doorOpenedAt + 1;
+            if (ticksOpen >= DWELL_TIME_TICKS) {
                 doorOpenedAt = null;
                 return Action.CLOSE_DOOR;
             }
