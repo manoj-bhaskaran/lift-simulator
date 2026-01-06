@@ -4,6 +4,7 @@ import com.liftsimulator.domain.Action;
 import com.liftsimulator.domain.Direction;
 import com.liftsimulator.domain.DoorState;
 import com.liftsimulator.domain.LiftState;
+import com.liftsimulator.domain.LiftStatus;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.2.0**
+Current version: **0.2.1**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -20,7 +20,7 @@ The simulation is text-based and designed for clarity over visual appeal.
 
 ## Features
 
-The current version (v0.2.0) implements:
+The current version (v0.2.1) implements:
 - **Formal lift state machine** with 7 explicit states (IDLE, MOVING_UP, MOVING_DOWN, DOORS_OPENING, DOORS_OPEN, DOORS_CLOSING, OUT_OF_SERVICE)
 - **Single source of truth**: LiftStatus is the only stored state, all other properties are derived
 - **State transition validation** ensuring only valid state changes occur
@@ -69,7 +69,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.2.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.2.1.jar`.
 
 ## Running the Simulation
 
@@ -82,7 +82,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.2.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.2.1.jar com.liftsimulator.Main
 ```
 
 The demo runs a pre-configured scenario with several lift requests and displays the simulation state at each tick.
