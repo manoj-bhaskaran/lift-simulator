@@ -125,6 +125,89 @@ Run tests with coverage:
 mvn test jacoco:report
 ```
 
+## Request Types: Hall Calls vs. Car Calls
+
+The simulator distinguishes between two types of lift requests, modeling real-world elevator behavior:
+
+### Hall Call (Request from outside the lift)
+
+Made when someone presses an up/down button **outside** the lift:
+
+```java
+controller.addHallCall(new HallCall(3, Direction.UP));
+```
+
+**Known information:**
+- **Origin floor**: Where the person is waiting (floor 3)
+- **Direction**: Where they want to go (UP or DOWN)
+- **Unknown**: Exact destination floor (person hasn't boarded yet)
+
+**Physical analog:** The up/down buttons on each floor
+
+**Completion:** Request completes when lift arrives at the origin floor and opens doors (person can now board)
+
+### Car Call (Request from inside the lift)
+
+Made when someone presses a floor button **inside** the lift:
+
+```java
+controller.addCarCall(new CarCall(7));
+```
+
+**Known information:**
+- **Destination floor**: Where the person wants to go (floor 7)
+- **Unknown/Irrelevant**: Origin floor, direction (inferred from current position)
+
+**Physical analog:** The numbered floor buttons inside the lift car
+
+**Completion:** Request completes when lift arrives at the destination floor and opens doors (person can now exit)
+
+### Why the Distinction Matters
+
+#### 1. Current Naive Algorithm
+The current `NaiveLiftController` treats both types similarly (goes to nearest floor), but the infrastructure supports future smart algorithms.
+
+#### 2. Future Direction-Aware Scheduling
+Smart algorithms can optimize based on hall call direction:
+
+**Example scenario:**
+- Lift at floor 0
+- Hall call: floor 3 going DOWN
+- Hall call: floor 5 going UP
+- Car call: floor 7
+
+**Naive:** 0 → 3 → 5 → 7 (inefficient backtracking)
+
+**Smart:** 0 → 5 (pick up UP) → 7 (drop off) → 3 (now going down, pick up DOWN)
+
+#### 3. Real-World Modeling
+Elevator panels have different buttons:
+- **Hall panels:** Only up/down buttons (direction matters)
+- **Car panels:** Only floor buttons (destination matters)
+
+#### 4. Multiple Requests at Same Floor
+If two people at floor 4 press different buttons:
+- Person A presses UP
+- Person B presses DOWN
+
+These should be **separate requests** because they'll board at different times (when lift is going their direction).
+
+### Unified Request Model
+
+The `LiftRequest` class unifies both types while preserving the distinction:
+
+```java
+// Hall call
+LiftRequest hallRequest = LiftRequest.hallCall(5, Direction.UP);
+// Has: type=HALL_CALL, originFloor=5, direction=UP, destinationFloor=null
+
+// Car call
+LiftRequest carRequest = LiftRequest.carCall(10);
+// Has: type=CAR_CALL, originFloor=null, destinationFloor=10, direction=null
+```
+
+This architecture enables future algorithms like SCAN, LOOK, and destination dispatch while maintaining backward compatibility.
+
 ## Lift State Machine
 
 The lift uses a **single source of truth** pattern where `LiftStatus` is the only stored state - all other properties (direction, door state) are derived from it.
