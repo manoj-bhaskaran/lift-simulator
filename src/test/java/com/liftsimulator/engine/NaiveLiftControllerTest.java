@@ -498,9 +498,13 @@ public class NaiveLiftControllerTest {
         LiftRequest request = LiftRequest.carCall(2);
         controller.addRequest(request);
 
-        // Lift serves the request
+        // Lift serves the request - opens doors
         LiftState state = new LiftState(2, LiftStatus.IDLE);
         controller.decideNextAction(state, 0);
+
+        // Doors are opening - this completes the request
+        LiftState openingState = new LiftState(2, LiftStatus.DOORS_OPENING);
+        controller.decideNextAction(openingState, 1);
 
         // Request should be completed and removed
         assertEquals(RequestState.COMPLETED, request.getState());
@@ -538,10 +542,14 @@ public class NaiveLiftControllerTest {
         LiftState state3 = new LiftState(3, LiftStatus.IDLE);
         controller.decideNextAction(state3, 1); // Open doors for floor 3
 
+        // Doors opening - completes floor 3 request
+        LiftState opening3 = new LiftState(3, LiftStatus.DOORS_OPENING);
+        controller.decideNextAction(opening3, 2);
+
         // After clearing floor 3, verify floor 7 is the next target
         assertEquals(1, controller.getRequests().size());
         LiftState afterFloor3 = new LiftState(3, LiftStatus.IDLE);
-        Action nextAction = controller.decideNextAction(afterFloor3, 2);
+        Action nextAction = controller.decideNextAction(afterFloor3, 3);
         assertEquals(Action.MOVE_UP, nextAction);
     }
 
@@ -575,10 +583,14 @@ public class NaiveLiftControllerTest {
         LiftState state2 = new LiftState(2, LiftStatus.IDLE);
         controller.decideNextAction(state2, 1);
 
+        // Doors opening - completes floor 2 request
+        LiftState opening2 = new LiftState(2, LiftStatus.DOORS_OPENING);
+        controller.decideNextAction(opening2, 2);
+
         // Should go to floor 8 next (floor 4 and 6 were cancelled)
         assertEquals(1, controller.getRequests().size());
         LiftState afterFloor2 = new LiftState(2, LiftStatus.IDLE);
-        Action nextAction = controller.decideNextAction(afterFloor2, 2);
+        Action nextAction = controller.decideNextAction(afterFloor2, 3);
         assertEquals(Action.MOVE_UP, nextAction);
     }
 
@@ -604,14 +616,15 @@ public class NaiveLiftControllerTest {
         assertTrue(cancelled);
         assertEquals(RequestState.CANCELLED, request.getState());
 
-        // Lift should stop moving and become idle
+        // Next tick: lift completes movement to floor 3, then stops
         engine.tick();
+        assertEquals(3, engine.getCurrentState().getFloor());
         assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
 
         // Lift should remain idle (no requests)
         engine.tick();
         assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
-        assertEquals(2, engine.getCurrentState().getFloor()); // Stays at floor 2
+        assertEquals(3, engine.getCurrentState().getFloor()); // Stays at floor 3
     }
 
     @Test
