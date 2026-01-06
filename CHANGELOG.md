@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests for `SimulationEngine` and `NaiveLiftController`
 - Maven build configuration with Java 17 and JUnit 5
 - Basic project documentation (README, CHANGELOG, ADR-0001)
+- EditorConfig file for consistent code formatting across IDEs and platforms
 
 ### Design Decisions
 - Chose tick-based simulation for predictable, testable time advancement

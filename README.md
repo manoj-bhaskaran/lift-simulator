@@ -34,6 +34,22 @@ Future iterations will add multi-lift systems, smarter algorithms, and more real
 - Java 17 or later
 - Maven 3.6 or later
 
+## Development Setup
+
+This project includes an `.editorconfig` file to maintain consistent code formatting across different editors and IDEs. Most modern editors support EditorConfig either natively or through plugins:
+
+- **IntelliJ IDEA**: Built-in support (no plugin needed)
+- **VS Code**: Install the "EditorConfig for VS Code" extension
+- **Eclipse**: Install the EditorConfig Eclipse plugin
+- **Vim/Neovim**: Install the editorconfig-vim plugin
+
+The configuration enforces:
+- UTF-8 encoding
+- LF line endings (ensures compatibility across Windows, Linux, and macOS)
+- 4-space indentation for Java and XML files
+- Trailing whitespace removal
+- Final newline insertion
+
 ## Building the Project
 
 Compile the project using Maven:
