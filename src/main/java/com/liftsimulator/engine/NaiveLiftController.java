@@ -9,6 +9,7 @@ import com.liftsimulator.domain.LiftState;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * A naive lift controller that implements basic scheduling logic.
@@ -76,7 +77,7 @@ public class NaiveLiftController implements LiftController {
      * @return the nearest requested floor, or empty if no requests
      */
     private Optional<Integer> findNearestRequestedFloor(int currentFloor) {
-        Set<Integer> requestedFloors = new HashSet<>();
+        Set<Integer> requestedFloors = new TreeSet<>();
 
         // Collect all requested floors from car calls
         carCalls.forEach(call -> requestedFloors.add(call.destinationFloor()));
@@ -89,7 +90,10 @@ public class NaiveLiftController implements LiftController {
                 .min((f1, f2) -> {
                     int dist1 = Math.abs(f1 - currentFloor);
                     int dist2 = Math.abs(f2 - currentFloor);
-                    return Integer.compare(dist1, dist2);
+                    if (dist1 != dist2) {
+                        return Integer.compare(dist1, dist2);
+                    }
+                    return Integer.compare(f1, f2);
                 });
     }
 

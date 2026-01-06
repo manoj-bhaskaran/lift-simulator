@@ -137,6 +137,34 @@ public class NaiveLiftControllerTest {
     }
 
     @Test
+    public void testTieBreakerPrefersLowerFloorForEquidistantCarCalls() {
+        // Add equidistant requests around the current floor
+        controller.addCarCall(new CarCall(1));
+        controller.addCarCall(new CarCall(5));
+
+        // Lift is at floor 3 with doors closed
+        LiftState state = new LiftState(3, Direction.IDLE, DoorState.CLOSED);
+
+        // Floors 1 and 5 are both distance 2; should prefer lower floor (1)
+        Action action = controller.decideNextAction(state, 0);
+        assertEquals(Action.MOVE_DOWN, action);
+    }
+
+    @Test
+    public void testTieBreakerPrefersLowerFloorForEquidistantMixedCalls() {
+        // Add equidistant mixed requests around the current floor
+        controller.addCarCall(new CarCall(2));
+        controller.addHallCall(new HallCall(6, Direction.UP));
+
+        // Lift is at floor 4 with doors closed
+        LiftState state = new LiftState(4, Direction.IDLE, DoorState.CLOSED);
+
+        // Floors 2 and 6 are both distance 2; should prefer lower floor (2)
+        Action action = controller.decideNextAction(state, 0);
+        assertEquals(Action.MOVE_DOWN, action);
+    }
+
+    @Test
     public void testRequestsClearedWhenServiced() {
         // Add a car call to floor 2
         controller.addCarCall(new CarCall(2));

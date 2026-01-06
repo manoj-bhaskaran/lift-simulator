@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-01-08
+
+### Fixed
+- Make nearest-floor selection deterministic with a tie-breaker for equidistant requests
+- Added tests covering deterministic behavior for equidistant requests
+
 ## [0.1.1] - 2026-01-07
 
 ### Fixed
@@ -37,5 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Immutable state objects to avoid bugs from shared mutable state
 - Separated controller logic from simulation engine for flexibility
 
+[0.1.2]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.1.2
 [0.1.1]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.1.1
 [0.1.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.1.0
