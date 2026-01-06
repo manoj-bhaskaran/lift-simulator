@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Keep the NaiveLiftController idle during door opening to prevent invalid move attempts
+- Clear same-floor requests while doors are opening to avoid redundant open commands
 
 ## [0.2.5] - 2026-01-11
 

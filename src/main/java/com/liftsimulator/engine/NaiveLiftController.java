@@ -106,6 +106,9 @@ public class NaiveLiftController implements LiftController {
 
         // Allow door transitions to complete before evaluating movement.
         if (currentStatus == LiftStatus.DOORS_OPENING) {
+            if (hasRequestForFloor(currentFloor)) {
+                clearRequestsForFloor(currentFloor);
+            }
             return Action.IDLE;
         }
 
