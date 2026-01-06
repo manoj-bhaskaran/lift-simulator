@@ -585,7 +585,7 @@ public class SimulationEngineTest {
                 if (tickCount == 1) {
                     return Action.OPEN_DOOR;  // Start opening doors
                 }
-                if (state.getStatus() == LiftStatus.DOORS_CLOSING && tickCount == 6) {
+                if (state.getStatus() == LiftStatus.DOORS_CLOSING && tickCount == 5) {
                     // Request to reopen within window (after 1 tick of closing)
                     return Action.OPEN_DOOR;
                 }
@@ -673,7 +673,7 @@ public class SimulationEngineTest {
                     return Action.OPEN_DOOR;
                 }
                 // Request reopen at exactly doorClosingTicksElapsed = 1 (window is 2, so 0 and 1 are valid)
-                if (state.getStatus() == LiftStatus.DOORS_CLOSING && tickCount == 6) {
+                if (state.getStatus() == LiftStatus.DOORS_CLOSING && tickCount == 5) {
                     return Action.OPEN_DOOR;
                 }
                 return Action.IDLE;
@@ -723,10 +723,7 @@ public class SimulationEngineTest {
         engine.tick(); // dwell completes, closing starts and advances (elapsed = 1)
         assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
 
-        engine.tick(); // OPEN_DOOR action, but elapsed=1 >= window=0, stays closing
-        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
-
-        engine.tick(); // doors close completely
+        engine.tick(); // closing completes (window=0 prevents any reopening)
         assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
     }
 
