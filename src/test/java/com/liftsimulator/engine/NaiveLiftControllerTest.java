@@ -275,4 +275,122 @@ public class NaiveLiftControllerTest {
         Action idleAction = controller.decideNextAction(closedAgainState, 4);
         assertEquals(Action.IDLE, idleAction);
     }
+
+    @Test
+    public void testRequestToReopenDoorsWhileClosing() {
+        // Controller should request to reopen doors if a request arrives for current floor
+        // while doors are closing (SimulationEngine will decide based on reopen window)
+
+        // No initial requests
+        LiftState closingState = new LiftState(5, LiftStatus.DOORS_CLOSING);
+
+        // Add a car call for the current floor while doors are closing
+        controller.addCarCall(new CarCall(5));
+
+        // Controller should request to OPEN_DOOR
+        Action action = controller.decideNextAction(closingState, 0);
+        assertEquals(Action.OPEN_DOOR, action);
+    }
+
+    @Test
+    public void testIdleWhenDoorsClosingWithNoRequestsForCurrentFloor() {
+        // Controller should remain idle if no requests for current floor while doors closing
+
+        // Add a request for a different floor
+        controller.addCarCall(new CarCall(3));
+
+        LiftState closingState = new LiftState(5, LiftStatus.DOORS_CLOSING);
+
+        // Controller should remain idle (let doors finish closing)
+        Action action = controller.decideNextAction(closingState, 0);
+        assertEquals(Action.IDLE, action);
+    }
+
+    @Test
+    public void testIntegrationDoorReopenWithinWindow() {
+        // Integration test: request arrives while doors closing, within reopen window
+        SimulationEngine engine = new SimulationEngine(controller, 0, 10, 1, 2, 2, 2);
+
+        // Add initial request to floor 5
+        controller.addCarCall(new CarCall(5));
+
+        // Move to floor 5
+        for (int i = 0; i < 5; i++) {
+            engine.tick();
+        }
+        assertEquals(5, engine.getCurrentState().getFloor());
+
+        // Stop then open doors
+        engine.tick(); // stop at floor 5 (MOVING_UP -> IDLE)
+        engine.tick(); // start opening
+        engine.tick(); // doors open
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        // Dwell time
+        engine.tick(); // dwell 1
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        // Dwell completes, doors start closing
+        engine.tick(); // dwell 2 completes, closing starts and advances (elapsed = 1)
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        // New request arrives for same floor within reopen window
+        controller.addCarCall(new CarCall(5));
+
+        // Next tick should reopen doors (elapsed=1 < window=2)
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
+
+        // Doors should fully open
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+    }
+
+    @Test
+    public void testIntegrationDoorDoesNotReopenOutsideWindow() {
+        // Integration test: request arrives while doors closing, outside reopen window
+        SimulationEngine engine = new SimulationEngine(controller, 0, 10, 1, 4, 2, 2);
+
+        // Add initial request to floor 5
+        controller.addCarCall(new CarCall(5));
+
+        // Move to floor 5
+        for (int i = 0; i < 5; i++) {
+            engine.tick();
+        }
+
+        // Stop then open doors
+        engine.tick(); // stop at floor 5 (MOVING_UP -> IDLE)
+        engine.tick(); // start opening
+        engine.tick();
+        engine.tick();
+        engine.tick(); // doors open (4 ticks to open)
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        // Dwell time
+        engine.tick(); // dwell 1
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        // Doors start closing
+        engine.tick(); // dwell 2 completes, closing starts and advances (elapsed = 1)
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        engine.tick(); // closing continues (elapsed = 2, now outside window)
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        // New request arrives outside window (elapsed = 2 >= window = 2)
+        controller.addCarCall(new CarCall(5));
+
+        // Next tick should NOT reopen (elapsed=2 >= window=2)
+        engine.tick(); // elapsed = 3, stays closing
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        // Doors should finish closing
+        engine.tick();
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+
+        // Request should still be pending, so lift should reopen
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
+    }
 }

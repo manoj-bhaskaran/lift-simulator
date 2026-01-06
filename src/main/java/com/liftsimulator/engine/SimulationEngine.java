@@ -17,12 +17,14 @@ public class SimulationEngine {
     private final int travelTicksPerFloor;
     private final int doorTransitionTicks;
     private final int doorDwellTicks;
+    private final int doorReopenWindowTicks;
     private int movementTicksRemaining;
     private int doorTicksRemaining;
     private int doorDwellTicksRemaining;
+    private int doorClosingTicksElapsed;
 
     public SimulationEngine(LiftController controller, int minFloor, int maxFloor) {
-        this(controller, minFloor, maxFloor, 1, 2, 3);
+        this(controller, minFloor, maxFloor, 1, 2, 3, -1);
     }
 
     public SimulationEngine(
@@ -32,7 +34,7 @@ public class SimulationEngine {
             int travelTicksPerFloor,
             int doorTransitionTicks
     ) {
-        this(controller, minFloor, maxFloor, travelTicksPerFloor, doorTransitionTicks, 3);
+        this(controller, minFloor, maxFloor, travelTicksPerFloor, doorTransitionTicks, 3, -1);
     }
 
     public SimulationEngine(
@@ -43,6 +45,18 @@ public class SimulationEngine {
             int doorTransitionTicks,
             int doorDwellTicks
     ) {
+        this(controller, minFloor, maxFloor, travelTicksPerFloor, doorTransitionTicks, doorDwellTicks, -1);
+    }
+
+    public SimulationEngine(
+            LiftController controller,
+            int minFloor,
+            int maxFloor,
+            int travelTicksPerFloor,
+            int doorTransitionTicks,
+            int doorDwellTicks,
+            int doorReopenWindowTicks
+    ) {
         if (travelTicksPerFloor <= 0) {
             throw new IllegalArgumentException("travelTicksPerFloor must be >= 1");
         }
@@ -52,16 +66,30 @@ public class SimulationEngine {
         if (doorDwellTicks <= 0) {
             throw new IllegalArgumentException("doorDwellTicks must be >= 1");
         }
+
+        // Use -1 as sentinel for "use default": min(2, doorTransitionTicks) for backward compatibility
+        if (doorReopenWindowTicks == -1) {
+            doorReopenWindowTicks = Math.min(2, doorTransitionTicks);
+        }
+
+        if (doorReopenWindowTicks < 0) {
+            throw new IllegalArgumentException("doorReopenWindowTicks must be >= 0");
+        }
+        if (doorReopenWindowTicks > doorTransitionTicks) {
+            throw new IllegalArgumentException("doorReopenWindowTicks cannot exceed doorTransitionTicks");
+        }
         this.controller = controller;
         this.minFloor = minFloor;
         this.maxFloor = maxFloor;
         this.travelTicksPerFloor = travelTicksPerFloor;
         this.doorTransitionTicks = doorTransitionTicks;
         this.doorDwellTicks = doorDwellTicks;
+        this.doorReopenWindowTicks = doorReopenWindowTicks;
         this.clock = new SimulationClock();
         this.movementTicksRemaining = 0;
         this.doorTicksRemaining = 0;
         this.doorDwellTicksRemaining = 0;
+        this.doorClosingTicksElapsed = 0;
         // Initialize lift at minimum floor, idle status
         this.currentState = new LiftState(minFloor, LiftStatus.IDLE);
     }
@@ -82,6 +110,15 @@ public class SimulationEngine {
         }
 
         if (doorTicksRemaining > 0) {
+            // Special case: check for door reopening during closing
+            if (currentState.getStatus() == LiftStatus.DOORS_CLOSING &&
+                action == Action.OPEN_DOOR &&
+                doorClosingTicksElapsed < doorReopenWindowTicks) {
+                // Interrupt closing and start reopening
+                currentState = new LiftState(currentState.getFloor(), LiftStatus.DOORS_OPENING);
+                doorTicksRemaining = doorTransitionTicks;
+                doorClosingTicksElapsed = 0;
+            }
             advanceDoorTransition();
             clock.tick();
             return;
@@ -165,13 +202,9 @@ public class SimulationEngine {
                     doorTicksRemaining = doorTransitionTicks;
                     movementTicksRemaining = 0;
                     doorDwellTicksRemaining = 0;
-                } else if (currentStatus == LiftStatus.DOORS_CLOSING) {
-                    // Abort door closing, re-open
-                    newStatus = LiftStatus.DOORS_OPENING;
-                    doorTicksRemaining = doorTransitionTicks;
-                    movementTicksRemaining = 0;
-                    doorDwellTicksRemaining = 0;
+                    doorClosingTicksElapsed = 0;
                 }
+                // Note: DOORS_CLOSING reopen handled in tick() to interrupt in-progress transition
                 // If already DOORS_OPENING or DOORS_OPEN, stay in current state
                 break;
             case CLOSE_DOOR:
@@ -183,6 +216,7 @@ public class SimulationEngine {
                     doorTicksRemaining = doorTransitionTicks;
                     movementTicksRemaining = 0;
                     doorDwellTicksRemaining = 0;
+                    doorClosingTicksElapsed = 0;  // Reset when doors start closing
                 }
                 break;
             case IDLE:
@@ -234,6 +268,12 @@ public class SimulationEngine {
 
     private void advanceDoorTransition() {
         doorTicksRemaining--;
+
+        // Track elapsed ticks during door closing
+        if (currentState.getStatus() == LiftStatus.DOORS_CLOSING) {
+            doorClosingTicksElapsed++;
+        }
+
         if (doorTicksRemaining > 0) {
             return;
         }
@@ -243,6 +283,7 @@ public class SimulationEngine {
             newStatus = LiftStatus.DOORS_OPEN;
         } else if (currentState.getStatus() == LiftStatus.DOORS_CLOSING) {
             newStatus = LiftStatus.IDLE;
+            doorClosingTicksElapsed = 0;  // Reset when door closing completes
         }
 
         if (StateTransitionValidator.isValidTransition(currentState.getStatus(), newStatus)) {
@@ -268,6 +309,7 @@ public class SimulationEngine {
         if (StateTransitionValidator.isValidTransition(currentState.getStatus(), newStatus)) {
             currentState = new LiftState(currentState.getFloor(), newStatus);
             doorTicksRemaining = doorTransitionTicks;
+            doorClosingTicksElapsed = 0;  // Reset when automatic door closing starts
             advanceDoorTransition();
         }
     }
