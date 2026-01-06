@@ -320,7 +320,8 @@ public class NaiveLiftControllerTest {
         }
         assertEquals(5, engine.getCurrentState().getFloor());
 
-        // Open doors
+        // Stop then open doors
+        engine.tick(); // stop at floor 5 (MOVING_UP -> IDLE)
         engine.tick(); // start opening
         engine.tick(); // doors open
         assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
@@ -358,7 +359,8 @@ public class NaiveLiftControllerTest {
             engine.tick();
         }
 
-        // Open doors
+        // Stop then open doors
+        engine.tick(); // stop at floor 5 (MOVING_UP -> IDLE)
         engine.tick(); // start opening
         engine.tick();
         engine.tick();
