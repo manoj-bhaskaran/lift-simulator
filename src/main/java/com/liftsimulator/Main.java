@@ -34,8 +34,9 @@ public class Main {
 
         // Run simulation for 40 ticks
         int tickCount = 40;
-        System.out.println(String.format("%-6s %-8s %-12s %-10s %-15s", "Tick", "Floor", "Direction", "Door", "Notes"));
-        System.out.println("------------------------------------------------------------------------");
+        System.out.println(String.format("%-6s %-8s %-15s %-12s %-10s %-15s",
+                "Tick", "Floor", "Status", "Direction", "Door", "Notes"));
+        System.out.println("----------------------------------------------------------------------------------");
 
         for (int i = 0; i < tickCount; i++) {
             LiftState state = engine.getCurrentState();
@@ -53,9 +54,10 @@ public class Main {
                 notes = "(Servicing floor 7)";
             }
 
-            System.out.println(String.format("%-6d %-8d %-12s %-10s %-15s",
+            System.out.println(String.format("%-6d %-8d %-15s %-12s %-10s %-15s",
                     engine.getCurrentTick(),
                     state.getFloor(),
+                    state.getStatus(),
                     state.getDirection(),
                     state.getDoorState(),
                     notes));
