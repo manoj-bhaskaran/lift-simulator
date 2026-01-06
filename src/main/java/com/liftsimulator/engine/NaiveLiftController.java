@@ -104,6 +104,11 @@ public class NaiveLiftController implements LiftController {
         DoorState doorState = currentState.getDoorState();
         LiftStatus currentStatus = currentState.getStatus();
 
+        // Allow door transitions to complete before evaluating movement.
+        if (currentStatus == LiftStatus.DOORS_OPENING) {
+            return Action.IDLE;
+        }
+
         // If doors are open, manage dwell time
         if (doorState == DoorState.OPEN) {
             if (hasRequestForFloor(currentFloor)) {
