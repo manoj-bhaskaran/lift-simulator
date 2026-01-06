@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Door cycles now automatically progress from open to closing after the dwell duration
 
+### Fixed
+- Align door closing timing from dwell with door transition tick consumption
+
 ## [0.3.0] - 2026-01-12
 
 ### Added

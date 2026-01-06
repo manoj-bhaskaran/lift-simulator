@@ -268,6 +268,7 @@ public class SimulationEngine {
         if (StateTransitionValidator.isValidTransition(currentState.getStatus(), newStatus)) {
             currentState = new LiftState(currentState.getFloor(), newStatus);
             doorTicksRemaining = doorTransitionTicks;
+            advanceDoorTransition();
         }
     }
 }

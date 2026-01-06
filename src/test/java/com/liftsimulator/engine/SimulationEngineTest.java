@@ -339,7 +339,7 @@ public class SimulationEngineTest {
 
         engine.tick(); // attempt move during closing
         assertEquals(floorBeforeMove, engine.getCurrentState().getFloor());
-        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
     }
 
     @Test
@@ -538,9 +538,6 @@ public class SimulationEngineTest {
         assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
 
         engine.tick(); // dwell 3 -> closing starts
-        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
-
-        engine.tick(); // closing tick 1
         assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
 
         engine.tick(); // closing completes
