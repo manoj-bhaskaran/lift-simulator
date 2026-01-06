@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.4.0**
+Current version: **0.5.0** (Unreleased)
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -20,10 +20,12 @@ The simulation is text-based and designed for clarity over visual appeal.
 
 ## Features
 
-The current version (v0.4.0) implements:
+The current version (v0.5.0) implements:
+- **Request lifecycle management**: Requests are first-class entities with explicit lifecycle states (CREATED → QUEUED → ASSIGNED → SERVING → COMPLETED/CANCELLED)
+- **Request state tracking**: Every request has a unique ID and progresses through validated state transitions
 - **Formal lift state machine** with 7 explicit states (IDLE, MOVING_UP, MOVING_DOWN, DOORS_OPENING, DOORS_OPEN, DOORS_CLOSING, OUT_OF_SERVICE)
-- **Single source of truth**: LiftStatus is the only stored state, all other properties are derived
-- **State transition validation** ensuring only valid state changes occur
+- **Single source of truth**: LiftStatus is the only stored state for the lift, all other properties are derived
+- **State transition validation** ensuring only valid state changes occur (for both lift and requests)
 - **Symmetric door behavior**: Both opening and closing are modeled as transitional states
 - **Single lift simulation** operating between configurable floor ranges
 - **Tick-based simulation engine** that advances time in discrete steps
@@ -32,10 +34,11 @@ The current version (v0.4.0) implements:
 - **Timed door dwell** with an automatic DOORS_OPEN → DOORS_CLOSING cycle
 - **NaiveLiftController** - A simple controller that services the nearest pending request
 - **Console output** displaying tick-by-tick lift state (floor, direction, door state, status)
-- **Basic request types**: Car calls (from inside the lift) and hall calls (from a floor)
+- **Request types**: Car calls (from inside the lift) and hall calls (from a floor)
 - **Safety enforcement**: Lift cannot move with doors open, doors cannot open while moving
+- **Backward compatibility**: Existing CarCall/HallCall interfaces still work
 
-Future iterations will add multi-lift systems, smarter algorithms, and more realistic constraints.
+Future iterations will add multi-lift systems, smarter algorithms, request priorities, and more realistic constraints.
 
 ## Prerequisites
 
@@ -72,7 +75,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.4.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.5.0.jar`.
 
 ## Running the Simulation
 
@@ -85,7 +88,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.4.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.5.0.jar com.liftsimulator.Main
 ```
 
 The demo runs a pre-configured scenario with several lift requests and displays the simulation state at each tick.
@@ -121,6 +124,89 @@ Run tests with coverage:
 ```bash
 mvn test jacoco:report
 ```
+
+## Request Types: Hall Calls vs. Car Calls
+
+The simulator distinguishes between two types of lift requests, modeling real-world elevator behavior:
+
+### Hall Call (Request from outside the lift)
+
+Made when someone presses an up/down button **outside** the lift:
+
+```java
+controller.addHallCall(new HallCall(3, Direction.UP));
+```
+
+**Known information:**
+- **Origin floor**: Where the person is waiting (floor 3)
+- **Direction**: Where they want to go (UP or DOWN)
+- **Unknown**: Exact destination floor (person hasn't boarded yet)
+
+**Physical analog:** The up/down buttons on each floor
+
+**Completion:** Request completes when lift arrives at the origin floor and opens doors (person can now board)
+
+### Car Call (Request from inside the lift)
+
+Made when someone presses a floor button **inside** the lift:
+
+```java
+controller.addCarCall(new CarCall(7));
+```
+
+**Known information:**
+- **Destination floor**: Where the person wants to go (floor 7)
+- **Unknown/Irrelevant**: Origin floor, direction (inferred from current position)
+
+**Physical analog:** The numbered floor buttons inside the lift car
+
+**Completion:** Request completes when lift arrives at the destination floor and opens doors (person can now exit)
+
+### Why the Distinction Matters
+
+#### 1. Current Naive Algorithm
+The current `NaiveLiftController` treats both types similarly (goes to nearest floor), but the infrastructure supports future smart algorithms.
+
+#### 2. Future Direction-Aware Scheduling
+Smart algorithms can optimize based on hall call direction:
+
+**Example scenario:**
+- Lift at floor 0
+- Hall call: floor 3 going DOWN
+- Hall call: floor 5 going UP
+- Car call: floor 7
+
+**Naive:** 0 → 3 → 5 → 7 (inefficient backtracking)
+
+**Smart:** 0 → 5 (pick up UP) → 7 (drop off) → 3 (now going down, pick up DOWN)
+
+#### 3. Real-World Modeling
+Elevator panels have different buttons:
+- **Hall panels:** Only up/down buttons (direction matters)
+- **Car panels:** Only floor buttons (destination matters)
+
+#### 4. Multiple Requests at Same Floor
+If two people at floor 4 press different buttons:
+- Person A presses UP
+- Person B presses DOWN
+
+These should be **separate requests** because they'll board at different times (when lift is going their direction).
+
+### Unified Request Model
+
+The `LiftRequest` class unifies both types while preserving the distinction:
+
+```java
+// Hall call
+LiftRequest hallRequest = LiftRequest.hallCall(5, Direction.UP);
+// Has: type=HALL_CALL, originFloor=5, direction=UP, destinationFloor=null
+
+// Car call
+LiftRequest carRequest = LiftRequest.carCall(10);
+// Has: type=CAR_CALL, originFloor=null, destinationFloor=10, direction=null
+```
+
+This architecture enables future algorithms like SCAN, LOOK, and destination dispatch while maintaining backward compatibility.
 
 ## Lift State Machine
 
@@ -170,12 +256,15 @@ src/
 │   ├── Main.java                          # Entry point and demo
 │   ├── domain/                            # Core domain models
 │   │   ├── Action.java                    # Actions the lift can take
-│   │   ├── CarCall.java                   # Request from inside lift
+│   │   ├── CarCall.java                   # Request from inside lift (legacy)
 │   │   ├── Direction.java                 # UP, DOWN, IDLE
 │   │   ├── DoorState.java                 # OPEN, CLOSED
-│   │   ├── HallCall.java                  # Request from a floor
+│   │   ├── HallCall.java                  # Request from a floor (legacy)
+│   │   ├── LiftRequest.java               # First-class request entity (NEW)
 │   │   ├── LiftState.java                 # Immutable lift state
-│   │   └── LiftStatus.java                # State machine status enum
+│   │   ├── LiftStatus.java                # Lift state machine enum
+│   │   ├── RequestState.java              # Request lifecycle enum (NEW)
+│   │   └── RequestType.java               # HALL_CALL or CAR_CALL (NEW)
 │   └── engine/                            # Simulation engine and controllers
 │       ├── LiftController.java            # Controller interface
 │       ├── NaiveLiftController.java       # Simple nearest-floor controller
@@ -184,7 +273,13 @@ src/
 │       ├── SimulationEngine.java          # Tick-based simulation engine
 │       └── StateTransitionValidator.java  # State machine validator
 └── test/java/com/liftsimulator/
-    └── ...                                # Unit tests
+    ├── domain/
+    │   └── LiftRequestTest.java           # Request lifecycle tests (NEW)
+    ├── engine/
+    │   ├── LiftRequestLifecycleTest.java  # Controller integration tests (NEW)
+    │   ├── NaiveLiftControllerTest.java   # Controller unit tests
+    │   └── SimulationEngineTest.java      # Engine unit tests
+    └── ...                                # Additional tests
 ```
 
 ## Architecture Decisions
@@ -192,6 +287,7 @@ src/
 See [docs/decisions](docs/decisions) for Architecture Decision Records (ADRs):
 - [ADR-0001: Tick-Based Simulation](docs/decisions/0001-tick-based-simulation.md)
 - [ADR-0002: Single Source of Truth for Lift State](docs/decisions/0002-single-source-of-truth-state.md)
+- [ADR-0003: Request Lifecycle Management](docs/decisions/0003-request-lifecycle-management.md)
 
 ## License
 

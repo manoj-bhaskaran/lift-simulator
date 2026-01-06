@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - Unreleased
+
+### Added
+- **Lift request lifecycle management**: Requests are now first-class entities with explicit lifecycle states
+- `LiftRequest` domain model with unique ID, type, origin, destination, and direction
+- `RequestState` enum with six lifecycle states: CREATED, QUEUED, ASSIGNED, SERVING, COMPLETED, CANCELLED
+- `RequestType` enum to distinguish between HALL_CALL and CAR_CALL requests
+- State transition validation ensuring only valid request state changes occur
+- Factory methods `LiftRequest.hallCall()` and `LiftRequest.carCall()` for creating requests
+- Terminal state detection with `isTerminal()` method
+- Comprehensive unit tests for request lifecycle (LiftRequestTest, LiftRequestLifecycleTest)
+- ADR-0003 documenting request lifecycle architectural decision
+
+### Changed
+- `NaiveLiftController` now manages requests as `LiftRequest` objects internally
+- Controller automatically advances requests through lifecycle states (CREATED → QUEUED → ASSIGNED → SERVING → COMPLETED)
+- Completed and cancelled requests are automatically removed from the controller
+- Backward compatibility maintained: `addCarCall()` and `addHallCall()` methods still work
+
+### Design Decisions
+- Every request must end in either COMPLETED or CANCELLED state (terminal states)
+- Invalid state transitions throw `IllegalStateException`
+- Self-transitions are prevented
+- Terminal states cannot transition to any other state
+- Request state progression is automatically managed by the controller
+
 ## [0.4.0] - 2026-01-13
 
 ### Added
@@ -147,6 +173,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Immutable state objects to avoid bugs from shared mutable state
 - Separated controller logic from simulation engine for flexibility
 
+[0.5.0]: https://github.com/manoj-bhaskaran/lift-simulator/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.4.0
 [0.3.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.3.0
 [0.2.9]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.9
