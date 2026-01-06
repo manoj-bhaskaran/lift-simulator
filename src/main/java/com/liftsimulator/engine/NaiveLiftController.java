@@ -207,6 +207,7 @@ public class NaiveLiftController implements LiftController {
         // If at a requested floor, stop first if moving, then open doors
         if (hasRequestForFloor(currentFloor)) {
             if (currentStatus == LiftStatus.MOVING_UP || currentStatus == LiftStatus.MOVING_DOWN) {
+                assignRequestsForFloor(currentFloor);
                 serveRequestsForFloor(currentFloor);
                 return Action.IDLE;
             }
@@ -214,6 +215,7 @@ public class NaiveLiftController implements LiftController {
                 completeRequestsForFloor(currentFloor);
                 return Action.IDLE;
             }
+            assignRequestsForFloor(currentFloor);
             serveRequestsForFloor(currentFloor);
             return Action.OPEN_DOOR;
         }
