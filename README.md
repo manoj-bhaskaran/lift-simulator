@@ -21,8 +21,10 @@ The simulation is text-based and designed for clarity over visual appeal.
 ## Features
 
 The current version (v0.2.0) implements:
-- **Formal lift state machine** with explicit states (IDLE, MOVING_UP, MOVING_DOWN, DOORS_OPEN, DOORS_CLOSING, OUT_OF_SERVICE)
+- **Formal lift state machine** with 7 explicit states (IDLE, MOVING_UP, MOVING_DOWN, DOORS_OPENING, DOORS_OPEN, DOORS_CLOSING, OUT_OF_SERVICE)
+- **Single source of truth**: LiftStatus is the only stored state, all other properties are derived
 - **State transition validation** ensuring only valid state changes occur
+- **Symmetric door behavior**: Both opening and closing are modeled as transitional states
 - **Single lift simulation** operating between configurable floor ranges
 - **Tick-based simulation engine** that advances time in discrete steps
 - **NaiveLiftController** - A simple controller that services the nearest pending request
@@ -101,22 +103,40 @@ mvn test jacoco:report
 
 ## Lift State Machine
 
-The lift operates according to a formal state machine with the following states:
+The lift uses a **single source of truth** pattern where `LiftStatus` is the only stored state - all other properties (direction, door state) are derived from it.
 
-- **IDLE**: Lift is stationary with doors closed, ready to accept requests
-- **MOVING_UP**: Lift is traveling upward between floors
-- **MOVING_DOWN**: Lift is traveling downward between floors
-- **DOORS_OPEN**: Lift doors are open at a floor
-- **DOORS_CLOSING**: Lift doors are in the process of closing
-- **OUT_OF_SERVICE**: Lift is offline for maintenance or emergency
+### States
 
-### State Transition Rules
+| State | Description | Direction | Doors |
+|-------|-------------|-----------|-------|
+| **IDLE** | Stationary, ready to accept requests | IDLE | CLOSED |
+| **MOVING_UP** | Traveling upward between floors | UP | CLOSED (locked) |
+| **MOVING_DOWN** | Traveling downward between floors | DOWN | CLOSED (locked) |
+| **DOORS_OPENING** | Doors in process of opening (transitional) | IDLE | CLOSED |
+| **DOORS_OPEN** | Doors fully open, passengers can enter/exit | IDLE | OPEN |
+| **DOORS_CLOSING** | Doors in process of closing (transitional) | IDLE | CLOSED |
+| **OUT_OF_SERVICE** | Offline for maintenance or emergency | IDLE | CLOSED |
 
-The state machine enforces the following constraints:
-- Lift cannot move (MOVING_UP/MOVING_DOWN) when doors are not fully closed
-- Doors cannot open (DOORS_OPEN) while the lift is moving
-- All state transitions are validated and invalid transitions are logged
-- Safety-critical transitions are prevented (e.g., movement with open doors)
+### State Transition Table
+
+| From ↓ / To → | IDLE | MOVING_UP | MOVING_DOWN | DOORS_OPENING | DOORS_OPEN | DOORS_CLOSING | OUT_OF_SERVICE |
+|---------------|------|-----------|-------------|---------------|------------|---------------|----------------|
+| **IDLE** | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
+| **MOVING_UP** | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ |
+| **MOVING_DOWN** | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ | ✅ |
+| **DOORS_OPENING** | ✅ | ❌ | ❌ | ✅ | ✅ | ❌ | ✅ |
+| **DOORS_OPEN** | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| **DOORS_CLOSING** | ✅ | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ |
+| **OUT_OF_SERVICE** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+
+### Safety Constraints
+
+The state machine enforces critical safety rules:
+- **Cannot move with doors open**: DOORS_OPEN/DOORS_OPENING/DOORS_CLOSING cannot transition to MOVING_UP/MOVING_DOWN
+- **Cannot reverse direction**: Must stop (IDLE) before changing direction
+- **Cannot open doors while moving**: MOVING_UP/MOVING_DOWN must transition to DOORS_OPENING (which stops the lift first)
+- **Symmetric door transitions**: Both opening and closing are modeled as separate states
+- **All transitions validated**: Invalid transitions are prevented and logged
 
 Valid transitions are managed by the `StateTransitionValidator` class, which ensures the lift operates safely and predictably.
 
@@ -148,6 +168,7 @@ src/
 
 See [docs/decisions](docs/decisions) for Architecture Decision Records (ADRs):
 - [ADR-0001: Tick-Based Simulation](docs/decisions/0001-tick-based-simulation.md)
+- [ADR-0002: Single Source of Truth for Lift State](docs/decisions/0002-single-source-of-truth-state.md)
 
 ## License
 

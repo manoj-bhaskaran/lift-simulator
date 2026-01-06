@@ -20,44 +20,51 @@ public class StateTransitionValidator {
     private static final Map<LiftStatus, Set<LiftStatus>> VALID_TRANSITIONS = new EnumMap<>(LiftStatus.class);
 
     static {
-        // IDLE can transition to: MOVING_UP, MOVING_DOWN, DOORS_OPEN, OUT_OF_SERVICE
+        // IDLE can transition to: MOVING_UP, MOVING_DOWN, DOORS_OPENING, OUT_OF_SERVICE
         VALID_TRANSITIONS.put(LiftStatus.IDLE, EnumSet.of(
                 LiftStatus.IDLE,
                 LiftStatus.MOVING_UP,
                 LiftStatus.MOVING_DOWN,
-                LiftStatus.DOORS_OPEN,
+                LiftStatus.DOORS_OPENING,
                 LiftStatus.OUT_OF_SERVICE
         ));
 
-        // MOVING_UP can transition to: MOVING_UP, IDLE, DOORS_OPEN, OUT_OF_SERVICE
+        // MOVING_UP can transition to: MOVING_UP, IDLE, DOORS_OPENING, OUT_OF_SERVICE
         VALID_TRANSITIONS.put(LiftStatus.MOVING_UP, EnumSet.of(
                 LiftStatus.MOVING_UP,
                 LiftStatus.IDLE,
-                LiftStatus.DOORS_OPEN,
+                LiftStatus.DOORS_OPENING,
                 LiftStatus.OUT_OF_SERVICE
         ));
 
-        // MOVING_DOWN can transition to: MOVING_DOWN, IDLE, DOORS_OPEN, OUT_OF_SERVICE
+        // MOVING_DOWN can transition to: MOVING_DOWN, IDLE, DOORS_OPENING, OUT_OF_SERVICE
         VALID_TRANSITIONS.put(LiftStatus.MOVING_DOWN, EnumSet.of(
                 LiftStatus.MOVING_DOWN,
                 LiftStatus.IDLE,
-                LiftStatus.DOORS_OPEN,
+                LiftStatus.DOORS_OPENING,
                 LiftStatus.OUT_OF_SERVICE
         ));
 
-        // DOORS_OPEN can transition to: IDLE (instant close), DOORS_CLOSING, OUT_OF_SERVICE
-        VALID_TRANSITIONS.put(LiftStatus.DOORS_OPEN, EnumSet.of(
+        // DOORS_OPENING can transition to: DOORS_OPEN, IDLE (abort), OUT_OF_SERVICE
+        VALID_TRANSITIONS.put(LiftStatus.DOORS_OPENING, EnumSet.of(
+                LiftStatus.DOORS_OPENING,
                 LiftStatus.DOORS_OPEN,
                 LiftStatus.IDLE,
+                LiftStatus.OUT_OF_SERVICE
+        ));
+
+        // DOORS_OPEN can transition to: DOORS_CLOSING, OUT_OF_SERVICE
+        VALID_TRANSITIONS.put(LiftStatus.DOORS_OPEN, EnumSet.of(
+                LiftStatus.DOORS_OPEN,
                 LiftStatus.DOORS_CLOSING,
                 LiftStatus.OUT_OF_SERVICE
         ));
 
-        // DOORS_CLOSING can transition to: IDLE, DOORS_OPEN, OUT_OF_SERVICE
+        // DOORS_CLOSING can transition to: IDLE, DOORS_OPENING (re-open), OUT_OF_SERVICE
         VALID_TRANSITIONS.put(LiftStatus.DOORS_CLOSING, EnumSet.of(
                 LiftStatus.DOORS_CLOSING,
                 LiftStatus.IDLE,
-                LiftStatus.DOORS_OPEN,
+                LiftStatus.DOORS_OPENING,
                 LiftStatus.OUT_OF_SERVICE
         ));
 
@@ -79,12 +86,14 @@ public class StateTransitionValidator {
         return switch (action) {
             case MOVE_UP -> LiftStatus.MOVING_UP;
             case MOVE_DOWN -> LiftStatus.MOVING_DOWN;
-            case OPEN_DOOR -> LiftStatus.DOORS_OPEN;
+            case OPEN_DOOR -> LiftStatus.DOORS_OPENING;
             case CLOSE_DOOR -> LiftStatus.DOORS_CLOSING;
             case IDLE -> {
                 // When IDLE action is taken, transition based on current state
                 if (currentStatus == LiftStatus.DOORS_CLOSING) {
                     yield LiftStatus.IDLE;
+                } else if (currentStatus == LiftStatus.DOORS_OPENING) {
+                    yield LiftStatus.DOORS_OPEN;
                 } else if (currentStatus == LiftStatus.MOVING_UP ||
                            currentStatus == LiftStatus.MOVING_DOWN) {
                     yield LiftStatus.IDLE;

@@ -2,37 +2,43 @@ package com.liftsimulator.domain;
 
 /**
  * Represents the operational status of the lift in the state machine.
- * This enum defines all possible states the lift can be in and helps enforce
- * valid state transitions.
+ * This enum is the single source of truth for lift state - all other state
+ * properties (direction, door state) are derived from this status.
  */
 public enum LiftStatus {
     /**
-     * Lift is idle - not moving and not servicing any requests.
-     * Doors are closed.
+     * Lift is idle - not moving and doors are closed.
+     * Ready to accept requests.
      */
     IDLE,
 
     /**
      * Lift is moving upward between floors.
-     * Doors must be closed in this state.
+     * Doors are closed and locked in this state.
      */
     MOVING_UP,
 
     /**
      * Lift is moving downward between floors.
-     * Doors must be closed in this state.
+     * Doors are closed and locked in this state.
      */
     MOVING_DOWN,
 
     /**
-     * Lift doors are open at a floor.
-     * Lift cannot move in this state.
+     * Lift doors are in the process of opening.
+     * This is a transitional state. Lift is stationary.
+     */
+    DOORS_OPENING,
+
+    /**
+     * Lift doors are fully open at a floor.
+     * Lift cannot move in this state. Passengers can enter/exit.
      */
     DOORS_OPEN,
 
     /**
      * Lift doors are in the process of closing.
-     * This is a transitional state before movement can begin.
+     * This is a transitional state. Lift is stationary.
      */
     DOORS_CLOSING,
 
