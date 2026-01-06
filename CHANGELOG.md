@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-01-12
+
+### Added
+- Introduced a deterministic simulation clock to manage tick progression
+- Added configurable travel and door transition durations to model time per floor
+- Expanded unit tests to validate tick-based movement and door timing
+- Added a deterministic simulation regression test for fixed inputs
+
+### Changed
+- Movement and door transitions now consume configured ticks before completing
+
 ## [0.2.9] - 2026-01-06
 
 ### Fixed
@@ -124,6 +135,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Immutable state objects to avoid bugs from shared mutable state
 - Separated controller logic from simulation engine for flexibility
 
+[0.3.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.3.0
 [0.2.9]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.9
 [0.2.8]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.8
 [0.2.7]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.7
