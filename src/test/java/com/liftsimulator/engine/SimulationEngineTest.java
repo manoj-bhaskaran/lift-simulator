@@ -734,9 +734,9 @@ public class SimulationEngineTest {
             new SimulationEngine(new FixedActionController(Action.IDLE), 0, 5, 1, 2, 3, 3);
         });
 
-        // Test that doorReopenWindowTicks cannot be negative
+        // Test that doorReopenWindowTicks cannot be negative (except -1 which is sentinel for default)
         assertThrows(IllegalArgumentException.class, () -> {
-            new SimulationEngine(new FixedActionController(Action.IDLE), 0, 5, 1, 2, 3, -1);
+            new SimulationEngine(new FixedActionController(Action.IDLE), 0, 5, 1, 2, 3, -2);
         });
 
         // Test that valid values are accepted
