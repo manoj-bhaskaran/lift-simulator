@@ -97,15 +97,13 @@ public class SimulationEngine {
                 }
                 break;
             case OPEN_DOOR:
-                // Can only open doors when not moving
-                if (currentStatus != LiftStatus.MOVING_UP &&
-                    currentStatus != LiftStatus.MOVING_DOWN &&
-                    currentStatus != LiftStatus.OUT_OF_SERVICE) {
+                // Can open doors when stopped or moving (lift stops first)
+                if (currentStatus != LiftStatus.OUT_OF_SERVICE) {
                     newDoorState = DoorState.OPEN;
                     newDirection = Direction.IDLE;
                     newStatus = LiftStatus.DOORS_OPEN;
                 } else {
-                    // Invalid - can't open doors while moving
+                    // Invalid - can't open doors when out of service
                     StateTransitionValidator.isActionAllowed(currentStatus, action);
                     return state;
                 }

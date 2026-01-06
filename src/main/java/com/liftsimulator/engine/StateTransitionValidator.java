@@ -45,9 +45,10 @@ public class StateTransitionValidator {
                 LiftStatus.OUT_OF_SERVICE
         ));
 
-        // DOORS_OPEN can transition to: DOORS_CLOSING, OUT_OF_SERVICE
+        // DOORS_OPEN can transition to: IDLE (instant close), DOORS_CLOSING, OUT_OF_SERVICE
         VALID_TRANSITIONS.put(LiftStatus.DOORS_OPEN, EnumSet.of(
                 LiftStatus.DOORS_OPEN,
+                LiftStatus.IDLE,
                 LiftStatus.DOORS_CLOSING,
                 LiftStatus.OUT_OF_SERVICE
         ));
