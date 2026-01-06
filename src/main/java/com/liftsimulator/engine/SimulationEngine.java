@@ -21,8 +21,8 @@ public class SimulationEngine {
         this.minFloor = minFloor;
         this.maxFloor = maxFloor;
         this.currentTick = 0;
-        // Initialize lift at ground floor, idle, doors closed
-        this.currentState = new LiftState(0, Direction.IDLE, DoorState.CLOSED);
+        // Initialize lift at minimum floor, idle, doors closed
+        this.currentState = new LiftState(minFloor, Direction.IDLE, DoorState.CLOSED);
     }
 
     /**
@@ -50,15 +50,23 @@ public class SimulationEngine {
 
         switch (action) {
             case MOVE_UP:
-                if (state.getDoorState() == DoorState.CLOSED && newFloor < maxFloor) {
-                    newFloor++;
-                    newDirection = Direction.UP;
+                if (state.getDoorState() == DoorState.CLOSED) {
+                    if (newFloor < maxFloor) {
+                        newFloor++;
+                        newDirection = Direction.UP;
+                    } else if (newFloor == maxFloor) {
+                        newDirection = Direction.IDLE;
+                    }
                 }
                 break;
             case MOVE_DOWN:
-                if (state.getDoorState() == DoorState.CLOSED && newFloor > minFloor) {
-                    newFloor--;
-                    newDirection = Direction.DOWN;
+                if (state.getDoorState() == DoorState.CLOSED) {
+                    if (newFloor > minFloor) {
+                        newFloor--;
+                        newDirection = Direction.DOWN;
+                    } else if (newFloor == minFloor) {
+                        newDirection = Direction.IDLE;
+                    }
                 }
                 break;
             case OPEN_DOOR:
