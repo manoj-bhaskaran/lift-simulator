@@ -7,6 +7,9 @@ import com.liftsimulator.domain.Direction;
 import com.liftsimulator.domain.DoorState;
 import com.liftsimulator.domain.HallCall;
 import com.liftsimulator.domain.LiftState;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 /**
  * Main entry point for the lift simulator.
@@ -15,6 +18,7 @@ import com.liftsimulator.domain.LiftState;
 public class Main {
     public static void main(String[] args) {
         System.out.println("=== Lift Simulator - NaiveLiftController Demo ===");
+        System.out.println("Version: " + resolveVersion());
         System.out.println("Starting simulation...\n");
 
         // Create naive controller and engine
@@ -67,5 +71,21 @@ public class Main {
 
         System.out.println("\nSimulation completed successfully!");
         System.out.println("All requests serviced using naive scheduling (nearest floor first).");
+    }
+
+    private static String resolveVersion() {
+        Properties properties = new Properties();
+        try (InputStream inputStream = Main.class.getResourceAsStream("/version.properties")) {
+            if (inputStream != null) {
+                properties.load(inputStream);
+                String version = properties.getProperty("version");
+                if (version != null && !version.isBlank()) {
+                    return version.trim();
+                }
+            }
+        } catch (IOException e) {
+            return "unknown";
+        }
+        return "unknown";
     }
 }

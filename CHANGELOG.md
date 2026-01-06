@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.8] - 2026-01-11
+
+### Fixed
+- Keep the naive controller idle while doors are closing to avoid invalid move attempts
+
+## [0.2.7] - 2026-01-11
+
+### Added
+- Print the running software version in the demo output
+
 ## [0.2.6] - 2026-01-11
 
 ### Fixed
@@ -108,6 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Immutable state objects to avoid bugs from shared mutable state
 - Separated controller logic from simulation engine for flexibility
 
+[0.2.8]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.8
+[0.2.7]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.7
 [0.2.6]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.6
 [0.2.5]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.5
 [0.2.4]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.4
