@@ -116,7 +116,7 @@ SimulationEngine engine = new SimulationEngine(
 - **doorDwellTicks**: How long doors remain open before automatically closing
 - **doorReopenWindowTicks**: Time window (in ticks) during door closing when doors can be reopened for new requests at the current floor
   - Must be non-negative and cannot exceed `doorTransitionTicks`
-  - Default: 2 ticks
+  - Default: `min(2, doorTransitionTicks)` for backward compatibility
   - Setting to 0 disables door reopening (doors cannot be interrupted once closing starts)
   - Realistic behavior: if a request arrives for the current floor while doors are closing and within this window, doors will reopen
   - If the window has passed, the request is queued normally and will be served in the next cycle

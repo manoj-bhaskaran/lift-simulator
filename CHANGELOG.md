@@ -9,12 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Door reopening window**: Configurable time window during door closing when doors can be reopened for new requests
-- `doorReopenWindowTicks` parameter to `SimulationEngine` constructor (default: 2 ticks)
+- `doorReopenWindowTicks` parameter to `SimulationEngine` constructor (default: `min(2, doorTransitionTicks)`)
 - Realistic door behavior: doors reopen if request arrives for current floor within the reopen window
 - Automatic request queuing when door closing window has passed
 - Validation ensuring `doorReopenWindowTicks` is non-negative and does not exceed `doorTransitionTicks`
 - Comprehensive unit tests for door reopening scenarios (within window, outside window, boundary cases, zero window)
 - Integration tests with `NaiveLiftController` demonstrating real-world door reopening behavior
+- Backward compatibility: default window automatically adjusts to `doorTransitionTicks` when smaller than 2
 
 ### Changed
 - `NaiveLiftController` now attempts to reopen doors when a request arrives for the current floor during door closing

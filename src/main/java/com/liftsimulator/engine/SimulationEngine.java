@@ -24,7 +24,7 @@ public class SimulationEngine {
     private int doorClosingTicksElapsed;
 
     public SimulationEngine(LiftController controller, int minFloor, int maxFloor) {
-        this(controller, minFloor, maxFloor, 1, 2, 3, 2);
+        this(controller, minFloor, maxFloor, 1, 2, 3, -1);
     }
 
     public SimulationEngine(
@@ -34,7 +34,7 @@ public class SimulationEngine {
             int travelTicksPerFloor,
             int doorTransitionTicks
     ) {
-        this(controller, minFloor, maxFloor, travelTicksPerFloor, doorTransitionTicks, 3, 2);
+        this(controller, minFloor, maxFloor, travelTicksPerFloor, doorTransitionTicks, 3, -1);
     }
 
     public SimulationEngine(
@@ -45,7 +45,7 @@ public class SimulationEngine {
             int doorTransitionTicks,
             int doorDwellTicks
     ) {
-        this(controller, minFloor, maxFloor, travelTicksPerFloor, doorTransitionTicks, doorDwellTicks, 2);
+        this(controller, minFloor, maxFloor, travelTicksPerFloor, doorTransitionTicks, doorDwellTicks, -1);
     }
 
     public SimulationEngine(
@@ -66,6 +66,12 @@ public class SimulationEngine {
         if (doorDwellTicks <= 0) {
             throw new IllegalArgumentException("doorDwellTicks must be >= 1");
         }
+
+        // Use -1 as sentinel for "use default": min(2, doorTransitionTicks) for backward compatibility
+        if (doorReopenWindowTicks == -1) {
+            doorReopenWindowTicks = Math.min(2, doorTransitionTicks);
+        }
+
         if (doorReopenWindowTicks < 0) {
             throw new IllegalArgumentException("doorReopenWindowTicks must be >= 0");
         }
