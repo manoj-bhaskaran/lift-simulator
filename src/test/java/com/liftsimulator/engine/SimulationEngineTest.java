@@ -436,4 +436,76 @@ public class SimulationEngineTest {
             assertEquals(DoorState.CLOSED, engine.getCurrentState().getDoorState());
         }
     }
+
+    @Test
+    public void testMoveUpHonorsTravelTicksPerFloor() {
+        SimulationEngine engine = new SimulationEngine(
+                new FixedActionController(Action.MOVE_UP),
+                0,
+                5,
+                3,
+                2
+        );
+
+        engine.tick();
+        assertEquals(0, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.MOVING_UP, engine.getCurrentState().getStatus());
+
+        engine.tick();
+        assertEquals(0, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.MOVING_UP, engine.getCurrentState().getStatus());
+
+        engine.tick();
+        assertEquals(1, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.MOVING_UP, engine.getCurrentState().getStatus());
+    }
+
+    @Test
+    public void testDoorTransitionConsumesConfiguredTicks() {
+        SimulationEngine engine = new SimulationEngine(
+                new FixedActionController(Action.OPEN_DOOR),
+                0,
+                5,
+                1,
+                3
+        );
+
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
+        assertEquals(DoorState.CLOSED, engine.getCurrentState().getDoorState());
+
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
+
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+        assertEquals(DoorState.OPEN, engine.getCurrentState().getDoorState());
+    }
+
+    @Test
+    public void testDeterministicResultsForFixedInputs() {
+        SimulationEngine firstRun = new SimulationEngine(
+                new FixedActionController(Action.MOVE_UP),
+                0,
+                5,
+                2,
+                2
+        );
+
+        SimulationEngine secondRun = new SimulationEngine(
+                new FixedActionController(Action.MOVE_UP),
+                0,
+                5,
+                2,
+                2
+        );
+
+        for (int i = 0; i < 6; i++) {
+            assertEquals(firstRun.getCurrentTick(), secondRun.getCurrentTick());
+            assertEquals(firstRun.getCurrentState().getFloor(), secondRun.getCurrentState().getFloor());
+            assertEquals(firstRun.getCurrentState().getStatus(), secondRun.getCurrentState().getStatus());
+            firstRun.tick();
+            secondRun.tick();
+        }
+    }
 }

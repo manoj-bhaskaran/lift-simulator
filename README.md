@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.2.9**
+Current version: **0.3.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -20,13 +20,15 @@ The simulation is text-based and designed for clarity over visual appeal.
 
 ## Features
 
-The current version (v0.2.9) implements:
+The current version (v0.3.0) implements:
 - **Formal lift state machine** with 7 explicit states (IDLE, MOVING_UP, MOVING_DOWN, DOORS_OPENING, DOORS_OPEN, DOORS_CLOSING, OUT_OF_SERVICE)
 - **Single source of truth**: LiftStatus is the only stored state, all other properties are derived
 - **State transition validation** ensuring only valid state changes occur
 - **Symmetric door behavior**: Both opening and closing are modeled as transitional states
 - **Single lift simulation** operating between configurable floor ranges
 - **Tick-based simulation engine** that advances time in discrete steps
+- **Simulation clock** powering deterministic tick progression
+- **Configurable travel and door transition durations** to model time per floor and door cycles
 - **NaiveLiftController** - A simple controller that services the nearest pending request
 - **Console output** displaying tick-by-tick lift state (floor, direction, door state, status)
 - **Basic request types**: Car calls (from inside the lift) and hall calls (from a floor)
@@ -69,7 +71,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.2.9.jar`.
+The packaged JAR will be in `target/lift-simulator-0.3.0.jar`.
 
 ## Running the Simulation
 
@@ -82,10 +84,26 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.2.9.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.3.0.jar com.liftsimulator.Main
 ```
 
 The demo runs a pre-configured scenario with several lift requests and displays the simulation state at each tick.
+
+## Configuring Tick Timing
+
+You can model travel and door timing by using the extended `SimulationEngine` constructor:
+
+```java
+SimulationEngine engine = new SimulationEngine(
+    controller,
+    0,
+    10,
+    3, // travelTicksPerFloor
+    2  // doorTransitionTicks
+);
+```
+
+Travel ticks specify how many ticks it takes to move one floor. Door transition ticks apply to opening and closing.
 
 ## Running Tests
 
@@ -159,6 +177,7 @@ src/
 │       ├── LiftController.java            # Controller interface
 │       ├── NaiveLiftController.java       # Simple nearest-floor controller
 │       ├── SimpleLiftController.java      # Alternative basic controller
+│       ├── SimulationClock.java           # Deterministic simulation clock
 │       ├── SimulationEngine.java          # Tick-based simulation engine
 │       └── StateTransitionValidator.java  # State machine validator
 └── test/java/com/liftsimulator/

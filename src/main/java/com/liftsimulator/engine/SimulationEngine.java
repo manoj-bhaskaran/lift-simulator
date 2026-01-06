@@ -9,17 +9,41 @@ import com.liftsimulator.domain.LiftStatus;
  * The engine owns time and coordinates state updates.
  */
 public class SimulationEngine {
-    private long currentTick;
+    private final SimulationClock clock;
     private LiftState currentState;
     private final LiftController controller;
     private final int minFloor;
     private final int maxFloor;
+    private final int travelTicksPerFloor;
+    private final int doorTransitionTicks;
+    private int movementTicksRemaining;
+    private int doorTicksRemaining;
 
     public SimulationEngine(LiftController controller, int minFloor, int maxFloor) {
+        this(controller, minFloor, maxFloor, 1, 2);
+    }
+
+    public SimulationEngine(
+            LiftController controller,
+            int minFloor,
+            int maxFloor,
+            int travelTicksPerFloor,
+            int doorTransitionTicks
+    ) {
+        if (travelTicksPerFloor <= 0) {
+            throw new IllegalArgumentException("travelTicksPerFloor must be >= 1");
+        }
+        if (doorTransitionTicks <= 0) {
+            throw new IllegalArgumentException("doorTransitionTicks must be >= 1");
+        }
         this.controller = controller;
         this.minFloor = minFloor;
         this.maxFloor = maxFloor;
-        this.currentTick = 0;
+        this.travelTicksPerFloor = travelTicksPerFloor;
+        this.doorTransitionTicks = doorTransitionTicks;
+        this.clock = new SimulationClock();
+        this.movementTicksRemaining = 0;
+        this.doorTicksRemaining = 0;
         // Initialize lift at minimum floor, idle status
         this.currentState = new LiftState(minFloor, LiftStatus.IDLE);
     }
@@ -30,20 +54,39 @@ public class SimulationEngine {
      */
     public void tick() {
         // Ask controller for next action
-        Action action = controller.decideNextAction(currentState, currentTick);
+        Action action = controller.decideNextAction(currentState, clock.getCurrentTick());
+
+        // Advance any in-progress movement or door transition
+        if (movementTicksRemaining > 0) {
+            advanceMovement();
+            clock.tick();
+            return;
+        }
+
+        if (doorTicksRemaining > 0) {
+            advanceDoorTransition();
+            clock.tick();
+            return;
+        }
 
         // Apply action to get new state
-        currentState = applyAction(currentState, action);
+        currentState = startAction(currentState, action);
+
+        if (movementTicksRemaining > 0) {
+            advanceMovement();
+        } else if (doorTicksRemaining > 0) {
+            advanceDoorTransition();
+        }
 
         // Increment tick counter
-        currentTick++;
+        clock.tick();
     }
 
     /**
      * Applies an action to the current state and returns the new state.
      * Enforces state machine transitions and ensures lift never moves with doors open.
      */
-    private LiftState applyAction(LiftState state, Action action) {
+    private LiftState startAction(LiftState state, Action action) {
         int newFloor = state.getFloor();
         LiftStatus currentStatus = state.getStatus();
         LiftStatus newStatus = currentStatus;
@@ -62,8 +105,9 @@ public class SimulationEngine {
         switch (action) {
             case MOVE_UP:
                 if (newFloor < maxFloor) {
-                    newFloor++;
                     newStatus = LiftStatus.MOVING_UP;
+                    movementTicksRemaining = travelTicksPerFloor;
+                    doorTicksRemaining = 0;
                 } else if (newFloor == maxFloor) {
                     // At top floor, can't move up
                     newStatus = LiftStatus.IDLE;
@@ -71,8 +115,9 @@ public class SimulationEngine {
                 break;
             case MOVE_DOWN:
                 if (newFloor > minFloor) {
-                    newFloor--;
                     newStatus = LiftStatus.MOVING_DOWN;
+                    movementTicksRemaining = travelTicksPerFloor;
+                    doorTicksRemaining = 0;
                 } else if (newFloor == minFloor) {
                     // At bottom floor, can't move down
                     newStatus = LiftStatus.IDLE;
@@ -89,24 +134,26 @@ public class SimulationEngine {
                 } else if (currentStatus == LiftStatus.IDLE) {
                     // Can now start opening doors
                     newStatus = LiftStatus.DOORS_OPENING;
+                    doorTicksRemaining = doorTransitionTicks;
+                    movementTicksRemaining = 0;
                 } else if (currentStatus == LiftStatus.DOORS_CLOSING) {
                     // Abort door closing, re-open
                     newStatus = LiftStatus.DOORS_OPENING;
+                    doorTicksRemaining = doorTransitionTicks;
+                    movementTicksRemaining = 0;
                 }
                 // If already DOORS_OPENING or DOORS_OPEN, stay in current state
                 break;
             case CLOSE_DOOR:
                 if (currentStatus == LiftStatus.DOORS_OPEN || currentStatus == LiftStatus.DOORS_OPENING) {
                     newStatus = LiftStatus.DOORS_CLOSING;
+                    doorTicksRemaining = doorTransitionTicks;
+                    movementTicksRemaining = 0;
                 }
                 break;
             case IDLE:
                 // Complete transitional states or stop movement
-                if (currentStatus == LiftStatus.DOORS_OPENING) {
-                    newStatus = LiftStatus.DOORS_OPEN;
-                } else if (currentStatus == LiftStatus.DOORS_CLOSING) {
-                    newStatus = LiftStatus.IDLE;
-                } else if (currentStatus == LiftStatus.MOVING_UP ||
+                if (currentStatus == LiftStatus.MOVING_UP ||
                            currentStatus == LiftStatus.MOVING_DOWN) {
                     newStatus = LiftStatus.IDLE;
                 }
@@ -124,10 +171,48 @@ public class SimulationEngine {
     }
 
     public long getCurrentTick() {
-        return currentTick;
+        return clock.getCurrentTick();
     }
 
     public LiftState getCurrentState() {
         return currentState;
+    }
+
+    private void advanceMovement() {
+        movementTicksRemaining--;
+        if (movementTicksRemaining > 0) {
+            return;
+        }
+
+        int newFloor = currentState.getFloor();
+        LiftStatus newStatus = currentState.getStatus();
+
+        if (currentState.getStatus() == LiftStatus.MOVING_UP) {
+            newFloor = Math.min(maxFloor, newFloor + 1);
+        } else if (currentState.getStatus() == LiftStatus.MOVING_DOWN) {
+            newFloor = Math.max(minFloor, newFloor - 1);
+        }
+
+        if (StateTransitionValidator.isValidTransition(currentState.getStatus(), newStatus)) {
+            currentState = new LiftState(newFloor, newStatus);
+        }
+    }
+
+    private void advanceDoorTransition() {
+        doorTicksRemaining--;
+        if (doorTicksRemaining > 0) {
+            return;
+        }
+
+        LiftStatus newStatus = currentState.getStatus();
+        if (currentState.getStatus() == LiftStatus.DOORS_OPENING) {
+            newStatus = LiftStatus.DOORS_OPEN;
+        } else if (currentState.getStatus() == LiftStatus.DOORS_CLOSING) {
+            newStatus = LiftStatus.IDLE;
+        }
+
+        if (StateTransitionValidator.isValidTransition(currentState.getStatus(), newStatus)) {
+            currentState = new LiftState(currentState.getFloor(), newStatus);
+        }
     }
 }
