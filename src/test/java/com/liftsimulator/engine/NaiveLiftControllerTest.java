@@ -603,12 +603,12 @@ public class NaiveLiftControllerTest {
         LiftRequest request = LiftRequest.carCall(5);
         controller.addRequest(request);
 
-        // Move 2 floors up
-        engine.tick(); // start moving
-        engine.tick(); // floor 1
+        // Move 3 floors up (movement completes in the same tick as MOVE_UP with ticksPerFloor=1)
+        engine.tick(); // start moving, reaches floor 1
         engine.tick(); // floor 2
+        engine.tick(); // floor 3
 
-        assertEquals(2, engine.getCurrentState().getFloor());
+        assertEquals(3, engine.getCurrentState().getFloor());
         assertEquals(LiftStatus.MOVING_UP, engine.getCurrentState().getStatus());
 
         // Cancel the request while lift is moving
