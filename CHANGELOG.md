@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-01-06
+
+### Fixed
+- Align cancellation-while-moving integration test expectations with tick-per-floor movement behavior
+
+## [0.7.0] - 2026-01-06
+
+### Added
+- **Request cancellation API**: New `cancelRequest(long requestId)` method in `NaiveLiftController` to safely cancel pending requests
+- Ability to cancel requests in any non-terminal state (QUEUED, ASSIGNED, SERVING)
+- Automatic removal of cancelled requests from the controller's queue
+- Return value indicates cancellation success (false if request not found or already terminal)
+- Comprehensive unit tests for cancelling requests in each lifecycle state
+- Integration tests for cancellation scenarios (while moving, multiple requests same floor)
+- Lifecycle tests verifying CANCELLED terminal state behavior
+
+### Design Decisions
+- Cancelled requests transition to CANCELLED state before removal, maintaining lifecycle integrity
+- Cancellation is idempotent - calling multiple times on same request ID is safe
+- Cancelled requests are immediately removed from queue to prevent processing
+- Existing `isTerminal()` checks automatically filter cancelled requests from active processing
+- No ADR created as this extends the existing request lifecycle architecture (ADR-0003)
+
 ## [0.6.0] - 2026-01-06
 
 ### Added

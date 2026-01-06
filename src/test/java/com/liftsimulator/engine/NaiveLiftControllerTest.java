@@ -5,6 +5,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NaiveLiftControllerTest {
     private NaiveLiftController controller;
@@ -392,5 +394,267 @@ public class NaiveLiftControllerTest {
         // Request should still be pending, so lift should reopen
         engine.tick();
         assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
+    }
+
+    @Test
+    public void testCancelQueuedRequest() {
+        // Add a car call
+        LiftRequest request = LiftRequest.carCall(5);
+        controller.addRequest(request);
+
+        // Verify request is queued
+        assertEquals(RequestState.QUEUED, request.getState());
+        assertEquals(1, controller.getRequests().size());
+
+        // Cancel the request
+        boolean cancelled = controller.cancelRequest(request.getId());
+        assertTrue(cancelled);
+
+        // Verify request is cancelled and removed
+        assertEquals(RequestState.CANCELLED, request.getState());
+        assertEquals(0, controller.getRequests().size());
+
+        // Lift should remain idle (no requests)
+        LiftState state = new LiftState(0, LiftStatus.IDLE);
+        Action action = controller.decideNextAction(state, 0);
+        assertEquals(Action.IDLE, action);
+    }
+
+    @Test
+    public void testCancelAssignedRequest() {
+        // Add a car call to floor 5
+        LiftRequest request = LiftRequest.carCall(5);
+        controller.addRequest(request);
+
+        // Lift starts moving towards floor 5, which assigns the request
+        LiftState state = new LiftState(0, LiftStatus.IDLE);
+        controller.decideNextAction(state, 0);
+
+        // Verify request is assigned
+        assertEquals(RequestState.ASSIGNED, request.getState());
+
+        // Cancel the request while assigned
+        boolean cancelled = controller.cancelRequest(request.getId());
+        assertTrue(cancelled);
+
+        // Verify request is cancelled and removed
+        assertEquals(RequestState.CANCELLED, request.getState());
+        assertEquals(0, controller.getRequests().size());
+
+        // Lift should now be idle (no requests left)
+        Action action = controller.decideNextAction(state, 1);
+        assertEquals(Action.IDLE, action);
+    }
+
+    @Test
+    public void testCancelServingRequest() {
+        // Add a car call to floor 3
+        LiftRequest request = LiftRequest.carCall(3);
+        controller.addRequest(request);
+
+        // Lift arrives at floor 3 while moving
+        LiftState movingState = new LiftState(3, LiftStatus.MOVING_UP);
+        controller.decideNextAction(movingState, 0);
+
+        // Request should be serving
+        assertEquals(RequestState.SERVING, request.getState());
+
+        // Cancel the request while serving
+        boolean cancelled = controller.cancelRequest(request.getId());
+        assertTrue(cancelled);
+
+        // Verify request is cancelled and removed
+        assertEquals(RequestState.CANCELLED, request.getState());
+        assertEquals(0, controller.getRequests().size());
+
+        // Lift should now idle instead of opening doors
+        LiftState stoppedState = new LiftState(3, LiftStatus.IDLE);
+        Action action = controller.decideNextAction(stoppedState, 1);
+        assertEquals(Action.IDLE, action);
+    }
+
+    @Test
+    public void testCancelNonExistentRequest() {
+        // Try to cancel a request that doesn't exist
+        boolean cancelled = controller.cancelRequest(999L);
+        assertFalse(cancelled);
+    }
+
+    @Test
+    public void testCancelAlreadyCancelledRequest() {
+        // Add and cancel a request
+        LiftRequest request = LiftRequest.carCall(5);
+        controller.addRequest(request);
+        controller.cancelRequest(request.getId());
+
+        // Try to cancel again
+        boolean cancelled = controller.cancelRequest(request.getId());
+        assertFalse(cancelled);
+    }
+
+    @Test
+    public void testCancelCompletedRequest() {
+        // Add a car call to floor 2
+        LiftRequest request = LiftRequest.carCall(2);
+        controller.addRequest(request);
+
+        // Lift serves the request - opens doors
+        LiftState state = new LiftState(2, LiftStatus.IDLE);
+        controller.decideNextAction(state, 0);
+
+        // Doors are opening - this completes the request
+        LiftState openingState = new LiftState(2, LiftStatus.DOORS_OPENING);
+        controller.decideNextAction(openingState, 1);
+
+        // Request should be completed and removed
+        assertEquals(RequestState.COMPLETED, request.getState());
+        assertEquals(0, controller.getRequests().size());
+
+        // Try to cancel the completed request
+        boolean cancelled = controller.cancelRequest(request.getId());
+        assertFalse(cancelled);
+    }
+
+    @Test
+    public void testCancelledRequestNeverServed() {
+        // Add multiple requests
+        LiftRequest request1 = LiftRequest.carCall(3);
+        LiftRequest request2 = LiftRequest.carCall(5);
+        LiftRequest request3 = LiftRequest.carCall(7);
+
+        controller.addRequest(request1);
+        controller.addRequest(request2);
+        controller.addRequest(request3);
+
+        // Cancel request2
+        controller.cancelRequest(request2.getId());
+
+        // Verify request2 is cancelled
+        assertEquals(RequestState.CANCELLED, request2.getState());
+        assertEquals(2, controller.getRequests().size());
+
+        // Lift should move to floor 3 (nearest)
+        LiftState state = new LiftState(0, LiftStatus.IDLE);
+        Action action = controller.decideNextAction(state, 0);
+        assertEquals(Action.MOVE_UP, action);
+
+        // After serving floor 3, should move to floor 7 (skipping cancelled floor 5)
+        LiftState state3 = new LiftState(3, LiftStatus.IDLE);
+        controller.decideNextAction(state3, 1); // Open doors for floor 3
+
+        // Doors opening - completes floor 3 request
+        LiftState opening3 = new LiftState(3, LiftStatus.DOORS_OPENING);
+        controller.decideNextAction(opening3, 2);
+
+        // After clearing floor 3, verify floor 7 is the next target
+        assertEquals(1, controller.getRequests().size());
+        LiftState afterFloor3 = new LiftState(3, LiftStatus.IDLE);
+        Action nextAction = controller.decideNextAction(afterFloor3, 3);
+        assertEquals(Action.MOVE_UP, nextAction);
+    }
+
+    @Test
+    public void testCancellationDoesNotCorruptQueue() {
+        // Add multiple requests
+        LiftRequest request1 = LiftRequest.carCall(2);
+        LiftRequest request2 = LiftRequest.carCall(4);
+        LiftRequest request3 = LiftRequest.carCall(6);
+        LiftRequest request4 = LiftRequest.carCall(8);
+
+        controller.addRequest(request1);
+        controller.addRequest(request2);
+        controller.addRequest(request3);
+        controller.addRequest(request4);
+
+        assertEquals(4, controller.getRequests().size());
+
+        // Cancel middle requests
+        controller.cancelRequest(request2.getId());
+        controller.cancelRequest(request3.getId());
+
+        assertEquals(2, controller.getRequests().size());
+
+        // Verify remaining requests are still valid
+        LiftState state = new LiftState(0, LiftStatus.IDLE);
+        Action action = controller.decideNextAction(state, 0);
+        assertEquals(Action.MOVE_UP, action);
+
+        // Serve floor 2
+        LiftState state2 = new LiftState(2, LiftStatus.IDLE);
+        controller.decideNextAction(state2, 1);
+
+        // Doors opening - completes floor 2 request
+        LiftState opening2 = new LiftState(2, LiftStatus.DOORS_OPENING);
+        controller.decideNextAction(opening2, 2);
+
+        // Should go to floor 8 next (floor 4 and 6 were cancelled)
+        assertEquals(1, controller.getRequests().size());
+        LiftState afterFloor2 = new LiftState(2, LiftStatus.IDLE);
+        Action nextAction = controller.decideNextAction(afterFloor2, 3);
+        assertEquals(Action.MOVE_UP, nextAction);
+    }
+
+    @Test
+    public void testIntegrationCancelWhileMoving() {
+        // Integration test: cancel request while lift is moving towards it
+        SimulationEngine engine = new SimulationEngine(controller, 0, 10, 1, 2, 2, 2);
+
+        // Add request to floor 5
+        LiftRequest request = LiftRequest.carCall(5);
+        controller.addRequest(request);
+
+        // Move 3 floors up (movement completes in the same tick as MOVE_UP with ticksPerFloor=1)
+        engine.tick(); // start moving, reaches floor 1
+        engine.tick(); // floor 2
+        engine.tick(); // floor 3
+
+        assertEquals(3, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.MOVING_UP, engine.getCurrentState().getStatus());
+
+        // Cancel the request while lift is moving
+        boolean cancelled = controller.cancelRequest(request.getId());
+        assertTrue(cancelled);
+        assertEquals(RequestState.CANCELLED, request.getState());
+
+        // Next tick: lift completes movement to floor 3, then stops
+        engine.tick();
+        assertEquals(3, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+
+        // Lift should remain idle (no requests)
+        engine.tick();
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+        assertEquals(3, engine.getCurrentState().getFloor()); // Stays at floor 3
+    }
+
+    @Test
+    public void testIntegrationCancelMultipleRequestsSameFloor() {
+        // Add multiple requests for the same floor
+        LiftRequest hallCall = LiftRequest.hallCall(3, Direction.UP);
+        LiftRequest carCall = LiftRequest.carCall(3);
+
+        controller.addRequest(hallCall);
+        controller.addRequest(carCall);
+
+        assertEquals(2, controller.getRequests().size());
+
+        // Cancel one request
+        controller.cancelRequest(hallCall.getId());
+
+        assertEquals(1, controller.getRequests().size());
+
+        // Lift should still go to floor 3 (one request remaining)
+        LiftState state = new LiftState(0, LiftStatus.IDLE);
+        Action action = controller.decideNextAction(state, 0);
+        assertEquals(Action.MOVE_UP, action);
+
+        // Cancel the second request
+        controller.cancelRequest(carCall.getId());
+
+        assertEquals(0, controller.getRequests().size());
+
+        // Lift should now idle (no requests)
+        Action idleAction = controller.decideNextAction(state, 1);
+        assertEquals(Action.IDLE, idleAction);
     }
 }

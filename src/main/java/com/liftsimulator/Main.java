@@ -34,11 +34,16 @@ public class Main {
         System.out.println("  - Car call to floor 3");
         System.out.println("  - Hall call from floor 7 going UP");
         System.out.println("  - Car call to floor 5");
+        System.out.println("  - Car call to floor 8 (will be cancelled mid-simulation)");
         System.out.println();
 
         controller.addCarCall(new CarCall(3));
         controller.addHallCall(new HallCall(7, Direction.UP));
         controller.addCarCall(new CarCall(5));
+
+        // Add a request that we'll cancel later to demonstrate cancellation
+        LiftRequest requestToCancel = LiftRequest.carCall(8);
+        controller.addRequest(requestToCancel);
 
         // Run simulation for 40 ticks
         int tickCount = 40;
@@ -49,6 +54,12 @@ public class Main {
         for (int i = 0; i < tickCount; i++) {
             LiftState state = engine.getCurrentState();
             String notes = "";
+
+            // Cancel request to floor 8 at tick 15 to demonstrate cancellation
+            if (i == 15 && !requestToCancel.isTerminal()) {
+                controller.cancelRequest(requestToCancel.getId());
+                notes = "*** CANCELLED request to floor 8 ***";
+            }
 
             // Add contextual notes
             if (i == 0) notes = "(Starting)";
@@ -78,6 +89,7 @@ public class Main {
 
         System.out.println("\nSimulation completed successfully!");
         System.out.println("All requests serviced using naive scheduling (nearest floor first).");
+        System.out.println("\nNote: Request to floor 8 was cancelled at tick 15 and never serviced.");
     }
 
     /**

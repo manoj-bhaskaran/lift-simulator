@@ -73,6 +73,39 @@ public class NaiveLiftController implements LiftController {
     }
 
     /**
+     * Cancels a lift request by its ID.
+     * The request will be transitioned to CANCELLED state and removed from the queue.
+     * This method is safe to call for requests in any state.
+     *
+     * @param requestId the ID of the request to cancel
+     * @return true if the request was found and cancelled, false if not found or already terminal
+     */
+    public boolean cancelRequest(long requestId) {
+        Optional<LiftRequest> requestOpt = requests.stream()
+                .filter(request -> request.getId() == requestId)
+                .findFirst();
+
+        if (requestOpt.isEmpty()) {
+            return false;
+        }
+
+        LiftRequest request = requestOpt.get();
+
+        // If already terminal (completed or cancelled), nothing to do
+        if (request.isTerminal()) {
+            return false;
+        }
+
+        // Transition to cancelled state
+        request.transitionTo(RequestState.CANCELLED);
+
+        // Remove from requests set
+        requests.remove(request);
+
+        return true;
+    }
+
+    /**
      * Completes all requests for the given floor.
      * This is called when the lift arrives at a floor and opens doors.
      * Transitions requests from SERVING to COMPLETED.
