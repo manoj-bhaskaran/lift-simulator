@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.5.0** (Unreleased)
+Current version: **0.5.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -33,7 +33,8 @@ The current version (v0.5.0) implements:
 - **Configurable travel, door transition, and door dwell durations** to model time per floor and door cycles
 - **Timed door dwell** with an automatic DOORS_OPEN → DOORS_CLOSING cycle
 - **NaiveLiftController** - A simple controller that services the nearest pending request
-- **Console output** displaying tick-by-tick lift state (floor, direction, door state, status)
+- **Console output** displaying tick-by-tick lift state (floor, direction, door state, status, request lifecycle)
+- **Request lifecycle visibility** in demo output with compact status display (Q:n, A:n, S:n)
 - **Request types**: Car calls (from inside the lift) and hall calls (from a floor)
 - **Safety enforcement**: Lift cannot move with doors open, doors cannot open while moving
 - **Backward compatibility**: Existing CarCall/HallCall interfaces still work
