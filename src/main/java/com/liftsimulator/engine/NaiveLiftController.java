@@ -193,6 +193,11 @@ public class NaiveLiftController implements LiftController {
         }
 
         if (currentStatus == LiftStatus.DOORS_CLOSING) {
+            // Check if a new request arrived for current floor while doors closing
+            if (hasRequestForFloor(currentFloor)) {
+                // Attempt to reopen doors (will succeed only if within reopen window)
+                return Action.OPEN_DOOR;
+            }
             return Action.IDLE;
         }
 

@@ -571,4 +571,183 @@ public class SimulationEngineTest {
             secondRun.tick();
         }
     }
+
+    @Test
+    public void testDoorsReopenWhenRequestArrivesWithinWindow() {
+        // Controller that opens doors, waits for them to start closing,
+        // then requests to reopen within the window
+        LiftController doorReopenController = new LiftController() {
+            private int tickCount = 0;
+
+            @Override
+            public Action decideNextAction(LiftState state, long tick) {
+                tickCount++;
+                if (tickCount == 1) {
+                    return Action.OPEN_DOOR;  // Start opening doors
+                }
+                if (state.getStatus() == LiftStatus.DOORS_CLOSING && tickCount == 6) {
+                    // Request to reopen within window (after 1 tick of closing)
+                    return Action.OPEN_DOOR;
+                }
+                return Action.IDLE;
+            }
+        };
+
+        // doorTransitionTicks=2, doorDwellTicks=2, doorReopenWindowTicks=2
+        SimulationEngine engine = new SimulationEngine(doorReopenController, 0, 5, 1, 2, 2, 2);
+
+        engine.tick(); // tick 1: start opening
+        engine.tick(); // tick 2: doors open
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        engine.tick(); // tick 3: dwell 1
+        engine.tick(); // tick 4: dwell 2
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        engine.tick(); // tick 5: closing starts (doorClosingTicksElapsed = 0)
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        engine.tick(); // tick 6: OPEN_DOOR action within window (doorClosingTicksElapsed = 1)
+        assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
+
+        engine.tick(); // tick 7: complete opening
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+    }
+
+    @Test
+    public void testDoorsRemainClosedWhenWindowHasPassed() {
+        // Controller that opens doors, waits for them to start closing,
+        // then requests to reopen after the window has passed
+        LiftController doorReopenController = new LiftController() {
+            private int tickCount = 0;
+
+            @Override
+            public Action decideNextAction(LiftState state, long tick) {
+                tickCount++;
+                if (tickCount == 1) {
+                    return Action.OPEN_DOOR;  // Start opening doors
+                }
+                if (state.getStatus() == LiftStatus.DOORS_CLOSING && tickCount == 8) {
+                    // Request to reopen after window (after 3 ticks of closing, window is 2)
+                    return Action.OPEN_DOOR;
+                }
+                return Action.IDLE;
+            }
+        };
+
+        // doorTransitionTicks=4, doorDwellTicks=2, doorReopenWindowTicks=2
+        SimulationEngine engine = new SimulationEngine(doorReopenController, 0, 5, 1, 4, 2, 2);
+
+        engine.tick(); // tick 1: start opening
+        engine.tick(); // tick 2: opening continues
+        engine.tick(); // tick 3: opening continues
+        engine.tick(); // tick 4: doors open
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        engine.tick(); // tick 5: dwell 1
+        engine.tick(); // tick 6: dwell 2 -> closing starts
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        engine.tick(); // tick 7: closing (doorClosingTicksElapsed = 1)
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        engine.tick(); // tick 8: closing (doorClosingTicksElapsed = 2) - OPEN_DOOR but outside window
+        // Should remain DOORS_CLOSING because window has passed
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        engine.tick(); // tick 9: closing continues
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        engine.tick(); // tick 10: doors close completely
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+    }
+
+    @Test
+    public void testReopenWindowAtBoundary() {
+        // Test that reopen works exactly at the boundary of the window
+        LiftController doorReopenController = new LiftController() {
+            private int tickCount = 0;
+
+            @Override
+            public Action decideNextAction(LiftState state, long tick) {
+                tickCount++;
+                if (tickCount == 1) {
+                    return Action.OPEN_DOOR;
+                }
+                // Request reopen at exactly doorClosingTicksElapsed = 1 (window is 2, so 0 and 1 are valid)
+                if (state.getStatus() == LiftStatus.DOORS_CLOSING && tickCount == 6) {
+                    return Action.OPEN_DOOR;
+                }
+                return Action.IDLE;
+            }
+        };
+
+        SimulationEngine engine = new SimulationEngine(doorReopenController, 0, 5, 1, 2, 2, 2);
+
+        engine.tick(); // start opening
+        engine.tick(); // doors open
+        engine.tick(); // dwell 1
+        engine.tick(); // dwell 2
+        engine.tick(); // closing starts (elapsed = 0)
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        engine.tick(); // elapsed = 1, OPEN_DOOR (should succeed as 1 < 2)
+        assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
+    }
+
+    @Test
+    public void testZeroReopenWindowPreventsReopening() {
+        // Test that setting reopen window to 0 prevents any reopening
+        LiftController doorReopenController = new LiftController() {
+            private int tickCount = 0;
+
+            @Override
+            public Action decideNextAction(LiftState state, long tick) {
+                tickCount++;
+                if (tickCount == 1) {
+                    return Action.OPEN_DOOR;
+                }
+                if (state.getStatus() == LiftStatus.DOORS_CLOSING && tickCount == 5) {
+                    return Action.OPEN_DOOR;
+                }
+                return Action.IDLE;
+            }
+        };
+
+        // doorReopenWindowTicks=0 means no reopening allowed
+        SimulationEngine engine = new SimulationEngine(doorReopenController, 0, 5, 1, 2, 1, 0);
+
+        engine.tick(); // start opening
+        engine.tick(); // doors open
+        engine.tick(); // dwell completes, closing starts
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        engine.tick(); // OPEN_DOOR action, but window is 0 so should stay closing
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        engine.tick(); // doors close completely
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+    }
+
+    @Test
+    public void testReopenWindowValidation() {
+        // Test that doorReopenWindowTicks cannot exceed doorTransitionTicks
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SimulationEngine(new FixedActionController(Action.IDLE), 0, 5, 1, 2, 3, 3);
+        });
+
+        // Test that doorReopenWindowTicks cannot be negative
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SimulationEngine(new FixedActionController(Action.IDLE), 0, 5, 1, 2, 3, -1);
+        });
+
+        // Test that valid values are accepted
+        assertDoesNotThrow(() -> {
+            new SimulationEngine(new FixedActionController(Action.IDLE), 0, 5, 1, 2, 3, 2);
+        });
+
+        assertDoesNotThrow(() -> {
+            new SimulationEngine(new FixedActionController(Action.IDLE), 0, 5, 1, 2, 3, 0);
+        });
+    }
 }

@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-01-06
+
+### Added
+- **Door reopening window**: Configurable time window during door closing when doors can be reopened for new requests
+- `doorReopenWindowTicks` parameter to `SimulationEngine` constructor (default: 2 ticks)
+- Realistic door behavior: doors reopen if request arrives for current floor within the reopen window
+- Automatic request queuing when door closing window has passed
+- Validation ensuring `doorReopenWindowTicks` is non-negative and does not exceed `doorTransitionTicks`
+- Comprehensive unit tests for door reopening scenarios (within window, outside window, boundary cases, zero window)
+- Integration tests with `NaiveLiftController` demonstrating real-world door reopening behavior
+
+### Changed
+- `NaiveLiftController` now attempts to reopen doors when a request arrives for the current floor during door closing
+- `SimulationEngine` tracks elapsed ticks during door closing to enforce reopen window
+- Door reopening logic in `startAction()` checks elapsed time against configured window
+
+### Design Decisions
+- Reopen window measured in simulation ticks for consistency with other timing parameters
+- Window applies only during DOORS_CLOSING state, not after doors fully close
+- Zero-tick window disables reopening entirely (doors cannot be interrupted once closing starts)
+- Request remains queued if door closing window has passed, lift will serve it after current cycle
+
 ## [0.5.0] - 2026-01-06
 
 ### Added
@@ -174,6 +196,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Immutable state objects to avoid bugs from shared mutable state
 - Separated controller logic from simulation engine for flexibility
 
+[0.6.0]: https://github.com/manoj-bhaskaran/lift-simulator/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/manoj-bhaskaran/lift-simulator/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.4.0
 [0.3.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.3.0
