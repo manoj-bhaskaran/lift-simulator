@@ -1,10 +1,10 @@
 package com.liftsimulator;
 
-import com.liftsimulator.engine.LiftController;
 import com.liftsimulator.engine.NaiveLiftController;
 import com.liftsimulator.engine.SimulationEngine;
 import com.liftsimulator.domain.CarCall;
 import com.liftsimulator.domain.Direction;
+import com.liftsimulator.domain.DoorState;
 import com.liftsimulator.domain.HallCall;
 import com.liftsimulator.domain.LiftState;
 
@@ -43,13 +43,13 @@ public class Main {
 
             // Add contextual notes
             if (i == 0) notes = "(Starting)";
-            if (state.getFloor() == 3 && state.getDoorState().toString().equals("OPEN")) {
+            if (state.getFloor() == 3 && state.getDoorState() == DoorState.OPEN) {
                 notes = "(Servicing floor 3)";
             }
-            if (state.getFloor() == 5 && state.getDoorState().toString().equals("OPEN")) {
+            if (state.getFloor() == 5 && state.getDoorState() == DoorState.OPEN) {
                 notes = "(Servicing floor 5)";
             }
-            if (state.getFloor() == 7 && state.getDoorState().toString().equals("OPEN")) {
+            if (state.getFloor() == 7 && state.getDoorState() == DoorState.OPEN) {
                 notes = "(Servicing floor 7)";
             }
 
