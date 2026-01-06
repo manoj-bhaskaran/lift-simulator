@@ -313,6 +313,36 @@ public class SimulationEngineTest {
     }
 
     @Test
+    public void testLiftDoesNotMoveWhileDoorsClosing() {
+        LiftController openThenMoveUpDuringClose = new LiftController() {
+            @Override
+            public Action decideNextAction(LiftState state, long tick) {
+                if (tick == 0) {
+                    return Action.OPEN_DOOR;
+                }
+                if (state.getStatus() == LiftStatus.DOORS_CLOSING) {
+                    return Action.MOVE_UP;
+                }
+                return Action.IDLE;
+            }
+        };
+
+        SimulationEngine engine = new SimulationEngine(openThenMoveUpDuringClose, 0, 5, 1, 2, 1);
+
+        engine.tick(); // start opening
+        engine.tick(); // doors open
+        assertEquals(DoorState.OPEN, engine.getCurrentState().getDoorState());
+
+        engine.tick(); // dwell completes -> closing starts
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+        int floorBeforeMove = engine.getCurrentState().getFloor();
+
+        engine.tick(); // attempt move during closing
+        assertEquals(floorBeforeMove, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+    }
+
+    @Test
     public void testOpenDoorSetsDoorToOpen() {
         // Given: lift with doors closed
         LiftController openThenIdle = new LiftController() {
@@ -346,7 +376,7 @@ public class SimulationEngineTest {
     @Test
     public void testCloseDoorSetsDoorToClosed() {
         // Given: lift with doors open
-        LiftController openThenClose = new LiftController() {
+        LiftController openThenIdle = new LiftController() {
             private int tickCount = 0;
 
             @Override
@@ -354,17 +384,12 @@ public class SimulationEngineTest {
                 tickCount++;
                 if (tickCount == 1) {
                     return Action.OPEN_DOOR;  // Start opening
-                } else if (tickCount == 2) {
-                    return Action.IDLE;  // Complete opening
-                } else if (tickCount == 3) {
-                    return Action.CLOSE_DOOR;  // Start closing
-                } else {
-                    return Action.IDLE;  // Complete closing
                 }
+                return Action.IDLE;  // Let dwell/close cycle proceed
             }
         };
 
-        SimulationEngine engine = new SimulationEngine(openThenClose, 0, 5);
+        SimulationEngine engine = new SimulationEngine(openThenIdle, 0, 5, 1, 2, 2);
 
         // Open the door (2 ticks: OPEN_DOOR -> IDLE)
         engine.tick();  // IDLE -> DOORS_OPENING
@@ -372,8 +397,10 @@ public class SimulationEngineTest {
         engine.tick();  // DOORS_OPENING -> DOORS_OPEN
         assertEquals(DoorState.OPEN, engine.getCurrentState().getDoorState());
 
-        // When: CLOSE_DOOR action (2 ticks: CLOSE_DOOR -> IDLE)
-        engine.tick();  // DOORS_OPEN -> DOORS_CLOSING
+        // When: dwell completes, doors begin closing automatically
+        engine.tick();  // dwell tick 1
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+        engine.tick();  // dwell tick 2 -> closing starts
         assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
         engine.tick();  // DOORS_CLOSING -> IDLE
 
@@ -467,7 +494,8 @@ public class SimulationEngineTest {
                 0,
                 5,
                 1,
-                3
+                3,
+                2
         );
 
         engine.tick();
@@ -480,6 +508,41 @@ public class SimulationEngineTest {
         engine.tick();
         assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
         assertEquals(DoorState.OPEN, engine.getCurrentState().getDoorState());
+    }
+
+    @Test
+    public void testDoorDwellTriggersClosingAfterConfiguredTicks() {
+        LiftController openThenIdle = new LiftController() {
+            private int tickCount = 0;
+
+            @Override
+            public Action decideNextAction(LiftState state, long tick) {
+                tickCount++;
+                if (tickCount == 1) {
+                    return Action.OPEN_DOOR;
+                }
+                return Action.IDLE;
+            }
+        };
+
+        SimulationEngine engine = new SimulationEngine(openThenIdle, 0, 5, 1, 2, 3);
+
+        engine.tick(); // start opening
+        engine.tick(); // open
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        engine.tick(); // dwell 1
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        engine.tick(); // dwell 2
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        engine.tick(); // dwell 3 -> closing starts
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        engine.tick(); // closing completes
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+        assertEquals(DoorState.CLOSED, engine.getCurrentState().getDoorState());
     }
 
     @Test

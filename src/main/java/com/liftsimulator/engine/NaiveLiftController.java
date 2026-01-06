@@ -25,11 +25,8 @@ import java.util.TreeSet;
  * Optimization is out of scope; this focuses on correctness first.
  */
 public class NaiveLiftController implements LiftController {
-    private static final int DWELL_TIME_TICKS = 3;
-
     private final Set<CarCall> carCalls = new HashSet<>();
     private final Set<HallCall> hallCalls = new HashSet<>();
-    private Long doorOpenedAt = null;
 
     /**
      * Adds a car call (destination request from inside the lift).
@@ -116,21 +113,11 @@ public class NaiveLiftController implements LiftController {
             return Action.IDLE;
         }
 
-        // If doors are open, manage dwell time
+        // If doors are open, let the engine manage the dwell/close cycle
         if (doorState == DoorState.OPEN) {
             if (hasRequestForFloor(currentFloor)) {
                 clearRequestsForFloor(currentFloor);
             }
-            if (doorOpenedAt == null) {
-                doorOpenedAt = currentTick;
-            }
-
-            long ticksOpen = currentTick - doorOpenedAt + 1;
-            if (ticksOpen >= DWELL_TIME_TICKS) {
-                doorOpenedAt = null;
-                return Action.CLOSE_DOOR;
-            }
-
             return Action.IDLE;
         }
 

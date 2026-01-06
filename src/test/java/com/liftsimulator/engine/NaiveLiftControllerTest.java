@@ -109,9 +109,9 @@ public class NaiveLiftControllerTest {
         // Tick 2: still dwelling
         controller.decideNextAction(openState, 2);
 
-        // Tick 3: dwell time elapsed (3 ticks passed), should close
-        Action closeAction = controller.decideNextAction(openState, 3);
-        assertEquals(Action.CLOSE_DOOR, closeAction);
+        // Tick 3: controller should remain idle; engine handles close timing
+        Action idleAction = controller.decideNextAction(openState, 3);
+        assertEquals(Action.IDLE, idleAction);
     }
 
     @Test
@@ -212,11 +212,10 @@ public class NaiveLiftControllerTest {
         controller.decideNextAction(openState, 1);
         controller.decideNextAction(openState, 2);
 
-        // After dwell time, close doors
-        Action closeAction = controller.decideNextAction(openState, 3);
-        assertEquals(Action.CLOSE_DOOR, closeAction);
+        // After dwell time, controller still idles and requests should remain cleared
+        controller.decideNextAction(openState, 3);
 
-        // Now doors are closed again, no more requests
+        // Now doors are closed again (simulated), no more requests
         LiftState closedAgainState = new LiftState(2, LiftStatus.IDLE);
         Action idleAction = controller.decideNextAction(closedAgainState, 4);
 
@@ -270,7 +269,7 @@ public class NaiveLiftControllerTest {
         LiftState openState = new LiftState(3, LiftStatus.DOORS_OPEN);
         controller.decideNextAction(openState, 1);
         controller.decideNextAction(openState, 2);
-        controller.decideNextAction(openState, 3); // Close door
+        controller.decideNextAction(openState, 3); // Dwell tick
 
         LiftState closedAgainState = new LiftState(3, LiftStatus.IDLE);
         Action idleAction = controller.decideNextAction(closedAgainState, 4);
