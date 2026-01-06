@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-01-07
+
+### Fixed
+- Initialize the simulation state at the configured minimum floor
+- Normalize direction to idle when movement is requested at top or bottom floors
+- Added tests for non-zero minimum floor initialization and boundary direction behavior
+
 ## [0.1.0] - 2026-01-06
 
 ### Added
@@ -30,4 +37,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Immutable state objects to avoid bugs from shared mutable state
 - Separated controller logic from simulation engine for flexibility
 
+[0.1.1]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.1.1
 [0.1.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.1.0

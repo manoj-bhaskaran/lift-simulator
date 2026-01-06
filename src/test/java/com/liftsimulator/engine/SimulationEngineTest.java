@@ -32,6 +32,19 @@ public class SimulationEngineTest {
     }
 
     @Test
+    public void testInitializesAtMinFloor() {
+        SimulationEngine engine = new SimulationEngine(
+                new FixedActionController(Action.IDLE),
+                2,
+                6
+        );
+
+        assertEquals(2, engine.getCurrentState().getFloor());
+        assertEquals(Direction.IDLE, engine.getCurrentState().getDirection());
+        assertEquals(DoorState.CLOSED, engine.getCurrentState().getDoorState());
+    }
+
+    @Test
     public void testMoveUpIncrementsFloorByOne() {
         // Given: lift at floor 0 with doors closed
         SimulationEngine engine = new SimulationEngine(
@@ -68,6 +81,7 @@ public class SimulationEngineTest {
 
         // Then: floor should remain at top floor
         assertEquals(5, engine.getCurrentState().getFloor());
+        assertEquals(Direction.IDLE, engine.getCurrentState().getDirection());
     }
 
     @Test
@@ -165,6 +179,37 @@ public class SimulationEngineTest {
 
         // Then: floor should remain at ground floor
         assertEquals(0, engine.getCurrentState().getFloor());
+        assertEquals(Direction.IDLE, engine.getCurrentState().getDirection());
+    }
+
+    @Test
+    public void testMoveDownAtBottomFloorSetsDirectionIdle() {
+        LiftController moveUpThenDownPastMin = new LiftController() {
+            private int tickCount = 0;
+
+            @Override
+            public Action decideNextAction(LiftState state, long tick) {
+                if (tickCount == 0) {
+                    tickCount++;
+                    return Action.MOVE_UP;
+                }
+                return Action.MOVE_DOWN;
+            }
+        };
+
+        SimulationEngine engine = new SimulationEngine(moveUpThenDownPastMin, 0, 3);
+
+        engine.tick();
+        assertEquals(1, engine.getCurrentState().getFloor());
+        assertEquals(Direction.UP, engine.getCurrentState().getDirection());
+
+        engine.tick();
+        assertEquals(0, engine.getCurrentState().getFloor());
+        assertEquals(Direction.DOWN, engine.getCurrentState().getDirection());
+
+        engine.tick();
+        assertEquals(0, engine.getCurrentState().getFloor());
+        assertEquals(Direction.IDLE, engine.getCurrentState().getDirection());
     }
 
     @Test
