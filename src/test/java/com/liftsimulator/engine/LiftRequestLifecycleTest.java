@@ -280,4 +280,154 @@ public class LiftRequestLifecycleTest {
         // Request should be in SERVING state when lift stops
         assertEquals(RequestState.SERVING, request.getState());
     }
+
+    @Test
+    public void testCancellationFromQueuedState() {
+        LiftRequest request = LiftRequest.carCall(7);
+        controller.addRequest(request);
+
+        assertEquals(RequestState.QUEUED, request.getState());
+
+        // Cancel the queued request
+        boolean cancelled = controller.cancelRequest(request.getId());
+        assertTrue(cancelled);
+
+        // Request should be in CANCELLED state (terminal)
+        assertEquals(RequestState.CANCELLED, request.getState());
+        assertTrue(request.isTerminal());
+
+        // Request should be removed from controller
+        Set<LiftRequest> requests = controller.getRequests();
+        assertFalse(requests.contains(request));
+    }
+
+    @Test
+    public void testCancellationFromAssignedState() {
+        LiftRequest request = LiftRequest.carCall(6);
+        controller.addRequest(request);
+
+        // Lift decides to move to floor 6, assigning the request
+        LiftState state = new LiftState(2, LiftStatus.IDLE);
+        controller.decideNextAction(state, 0);
+
+        assertEquals(RequestState.ASSIGNED, request.getState());
+
+        // Cancel the assigned request
+        boolean cancelled = controller.cancelRequest(request.getId());
+        assertTrue(cancelled);
+
+        // Request should be in CANCELLED state (terminal)
+        assertEquals(RequestState.CANCELLED, request.getState());
+        assertTrue(request.isTerminal());
+
+        // Request should be removed from controller
+        Set<LiftRequest> requests = controller.getRequests();
+        assertFalse(requests.contains(request));
+    }
+
+    @Test
+    public void testCancellationFromServingState() {
+        LiftRequest request = LiftRequest.carCall(4);
+        controller.addRequest(request);
+
+        // Lift arrives at floor 4 while moving
+        LiftState movingState = new LiftState(4, LiftStatus.MOVING_UP);
+        controller.decideNextAction(movingState, 0);
+
+        assertEquals(RequestState.SERVING, request.getState());
+
+        // Cancel the serving request
+        boolean cancelled = controller.cancelRequest(request.getId());
+        assertTrue(cancelled);
+
+        // Request should be in CANCELLED state (terminal)
+        assertEquals(RequestState.CANCELLED, request.getState());
+        assertTrue(request.isTerminal());
+
+        // Request should be removed from controller
+        Set<LiftRequest> requests = controller.getRequests();
+        assertFalse(requests.contains(request));
+    }
+
+    @Test
+    public void testCancelledRequestIsTerminal() {
+        LiftRequest request = LiftRequest.carCall(5);
+        controller.addRequest(request);
+
+        controller.cancelRequest(request.getId());
+
+        // Cancelled request should be terminal
+        assertTrue(request.isTerminal());
+        assertEquals(RequestState.CANCELLED, request.getState());
+
+        // Attempt to transition from CANCELLED should fail
+        assertThrows(IllegalStateException.class, () -> {
+            request.transitionTo(RequestState.QUEUED);
+        });
+
+        assertThrows(IllegalStateException.class, () -> {
+            request.transitionTo(RequestState.COMPLETED);
+        });
+    }
+
+    @Test
+    public void testCancellationAlternativeLifecyclePath() {
+        // Test that requests can be cancelled from any non-terminal state
+        LiftRequest request1 = LiftRequest.carCall(3);
+        LiftRequest request2 = LiftRequest.carCall(5);
+        LiftRequest request3 = LiftRequest.carCall(7);
+
+        controller.addRequest(request1);
+        controller.addRequest(request2);
+        controller.addRequest(request3);
+
+        // All start as QUEUED
+        assertEquals(RequestState.QUEUED, request1.getState());
+        assertEquals(RequestState.QUEUED, request2.getState());
+        assertEquals(RequestState.QUEUED, request3.getState());
+
+        // Cancel one from QUEUED
+        controller.cancelRequest(request1.getId());
+        assertEquals(RequestState.CANCELLED, request1.getState());
+
+        // Move towards nearest (floor 5)
+        LiftState state = new LiftState(0, LiftStatus.IDLE);
+        controller.decideNextAction(state, 0);
+
+        // request2 becomes ASSIGNED
+        assertEquals(RequestState.ASSIGNED, request2.getState());
+        assertEquals(RequestState.QUEUED, request3.getState());
+
+        // Cancel from ASSIGNED
+        controller.cancelRequest(request2.getId());
+        assertEquals(RequestState.CANCELLED, request2.getState());
+
+        // Only request3 remains
+        Set<LiftRequest> requests = controller.getRequests();
+        assertEquals(1, requests.size());
+        assertTrue(requests.contains(request3));
+    }
+
+    @Test
+    public void testCancelledRequestsRemovedFromQueue() {
+        LiftRequest request1 = LiftRequest.carCall(2);
+        LiftRequest request2 = LiftRequest.carCall(4);
+        LiftRequest request3 = LiftRequest.carCall(6);
+
+        controller.addRequest(request1);
+        controller.addRequest(request2);
+        controller.addRequest(request3);
+
+        assertEquals(3, controller.getRequests().size());
+
+        // Cancel middle request
+        controller.cancelRequest(request2.getId());
+
+        // Only 2 requests should remain
+        Set<LiftRequest> requests = controller.getRequests();
+        assertEquals(2, requests.size());
+        assertTrue(requests.contains(request1));
+        assertFalse(requests.contains(request2));
+        assertTrue(requests.contains(request3));
+    }
 }
