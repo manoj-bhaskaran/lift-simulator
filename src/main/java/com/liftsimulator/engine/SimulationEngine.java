@@ -1,9 +1,8 @@
 package com.liftsimulator.engine;
 
 import com.liftsimulator.domain.Action;
-import com.liftsimulator.domain.Direction;
-import com.liftsimulator.domain.DoorState;
 import com.liftsimulator.domain.LiftState;
+import com.liftsimulator.domain.LiftStatus;
 
 /**
  * Core simulation engine that advances time in discrete ticks.
@@ -21,8 +20,8 @@ public class SimulationEngine {
         this.minFloor = minFloor;
         this.maxFloor = maxFloor;
         this.currentTick = 0;
-        // Initialize lift at minimum floor, idle, doors closed
-        this.currentState = new LiftState(minFloor, Direction.IDLE, DoorState.CLOSED);
+        // Initialize lift at minimum floor, idle status
+        this.currentState = new LiftState(minFloor, LiftStatus.IDLE);
     }
 
     /**
@@ -42,46 +41,86 @@ public class SimulationEngine {
 
     /**
      * Applies an action to the current state and returns the new state.
+     * Enforces state machine transitions and ensures lift never moves with doors open.
      */
     private LiftState applyAction(LiftState state, Action action) {
         int newFloor = state.getFloor();
-        Direction newDirection = state.getDirection();
-        DoorState newDoorState = state.getDoorState();
+        LiftStatus currentStatus = state.getStatus();
+        LiftStatus newStatus = currentStatus;
+
+        // Prevent movement if doors are not closed (enforced by state machine)
+        if ((action == Action.MOVE_UP || action == Action.MOVE_DOWN) &&
+            (currentStatus == LiftStatus.DOORS_OPENING ||
+             currentStatus == LiftStatus.DOORS_OPEN ||
+             currentStatus == LiftStatus.DOORS_CLOSING ||
+             currentStatus == LiftStatus.OUT_OF_SERVICE)) {
+            // Invalid state for movement - log warning and return unchanged state
+            StateTransitionValidator.isActionAllowed(currentStatus, action);
+            return state;
+        }
 
         switch (action) {
             case MOVE_UP:
-                if (state.getDoorState() == DoorState.CLOSED) {
-                    if (newFloor < maxFloor) {
-                        newFloor++;
-                        newDirection = Direction.UP;
-                    } else if (newFloor == maxFloor) {
-                        newDirection = Direction.IDLE;
-                    }
+                if (newFloor < maxFloor) {
+                    newFloor++;
+                    newStatus = LiftStatus.MOVING_UP;
+                } else if (newFloor == maxFloor) {
+                    // At top floor, can't move up
+                    newStatus = LiftStatus.IDLE;
                 }
                 break;
             case MOVE_DOWN:
-                if (state.getDoorState() == DoorState.CLOSED) {
-                    if (newFloor > minFloor) {
-                        newFloor--;
-                        newDirection = Direction.DOWN;
-                    } else if (newFloor == minFloor) {
-                        newDirection = Direction.IDLE;
-                    }
+                if (newFloor > minFloor) {
+                    newFloor--;
+                    newStatus = LiftStatus.MOVING_DOWN;
+                } else if (newFloor == minFloor) {
+                    // At bottom floor, can't move down
+                    newStatus = LiftStatus.IDLE;
                 }
                 break;
             case OPEN_DOOR:
-                newDoorState = DoorState.OPEN;
-                newDirection = Direction.IDLE;
+                if (currentStatus == LiftStatus.OUT_OF_SERVICE) {
+                    // Can't open doors when out of service
+                    StateTransitionValidator.isActionAllowed(currentStatus, action);
+                    return state;
+                } else if (currentStatus == LiftStatus.MOVING_UP || currentStatus == LiftStatus.MOVING_DOWN) {
+                    // Must stop first before opening doors
+                    newStatus = LiftStatus.IDLE;
+                } else if (currentStatus == LiftStatus.IDLE) {
+                    // Can now start opening doors
+                    newStatus = LiftStatus.DOORS_OPENING;
+                } else if (currentStatus == LiftStatus.DOORS_CLOSING) {
+                    // Abort door closing, re-open
+                    newStatus = LiftStatus.DOORS_OPENING;
+                }
+                // If already DOORS_OPENING or DOORS_OPEN, stay in current state
                 break;
             case CLOSE_DOOR:
-                newDoorState = DoorState.CLOSED;
+                if (currentStatus == LiftStatus.DOORS_OPEN || currentStatus == LiftStatus.DOORS_OPENING) {
+                    newStatus = LiftStatus.DOORS_CLOSING;
+                }
                 break;
             case IDLE:
-                newDirection = Direction.IDLE;
+                // Complete transitional states or stop movement
+                if (currentStatus == LiftStatus.DOORS_OPENING) {
+                    newStatus = LiftStatus.DOORS_OPEN;
+                } else if (currentStatus == LiftStatus.DOORS_CLOSING) {
+                    newStatus = LiftStatus.IDLE;
+                } else if (currentStatus == LiftStatus.MOVING_UP ||
+                           currentStatus == LiftStatus.MOVING_DOWN) {
+                    newStatus = LiftStatus.IDLE;
+                }
+                // Otherwise stay in current status
                 break;
         }
 
-        return new LiftState(newFloor, newDirection, newDoorState);
+        // Validate the state transition
+        if (!StateTransitionValidator.isValidTransition(currentStatus, newStatus)) {
+            // Invalid transition - return current state unchanged
+            return state;
+        }
+
+        return new LiftState(newFloor, newStatus);
     }
 
     public long getCurrentTick() {
