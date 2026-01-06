@@ -106,6 +106,9 @@ public class NaiveLiftController implements LiftController {
 
         // If doors are open, manage dwell time
         if (doorState == DoorState.OPEN) {
+            if (hasRequestForFloor(currentFloor)) {
+                clearRequestsForFloor(currentFloor);
+            }
             if (doorOpenedAt == null) {
                 doorOpenedAt = currentTick;
             }
@@ -125,6 +128,7 @@ public class NaiveLiftController implements LiftController {
                 return Action.IDLE;
             }
             if (currentStatus == LiftStatus.DOORS_OPENING) {
+                clearRequestsForFloor(currentFloor);
                 return Action.IDLE;
             }
             clearRequestsForFloor(currentFloor);
