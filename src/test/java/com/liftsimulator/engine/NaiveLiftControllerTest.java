@@ -20,7 +20,7 @@ public class NaiveLiftControllerTest {
         controller.addCarCall(new CarCall(3));
 
         // Lift is at floor 3 with doors closed
-        LiftState state = new LiftState(3, Direction.IDLE, DoorState.CLOSED);
+        LiftState state = new LiftState(3, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
 
         // Should open door when at requested floor
         Action action = controller.decideNextAction(state, 0);
@@ -33,7 +33,7 @@ public class NaiveLiftControllerTest {
         controller.addHallCall(new HallCall(2, Direction.UP));
 
         // Lift is at floor 2 with doors closed
-        LiftState state = new LiftState(2, Direction.IDLE, DoorState.CLOSED);
+        LiftState state = new LiftState(2, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
 
         // Should open door when at requested floor
         Action action = controller.decideNextAction(state, 0);
@@ -46,12 +46,12 @@ public class NaiveLiftControllerTest {
         controller.addCarCall(new CarCall(5));
 
         // First, lift arrives and opens door (tick 0)
-        LiftState closedState = new LiftState(5, Direction.IDLE, DoorState.CLOSED);
+        LiftState closedState = new LiftState(5, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
         Action openAction = controller.decideNextAction(closedState, 0);
         assertEquals(Action.OPEN_DOOR, openAction);
 
         // Doors are now open, should idle during dwell time (ticks 1-2)
-        LiftState openState = new LiftState(5, Direction.IDLE, DoorState.OPEN);
+        LiftState openState = new LiftState(5, Direction.IDLE, DoorState.OPEN, LiftStatus.DOORS_OPEN);
 
         Action idleAction1 = controller.decideNextAction(openState, 1);
         assertEquals(Action.IDLE, idleAction1);
@@ -66,11 +66,11 @@ public class NaiveLiftControllerTest {
         controller.addCarCall(new CarCall(4));
 
         // First, lift arrives and opens door (tick 0)
-        LiftState closedState = new LiftState(4, Direction.IDLE, DoorState.CLOSED);
+        LiftState closedState = new LiftState(4, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
         controller.decideNextAction(closedState, 0);
 
         // Doors are now open, simulate dwell time passing
-        LiftState openState = new LiftState(4, Direction.IDLE, DoorState.OPEN);
+        LiftState openState = new LiftState(4, Direction.IDLE, DoorState.OPEN, LiftStatus.DOORS_OPEN);
 
         // Tick 1: still dwelling
         controller.decideNextAction(openState, 1);
@@ -89,7 +89,7 @@ public class NaiveLiftControllerTest {
         controller.addCarCall(new CarCall(5));
 
         // Lift is at floor 2 with doors closed
-        LiftState state = new LiftState(2, Direction.IDLE, DoorState.CLOSED);
+        LiftState state = new LiftState(2, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
 
         // Should move up towards floor 5
         Action action = controller.decideNextAction(state, 0);
@@ -102,7 +102,7 @@ public class NaiveLiftControllerTest {
         controller.addHallCall(new HallCall(1, Direction.UP));
 
         // Lift is at floor 4 with doors closed
-        LiftState state = new LiftState(4, Direction.IDLE, DoorState.CLOSED);
+        LiftState state = new LiftState(4, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
 
         // Should move down towards floor 1
         Action action = controller.decideNextAction(state, 0);
@@ -114,7 +114,7 @@ public class NaiveLiftControllerTest {
         // No requests added
 
         // Lift is at floor 0 with doors closed
-        LiftState state = new LiftState(0, Direction.IDLE, DoorState.CLOSED);
+        LiftState state = new LiftState(0, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
 
         // Should idle when no requests
         Action action = controller.decideNextAction(state, 0);
@@ -128,7 +128,7 @@ public class NaiveLiftControllerTest {
         controller.addCarCall(new CarCall(7));
 
         // Lift is at floor 3 with doors closed
-        LiftState state = new LiftState(3, Direction.IDLE, DoorState.CLOSED);
+        LiftState state = new LiftState(3, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
 
         // Floor 1 is distance 2, floor 7 is distance 4
         // Should move towards floor 1 (nearest)
@@ -143,7 +143,7 @@ public class NaiveLiftControllerTest {
         controller.addCarCall(new CarCall(5));
 
         // Lift is at floor 3 with doors closed
-        LiftState state = new LiftState(3, Direction.IDLE, DoorState.CLOSED);
+        LiftState state = new LiftState(3, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
 
         // Floors 1 and 5 are both distance 2; should prefer lower floor (1)
         Action action = controller.decideNextAction(state, 0);
@@ -157,7 +157,7 @@ public class NaiveLiftControllerTest {
         controller.addHallCall(new HallCall(6, Direction.UP));
 
         // Lift is at floor 4 with doors closed
-        LiftState state = new LiftState(4, Direction.IDLE, DoorState.CLOSED);
+        LiftState state = new LiftState(4, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
 
         // Floors 2 and 6 are both distance 2; should prefer lower floor (2)
         Action action = controller.decideNextAction(state, 0);
@@ -170,14 +170,14 @@ public class NaiveLiftControllerTest {
         controller.addCarCall(new CarCall(2));
 
         // Lift arrives at floor 2, doors closed
-        LiftState closedState = new LiftState(2, Direction.IDLE, DoorState.CLOSED);
+        LiftState closedState = new LiftState(2, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
 
         // First decision: open door (this clears the request)
         Action openAction = controller.decideNextAction(closedState, 0);
         assertEquals(Action.OPEN_DOOR, openAction);
 
         // Simulate doors opening
-        LiftState openState = new LiftState(2, Direction.IDLE, DoorState.OPEN);
+        LiftState openState = new LiftState(2, Direction.IDLE, DoorState.OPEN, LiftStatus.DOORS_OPEN);
         controller.decideNextAction(openState, 1);
         controller.decideNextAction(openState, 2);
 
@@ -186,7 +186,7 @@ public class NaiveLiftControllerTest {
         assertEquals(Action.CLOSE_DOOR, closeAction);
 
         // Now doors are closed again, no more requests
-        LiftState closedAgainState = new LiftState(2, Direction.IDLE, DoorState.CLOSED);
+        LiftState closedAgainState = new LiftState(2, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
         Action idleAction = controller.decideNextAction(closedAgainState, 4);
 
         // Should be idle since request was cleared
@@ -200,7 +200,7 @@ public class NaiveLiftControllerTest {
         controller.addCarCall(new CarCall(5));
 
         // Lift at floor 0
-        LiftState state = new LiftState(0, Direction.IDLE, DoorState.CLOSED);
+        LiftState state = new LiftState(0, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
 
         // Should move up towards nearest (floor 3)
         Action action = controller.decideNextAction(state, 0);
@@ -214,7 +214,7 @@ public class NaiveLiftControllerTest {
         controller.addHallCall(new HallCall(2, Direction.DOWN));
 
         // Lift at floor 0
-        LiftState state = new LiftState(0, Direction.IDLE, DoorState.CLOSED);
+        LiftState state = new LiftState(0, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
 
         // Floor 2 is nearer (distance 2) than floor 4 (distance 4)
         Action action = controller.decideNextAction(state, 0);
@@ -229,19 +229,19 @@ public class NaiveLiftControllerTest {
         controller.addHallCall(new HallCall(3, Direction.DOWN));
 
         // Lift arrives at floor 3
-        LiftState closedState = new LiftState(3, Direction.IDLE, DoorState.CLOSED);
+        LiftState closedState = new LiftState(3, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
 
         // Opens door and clears all requests for floor 3
         Action openAction = controller.decideNextAction(closedState, 0);
         assertEquals(Action.OPEN_DOOR, openAction);
 
         // After closing doors, no requests left
-        LiftState openState = new LiftState(3, Direction.IDLE, DoorState.OPEN);
+        LiftState openState = new LiftState(3, Direction.IDLE, DoorState.OPEN, LiftStatus.DOORS_OPEN);
         controller.decideNextAction(openState, 1);
         controller.decideNextAction(openState, 2);
         controller.decideNextAction(openState, 3); // Close door
 
-        LiftState closedAgainState = new LiftState(3, Direction.IDLE, DoorState.CLOSED);
+        LiftState closedAgainState = new LiftState(3, Direction.IDLE, DoorState.CLOSED, LiftStatus.IDLE);
         Action idleAction = controller.decideNextAction(closedAgainState, 4);
         assertEquals(Action.IDLE, idleAction);
     }

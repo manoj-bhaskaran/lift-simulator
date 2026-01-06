@@ -7,11 +7,13 @@ public class LiftState {
     private final int floor;
     private final Direction direction;
     private final DoorState doorState;
+    private final LiftStatus status;
 
-    public LiftState(int floor, Direction direction, DoorState doorState) {
+    public LiftState(int floor, Direction direction, DoorState doorState, LiftStatus status) {
         this.floor = floor;
         this.direction = direction;
         this.doorState = doorState;
+        this.status = status;
     }
 
     public int getFloor() {
@@ -26,12 +28,17 @@ public class LiftState {
         return doorState;
     }
 
+    public LiftStatus getStatus() {
+        return status;
+    }
+
     @Override
     public String toString() {
         return "LiftState{" +
                 "floor=" + floor +
                 ", direction=" + direction +
                 ", doorState=" + doorState +
+                ", status=" + status +
                 '}';
     }
 }

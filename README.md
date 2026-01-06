@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.1.3**
+Current version: **0.2.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -18,14 +18,17 @@ The Lift Simulator is an iterative project to model and test lift controller alg
 
 The simulation is text-based and designed for clarity over visual appeal.
 
-## Iteration 1 Scope
+## Features
 
-The current iteration (v0.1.3) implements:
+The current version (v0.2.0) implements:
+- **Formal lift state machine** with explicit states (IDLE, MOVING_UP, MOVING_DOWN, DOORS_OPEN, DOORS_CLOSING, OUT_OF_SERVICE)
+- **State transition validation** ensuring only valid state changes occur
 - **Single lift simulation** operating between configurable floor ranges
 - **Tick-based simulation engine** that advances time in discrete steps
 - **NaiveLiftController** - A simple controller that services the nearest pending request
-- **Console output** displaying tick-by-tick lift state (floor, direction, door state)
+- **Console output** displaying tick-by-tick lift state (floor, direction, door state, status)
 - **Basic request types**: Car calls (from inside the lift) and hall calls (from a floor)
+- **Safety enforcement**: Lift cannot move with doors open, doors cannot open while moving
 
 Future iterations will add multi-lift systems, smarter algorithms, and more realistic constraints.
 
@@ -64,7 +67,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.1.3.jar`.
+The packaged JAR will be in `target/lift-simulator-0.2.0.jar`.
 
 ## Running the Simulation
 
@@ -77,7 +80,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.1.3.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.2.0.jar com.liftsimulator.Main
 ```
 
 The demo runs a pre-configured scenario with several lift requests and displays the simulation state at each tick.
@@ -96,26 +99,49 @@ Run tests with coverage:
 mvn test jacoco:report
 ```
 
+## Lift State Machine
+
+The lift operates according to a formal state machine with the following states:
+
+- **IDLE**: Lift is stationary with doors closed, ready to accept requests
+- **MOVING_UP**: Lift is traveling upward between floors
+- **MOVING_DOWN**: Lift is traveling downward between floors
+- **DOORS_OPEN**: Lift doors are open at a floor
+- **DOORS_CLOSING**: Lift doors are in the process of closing
+- **OUT_OF_SERVICE**: Lift is offline for maintenance or emergency
+
+### State Transition Rules
+
+The state machine enforces the following constraints:
+- Lift cannot move (MOVING_UP/MOVING_DOWN) when doors are not fully closed
+- Doors cannot open (DOORS_OPEN) while the lift is moving
+- All state transitions are validated and invalid transitions are logged
+- Safety-critical transitions are prevented (e.g., movement with open doors)
+
+Valid transitions are managed by the `StateTransitionValidator` class, which ensures the lift operates safely and predictably.
+
 ## Project Structure
 
 ```
 src/
 ├── main/java/com/liftsimulator/
-│   ├── Main.java                    # Entry point and demo
-│   ├── domain/                      # Core domain models
-│   │   ├── Action.java              # Actions the lift can take
-│   │   ├── CarCall.java             # Request from inside lift
-│   │   ├── Direction.java           # UP, DOWN, IDLE
-│   │   ├── DoorState.java           # OPEN, CLOSED
-│   │   ├── HallCall.java            # Request from a floor
-│   │   └── LiftState.java           # Immutable lift state
-│   └── engine/                      # Simulation engine and controllers
-│       ├── LiftController.java      # Controller interface
-│       ├── NaiveLiftController.java # Simple nearest-floor controller
-│       ├── SimpleLiftController.java# Alternative basic controller
-│       └── SimulationEngine.java    # Tick-based simulation engine
+│   ├── Main.java                          # Entry point and demo
+│   ├── domain/                            # Core domain models
+│   │   ├── Action.java                    # Actions the lift can take
+│   │   ├── CarCall.java                   # Request from inside lift
+│   │   ├── Direction.java                 # UP, DOWN, IDLE
+│   │   ├── DoorState.java                 # OPEN, CLOSED
+│   │   ├── HallCall.java                  # Request from a floor
+│   │   ├── LiftState.java                 # Immutable lift state
+│   │   └── LiftStatus.java                # State machine status enum
+│   └── engine/                            # Simulation engine and controllers
+│       ├── LiftController.java            # Controller interface
+│       ├── NaiveLiftController.java       # Simple nearest-floor controller
+│       ├── SimpleLiftController.java      # Alternative basic controller
+│       ├── SimulationEngine.java          # Tick-based simulation engine
+│       └── StateTransitionValidator.java  # State machine validator
 └── test/java/com/liftsimulator/
-    └── ...                          # Unit tests
+    └── ...                                # Unit tests
 ```
 
 ## Architecture Decisions
