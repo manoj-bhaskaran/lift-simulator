@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0] - Unreleased
+## [0.5.0] - 2026-01-06
 
 ### Added
 - **Lift request lifecycle management**: Requests are now first-class entities with explicit lifecycle states
@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Controller automatically advances requests through lifecycle states (CREATED → QUEUED → ASSIGNED → SERVING → COMPLETED)
 - Completed and cancelled requests are automatically removed from the controller
 - Backward compatibility maintained: `addCarCall()` and `addHallCall()` methods still work
+- Demo output now displays request lifecycle status with compact "Requests" column showing counts by state (Q:n, A:n, S:n)
 
 ### Design Decisions
 - Every request must end in either COMPLETED or CANCELLED state (terminal states)
