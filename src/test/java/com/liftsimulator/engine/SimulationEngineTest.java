@@ -279,8 +279,10 @@ public class SimulationEngineTest {
                 if (tickCount <= 2) {
                     return Action.MOVE_UP;  // Move up to floor 2
                 } else if (tickCount == 3) {
-                    return Action.OPEN_DOOR;  // Start opening doors
+                    return Action.IDLE;  // Stop before opening doors
                 } else if (tickCount == 4) {
+                    return Action.OPEN_DOOR;  // Start opening doors
+                } else if (tickCount == 5) {
                     return Action.IDLE;  // Complete opening doors
                 } else {
                     return Action.MOVE_DOWN;  // Try to move down with doors open
@@ -295,7 +297,8 @@ public class SimulationEngineTest {
         engine.tick();
         assertEquals(2, engine.getCurrentState().getFloor());
 
-        // Open the door (2 ticks)
+        // Open the door (3 ticks: stop, open, complete)
+        engine.tick();  // MOVING_UP -> IDLE
         engine.tick();  // IDLE -> DOORS_OPENING
         engine.tick();  // DOORS_OPENING -> DOORS_OPEN
         assertEquals(DoorState.OPEN, engine.getCurrentState().getDoorState());
