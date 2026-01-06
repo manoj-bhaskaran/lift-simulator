@@ -141,11 +141,14 @@ public class SimulationEngineTest {
 
             @Override
             public Action decideNextAction(LiftState state, long tick) {
-                if (tickCount < 3) {
-                    tickCount++;
-                    return Action.MOVE_UP;
+                tickCount++;
+                if (tickCount <= 3) {
+                    return Action.MOVE_UP;  // Move up to floor 3
+                } else if (tickCount == 4) {
+                    return Action.IDLE;  // Stop before changing direction
+                } else {
+                    return Action.MOVE_DOWN;  // Now move down
                 }
-                return Action.MOVE_DOWN;
             }
         };
 
@@ -155,6 +158,11 @@ public class SimulationEngineTest {
         for (int i = 0; i < 3; i++) {
             engine.tick();
         }
+        assertEquals(3, engine.getCurrentState().getFloor());
+
+        // Stop the lift (required before changing direction)
+        engine.tick();
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
         assertEquals(3, engine.getCurrentState().getFloor());
 
         // When: tick with MOVE_DOWN action
@@ -189,24 +197,35 @@ public class SimulationEngineTest {
 
             @Override
             public Action decideNextAction(LiftState state, long tick) {
-                if (tickCount == 0) {
-                    tickCount++;
-                    return Action.MOVE_UP;
+                tickCount++;
+                if (tickCount == 1) {
+                    return Action.MOVE_UP;  // Move up to floor 1
+                } else if (tickCount == 2) {
+                    return Action.IDLE;  // Stop before changing direction
+                } else {
+                    return Action.MOVE_DOWN;  // Move down
                 }
-                return Action.MOVE_DOWN;
             }
         };
 
         SimulationEngine engine = new SimulationEngine(moveUpThenDownPastMin, 0, 3);
 
+        // Move up to floor 1
         engine.tick();
         assertEquals(1, engine.getCurrentState().getFloor());
         assertEquals(Direction.UP, engine.getCurrentState().getDirection());
 
+        // Stop the lift (required before changing direction)
+        engine.tick();
+        assertEquals(1, engine.getCurrentState().getFloor());
+        assertEquals(Direction.IDLE, engine.getCurrentState().getDirection());
+
+        // Move down to floor 0
         engine.tick();
         assertEquals(0, engine.getCurrentState().getFloor());
         assertEquals(Direction.DOWN, engine.getCurrentState().getDirection());
 
+        // Try to move down at bottom floor - should set direction to IDLE
         engine.tick();
         assertEquals(0, engine.getCurrentState().getFloor());
         assertEquals(Direction.IDLE, engine.getCurrentState().getDirection());
@@ -220,18 +239,22 @@ public class SimulationEngineTest {
 
             @Override
             public Action decideNextAction(LiftState state, long tick) {
-                if (tickCount == 0) {
-                    tickCount++;
-                    return Action.OPEN_DOOR;
+                tickCount++;
+                if (tickCount == 1) {
+                    return Action.OPEN_DOOR;  // Start opening
+                } else if (tickCount == 2) {
+                    return Action.IDLE;  // Complete opening
+                } else {
+                    return Action.MOVE_UP;  // Try to move with doors open
                 }
-                return Action.MOVE_UP;
             }
         };
 
         SimulationEngine engine = new SimulationEngine(openDoorThenMoveUp, 0, 5);
 
-        // Open the door
-        engine.tick();
+        // Open the door (2 ticks)
+        engine.tick();  // IDLE -> DOORS_OPENING
+        engine.tick();  // DOORS_OPENING -> DOORS_OPEN
         assertEquals(DoorState.OPEN, engine.getCurrentState().getDoorState());
         int floorBeforeMove = engine.getCurrentState().getFloor();
 
@@ -251,14 +274,16 @@ public class SimulationEngineTest {
 
             @Override
             public Action decideNextAction(LiftState state, long tick) {
-                if (tickCount < 2) {
-                    tickCount++;
-                    return Action.MOVE_UP;
-                } else if (tickCount == 2) {
-                    tickCount++;
-                    return Action.OPEN_DOOR;
+                tickCount++;
+                if (tickCount <= 2) {
+                    return Action.MOVE_UP;  // Move up to floor 2
+                } else if (tickCount == 3) {
+                    return Action.OPEN_DOOR;  // Start opening doors
+                } else if (tickCount == 4) {
+                    return Action.IDLE;  // Complete opening doors
+                } else {
+                    return Action.MOVE_DOWN;  // Try to move down with doors open
                 }
-                return Action.MOVE_DOWN;
             }
         };
 
@@ -269,8 +294,9 @@ public class SimulationEngineTest {
         engine.tick();
         assertEquals(2, engine.getCurrentState().getFloor());
 
-        // Open the door
-        engine.tick();
+        // Open the door (2 ticks)
+        engine.tick();  // IDLE -> DOORS_OPENING
+        engine.tick();  // DOORS_OPENING -> DOORS_OPEN
         assertEquals(DoorState.OPEN, engine.getCurrentState().getDoorState());
         int floorBeforeMove = engine.getCurrentState().getFloor();
 
@@ -285,18 +311,30 @@ public class SimulationEngineTest {
     @Test
     public void testOpenDoorSetsDoorToOpen() {
         // Given: lift with doors closed
-        SimulationEngine engine = new SimulationEngine(
-                new FixedActionController(Action.OPEN_DOOR),
-                0,
-                5
-        );
+        LiftController openThenIdle = new LiftController() {
+            private int tickCount = 0;
 
+            @Override
+            public Action decideNextAction(LiftState state, long tick) {
+                tickCount++;
+                if (tickCount == 1) {
+                    return Action.OPEN_DOOR;  // Start opening doors
+                } else {
+                    return Action.IDLE;  // Complete door opening
+                }
+            }
+        };
+
+        SimulationEngine engine = new SimulationEngine(openThenIdle, 0, 5);
         assertEquals(DoorState.CLOSED, engine.getCurrentState().getDoorState());
 
-        // When: OPEN_DOOR action
+        // When: OPEN_DOOR action (starts opening)
         engine.tick();
+        assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
+        assertEquals(DoorState.CLOSED, engine.getCurrentState().getDoorState());
 
-        // Then: door should be open
+        // Then: IDLE action completes opening
+        engine.tick();
         assertEquals(DoorState.OPEN, engine.getCurrentState().getDoorState());
         assertEquals(Direction.IDLE, engine.getCurrentState().getDirection());
     }
@@ -305,26 +343,35 @@ public class SimulationEngineTest {
     public void testCloseDoorSetsDoorToClosed() {
         // Given: lift with doors open
         LiftController openThenClose = new LiftController() {
-            private boolean doorOpened = false;
+            private int tickCount = 0;
 
             @Override
             public Action decideNextAction(LiftState state, long tick) {
-                if (!doorOpened) {
-                    doorOpened = true;
-                    return Action.OPEN_DOOR;
+                tickCount++;
+                if (tickCount == 1) {
+                    return Action.OPEN_DOOR;  // Start opening
+                } else if (tickCount == 2) {
+                    return Action.IDLE;  // Complete opening
+                } else if (tickCount == 3) {
+                    return Action.CLOSE_DOOR;  // Start closing
+                } else {
+                    return Action.IDLE;  // Complete closing
                 }
-                return Action.CLOSE_DOOR;
             }
         };
 
         SimulationEngine engine = new SimulationEngine(openThenClose, 0, 5);
 
-        // Open the door
-        engine.tick();
+        // Open the door (2 ticks: OPEN_DOOR -> IDLE)
+        engine.tick();  // IDLE -> DOORS_OPENING
+        assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
+        engine.tick();  // DOORS_OPENING -> DOORS_OPEN
         assertEquals(DoorState.OPEN, engine.getCurrentState().getDoorState());
 
-        // When: CLOSE_DOOR action
-        engine.tick();
+        // When: CLOSE_DOOR action (2 ticks: CLOSE_DOOR -> IDLE)
+        engine.tick();  // DOORS_OPEN -> DOORS_CLOSING
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+        engine.tick();  // DOORS_CLOSING -> IDLE
 
         // Then: door should be closed
         assertEquals(DoorState.CLOSED, engine.getCurrentState().getDoorState());
@@ -354,11 +401,14 @@ public class SimulationEngineTest {
 
             @Override
             public Action decideNextAction(LiftState state, long tick) {
-                if (tickCount < 5) {
-                    tickCount++;
-                    return Action.MOVE_UP;
+                tickCount++;
+                if (tickCount <= 5) {
+                    return Action.MOVE_UP;  // Move up to floor 5
+                } else if (tickCount == 6) {
+                    return Action.IDLE;  // Stop before changing direction
+                } else {
+                    return Action.MOVE_DOWN;  // Move down
                 }
-                return Action.MOVE_DOWN;
             }
         };
 
@@ -369,6 +419,11 @@ public class SimulationEngineTest {
             engine.tick();
         }
         assertEquals(5, engine.getCurrentState().getFloor());
+
+        // Stop the lift (required before changing direction)
+        engine.tick();
+        assertEquals(5, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
 
         // Move down back to floor 0
         for (int expectedFloor = 4; expectedFloor >= 0; expectedFloor--) {
