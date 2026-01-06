@@ -16,11 +16,13 @@ public class SimulationEngine {
     private final int maxFloor;
     private final int travelTicksPerFloor;
     private final int doorTransitionTicks;
+    private final int doorDwellTicks;
     private int movementTicksRemaining;
     private int doorTicksRemaining;
+    private int doorDwellTicksRemaining;
 
     public SimulationEngine(LiftController controller, int minFloor, int maxFloor) {
-        this(controller, minFloor, maxFloor, 1, 2);
+        this(controller, minFloor, maxFloor, 1, 2, 3);
     }
 
     public SimulationEngine(
@@ -30,20 +32,36 @@ public class SimulationEngine {
             int travelTicksPerFloor,
             int doorTransitionTicks
     ) {
+        this(controller, minFloor, maxFloor, travelTicksPerFloor, doorTransitionTicks, 3);
+    }
+
+    public SimulationEngine(
+            LiftController controller,
+            int minFloor,
+            int maxFloor,
+            int travelTicksPerFloor,
+            int doorTransitionTicks,
+            int doorDwellTicks
+    ) {
         if (travelTicksPerFloor <= 0) {
             throw new IllegalArgumentException("travelTicksPerFloor must be >= 1");
         }
         if (doorTransitionTicks <= 0) {
             throw new IllegalArgumentException("doorTransitionTicks must be >= 1");
         }
+        if (doorDwellTicks <= 0) {
+            throw new IllegalArgumentException("doorDwellTicks must be >= 1");
+        }
         this.controller = controller;
         this.minFloor = minFloor;
         this.maxFloor = maxFloor;
         this.travelTicksPerFloor = travelTicksPerFloor;
         this.doorTransitionTicks = doorTransitionTicks;
+        this.doorDwellTicks = doorDwellTicks;
         this.clock = new SimulationClock();
         this.movementTicksRemaining = 0;
         this.doorTicksRemaining = 0;
+        this.doorDwellTicksRemaining = 0;
         // Initialize lift at minimum floor, idle status
         this.currentState = new LiftState(minFloor, LiftStatus.IDLE);
     }
@@ -69,6 +87,12 @@ public class SimulationEngine {
             return;
         }
 
+        if (doorDwellTicksRemaining > 0) {
+            advanceDoorDwell();
+            clock.tick();
+            return;
+        }
+
         // Apply action to get new state
         currentState = startAction(currentState, action);
 
@@ -76,6 +100,8 @@ public class SimulationEngine {
             advanceMovement();
         } else if (doorTicksRemaining > 0) {
             advanceDoorTransition();
+        } else if (doorDwellTicksRemaining > 0) {
+            advanceDoorDwell();
         }
 
         // Increment tick counter
@@ -108,6 +134,7 @@ public class SimulationEngine {
                     newStatus = LiftStatus.MOVING_UP;
                     movementTicksRemaining = travelTicksPerFloor;
                     doorTicksRemaining = 0;
+                    doorDwellTicksRemaining = 0;
                 } else if (newFloor == maxFloor) {
                     // At top floor, can't move up
                     newStatus = LiftStatus.IDLE;
@@ -118,6 +145,7 @@ public class SimulationEngine {
                     newStatus = LiftStatus.MOVING_DOWN;
                     movementTicksRemaining = travelTicksPerFloor;
                     doorTicksRemaining = 0;
+                    doorDwellTicksRemaining = 0;
                 } else if (newFloor == minFloor) {
                     // At bottom floor, can't move down
                     newStatus = LiftStatus.IDLE;
@@ -136,19 +164,25 @@ public class SimulationEngine {
                     newStatus = LiftStatus.DOORS_OPENING;
                     doorTicksRemaining = doorTransitionTicks;
                     movementTicksRemaining = 0;
+                    doorDwellTicksRemaining = 0;
                 } else if (currentStatus == LiftStatus.DOORS_CLOSING) {
                     // Abort door closing, re-open
                     newStatus = LiftStatus.DOORS_OPENING;
                     doorTicksRemaining = doorTransitionTicks;
                     movementTicksRemaining = 0;
+                    doorDwellTicksRemaining = 0;
                 }
                 // If already DOORS_OPENING or DOORS_OPEN, stay in current state
                 break;
             case CLOSE_DOOR:
+                if (doorDwellTicksRemaining > 0) {
+                    return state;
+                }
                 if (currentStatus == LiftStatus.DOORS_OPEN || currentStatus == LiftStatus.DOORS_OPENING) {
                     newStatus = LiftStatus.DOORS_CLOSING;
                     doorTicksRemaining = doorTransitionTicks;
                     movementTicksRemaining = 0;
+                    doorDwellTicksRemaining = 0;
                 }
                 break;
             case IDLE:
@@ -213,6 +247,28 @@ public class SimulationEngine {
 
         if (StateTransitionValidator.isValidTransition(currentState.getStatus(), newStatus)) {
             currentState = new LiftState(currentState.getFloor(), newStatus);
+            if (newStatus == LiftStatus.DOORS_OPEN) {
+                doorDwellTicksRemaining = doorDwellTicks;
+            }
+        }
+    }
+
+    private void advanceDoorDwell() {
+        if (currentState.getStatus() != LiftStatus.DOORS_OPEN) {
+            doorDwellTicksRemaining = 0;
+            return;
+        }
+
+        doorDwellTicksRemaining--;
+        if (doorDwellTicksRemaining > 0) {
+            return;
+        }
+
+        LiftStatus newStatus = LiftStatus.DOORS_CLOSING;
+        if (StateTransitionValidator.isValidTransition(currentState.getStatus(), newStatus)) {
+            currentState = new LiftState(currentState.getFloor(), newStatus);
+            doorTicksRemaining = doorTransitionTicks;
+            advanceDoorTransition();
         }
     }
 }

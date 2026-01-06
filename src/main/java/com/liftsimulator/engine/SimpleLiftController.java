@@ -17,11 +17,8 @@ public class SimpleLiftController implements LiftController {
         int currentFloor = currentState.getFloor();
         DoorState doorState = currentState.getDoorState();
 
-        // If doors are open, close them after 2 ticks
+        // If doors are open, let the engine manage the dwell/close cycle
         if (doorState == DoorState.OPEN) {
-            if (currentTick % 4 == 2) {
-                return Action.CLOSE_DOOR;
-            }
             return Action.IDLE;
         }
 
