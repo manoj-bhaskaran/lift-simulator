@@ -41,6 +41,37 @@ public class NaiveLiftControllerTest {
     }
 
     @Test
+    public void testStopsThenOpensDoorWhenArrivingWhileMoving() {
+        // Add a car call to floor 3
+        controller.addCarCall(new CarCall(3));
+
+        // Lift arrives at floor 3 while moving up
+        LiftState movingState = new LiftState(3, LiftStatus.MOVING_UP);
+        Action stopAction = controller.decideNextAction(movingState, 0);
+        assertEquals(Action.IDLE, stopAction);
+
+        // Next tick after stopping, should open doors and clear request
+        LiftState stoppedState = new LiftState(3, LiftStatus.IDLE);
+        Action openAction = controller.decideNextAction(stoppedState, 1);
+        assertEquals(Action.OPEN_DOOR, openAction);
+    }
+
+    @Test
+    public void testRequestClearedWhenArrivingDuringDoorOpening() {
+        // Lift is opening doors at floor 2, request arrives at the same floor
+        controller.addCarCall(new CarCall(2));
+
+        LiftState openingState = new LiftState(2, LiftStatus.DOORS_OPENING);
+        Action action = controller.decideNextAction(openingState, 0);
+        assertEquals(Action.IDLE, action);
+
+        // After doors finish opening and later close, request should be cleared
+        LiftState closedState = new LiftState(2, LiftStatus.IDLE);
+        Action idleAction = controller.decideNextAction(closedState, 1);
+        assertEquals(Action.IDLE, idleAction);
+    }
+
+    @Test
     public void testIdleWhileDoorsOpenDuringDwellTime() {
         // Add a car call to floor 5 and simulate arriving there
         controller.addCarCall(new CarCall(5));
