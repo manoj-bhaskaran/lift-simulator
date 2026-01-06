@@ -36,7 +36,26 @@ import java.util.stream.Collectors;
  * Optimization is out of scope; this focuses on correctness first.
  */
 public class NaiveLiftController implements LiftController {
+    private static final int DEFAULT_HOME_FLOOR = 0;
+    private static final int DEFAULT_IDLE_TIMEOUT_TICKS = 5;
+
     private final Set<LiftRequest> requests = new HashSet<>();
+    private final int homeFloor;
+    private final int idleTimeoutTicks;
+    private Long idleStartTick;
+    private boolean parkingInProgress;
+
+    public NaiveLiftController() {
+        this(DEFAULT_HOME_FLOOR, DEFAULT_IDLE_TIMEOUT_TICKS);
+    }
+
+    public NaiveLiftController(int homeFloor, int idleTimeoutTicks) {
+        if (idleTimeoutTicks < 0) {
+            throw new IllegalArgumentException("idleTimeoutTicks must be >= 0");
+        }
+        this.homeFloor = homeFloor;
+        this.idleTimeoutTicks = idleTimeoutTicks;
+    }
 
     /**
      * Adds a car call (destination request from inside the lift).
@@ -210,11 +229,35 @@ public class NaiveLiftController implements LiftController {
                 .forEach(request -> request.transitionTo(RequestState.SERVING));
     }
 
+    private void resetIdleTracking() {
+        idleStartTick = null;
+        parkingInProgress = false;
+    }
+
+    private boolean shouldTrackIdle(LiftState currentState) {
+        return currentState.getStatus() == LiftStatus.IDLE && currentState.getDoorState() == DoorState.CLOSED;
+    }
+
+    private Action moveTowardHome(int currentFloor) {
+        if (currentFloor < homeFloor) {
+            return Action.MOVE_UP;
+        }
+        if (currentFloor > homeFloor) {
+            return Action.MOVE_DOWN;
+        }
+        return Action.IDLE;
+    }
+
     @Override
     public Action decideNextAction(LiftState currentState, long currentTick) {
         int currentFloor = currentState.getFloor();
         DoorState doorState = currentState.getDoorState();
         LiftStatus currentStatus = currentState.getStatus();
+        boolean hasActiveRequests = !getActiveRequests().isEmpty();
+
+        if (hasActiveRequests) {
+            resetIdleTracking();
+        }
 
         // Allow door transitions to complete before evaluating movement.
         if (currentStatus == LiftStatus.DOORS_OPENING) {
@@ -267,6 +310,30 @@ public class NaiveLiftController implements LiftController {
                 return Action.MOVE_UP;
             } else if (currentFloor > targetFloor) {
                 return Action.MOVE_DOWN;
+            }
+        }
+
+        if (!hasActiveRequests) {
+            if (parkingInProgress) {
+                if (currentFloor == homeFloor) {
+                    parkingInProgress = false;
+                    idleStartTick = currentTick;
+                    return Action.IDLE;
+                }
+                return moveTowardHome(currentFloor);
+            }
+
+            if (shouldTrackIdle(currentState)) {
+                if (idleStartTick == null) {
+                    idleStartTick = currentTick;
+                }
+                long idleTicks = currentTick - idleStartTick;
+                if (idleTicks >= idleTimeoutTicks && currentFloor != homeFloor) {
+                    parkingInProgress = true;
+                    return moveTowardHome(currentFloor);
+                }
+            } else {
+                idleStartTick = null;
             }
         }
 

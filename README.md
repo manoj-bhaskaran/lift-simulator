@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.7.1**
+Current version: **0.8.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -20,7 +20,7 @@ The simulation is text-based and designed for clarity over visual appeal.
 
 ## Features
 
-The current version (v0.7.1) implements:
+The current version (v0.8.0) implements:
 - **Request lifecycle management**: Requests are first-class entities with explicit lifecycle states (CREATED → QUEUED → ASSIGNED → SERVING → COMPLETED/CANCELLED)
 - **Request cancellation**: Cancel hall and car calls by request ID at any point before completion
 - **Request state tracking**: Every request has a unique ID and progresses through validated state transitions
@@ -29,6 +29,7 @@ The current version (v0.7.1) implements:
 - **State transition validation** ensuring only valid state changes occur (for both lift and requests)
 - **Symmetric door behavior**: Both opening and closing are modeled as transitional states
 - **Door reopening window**: Configurable time window during which closing doors can be reopened for new requests at the current floor
+- **Idle parking**: Configurable home floor and idle timeout to park the lift when no requests are pending
 - **Single lift simulation** operating between configurable floor ranges
 - **Tick-based simulation engine** that advances time in discrete steps
 - **Simulation clock** powering deterministic tick progression
@@ -78,7 +79,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.7.1.jar`.
+The packaged JAR will be in `target/lift-simulator-0.8.0.jar`.
 
 ## Running the Simulation
 
@@ -91,7 +92,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.7.1.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.8.0.jar com.liftsimulator.Main
 ```
 
 The demo runs a pre-configured scenario with several lift requests and displays the simulation state at each tick.
@@ -121,6 +122,20 @@ SimulationEngine engine = new SimulationEngine(
   - Setting to 0 disables door reopening (doors cannot be interrupted once closing starts)
   - Realistic behavior: if a request arrives for the current floor while doors are closing and within this window, doors will reopen
   - If the window has passed, the request is queued normally and will be served in the next cycle
+
+## Configuring Idle Parking
+
+You can configure the home floor and idle timeout for the naive controller:
+
+```java
+NaiveLiftController controller = new NaiveLiftController(
+    0, // homeFloor
+    5  // idleTimeoutTicks
+);
+```
+
+- **homeFloor**: The floor to park on when idle
+- **idleTimeoutTicks**: How many idle ticks before the lift starts parking (0 means park immediately)
 
 ## Running Tests
 

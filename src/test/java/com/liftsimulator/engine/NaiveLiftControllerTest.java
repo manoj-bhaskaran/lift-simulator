@@ -516,6 +516,46 @@ public class NaiveLiftControllerTest {
     }
 
     @Test
+    public void testParksAtHomeFloorAfterIdleTimeout() {
+        NaiveLiftController parkingController = new NaiveLiftController(2, 3);
+        SimulationEngine engine = new SimulationEngine(parkingController, 0, 5);
+
+        engine.tick(); // tick 0
+        engine.tick(); // tick 1
+        engine.tick(); // tick 2
+        assertEquals(0, engine.getCurrentState().getFloor());
+
+        engine.tick(); // tick 3 -> start parking
+        assertEquals(1, engine.getCurrentState().getFloor());
+
+        engine.tick(); // tick 4 -> continue parking
+        assertEquals(2, engine.getCurrentState().getFloor());
+
+        engine.tick(); // tick 5 -> stop at home
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+        assertEquals(2, engine.getCurrentState().getFloor());
+    }
+
+    @Test
+    public void testParkingInterruptedByNewRequest() {
+        NaiveLiftController parkingController = new NaiveLiftController(4, 1);
+        SimulationEngine engine = new SimulationEngine(parkingController, 0, 5);
+
+        engine.tick(); // tick 0
+        engine.tick(); // tick 1 -> start parking to floor 4
+        assertEquals(1, engine.getCurrentState().getFloor());
+
+        parkingController.addCarCall(new CarCall(1));
+
+        engine.tick(); // tick 2 -> stop for request
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+        assertEquals(1, engine.getCurrentState().getFloor());
+
+        engine.tick(); // tick 3 -> open doors for request
+        assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
+    }
+
+    @Test
     public void testCancelledRequestNeverServed() {
         // Add multiple requests
         LiftRequest request1 = LiftRequest.carCall(3);
