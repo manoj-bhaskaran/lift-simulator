@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.1.2**
+Current version: **0.1.3**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -20,7 +20,7 @@ The simulation is text-based and designed for clarity over visual appeal.
 
 ## Iteration 1 Scope
 
-The current iteration (v0.1.2) implements:
+The current iteration (v0.1.3) implements:
 - **Single lift simulation** operating between configurable floor ranges
 - **Tick-based simulation engine** that advances time in discrete steps
 - **NaiveLiftController** - A simple controller that services the nearest pending request
@@ -64,7 +64,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.1.2.jar`.
+The packaged JAR will be in `target/lift-simulator-0.1.3.jar`.
 
 ## Running the Simulation
 
@@ -77,7 +77,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.1.2.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.1.3.jar com.liftsimulator.Main
 ```
 
 The demo runs a pre-configured scenario with several lift requests and displays the simulation state at each tick.
