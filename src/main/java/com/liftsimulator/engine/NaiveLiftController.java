@@ -5,6 +5,7 @@ import com.liftsimulator.domain.CarCall;
 import com.liftsimulator.domain.DoorState;
 import com.liftsimulator.domain.HallCall;
 import com.liftsimulator.domain.LiftState;
+import com.liftsimulator.domain.LiftStatus;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -101,6 +102,7 @@ public class NaiveLiftController implements LiftController {
     public Action decideNextAction(LiftState currentState, long currentTick) {
         int currentFloor = currentState.getFloor();
         DoorState doorState = currentState.getDoorState();
+        LiftStatus currentStatus = currentState.getStatus();
 
         // If doors are open, manage dwell time
         if (doorState == DoorState.OPEN) {
@@ -117,8 +119,14 @@ public class NaiveLiftController implements LiftController {
             return Action.IDLE;
         }
 
-        // If at a requested floor, open doors and clear requests
+        // If at a requested floor, stop first if moving, then open doors
         if (hasRequestForFloor(currentFloor)) {
+            if (currentStatus == LiftStatus.MOVING_UP || currentStatus == LiftStatus.MOVING_DOWN) {
+                return Action.IDLE;
+            }
+            if (currentStatus == LiftStatus.DOORS_OPENING) {
+                return Action.IDLE;
+            }
             clearRequestsForFloor(currentFloor);
             return Action.OPEN_DOOR;
         }
