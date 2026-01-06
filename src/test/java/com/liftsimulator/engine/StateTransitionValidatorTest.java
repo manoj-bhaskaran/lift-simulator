@@ -25,8 +25,8 @@ class StateTransitionValidatorTest {
     }
 
     @Test
-    void testIdleCanTransitionToDoorsOpen() {
-        assertTrue(StateTransitionValidator.isValidTransition(LiftStatus.IDLE, LiftStatus.DOORS_OPEN));
+    void testIdleCanTransitionToDoorsOpening() {
+        assertTrue(StateTransitionValidator.isValidTransition(LiftStatus.IDLE, LiftStatus.DOORS_OPENING));
     }
 
     @Test
@@ -60,13 +60,13 @@ class StateTransitionValidatorTest {
     }
 
     @Test
-    void testInvalidTransitionMovingUpToDoorsOpen() {
-        assertTrue(StateTransitionValidator.isValidTransition(LiftStatus.MOVING_UP, LiftStatus.DOORS_OPEN));
+    void testInvalidTransitionMovingUpToDoorsOpening() {
+        assertFalse(StateTransitionValidator.isValidTransition(LiftStatus.MOVING_UP, LiftStatus.DOORS_OPENING));
     }
 
     @Test
-    void testInvalidTransitionMovingDownToDoorsOpen() {
-        assertTrue(StateTransitionValidator.isValidTransition(LiftStatus.MOVING_DOWN, LiftStatus.DOORS_OPEN));
+    void testInvalidTransitionMovingDownToDoorsOpening() {
+        assertFalse(StateTransitionValidator.isValidTransition(LiftStatus.MOVING_DOWN, LiftStatus.DOORS_OPENING));
     }
 
     @Test
@@ -99,7 +99,7 @@ class StateTransitionValidatorTest {
 
     @Test
     void testGetNextStatusForOpenDoorAction() {
-        assertEquals(LiftStatus.DOORS_OPEN, StateTransitionValidator.getNextStatus(LiftStatus.IDLE, Action.OPEN_DOOR));
+        assertEquals(LiftStatus.DOORS_OPENING, StateTransitionValidator.getNextStatus(LiftStatus.IDLE, Action.OPEN_DOOR));
     }
 
     @Test
@@ -148,7 +148,7 @@ class StateTransitionValidatorTest {
         assertTrue(validStates.contains(LiftStatus.IDLE));
         assertTrue(validStates.contains(LiftStatus.MOVING_UP));
         assertTrue(validStates.contains(LiftStatus.MOVING_DOWN));
-        assertTrue(validStates.contains(LiftStatus.DOORS_OPEN));
+        assertTrue(validStates.contains(LiftStatus.DOORS_OPENING));
         assertTrue(validStates.contains(LiftStatus.OUT_OF_SERVICE));
     }
 
@@ -167,8 +167,9 @@ class StateTransitionValidatorTest {
         Set<LiftStatus> validStates = StateTransitionValidator.getValidNextStates(LiftStatus.MOVING_UP);
         assertTrue(validStates.contains(LiftStatus.MOVING_UP));
         assertTrue(validStates.contains(LiftStatus.IDLE));
-        assertTrue(validStates.contains(LiftStatus.DOORS_OPEN));
         assertTrue(validStates.contains(LiftStatus.OUT_OF_SERVICE));
+        assertFalse(validStates.contains(LiftStatus.DOORS_OPENING));
+        assertFalse(validStates.contains(LiftStatus.DOORS_OPEN));
     }
 
     @Test
@@ -188,5 +189,42 @@ class StateTransitionValidatorTest {
             assertTrue(StateTransitionValidator.isValidTransition(status, status),
                 "State " + status + " should be able to remain in the same state");
         }
+    }
+
+    @Test
+    void testDoorsOpeningCanTransitionToDoorsOpen() {
+        assertTrue(StateTransitionValidator.isValidTransition(LiftStatus.DOORS_OPENING, LiftStatus.DOORS_OPEN));
+    }
+
+    @Test
+    void testDoorsOpeningCanTransitionToDoorsClosing() {
+        assertTrue(StateTransitionValidator.isValidTransition(LiftStatus.DOORS_OPENING, LiftStatus.DOORS_CLOSING));
+    }
+
+    @Test
+    void testInvalidTransitionDoorsOpeningToIdle() {
+        assertFalse(StateTransitionValidator.isValidTransition(LiftStatus.DOORS_OPENING, LiftStatus.IDLE));
+    }
+
+    @Test
+    void testDoorsClosingCanTransitionToDoorsOpening() {
+        assertTrue(StateTransitionValidator.isValidTransition(LiftStatus.DOORS_CLOSING, LiftStatus.DOORS_OPENING));
+    }
+
+    @Test
+    void testGetNextStatusForIdleActionFromDoorsOpening() {
+        assertEquals(LiftStatus.DOORS_OPEN, StateTransitionValidator.getNextStatus(LiftStatus.DOORS_OPENING, Action.IDLE));
+    }
+
+    @Test
+    void testGetValidNextStatesFromDoorsOpening() {
+        Set<LiftStatus> validStates = StateTransitionValidator.getValidNextStates(LiftStatus.DOORS_OPENING);
+        assertTrue(validStates.contains(LiftStatus.DOORS_OPENING));
+        assertTrue(validStates.contains(LiftStatus.DOORS_OPEN));
+        assertTrue(validStates.contains(LiftStatus.DOORS_CLOSING));
+        assertTrue(validStates.contains(LiftStatus.OUT_OF_SERVICE));
+        assertFalse(validStates.contains(LiftStatus.IDLE));
+        assertFalse(validStates.contains(LiftStatus.MOVING_UP));
+        assertFalse(validStates.contains(LiftStatus.MOVING_DOWN));
     }
 }

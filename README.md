@@ -122,9 +122,9 @@ The lift uses a **single source of truth** pattern where `LiftStatus` is the onl
 | From ↓ / To → | IDLE | MOVING_UP | MOVING_DOWN | DOORS_OPENING | DOORS_OPEN | DOORS_CLOSING | OUT_OF_SERVICE |
 |---------------|------|-----------|-------------|---------------|------------|---------------|----------------|
 | **IDLE** | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
-| **MOVING_UP** | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ |
-| **MOVING_DOWN** | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ | ✅ |
-| **DOORS_OPENING** | ✅ | ❌ | ❌ | ✅ | ✅ | ❌ | ✅ |
+| **MOVING_UP** | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **MOVING_DOWN** | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ |
+| **DOORS_OPENING** | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
 | **DOORS_OPEN** | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
 | **DOORS_CLOSING** | ✅ | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ |
 | **OUT_OF_SERVICE** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
@@ -134,7 +134,8 @@ The lift uses a **single source of truth** pattern where `LiftStatus` is the onl
 The state machine enforces critical safety rules:
 - **Cannot move with doors open**: DOORS_OPEN/DOORS_OPENING/DOORS_CLOSING cannot transition to MOVING_UP/MOVING_DOWN
 - **Cannot reverse direction**: Must stop (IDLE) before changing direction
-- **Cannot open doors while moving**: MOVING_UP/MOVING_DOWN must transition to DOORS_OPENING (which stops the lift first)
+- **Cannot open doors while moving**: MOVING_UP/MOVING_DOWN must first transition to IDLE (stop), then to DOORS_OPENING
+- **Doors must complete transitions**: DOORS_OPENING cannot transition directly to IDLE; must go through DOORS_OPEN → DOORS_CLOSING → IDLE
 - **Symmetric door transitions**: Both opening and closing are modeled as separate states
 - **All transitions validated**: Invalid transitions are prevented and logged
 

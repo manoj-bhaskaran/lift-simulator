@@ -29,27 +29,28 @@ public class StateTransitionValidator {
                 LiftStatus.OUT_OF_SERVICE
         ));
 
-        // MOVING_UP can transition to: MOVING_UP, IDLE, DOORS_OPENING, OUT_OF_SERVICE
+        // MOVING_UP can transition to: MOVING_UP, IDLE, OUT_OF_SERVICE
+        // Cannot open doors while moving - must stop first
         VALID_TRANSITIONS.put(LiftStatus.MOVING_UP, EnumSet.of(
                 LiftStatus.MOVING_UP,
                 LiftStatus.IDLE,
-                LiftStatus.DOORS_OPENING,
                 LiftStatus.OUT_OF_SERVICE
         ));
 
-        // MOVING_DOWN can transition to: MOVING_DOWN, IDLE, DOORS_OPENING, OUT_OF_SERVICE
+        // MOVING_DOWN can transition to: MOVING_DOWN, IDLE, OUT_OF_SERVICE
+        // Cannot open doors while moving - must stop first
         VALID_TRANSITIONS.put(LiftStatus.MOVING_DOWN, EnumSet.of(
                 LiftStatus.MOVING_DOWN,
                 LiftStatus.IDLE,
-                LiftStatus.DOORS_OPENING,
                 LiftStatus.OUT_OF_SERVICE
         ));
 
-        // DOORS_OPENING can transition to: DOORS_OPEN, IDLE (abort), OUT_OF_SERVICE
+        // DOORS_OPENING can transition to: DOORS_OPEN, DOORS_CLOSING (abort), OUT_OF_SERVICE
+        // Cannot go directly to IDLE - must close doors first
         VALID_TRANSITIONS.put(LiftStatus.DOORS_OPENING, EnumSet.of(
                 LiftStatus.DOORS_OPENING,
                 LiftStatus.DOORS_OPEN,
-                LiftStatus.IDLE,
+                LiftStatus.DOORS_CLOSING,
                 LiftStatus.OUT_OF_SERVICE
         ));
 

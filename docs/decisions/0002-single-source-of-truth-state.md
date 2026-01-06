@@ -53,6 +53,26 @@ Additionally, we are adding the `DOORS_OPENING` state to make door transitions s
 | DOORS_CLOSING | IDLE | CLOSED |
 | OUT_OF_SERVICE | IDLE | CLOSED |
 
+### Valid State Transitions
+
+The state machine enforces physically realistic transitions:
+
+| From ↓ / To → | IDLE | MOVING_UP | MOVING_DOWN | DOORS_OPENING | DOORS_OPEN | DOORS_CLOSING | OUT_OF_SERVICE |
+|---------------|------|-----------|-------------|---------------|------------|---------------|----------------|
+| **IDLE** | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
+| **MOVING_UP** | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **MOVING_DOWN** | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ |
+| **DOORS_OPENING** | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
+| **DOORS_OPEN** | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| **DOORS_CLOSING** | ✅ | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ |
+| **OUT_OF_SERVICE** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+
+**Key design decisions**:
+- **MOVING states cannot open doors**: Must stop (IDLE) first. This prevents physically impossible transitions.
+- **DOORS_OPENING cannot go to IDLE**: Doors are partway open and must complete opening or abort to closing.
+- **All door states prevent movement**: Lift cannot move unless in IDLE state with doors fully closed.
+- **Symmetric door transitions**: DOORS_OPENING and DOORS_CLOSING provide realistic door operation timing.
+
 ## Consequences
 
 ### Positive

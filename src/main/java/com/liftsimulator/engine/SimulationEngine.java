@@ -79,17 +79,24 @@ public class SimulationEngine {
                 }
                 break;
             case OPEN_DOOR:
-                // Start opening doors (lift stops if moving)
-                if (currentStatus != LiftStatus.OUT_OF_SERVICE) {
-                    newStatus = LiftStatus.DOORS_OPENING;
-                } else {
+                if (currentStatus == LiftStatus.OUT_OF_SERVICE) {
                     // Can't open doors when out of service
                     StateTransitionValidator.isActionAllowed(currentStatus, action);
                     return state;
+                } else if (currentStatus == LiftStatus.MOVING_UP || currentStatus == LiftStatus.MOVING_DOWN) {
+                    // Must stop first before opening doors
+                    newStatus = LiftStatus.IDLE;
+                } else if (currentStatus == LiftStatus.IDLE) {
+                    // Can now start opening doors
+                    newStatus = LiftStatus.DOORS_OPENING;
+                } else if (currentStatus == LiftStatus.DOORS_CLOSING) {
+                    // Abort door closing, re-open
+                    newStatus = LiftStatus.DOORS_OPENING;
                 }
+                // If already DOORS_OPENING or DOORS_OPEN, stay in current state
                 break;
             case CLOSE_DOOR:
-                if (currentStatus == LiftStatus.DOORS_OPEN) {
+                if (currentStatus == LiftStatus.DOORS_OPEN || currentStatus == LiftStatus.DOORS_OPENING) {
                     newStatus = LiftStatus.DOORS_CLOSING;
                 }
                 break;
