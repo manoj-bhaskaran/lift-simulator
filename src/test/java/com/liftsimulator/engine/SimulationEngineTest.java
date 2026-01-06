@@ -601,16 +601,15 @@ public class SimulationEngineTest {
         assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
 
         engine.tick(); // tick 3: dwell 1
-        engine.tick(); // tick 4: dwell 2
         assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
 
-        engine.tick(); // tick 5: closing starts (doorClosingTicksElapsed = 0)
+        engine.tick(); // tick 4: dwell 2 completes, closing starts and advances (elapsed becomes 1)
         assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
 
-        engine.tick(); // tick 6: OPEN_DOOR action within window (doorClosingTicksElapsed = 1)
+        engine.tick(); // tick 5: OPEN_DOOR action within window (elapsed=1 < window=2)
         assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
 
-        engine.tick(); // tick 7: complete opening
+        engine.tick(); // tick 6: complete opening
         assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
     }
 
@@ -645,20 +644,19 @@ public class SimulationEngineTest {
         assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
 
         engine.tick(); // tick 5: dwell 1
-        engine.tick(); // tick 6: dwell 2 -> closing starts
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        engine.tick(); // tick 6: dwell 2 completes, closing starts and advances (elapsed becomes 1)
         assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
 
-        engine.tick(); // tick 7: closing (doorClosingTicksElapsed = 1)
+        engine.tick(); // tick 7: closing continues (elapsed = 2, now outside window)
         assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
 
-        engine.tick(); // tick 8: closing (doorClosingTicksElapsed = 2) - OPEN_DOOR but outside window
-        // Should remain DOORS_CLOSING because window has passed
+        // New request arrives but outside window (elapsed = 2 >= window = 2)
+        engine.tick(); // tick 8: OPEN_DOOR but outside window, stays closing (elapsed = 3)
         assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
 
-        engine.tick(); // tick 9: closing continues
-        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
-
-        engine.tick(); // tick 10: doors close completely
+        engine.tick(); // tick 9: closing completes
         assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
     }
 
@@ -687,11 +685,12 @@ public class SimulationEngineTest {
         engine.tick(); // start opening
         engine.tick(); // doors open
         engine.tick(); // dwell 1
-        engine.tick(); // dwell 2
-        engine.tick(); // closing starts (elapsed = 0)
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        engine.tick(); // dwell 2 completes, closing starts and advances (elapsed becomes 1)
         assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
 
-        engine.tick(); // elapsed = 1, OPEN_DOOR (should succeed as 1 < 2)
+        engine.tick(); // OPEN_DOOR with elapsed=1 < window=2, should reopen
         assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
     }
 
@@ -719,10 +718,12 @@ public class SimulationEngineTest {
 
         engine.tick(); // start opening
         engine.tick(); // doors open
-        engine.tick(); // dwell completes, closing starts
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        engine.tick(); // dwell completes, closing starts and advances (elapsed = 1)
         assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
 
-        engine.tick(); // OPEN_DOOR action, but window is 0 so should stay closing
+        engine.tick(); // OPEN_DOOR action, but elapsed=1 >= window=0, stays closing
         assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
 
         engine.tick(); // doors close completely

@@ -327,16 +327,16 @@ public class NaiveLiftControllerTest {
 
         // Dwell time
         engine.tick(); // dwell 1
-        engine.tick(); // dwell 2
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
 
-        // Doors start closing
-        engine.tick(); // closing starts
+        // Dwell completes, doors start closing
+        engine.tick(); // dwell 2 completes, closing starts and advances (elapsed = 1)
         assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
 
         // New request arrives for same floor within reopen window
         controller.addCarCall(new CarCall(5));
 
-        // Next tick should reopen doors (within window)
+        // Next tick should reopen doors (elapsed=1 < window=2)
         engine.tick();
         assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
 
@@ -367,20 +367,20 @@ public class NaiveLiftControllerTest {
 
         // Dwell time
         engine.tick(); // dwell 1
-        engine.tick(); // dwell 2
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
 
         // Doors start closing
-        engine.tick(); // closing starts (elapsed = 0)
+        engine.tick(); // dwell 2 completes, closing starts and advances (elapsed = 1)
         assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
 
-        engine.tick(); // elapsed = 1
-        engine.tick(); // elapsed = 2 (window is 2, so next tick is outside)
+        engine.tick(); // closing continues (elapsed = 2, now outside window)
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
 
-        // New request arrives outside window
+        // New request arrives outside window (elapsed = 2 >= window = 2)
         controller.addCarCall(new CarCall(5));
 
-        // Next tick should NOT reopen (outside window)
-        engine.tick(); // elapsed = 3
+        // Next tick should NOT reopen (elapsed=2 >= window=2)
+        engine.tick(); // elapsed = 3, stays closing
         assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
 
         // Doors should finish closing

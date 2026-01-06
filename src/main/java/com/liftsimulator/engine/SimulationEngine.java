@@ -104,6 +104,15 @@ public class SimulationEngine {
         }
 
         if (doorTicksRemaining > 0) {
+            // Special case: check for door reopening during closing
+            if (currentState.getStatus() == LiftStatus.DOORS_CLOSING &&
+                action == Action.OPEN_DOOR &&
+                doorClosingTicksElapsed < doorReopenWindowTicks) {
+                // Interrupt closing and start reopening
+                currentState = new LiftState(currentState.getFloor(), LiftStatus.DOORS_OPENING);
+                doorTicksRemaining = doorTransitionTicks;
+                doorClosingTicksElapsed = 0;
+            }
             advanceDoorTransition();
             clock.tick();
             return;
@@ -188,18 +197,8 @@ public class SimulationEngine {
                     movementTicksRemaining = 0;
                     doorDwellTicksRemaining = 0;
                     doorClosingTicksElapsed = 0;
-                } else if (currentStatus == LiftStatus.DOORS_CLOSING) {
-                    // Check if within reopen window
-                    if (doorClosingTicksElapsed < doorReopenWindowTicks) {
-                        // Abort door closing, re-open
-                        newStatus = LiftStatus.DOORS_OPENING;
-                        doorTicksRemaining = doorTransitionTicks;
-                        movementTicksRemaining = 0;
-                        doorDwellTicksRemaining = 0;
-                        doorClosingTicksElapsed = 0;
-                    }
-                    // If outside window, stay DOORS_CLOSING (ignore reopen request)
                 }
+                // Note: DOORS_CLOSING reopen handled in tick() to interrupt in-progress transition
                 // If already DOORS_OPENING or DOORS_OPEN, stay in current state
                 break;
             case CLOSE_DOOR:
