@@ -172,6 +172,7 @@ public class OutOfServiceTest {
 
         // Add a request (should not be accepted by controller)
         controller.addCarCall(new CarCall(5));
+        assertEquals(0, controller.getRequests().size());
 
         // Tick the engine
         engine.tick();

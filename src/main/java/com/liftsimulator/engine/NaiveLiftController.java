@@ -44,6 +44,7 @@ public class NaiveLiftController implements LiftController {
     private final int idleTimeoutTicks;
     private Long idleStartTick;
     private boolean parkingInProgress;
+    private boolean outOfService;
 
     public NaiveLiftController() {
         this(DEFAULT_HOME_FLOOR, DEFAULT_IDLE_TIMEOUT_TICKS);
@@ -63,6 +64,9 @@ public class NaiveLiftController implements LiftController {
      * @param carCall the car call to add
      */
     public void addCarCall(CarCall carCall) {
+        if (outOfService) {
+            return;
+        }
         LiftRequest request = LiftRequest.carCall(carCall.destinationFloor());
         request.transitionTo(RequestState.QUEUED);
         requests.add(request);
@@ -74,6 +78,9 @@ public class NaiveLiftController implements LiftController {
      * @param hallCall the hall call to add
      */
     public void addHallCall(HallCall hallCall) {
+        if (outOfService) {
+            return;
+        }
         LiftRequest request = LiftRequest.hallCall(hallCall.floor(), hallCall.direction());
         request.transitionTo(RequestState.QUEUED);
         requests.add(request);
@@ -85,6 +92,9 @@ public class NaiveLiftController implements LiftController {
      * @param request the lift request to add
      */
     public void addRequest(LiftRequest request) {
+        if (outOfService) {
+            return;
+        }
         if (request.getState() == RequestState.CREATED) {
             request.transitionTo(RequestState.QUEUED);
         }
@@ -255,6 +265,10 @@ public class NaiveLiftController implements LiftController {
         LiftStatus currentStatus = currentState.getStatus();
         boolean hasActiveRequests = !getActiveRequests().isEmpty();
 
+        if (currentStatus == LiftStatus.OUT_OF_SERVICE || outOfService) {
+            return Action.IDLE;
+        }
+
         if (hasActiveRequests) {
             resetIdleTracking();
         }
@@ -353,6 +367,7 @@ public class NaiveLiftController implements LiftController {
      * - Cancel all pending requests
      */
     public void takeOutOfService() {
+        outOfService = true;
         // Cancel all active (non-terminal) requests
         Set<LiftRequest> activeRequests = new HashSet<>(getActiveRequests());
         for (LiftRequest request : activeRequests) {
@@ -372,6 +387,7 @@ public class NaiveLiftController implements LiftController {
      * to IDLE state via the SimulationEngine.
      */
     public void returnToService() {
+        outOfService = false;
         // Reset idle tracking when returning to service
         resetIdleTracking();
     }
