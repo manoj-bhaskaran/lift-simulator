@@ -146,16 +146,7 @@ public final class NaiveLiftController implements LiftController {
                 .collect(Collectors.toSet());
 
         for (LiftRequest request : requestsToComplete) {
-            if (request.getState() == RequestState.SERVING) {
-                request.transitionTo(RequestState.COMPLETED);
-            } else if (request.getState() == RequestState.ASSIGNED) {
-                request.transitionTo(RequestState.SERVING);
-                request.transitionTo(RequestState.COMPLETED);
-            } else if (request.getState() == RequestState.QUEUED) {
-                request.transitionTo(RequestState.ASSIGNED);
-                request.transitionTo(RequestState.SERVING);
-                request.transitionTo(RequestState.COMPLETED);
-            }
+            request.completeRequest();
         }
 
         // Remove completed requests.

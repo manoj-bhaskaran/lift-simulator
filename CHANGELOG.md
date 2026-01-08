@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.17] - 2026-01-25
+
+### Changed
+- Centralize request completion transitions in `LiftRequest` to avoid duplicated lifecycle chains
+
 ## [0.12.16] - 2026-01-24
 
 ### Fixed
