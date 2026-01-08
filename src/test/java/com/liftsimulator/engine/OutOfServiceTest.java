@@ -380,9 +380,10 @@ public class OutOfServiceTest {
         engine.tick(); // Floor 1
         engine.tick(); // Floor 2
         engine.tick(); // Floor 3, stop
-        engine.tick(); // Open doors
-
         assertEquals(3, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+
+        engine.tick(); // Open doors
         assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
 
         // Emergency: take out of service immediately
