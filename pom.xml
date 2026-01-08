@@ -7,7 +7,7 @@
 
     <groupId>com.liftsimulator</groupId>
     <artifactId>lift-simulator</artifactId>
-    <version>0.12.9</version>
+    <version>0.12.10</version>
     <packaging>jar</packaging>
 
     <name>Lift Simulator</name>
@@ -32,12 +32,6 @@
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-annotations</artifactId>
-            <version>4.8.6.0</version>
-            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -90,6 +84,7 @@
                     <effort>Max</effort>
                     <threshold>Low</threshold>
                     <failOnError>true</failOnError>
+                    <excludeFilterFile>config/spotbugs/exclude.xml</excludeFilterFile>
                 </configuration>
             </plugin>
             <plugin>

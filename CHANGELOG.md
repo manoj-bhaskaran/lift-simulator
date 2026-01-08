@@ -7,13 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.12.9] - 2026-01-17
+## [0.12.10] - 2026-01-18
 
 ### Fixed
-- Resolve SpotBugs annotation dependency version for Maven Central
-
-### Changed
-- Add SpotBugs annotations dependency and mark core classes as final for safer construction
+- Replace SpotBugs annotation dependency with a local exclude filter to keep builds resolving offline
 
 ## [0.12.7] - 2026-01-15
 
