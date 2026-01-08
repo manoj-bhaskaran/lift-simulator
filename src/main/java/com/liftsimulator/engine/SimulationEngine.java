@@ -22,6 +22,9 @@ public class SimulationEngine {
     private int doorTicksRemaining;
     private int doorDwellTicksRemaining;
     private int doorClosingTicksElapsed;
+    private boolean outOfServicePending;
+    private boolean outOfServiceDoorsOpened;
+    private int outOfServiceTargetFloor;
 
     public SimulationEngine(LiftController controller, int minFloor, int maxFloor) {
         this(controller, minFloor, maxFloor, 1, 2, 3, -1);
@@ -99,6 +102,13 @@ public class SimulationEngine {
      * The controller decides the next action, which is then applied to update the state.
      */
     public void tick() {
+        // Handle pending out-of-service transition
+        if (outOfServicePending) {
+            handleOutOfServiceTransition();
+            clock.tick();
+            return;
+        }
+
         // Ask controller for next action
         Action action = controller.decideNextAction(currentState, clock.getCurrentTick());
 
@@ -244,6 +254,152 @@ public class SimulationEngine {
 
     public LiftState getCurrentState() {
         return currentState;
+    }
+
+    /**
+     * Takes the lift out of service.
+     * This initiates a graceful shutdown sequence:
+     * 1. If moving: completes movement to the next floor
+     * 2. Opens doors to allow passengers to exit
+     * 3. Closes doors
+     * 4. Transitions to OUT_OF_SERVICE state
+     *
+     * Best practice: Call controller.takeOutOfService() first to cancel all active requests
+     * before calling this method.
+     *
+     * @throws IllegalStateException if the lift is already out of service or pending
+     */
+    public void setOutOfService() {
+        if (currentState.getStatus() == LiftStatus.OUT_OF_SERVICE) {
+            throw new IllegalStateException("Lift is already out of service");
+        }
+
+        if (outOfServicePending) {
+            throw new IllegalStateException("Lift is already pending out of service");
+        }
+
+        // Validate that we can eventually transition to OUT_OF_SERVICE
+        if (!StateTransitionValidator.isValidTransition(currentState.getStatus(), LiftStatus.OUT_OF_SERVICE)) {
+            throw new IllegalStateException(
+                String.format("Cannot transition to OUT_OF_SERVICE from %s", currentState.getStatus())
+            );
+        }
+
+        // Set pending flag to initiate graceful shutdown sequence
+        outOfServicePending = true;
+        outOfServiceDoorsOpened = currentState.getStatus() == LiftStatus.DOORS_OPEN ||
+            currentState.getStatus() == LiftStatus.DOORS_OPENING;
+
+        // Determine target floor for graceful shutdown
+        // If moving, complete movement to the next floor in direction of travel
+        if (currentState.getStatus() == LiftStatus.MOVING_UP) {
+            outOfServiceTargetFloor = Math.min(maxFloor, currentState.getFloor() + 1);
+        } else if (currentState.getStatus() == LiftStatus.MOVING_DOWN) {
+            outOfServiceTargetFloor = Math.max(minFloor, currentState.getFloor() - 1);
+        } else {
+            // Not moving, stop at current floor
+            outOfServiceTargetFloor = currentState.getFloor();
+        }
+
+        // If doors are already open, skip remaining dwell time for emergency shutdown
+        if (currentState.getStatus() == LiftStatus.DOORS_OPEN && doorDwellTicksRemaining > 0) {
+            doorDwellTicksRemaining = 0;
+        }
+    }
+
+    /**
+     * Returns the lift to service from OUT_OF_SERVICE state.
+     * This transitions the lift from OUT_OF_SERVICE to IDLE, allowing it to accept
+     * requests and operate normally again.
+     *
+     * @throws IllegalStateException if the lift is not currently out of service
+     */
+    public void returnToService() {
+        if (currentState.getStatus() != LiftStatus.OUT_OF_SERVICE) {
+            throw new IllegalStateException(
+                String.format("Cannot return to service from %s state (must be OUT_OF_SERVICE)",
+                    currentState.getStatus())
+            );
+        }
+
+        // Validate transition
+        if (!StateTransitionValidator.isValidTransition(LiftStatus.OUT_OF_SERVICE, LiftStatus.IDLE)) {
+            throw new IllegalStateException("Cannot transition from OUT_OF_SERVICE to IDLE");
+        }
+
+        // Transition to IDLE
+        currentState = new LiftState(currentState.getFloor(), LiftStatus.IDLE);
+    }
+
+    /**
+     * Handles the graceful out-of-service transition sequence.
+     * This method is called on each tick when outOfServicePending is true.
+     */
+    private void handleOutOfServiceTransition() {
+        LiftStatus status = currentState.getStatus();
+
+        // Step 1: If moving, continue until we reach the target floor, then stop
+        if (status == LiftStatus.MOVING_UP || status == LiftStatus.MOVING_DOWN) {
+            if (currentState.getFloor() != outOfServiceTargetFloor) {
+                // Haven't reached target floor yet, continue moving
+                if (movementTicksRemaining > 0) {
+                    advanceMovement();
+                    return;
+                }
+                // Need to start movement to next floor
+                movementTicksRemaining = travelTicksPerFloor;
+                advanceMovement();
+                return;
+            }
+            // Reached target floor, transition to IDLE
+            currentState = new LiftState(currentState.getFloor(), LiftStatus.IDLE);
+            status = LiftStatus.IDLE;  // Update local variable to allow fall-through
+            // Fall through to Step 4 to start opening doors on the same tick
+        }
+
+        // Step 2: If doors are in transition, let them complete
+        if (status == LiftStatus.DOORS_OPENING || status == LiftStatus.DOORS_CLOSING) {
+            if (doorTicksRemaining > 0) {
+                advanceDoorTransition();
+                status = currentState.getStatus();  // Update status after transition
+                if (doorTicksRemaining > 0) {
+                    // Still in transition
+                    return;
+                }
+                // Transition completed on this tick, fall through to next step
+            } else {
+                // Door transition already complete, update status and fall through
+                status = currentState.getStatus();
+            }
+        }
+
+        // Step 3: If doors are open, handle dwell time
+        if (status == LiftStatus.DOORS_OPEN) {
+            advanceDoorDwell();
+            return;
+        }
+
+        // Step 4: At this point we're IDLE. If we haven't opened doors yet, open them
+        if (status == LiftStatus.IDLE && !outOfServiceDoorsOpened) {
+            currentState = new LiftState(currentState.getFloor(), LiftStatus.DOORS_OPENING);
+            doorTicksRemaining = doorTransitionTicks;
+            doorClosingTicksElapsed = 0;
+            outOfServiceDoorsOpened = true;
+            advanceDoorTransition();
+            return;
+        }
+
+        // Step 5: If we're IDLE and doors have been opened/closed, transition to OUT_OF_SERVICE
+        if (status == LiftStatus.IDLE && outOfServiceDoorsOpened) {
+            currentState = new LiftState(currentState.getFloor(), LiftStatus.OUT_OF_SERVICE);
+            outOfServicePending = false;
+            outOfServiceDoorsOpened = false;
+            // Reset all timing counters
+            movementTicksRemaining = 0;
+            doorTicksRemaining = 0;
+            doorDwellTicksRemaining = 0;
+            doorClosingTicksElapsed = 0;
+        }
     }
 
     private void advanceMovement() {

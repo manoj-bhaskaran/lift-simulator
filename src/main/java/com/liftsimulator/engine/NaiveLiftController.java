@@ -342,6 +342,41 @@ public class NaiveLiftController implements LiftController {
     }
 
     /**
+     * Takes the lift out of service by cancelling all active requests.
+     * This method cancels all non-terminal requests (QUEUED, ASSIGNED, SERVING).
+     * After calling this method, the lift should be transitioned to OUT_OF_SERVICE
+     * state via the SimulationEngine.
+     *
+     * The lift will:
+     * - Stop at the nearest floor if moving
+     * - Open and close doors if at a floor
+     * - Cancel all pending requests
+     */
+    public void takeOutOfService() {
+        // Cancel all active (non-terminal) requests
+        Set<LiftRequest> activeRequests = new HashSet<>(getActiveRequests());
+        for (LiftRequest request : activeRequests) {
+            if (!request.isTerminal()) {
+                request.transitionTo(RequestState.CANCELLED);
+                requests.remove(request);
+            }
+        }
+
+        // Reset idle tracking and parking state
+        resetIdleTracking();
+    }
+
+    /**
+     * Prepares the lift to return to service.
+     * After calling this method, the lift should be transitioned from OUT_OF_SERVICE
+     * to IDLE state via the SimulationEngine.
+     */
+    public void returnToService() {
+        // Reset idle tracking when returning to service
+        resetIdleTracking();
+    }
+
+    /**
      * Gets all requests (for testing purposes).
      *
      * @return a copy of all requests

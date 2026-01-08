@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2026-01-08
+
+### Fixed
+- Align out-of-service integration test flow with the required stop tick before door opening
+
+## [0.9.2] - 2026-01-08
+
+### Fixed
+- Preserve MOVING_* status on arrival until controller decisions so door dwell timing and parking interruptions occur after a stop tick
+
+## [0.9.1] - 2026-01-08
+
+### Fixed
+- Normalize movement status before controller decisions so doors can open immediately after arriving at a requested floor
+- Avoid reopening doors during out-of-service shutdown when doors are already open or opening
+
+## [0.9.0] - 2026-01-08
+
+### Added
+- **Out-of-service functionality**: Full support for taking lifts out of service safely
+- `takeOutOfService()` method in `NaiveLiftController` to cancel all active requests when taking lift out of service
+- `returnToService()` method in `NaiveLiftController` to prepare lift for returning to normal operation
+- `setOutOfService()` method in `SimulationEngine` to transition lift to OUT_OF_SERVICE state from any state
+- `returnToService()` method in `SimulationEngine` to transition from OUT_OF_SERVICE back to IDLE state
+- Automatic cancellation of all pending requests (QUEUED, ASSIGNED, SERVING) when taking lift out of service
+- Comprehensive test suite (`OutOfServiceTest`) covering entering/exiting service from all states
+- Demo updated to showcase out-of-service scenario at tick 25 and return to service at tick 30
+- Documentation of out-of-service behavior in README with usage examples
+
+### Changed
+- OUT_OF_SERVICE state (already existed since v0.2.0) now has full operational support
+- Lifts in OUT_OF_SERVICE state cannot move, open doors, or accept new requests
+- Demo simulation extended to 50 ticks to show complete out-of-service workflow
+
+### Design Decisions
+- Taking lift out of service immediately cancels all unserviced requests for safety
+- **Graceful shutdown sequence**: If moving, lift completes movement to next floor; doors then open to allow passenger exit, then close, before transitioning to OUT_OF_SERVICE
+- Ensures passenger safety by allowing exit before going offline
+- If lift is stationary with doors closed, doors still open/close to ensure nobody is trapped
+- Door state is CLOSED when out of service (derived from status)
+- Direction is IDLE when out of service (derived from status)
+- Returning to service transitions to IDLE state, ready to accept new requests
+- Two-step process: controller cancels requests, engine manages graceful shutdown (separation of concerns)
+
 ## [0.8.0] - 2026-01-06
 
 ### Added
@@ -227,6 +271,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Immutable state objects to avoid bugs from shared mutable state
 - Separated controller logic from simulation engine for flexibility
 
+[0.9.1]: https://github.com/manoj-bhaskaran/lift-simulator/compare/v0.9.0...v0.9.1
 [0.6.0]: https://github.com/manoj-bhaskaran/lift-simulator/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/manoj-bhaskaran/lift-simulator/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.4.0
