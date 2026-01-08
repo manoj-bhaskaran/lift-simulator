@@ -154,11 +154,13 @@ controller.returnToService();   // Prepares controller for normal operation
 engine.returnToService();       // Transitions to IDLE state
 ```
 
-**Behavior when taking out of service:**
+**Behavior when taking out of service (graceful shutdown):**
 - All pending requests (QUEUED, ASSIGNED, SERVING) are immediately cancelled
-- Lift stops at its current floor
-- Doors close (if they were open)
-- Lift cannot move, open doors, or accept new requests while out of service
+- If the lift is moving, it completes movement to the next floor in its current direction
+- Doors open to allow passengers to exit safely
+- Doors close after dwell time
+- Lift transitions to OUT_OF_SERVICE state
+- While OUT_OF_SERVICE: cannot move, open doors, or accept new requests
 
 **Behavior when returning to service:**
 - Lift transitions to IDLE state at its current floor

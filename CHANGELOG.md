@@ -25,11 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Design Decisions
 - Taking lift out of service immediately cancels all unserviced requests for safety
-- Lift stops at current floor when taken out of service (no automatic movement to safe floor)
+- **Graceful shutdown sequence**: If moving, lift completes movement to next floor; doors then open to allow passenger exit, then close, before transitioning to OUT_OF_SERVICE
+- Ensures passenger safety by allowing exit before going offline
+- If lift is stationary with doors closed, doors still open/close to ensure nobody is trapped
 - Door state is CLOSED when out of service (derived from status)
 - Direction is IDLE when out of service (derived from status)
 - Returning to service transitions to IDLE state, ready to accept new requests
-- Two-step process: controller cancels requests, engine changes state (separation of concerns)
+- Two-step process: controller cancels requests, engine manages graceful shutdown (separation of concerns)
 
 ## [0.8.0] - 2026-01-06
 

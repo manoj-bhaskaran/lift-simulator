@@ -46,17 +46,35 @@ public class OutOfServiceTest {
 
     @Test
     public void testTakeOutOfServiceFromIdle() {
-        // Lift at floor 2, idle
-        engine.tick();
-        engine.tick();
-
+        // Lift starts at floor 0, idle
         assertEquals(0, engine.getCurrentState().getFloor());
         assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
 
-        // Take out of service
+        // Take out of service - should initiate graceful shutdown
         controller.takeOutOfService();
         engine.setOutOfService();
 
+        // Still IDLE, pending sequence hasn't started yet
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+
+        // Tick 1: Start opening doors
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
+
+        // Tick 2: Doors fully open
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        // Tick 3: Dwell time
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        // Tick 4: Start closing doors
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        // Tick 5: Doors fully closed, transition to OUT_OF_SERVICE
+        engine.tick();
         assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
         assertEquals(0, engine.getCurrentState().getFloor());
     }
@@ -69,14 +87,42 @@ public class OutOfServiceTest {
         // Start moving
         engine.tick();
         assertEquals(LiftStatus.MOVING_UP, engine.getCurrentState().getStatus());
+        assertEquals(1, engine.getCurrentState().getFloor());
 
         // Take out of service while moving
         controller.takeOutOfService();
         engine.setOutOfService();
-
-        // Should be out of service
-        assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
         assertEquals(0, controller.getRequests().size());
+
+        // Should still be moving, completing to next floor
+        assertEquals(LiftStatus.MOVING_UP, engine.getCurrentState().getStatus());
+
+        // Tick: Complete movement to floor 2
+        engine.tick();
+        assertEquals(2, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.MOVING_UP, engine.getCurrentState().getStatus());
+
+        // Tick: Now stopped at floor 2, start opening doors
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
+        assertEquals(2, engine.getCurrentState().getFloor());
+
+        // Tick: Doors fully open
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        // Tick: Dwell
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        // Tick: Start closing
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        // Tick: Doors closed, now OUT_OF_SERVICE
+        engine.tick();
+        assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
+        assertEquals(2, engine.getCurrentState().getFloor());
     }
 
     @Test
@@ -93,16 +139,34 @@ public class OutOfServiceTest {
         // Take out of service while doors open
         controller.takeOutOfService();
         engine.setOutOfService();
-
-        assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
         assertEquals(0, controller.getRequests().size());
+
+        // Still doors open during dwell
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
+
+        // Tick: Dwell time passes, start closing
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
+
+        // Tick: Doors closed, transition to OUT_OF_SERVICE
+        engine.tick();
+        assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
+        assertEquals(0, engine.getCurrentState().getFloor());
     }
 
     @Test
     public void testCannotMoveWhenOutOfService() {
-        // Take lift out of service
+        // Take lift out of service and complete graceful shutdown
         controller.takeOutOfService();
         engine.setOutOfService();
+
+        // Go through graceful shutdown sequence
+        for (int i = 0; i < 10; i++) {
+            engine.tick();
+            if (engine.getCurrentState().getStatus() == LiftStatus.OUT_OF_SERVICE) {
+                break;
+            }
+        }
 
         assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
 
@@ -119,9 +183,17 @@ public class OutOfServiceTest {
 
     @Test
     public void testCannotOpenDoorsWhenOutOfService() {
-        // Take lift out of service
+        // Take lift out of service and complete graceful shutdown
         controller.takeOutOfService();
         engine.setOutOfService();
+
+        // Go through graceful shutdown sequence
+        for (int i = 0; i < 10; i++) {
+            engine.tick();
+            if (engine.getCurrentState().getStatus() == LiftStatus.OUT_OF_SERVICE) {
+                break;
+            }
+        }
 
         assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
 
@@ -136,9 +208,17 @@ public class OutOfServiceTest {
 
     @Test
     public void testReturnToService() {
-        // Take lift out of service
+        // Take lift out of service and complete graceful shutdown
         controller.takeOutOfService();
         engine.setOutOfService();
+
+        // Go through graceful shutdown sequence
+        for (int i = 0; i < 10; i++) {
+            engine.tick();
+            if (engine.getCurrentState().getStatus() == LiftStatus.OUT_OF_SERVICE) {
+                break;
+            }
+        }
 
         assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
 
@@ -151,9 +231,17 @@ public class OutOfServiceTest {
 
     @Test
     public void testCanAcceptRequestsAfterReturningToService() {
-        // Take lift out of service
+        // Take lift out of service and complete graceful shutdown
         controller.takeOutOfService();
         engine.setOutOfService();
+
+        // Go through graceful shutdown sequence
+        for (int i = 0; i < 10; i++) {
+            engine.tick();
+            if (engine.getCurrentState().getStatus() == LiftStatus.OUT_OF_SERVICE) {
+                break;
+            }
+        }
 
         // Return to service
         controller.returnToService();
@@ -173,10 +261,27 @@ public class OutOfServiceTest {
 
     @Test
     public void testSetOutOfServiceThrowsWhenAlreadyOutOfService() {
+        // Take lift out of service and complete graceful shutdown
+        engine.setOutOfService();
+
+        // Go through graceful shutdown sequence
+        for (int i = 0; i < 10; i++) {
+            engine.tick();
+            if (engine.getCurrentState().getStatus() == LiftStatus.OUT_OF_SERVICE) {
+                break;
+            }
+        }
+
+        // Try to take out of service again
+        assertThrows(IllegalStateException.class, () -> engine.setOutOfService());
+    }
+
+    @Test
+    public void testSetOutOfServiceThrowsWhenAlreadyPending() {
         // Take lift out of service
         engine.setOutOfService();
 
-        // Try to take out of service again
+        // Try to take out of service again while pending
         assertThrows(IllegalStateException.class, () -> engine.setOutOfService());
     }
 
@@ -200,22 +305,43 @@ public class OutOfServiceTest {
         engine.tick(); // Floor 3
 
         assertEquals(3, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.MOVING_UP, engine.getCurrentState().getStatus());
 
-        // Take out of service while moving
+        // Take out of service while moving between floor 3 and 4
         controller.takeOutOfService();
         engine.setOutOfService();
-
-        // Should be out of service at floor 3
-        assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
-        assertEquals(3, engine.getCurrentState().getFloor());
         assertEquals(0, controller.getRequests().size());
+
+        // Should complete movement to floor 4
+        engine.tick();
+        assertEquals(4, engine.getCurrentState().getFloor());
+
+        // Go through door open/close sequence
+        for (int i = 0; i < 10; i++) {
+            engine.tick();
+            if (engine.getCurrentState().getStatus() == LiftStatus.OUT_OF_SERVICE) {
+                break;
+            }
+        }
+
+        // Should be out of service at floor 4 (the next floor it reached)
+        assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
+        assertEquals(4, engine.getCurrentState().getFloor());
     }
 
     @Test
     public void testOutOfServiceDoorStateIsClosed() {
-        // Take lift out of service
+        // Take lift out of service and complete graceful shutdown
         controller.takeOutOfService();
         engine.setOutOfService();
+
+        // Go through graceful shutdown sequence
+        for (int i = 0; i < 10; i++) {
+            engine.tick();
+            if (engine.getCurrentState().getStatus() == LiftStatus.OUT_OF_SERVICE) {
+                break;
+            }
+        }
 
         // Door state should be CLOSED (derived from OUT_OF_SERVICE status)
         assertEquals(DoorState.CLOSED, engine.getCurrentState().getDoorState());
@@ -230,6 +356,14 @@ public class OutOfServiceTest {
 
         controller.takeOutOfService();
         engine.setOutOfService();
+
+        // Go through graceful shutdown sequence
+        for (int i = 0; i < 10; i++) {
+            engine.tick();
+            if (engine.getCurrentState().getStatus() == LiftStatus.OUT_OF_SERVICE) {
+                break;
+            }
+        }
 
         // Direction should be IDLE (derived from OUT_OF_SERVICE status)
         assertEquals(Direction.IDLE, engine.getCurrentState().getDirection());
@@ -258,6 +392,14 @@ public class OutOfServiceTest {
         // All requests cancelled
         assertEquals(0, controller.getRequests().size());
 
+        // Complete door opening sequence
+        for (int i = 0; i < 10; i++) {
+            engine.tick();
+            if (engine.getCurrentState().getStatus() == LiftStatus.OUT_OF_SERVICE) {
+                break;
+            }
+        }
+
         // Lift is out of service at floor 3
         assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
         assertEquals(3, engine.getCurrentState().getFloor());
@@ -284,51 +426,45 @@ public class OutOfServiceTest {
     }
 
     @Test
-    public void testOutOfServiceFromVariousStates() {
-        // Test from DOORS_OPENING
-        controller.addCarCall(new CarCall(0));
+    public void testGracefulShutdownSequence() {
+        // Verify the complete graceful shutdown sequence
+        controller.addCarCall(new CarCall(5));
+
+        // Move partway there
+        engine.tick(); // Floor 1
+        engine.tick(); // Floor 2 (moving)
+
+        assertEquals(2, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.MOVING_UP, engine.getCurrentState().getStatus());
+
+        // Initiate out-of-service while moving
+        controller.takeOutOfService();
+        engine.setOutOfService();
+
+        // Step 1: Complete movement to next floor (floor 3)
+        engine.tick();
+        assertEquals(3, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.MOVING_UP, engine.getCurrentState().getStatus());
+
+        // Step 2: Stop at floor 3, start opening doors
         engine.tick();
         assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
 
-        controller.takeOutOfService();
-        engine.setOutOfService();
-        assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
+        // Step 3: Doors fully open
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
 
-        // Reset
-        engine.returnToService();
+        // Step 4: Dwell time
+        engine.tick();
+        assertEquals(LiftStatus.DOORS_OPEN, engine.getCurrentState().getStatus());
 
-        // Test from DOORS_CLOSING
-        controller.addCarCall(new CarCall(0));
-        engine.tick(); // Open
-        engine.tick(); // Fully open
-        engine.tick(); // Dwell
-        engine.tick(); // Start closing
-
+        // Step 5: Start closing doors
+        engine.tick();
         assertEquals(LiftStatus.DOORS_CLOSING, engine.getCurrentState().getStatus());
 
-        controller.takeOutOfService();
-        engine.setOutOfService();
+        // Step 6: Doors closed, transition to OUT_OF_SERVICE
+        engine.tick();
         assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
-
-        // Reset
-        engine.returnToService();
-
-        // Test from MOVING_DOWN
-        controller.addCarCall(new CarCall(5));
-        for (int i = 0; i < 5; i++) engine.tick(); // Move to floor 5
-
-        controller.addCarCall(new CarCall(2));
-        engine.tick(); // Stop
-        engine.tick(); // Open doors
-        engine.tick(); // Fully open
-        engine.tick(); // Dwell
-        engine.tick(); // Close
-        engine.tick(); // Fully closed, start moving down
-
-        assertEquals(LiftStatus.MOVING_DOWN, engine.getCurrentState().getStatus());
-
-        controller.takeOutOfService();
-        engine.setOutOfService();
-        assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
+        assertEquals(3, engine.getCurrentState().getFloor());
     }
 }

@@ -8,6 +8,7 @@ import com.liftsimulator.domain.DoorState;
 import com.liftsimulator.domain.HallCall;
 import com.liftsimulator.domain.LiftRequest;
 import com.liftsimulator.domain.LiftState;
+import com.liftsimulator.domain.LiftStatus;
 import com.liftsimulator.domain.RequestState;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,9 +35,9 @@ public class Main {
         System.out.println("  - Car call to floor 3");
         System.out.println("  - Hall call from floor 7 going UP");
         System.out.println("  - Car call to floor 5");
-        System.out.println("  - Car call to floor 8 (will be cancelled mid-simulation)");
-        System.out.println("  - Out-of-service event at tick 25");
-        System.out.println("  - Return to service at tick 30");
+        System.out.println("  - Car call to floor 8 (will be cancelled at tick 15)");
+        System.out.println("  - Graceful out-of-service initiated at tick 25");
+        System.out.println("  - Return to service at tick 35");
         System.out.println();
 
         controller.addCarCall(new CarCall(3));
@@ -63,22 +64,28 @@ public class Main {
                 notes = "*** CANCELLED request to floor 8 ***";
             }
 
-            // Take lift out of service at tick 25
+            // Take lift out of service at tick 25 (graceful shutdown begins)
             if (i == 25 && state.getStatus() != LiftStatus.OUT_OF_SERVICE) {
                 controller.takeOutOfService();
                 engine.setOutOfService();
-                notes = "*** LIFT OUT OF SERVICE ***";
+                notes = "*** INITIATING OUT-OF-SERVICE (graceful shutdown) ***";
             }
 
-            // Return lift to service at tick 30
-            if (i == 30 && state.getStatus() == LiftStatus.OUT_OF_SERVICE) {
+            // Mark when OUT_OF_SERVICE is actually reached
+            if (i > 25 && i < 35 && state.getStatus() == LiftStatus.OUT_OF_SERVICE &&
+                (i == 0 || engine.getCurrentState().getStatus() != LiftStatus.OUT_OF_SERVICE)) {
+                // This condition is a bit tricky due to timing, simplified with range check
+            }
+
+            // Return lift to service (whenever it's actually OUT_OF_SERVICE)
+            if (i == 35 && state.getStatus() == LiftStatus.OUT_OF_SERVICE) {
                 controller.returnToService();
                 engine.returnToService();
-                notes = "*** LIFT RETURNED TO SERVICE ***";
+                notes = "*** RETURNED TO SERVICE ***";
             }
 
             // Add a new request after returning to service
-            if (i == 31) {
+            if (i == 36) {
                 controller.addCarCall(new CarCall(4));
                 notes = "*** NEW request to floor 4 ***";
             }
@@ -116,8 +123,12 @@ public class Main {
         System.out.println("All requests serviced using naive scheduling (nearest floor first).");
         System.out.println("\nKey events:");
         System.out.println("  - Request to floor 8 was cancelled at tick 15 and never serviced.");
-        System.out.println("  - Lift taken out of service at tick 25, all pending requests cancelled.");
-        System.out.println("  - Lift returned to service at tick 30.");
+        System.out.println("  - Out-of-service initiated at tick 25 with graceful shutdown sequence:");
+        System.out.println("    * All pending requests cancelled immediately");
+        System.out.println("    * Lift completes movement to next floor (if moving)");
+        System.out.println("    * Doors open to allow passenger exit, then close");
+        System.out.println("    * Transitions to OUT_OF_SERVICE state");
+        System.out.println("  - Lift returned to service at tick 35.");
         System.out.println("  - New request to floor 4 added and serviced after returning to service.");
     }
 
