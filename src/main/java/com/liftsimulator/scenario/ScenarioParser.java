@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class ScenarioParser {
     public ScenarioDefinition parse(Path path) throws IOException {
@@ -118,7 +119,7 @@ public class ScenarioParser {
                 }
 
                 long tick = parseTick(tokens[0], sourceName, lineNumber);
-                String action = tokens[1].toLowerCase();
+                String action = tokens[1].toLowerCase(Locale.ROOT);
                 Integer floorValue = extractFloorValue(action, tokens);
                 if (floorValue != null) {
                     minFloor = minFloor == null ? floorValue : Math.min(minFloor, floorValue);
@@ -198,7 +199,7 @@ public class ScenarioParser {
         }
         String alias = tokens[2];
         int floor = Integer.parseInt(tokens[3]);
-        Direction direction = Direction.valueOf(tokens[4].toUpperCase());
+        Direction direction = Direction.valueOf(tokens[4].toUpperCase(Locale.ROOT));
         String description = String.format("Hall call %s at %d %s", alias, floor, direction);
         return new ScenarioEvent(tick, description, context -> {
             LiftRequest request = LiftRequest.hallCall(floor, direction);

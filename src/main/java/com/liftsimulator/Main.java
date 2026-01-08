@@ -71,12 +71,6 @@ public class Main {
                 notes = "*** INITIATING OUT-OF-SERVICE (graceful shutdown) ***";
             }
 
-            // Mark when OUT_OF_SERVICE is actually reached
-            if (i > 25 && i < 35 && state.getStatus() == LiftStatus.OUT_OF_SERVICE &&
-                (i == 0 || engine.getCurrentState().getStatus() != LiftStatus.OUT_OF_SERVICE)) {
-                // This condition is a bit tricky due to timing, simplified with range check
-            }
-
             // Return lift to service (whenever it's actually OUT_OF_SERVICE)
             if (i == 35 && state.getStatus() == LiftStatus.OUT_OF_SERVICE) {
                 controller.returnToService();

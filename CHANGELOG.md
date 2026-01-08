@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.10] - 2026-01-18
+
+### Fixed
+- Replace SpotBugs annotation dependency with a local exclude filter to keep builds resolving offline
+
+## [0.12.7] - 2026-01-15
+
+### Added
+- Expand CI to include build, coverage, style checks, static analysis, and packaging steps
+- Add Checkstyle and SpotBugs tooling with a shared Checkstyle configuration
+
 ## [0.12.6] - 2026-01-14
 
 ### Added
