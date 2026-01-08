@@ -1,0 +1,13 @@
+# Demo scenario showcasing multiple events and lifecycle changes
+name: Demo scenario - multiple events
+ticks: 30
+
+# Format: tick, action, alias, args...
+# Actions: car_call, hall_call, cancel, out_of_service, return_to_service
+0, car_call, req1, 3
+2, hall_call, req2, 7, UP
+4, car_call, req3, 5
+10, cancel, req3
+15, out_of_service
+20, return_to_service
+22, car_call, req4, 4
