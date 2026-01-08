@@ -83,6 +83,14 @@ mvn clean package
 
 The packaged JAR will be in `target/lift-simulator-0.12.3.jar`.
 
+## Running Tests
+
+Run the test suite with Maven:
+
+```bash
+mvn test
+```
+
 ## Running the Simulation
 
 Run the demo simulation:
