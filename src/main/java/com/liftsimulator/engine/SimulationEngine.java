@@ -320,13 +320,14 @@ public class SimulationEngine {
     private void handleOutOfServiceTransition() {
         LiftStatus status = currentState.getStatus();
 
-        // Step 1: If moving, continue until we reach the next floor
+        // Step 1: If moving, continue until we reach the next floor, then stop
         if (status == LiftStatus.MOVING_UP || status == LiftStatus.MOVING_DOWN) {
             if (movementTicksRemaining > 0) {
                 advanceMovement();
                 return;
             }
-            // Movement complete, now at next floor in IDLE state
+            // Movement complete, transition to IDLE
+            currentState = new LiftState(currentState.getFloor(), LiftStatus.IDLE);
             return;
         }
 
@@ -346,7 +347,7 @@ public class SimulationEngine {
                 advanceDoorDwell();
                 return;
             }
-            // Dwell complete, doors will start closing automatically
+            // Dwell complete, doors will start closing automatically via advanceDoorDwell
             return;
         }
 
