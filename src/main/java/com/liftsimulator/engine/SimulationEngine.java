@@ -25,6 +25,7 @@ public class SimulationEngine {
     private boolean outOfServicePending;
     private boolean outOfServiceDoorsOpened;
     private int outOfServiceTargetFloor;
+    private boolean returnToServicePending;
 
     public SimulationEngine(LiftController controller, int minFloor, int maxFloor) {
         this(controller, minFloor, maxFloor, 1, 2, 3, -1);
@@ -315,6 +316,11 @@ public class SimulationEngine {
      * @throws IllegalStateException if the lift is not currently out of service
      */
     public void returnToService() {
+        if (outOfServicePending) {
+            returnToServicePending = true;
+            return;
+        }
+
         if (currentState.getStatus() != LiftStatus.OUT_OF_SERVICE) {
             throw new IllegalStateException(
                 String.format("Cannot return to service from %s state (must be OUT_OF_SERVICE)",
@@ -329,6 +335,7 @@ public class SimulationEngine {
 
         // Transition to IDLE
         currentState = new LiftState(currentState.getFloor(), LiftStatus.IDLE);
+        returnToServicePending = false;
     }
 
     /**
@@ -399,6 +406,9 @@ public class SimulationEngine {
             doorTicksRemaining = 0;
             doorDwellTicksRemaining = 0;
             doorClosingTicksElapsed = 0;
+            if (returnToServicePending) {
+                returnToService();
+            }
         }
     }
 
