@@ -109,6 +109,12 @@ public class SimulationEngine {
             return;
         }
 
+        if (movementTicksRemaining == 0 &&
+            (currentState.getStatus() == LiftStatus.MOVING_UP ||
+             currentState.getStatus() == LiftStatus.MOVING_DOWN)) {
+            currentState = new LiftState(currentState.getFloor(), LiftStatus.IDLE);
+        }
+
         // Ask controller for next action
         Action action = controller.decideNextAction(currentState, clock.getCurrentTick());
 
@@ -287,7 +293,8 @@ public class SimulationEngine {
 
         // Set pending flag to initiate graceful shutdown sequence
         outOfServicePending = true;
-        outOfServiceDoorsOpened = false;
+        outOfServiceDoorsOpened = currentState.getStatus() == LiftStatus.DOORS_OPEN ||
+            currentState.getStatus() == LiftStatus.DOORS_OPENING;
 
         // Determine target floor for graceful shutdown
         // If moving, complete movement to the next floor in direction of travel
