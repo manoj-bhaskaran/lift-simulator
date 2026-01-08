@@ -246,6 +246,62 @@ public class SimulationEngine {
         return currentState;
     }
 
+    /**
+     * Takes the lift out of service.
+     * This method transitions the lift to OUT_OF_SERVICE state from any current state.
+     * The lift will stop accepting new requests and cannot move or open doors.
+     *
+     * Best practice: Call controller.takeOutOfService() first to cancel all active requests
+     * before calling this method.
+     *
+     * @throws IllegalStateException if the lift is already out of service
+     */
+    public void setOutOfService() {
+        if (currentState.getStatus() == LiftStatus.OUT_OF_SERVICE) {
+            throw new IllegalStateException("Lift is already out of service");
+        }
+
+        // Validate transition
+        if (!StateTransitionValidator.isValidTransition(currentState.getStatus(), LiftStatus.OUT_OF_SERVICE)) {
+            throw new IllegalStateException(
+                String.format("Cannot transition to OUT_OF_SERVICE from %s", currentState.getStatus())
+            );
+        }
+
+        // Transition to OUT_OF_SERVICE
+        currentState = new LiftState(currentState.getFloor(), LiftStatus.OUT_OF_SERVICE);
+
+        // Reset all timing counters
+        movementTicksRemaining = 0;
+        doorTicksRemaining = 0;
+        doorDwellTicksRemaining = 0;
+        doorClosingTicksElapsed = 0;
+    }
+
+    /**
+     * Returns the lift to service from OUT_OF_SERVICE state.
+     * This transitions the lift from OUT_OF_SERVICE to IDLE, allowing it to accept
+     * requests and operate normally again.
+     *
+     * @throws IllegalStateException if the lift is not currently out of service
+     */
+    public void returnToService() {
+        if (currentState.getStatus() != LiftStatus.OUT_OF_SERVICE) {
+            throw new IllegalStateException(
+                String.format("Cannot return to service from %s state (must be OUT_OF_SERVICE)",
+                    currentState.getStatus())
+            );
+        }
+
+        // Validate transition
+        if (!StateTransitionValidator.isValidTransition(LiftStatus.OUT_OF_SERVICE, LiftStatus.IDLE)) {
+            throw new IllegalStateException("Cannot transition from OUT_OF_SERVICE to IDLE");
+        }
+
+        // Transition to IDLE
+        currentState = new LiftState(currentState.getFloor(), LiftStatus.IDLE);
+    }
+
     private void advanceMovement() {
         movementTicksRemaining--;
         if (movementTicksRemaining > 0) {

@@ -35,6 +35,8 @@ public class Main {
         System.out.println("  - Hall call from floor 7 going UP");
         System.out.println("  - Car call to floor 5");
         System.out.println("  - Car call to floor 8 (will be cancelled mid-simulation)");
+        System.out.println("  - Out-of-service event at tick 25");
+        System.out.println("  - Return to service at tick 30");
         System.out.println();
 
         controller.addCarCall(new CarCall(3));
@@ -45,8 +47,8 @@ public class Main {
         LiftRequest requestToCancel = LiftRequest.carCall(8);
         controller.addRequest(requestToCancel);
 
-        // Run simulation for 40 ticks
-        int tickCount = 40;
+        // Run simulation for 50 ticks to show out-of-service scenario
+        int tickCount = 50;
         System.out.println(String.format("%-6s %-8s %-15s %-12s %-10s %-12s %-15s",
                 "Tick", "Floor", "Status", "Direction", "Door", "Requests", "Notes"));
         System.out.println("-------------------------------------------------------------------------------------------");
@@ -61,10 +63,33 @@ public class Main {
                 notes = "*** CANCELLED request to floor 8 ***";
             }
 
+            // Take lift out of service at tick 25
+            if (i == 25 && state.getStatus() != LiftStatus.OUT_OF_SERVICE) {
+                controller.takeOutOfService();
+                engine.setOutOfService();
+                notes = "*** LIFT OUT OF SERVICE ***";
+            }
+
+            // Return lift to service at tick 30
+            if (i == 30 && state.getStatus() == LiftStatus.OUT_OF_SERVICE) {
+                controller.returnToService();
+                engine.returnToService();
+                notes = "*** LIFT RETURNED TO SERVICE ***";
+            }
+
+            // Add a new request after returning to service
+            if (i == 31) {
+                controller.addCarCall(new CarCall(4));
+                notes = "*** NEW request to floor 4 ***";
+            }
+
             // Add contextual notes
             if (i == 0) notes = "(Starting)";
             if (state.getFloor() == 3 && state.getDoorState() == DoorState.OPEN) {
                 notes = "(Servicing floor 3)";
+            }
+            if (state.getFloor() == 4 && state.getDoorState() == DoorState.OPEN) {
+                notes = "(Servicing floor 4)";
             }
             if (state.getFloor() == 5 && state.getDoorState() == DoorState.OPEN) {
                 notes = "(Servicing floor 5)";
@@ -89,7 +114,11 @@ public class Main {
 
         System.out.println("\nSimulation completed successfully!");
         System.out.println("All requests serviced using naive scheduling (nearest floor first).");
-        System.out.println("\nNote: Request to floor 8 was cancelled at tick 15 and never serviced.");
+        System.out.println("\nKey events:");
+        System.out.println("  - Request to floor 8 was cancelled at tick 15 and never serviced.");
+        System.out.println("  - Lift taken out of service at tick 25, all pending requests cancelled.");
+        System.out.println("  - Lift returned to service at tick 30.");
+        System.out.println("  - New request to floor 4 added and serviced after returning to service.");
     }
 
     /**

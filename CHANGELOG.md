@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-01-08
+
+### Added
+- **Out-of-service functionality**: Full support for taking lifts out of service safely
+- `takeOutOfService()` method in `NaiveLiftController` to cancel all active requests when taking lift out of service
+- `returnToService()` method in `NaiveLiftController` to prepare lift for returning to normal operation
+- `setOutOfService()` method in `SimulationEngine` to transition lift to OUT_OF_SERVICE state from any state
+- `returnToService()` method in `SimulationEngine` to transition from OUT_OF_SERVICE back to IDLE state
+- Automatic cancellation of all pending requests (QUEUED, ASSIGNED, SERVING) when taking lift out of service
+- Comprehensive test suite (`OutOfServiceTest`) covering entering/exiting service from all states
+- Demo updated to showcase out-of-service scenario at tick 25 and return to service at tick 30
+- Documentation of out-of-service behavior in README with usage examples
+
+### Changed
+- OUT_OF_SERVICE state (already existed since v0.2.0) now has full operational support
+- Lifts in OUT_OF_SERVICE state cannot move, open doors, or accept new requests
+- Demo simulation extended to 50 ticks to show complete out-of-service workflow
+
+### Design Decisions
+- Taking lift out of service immediately cancels all unserviced requests for safety
+- Lift stops at current floor when taken out of service (no automatic movement to safe floor)
+- Door state is CLOSED when out of service (derived from status)
+- Direction is IDLE when out of service (derived from status)
+- Returning to service transitions to IDLE state, ready to accept new requests
+- Two-step process: controller cancels requests, engine changes state (separation of concerns)
+
 ## [0.8.0] - 2026-01-06
 
 ### Added

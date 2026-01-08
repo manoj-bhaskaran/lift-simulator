@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.8.0**
+Current version: **0.9.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -20,7 +20,8 @@ The simulation is text-based and designed for clarity over visual appeal.
 
 ## Features
 
-The current version (v0.8.0) implements:
+The current version (v0.9.0) implements:
+- **Out-of-service functionality**: Take lifts out of service safely for maintenance or emergencies, automatically cancelling all pending requests
 - **Request lifecycle management**: Requests are first-class entities with explicit lifecycle states (CREATED → QUEUED → ASSIGNED → SERVING → COMPLETED/CANCELLED)
 - **Request cancellation**: Cancel hall and car calls by request ID at any point before completion
 - **Request state tracking**: Every request has a unique ID and progresses through validated state transitions
@@ -79,7 +80,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.8.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.9.0.jar`.
 
 ## Running the Simulation
 
@@ -92,7 +93,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.8.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.9.0.jar com.liftsimulator.Main
 ```
 
 The demo runs a pre-configured scenario with several lift requests and displays the simulation state at each tick.
@@ -136,6 +137,39 @@ NaiveLiftController controller = new NaiveLiftController(
 
 - **homeFloor**: The floor to park on when idle
 - **idleTimeoutTicks**: How many idle ticks before the lift starts parking (0 means park immediately)
+
+## Taking Lifts Out of Service
+
+You can take a lift out of service for maintenance or emergency situations:
+
+```java
+// Take lift out of service
+controller.takeOutOfService();  // Cancels all pending requests
+engine.setOutOfService();       // Transitions to OUT_OF_SERVICE state
+
+// ... lift is now offline and cannot move or accept requests ...
+
+// Return to service
+controller.returnToService();   // Prepares controller for normal operation
+engine.returnToService();       // Transitions to IDLE state
+```
+
+**Behavior when taking out of service:**
+- All pending requests (QUEUED, ASSIGNED, SERVING) are immediately cancelled
+- Lift stops at its current floor
+- Doors close (if they were open)
+- Lift cannot move, open doors, or accept new requests while out of service
+
+**Behavior when returning to service:**
+- Lift transitions to IDLE state at its current floor
+- Can immediately accept and service new requests
+- Operates normally as if freshly initialized
+
+**Use cases:**
+- Emergency stop situations
+- Scheduled maintenance windows
+- Simulating equipment failures
+- Testing failover scenarios in multi-lift systems
 
 ## Running Tests
 
@@ -300,10 +334,11 @@ src/
 │       └── StateTransitionValidator.java  # State machine validator
 └── test/java/com/liftsimulator/
     ├── domain/
-    │   └── LiftRequestTest.java           # Request lifecycle tests (NEW)
+    │   └── LiftRequestTest.java           # Request lifecycle tests
     ├── engine/
-    │   ├── LiftRequestLifecycleTest.java  # Controller integration tests (NEW)
+    │   ├── LiftRequestLifecycleTest.java  # Controller integration tests
     │   ├── NaiveLiftControllerTest.java   # Controller unit tests
+    │   ├── OutOfServiceTest.java          # Out-of-service tests
     │   └── SimulationEngineTest.java      # Engine unit tests
     └── ...                                # Additional tests
 ```
