@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.12] - 2026-01-20
+
+### Changed
+- Index active lift requests by ID in the naive controller to avoid linear lookups during cancellation
+
 ## [0.12.11] - 2026-01-19
 
 ### Added
