@@ -27,101 +27,97 @@ public class SimulationEngine {
     private int outOfServiceTargetFloor;
     private boolean returnToServicePending;
 
-    public SimulationEngine(LiftController controller, int minFloor, int maxFloor) {
-        this(controller, minFloor, maxFloor, minFloor, 1, 2, 3, -1);
+    public static Builder builder(LiftController controller, int minFloor, int maxFloor) {
+        return new Builder(controller, minFloor, maxFloor);
     }
 
-    public SimulationEngine(
-            LiftController controller,
-            int minFloor,
-            int maxFloor,
-            int initialFloor
-    ) {
-        this(controller, minFloor, maxFloor, initialFloor, 1, 2, 3, -1);
+    public static class Builder {
+        private final LiftController controller;
+        private final int minFloor;
+        private final int maxFloor;
+        private int initialFloor;
+        private int travelTicksPerFloor = 1;
+        private int doorTransitionTicks = 2;
+        private int doorDwellTicks = 3;
+        private int doorReopenWindowTicks = -1;
+
+        public Builder(LiftController controller, int minFloor, int maxFloor) {
+            this.controller = controller;
+            this.minFloor = minFloor;
+            this.maxFloor = maxFloor;
+            this.initialFloor = minFloor;
+        }
+
+        public Builder initialFloor(int floor) {
+            this.initialFloor = floor;
+            return this;
+        }
+
+        public Builder travelTicksPerFloor(int ticks) {
+            this.travelTicksPerFloor = ticks;
+            return this;
+        }
+
+        public Builder doorTransitionTicks(int ticks) {
+            this.doorTransitionTicks = ticks;
+            return this;
+        }
+
+        public Builder doorDwellTicks(int ticks) {
+            this.doorDwellTicks = ticks;
+            return this;
+        }
+
+        public Builder doorReopenWindowTicks(int ticks) {
+            this.doorReopenWindowTicks = ticks;
+            return this;
+        }
+
+        public SimulationEngine build() {
+            return new SimulationEngine(this);
+        }
     }
 
-    public SimulationEngine(
-            LiftController controller,
-            int minFloor,
-            int maxFloor,
-            int travelTicksPerFloor,
-            int doorTransitionTicks
-    ) {
-        this(controller, minFloor, maxFloor, minFloor, travelTicksPerFloor, doorTransitionTicks, 3, -1);
-    }
-
-    public SimulationEngine(
-            LiftController controller,
-            int minFloor,
-            int maxFloor,
-            int travelTicksPerFloor,
-            int doorTransitionTicks,
-            int doorDwellTicks
-    ) {
-        this(controller, minFloor, maxFloor, minFloor, travelTicksPerFloor, doorTransitionTicks, doorDwellTicks, -1);
-    }
-
-    public SimulationEngine(
-            LiftController controller,
-            int minFloor,
-            int maxFloor,
-            int travelTicksPerFloor,
-            int doorTransitionTicks,
-            int doorDwellTicks,
-            int doorReopenWindowTicks
-    ) {
-        this(controller, minFloor, maxFloor, minFloor, travelTicksPerFloor, doorTransitionTicks, doorDwellTicks,
-            doorReopenWindowTicks);
-    }
-
-    public SimulationEngine(
-            LiftController controller,
-            int minFloor,
-            int maxFloor,
-            int initialFloor,
-            int travelTicksPerFloor,
-            int doorTransitionTicks,
-            int doorDwellTicks,
-            int doorReopenWindowTicks
-    ) {
-        if (travelTicksPerFloor <= 0) {
+    private SimulationEngine(Builder builder) {
+        if (builder.travelTicksPerFloor <= 0) {
             throw new IllegalArgumentException("travelTicksPerFloor must be >= 1");
         }
-        if (doorTransitionTicks <= 0) {
+        if (builder.doorTransitionTicks <= 0) {
             throw new IllegalArgumentException("doorTransitionTicks must be >= 1");
         }
-        if (doorDwellTicks <= 0) {
+        if (builder.doorDwellTicks <= 0) {
             throw new IllegalArgumentException("doorDwellTicks must be >= 1");
         }
 
+        int configuredDoorReopenWindowTicks = builder.doorReopenWindowTicks;
         // Use -1 as sentinel for "use default": min(2, doorTransitionTicks) for backward compatibility
-        if (doorReopenWindowTicks == -1) {
-            doorReopenWindowTicks = Math.min(2, doorTransitionTicks);
+        if (configuredDoorReopenWindowTicks == -1) {
+            configuredDoorReopenWindowTicks = Math.min(2, builder.doorTransitionTicks);
         }
 
-        if (doorReopenWindowTicks < 0) {
+        if (configuredDoorReopenWindowTicks < 0) {
             throw new IllegalArgumentException("doorReopenWindowTicks must be >= 0");
         }
-        if (doorReopenWindowTicks > doorTransitionTicks) {
+        if (configuredDoorReopenWindowTicks > builder.doorTransitionTicks) {
             throw new IllegalArgumentException("doorReopenWindowTicks cannot exceed doorTransitionTicks");
         }
-        if (initialFloor < minFloor || initialFloor > maxFloor) {
+        if (builder.initialFloor < builder.minFloor || builder.initialFloor > builder.maxFloor) {
             throw new IllegalArgumentException("initialFloor must be within minFloor and maxFloor");
         }
-        this.controller = controller;
-        this.minFloor = minFloor;
-        this.maxFloor = maxFloor;
-        this.travelTicksPerFloor = travelTicksPerFloor;
-        this.doorTransitionTicks = doorTransitionTicks;
-        this.doorDwellTicks = doorDwellTicks;
-        this.doorReopenWindowTicks = doorReopenWindowTicks;
+        this.controller = builder.controller;
+        this.minFloor = builder.minFloor;
+        this.maxFloor = builder.maxFloor;
+        this.travelTicksPerFloor = builder.travelTicksPerFloor;
+        this.doorTransitionTicks = builder.doorTransitionTicks;
+        this.doorDwellTicks = builder.doorDwellTicks;
+        this.doorReopenWindowTicks = configuredDoorReopenWindowTicks;
         this.clock = new SimulationClock();
         this.movementTicksRemaining = 0;
         this.doorTicksRemaining = 0;
         this.doorDwellTicksRemaining = 0;
         this.doorClosingTicksElapsed = 0;
         // Initialize lift at the provided starting floor, idle status
-        this.currentState = new LiftState(initialFloor, LiftStatus.IDLE);
+        this.currentState = new LiftState(builder.initialFloor, LiftStatus.IDLE);
     }
 
     /**

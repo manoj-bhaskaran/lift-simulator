@@ -311,7 +311,12 @@ public class NaiveLiftControllerTest {
     @Test
     public void testIntegrationDoorReopenWithinWindow() {
         // Integration test: request arrives while doors closing, within reopen window
-        SimulationEngine engine = new SimulationEngine(controller, 0, 10, 1, 2, 2, 2);
+        SimulationEngine engine = SimulationEngine.builder(controller, 0, 10)
+                .travelTicksPerFloor(1)
+                .doorTransitionTicks(2)
+                .doorDwellTicks(2)
+                .doorReopenWindowTicks(2)
+                .build();
 
         // Add initial request to floor 5
         controller.addCarCall(new CarCall(5));
@@ -351,7 +356,12 @@ public class NaiveLiftControllerTest {
     @Test
     public void testIntegrationDoorDoesNotReopenOutsideWindow() {
         // Integration test: request arrives while doors closing, outside reopen window
-        SimulationEngine engine = new SimulationEngine(controller, 0, 10, 1, 4, 2, 2);
+        SimulationEngine engine = SimulationEngine.builder(controller, 0, 10)
+                .travelTicksPerFloor(1)
+                .doorTransitionTicks(4)
+                .doorDwellTicks(2)
+                .doorReopenWindowTicks(2)
+                .build();
 
         // Add initial request to floor 5
         controller.addCarCall(new CarCall(5));
@@ -518,7 +528,7 @@ public class NaiveLiftControllerTest {
     @Test
     public void testParksAtHomeFloorAfterIdleTimeout() {
         NaiveLiftController parkingController = new NaiveLiftController(2, 3);
-        SimulationEngine engine = new SimulationEngine(parkingController, 0, 5);
+        SimulationEngine engine = SimulationEngine.builder(parkingController, 0, 5).build();
 
         engine.tick(); // tick 0
         engine.tick(); // tick 1
@@ -539,7 +549,7 @@ public class NaiveLiftControllerTest {
     @Test
     public void testParkingInterruptedByNewRequest() {
         NaiveLiftController parkingController = new NaiveLiftController(4, 1);
-        SimulationEngine engine = new SimulationEngine(parkingController, 0, 5);
+        SimulationEngine engine = SimulationEngine.builder(parkingController, 0, 5).build();
 
         engine.tick(); // tick 0
         engine.tick(); // tick 1 -> start parking to floor 4
@@ -637,7 +647,12 @@ public class NaiveLiftControllerTest {
     @Test
     public void testIntegrationCancelWhileMoving() {
         // Integration test: cancel request while lift is moving towards it
-        SimulationEngine engine = new SimulationEngine(controller, 0, 10, 1, 2, 2, 2);
+        SimulationEngine engine = SimulationEngine.builder(controller, 0, 10)
+                .travelTicksPerFloor(1)
+                .doorTransitionTicks(2)
+                .doorDwellTicks(2)
+                .doorReopenWindowTicks(2)
+                .build();
 
         // Add request to floor 5
         LiftRequest request = LiftRequest.carCall(5);

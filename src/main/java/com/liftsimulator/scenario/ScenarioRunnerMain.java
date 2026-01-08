@@ -56,16 +56,13 @@ public class ScenarioRunnerMain {
                 : DEFAULT_IDLE_TIMEOUT_TICKS;
 
         NaiveLiftController controller = new NaiveLiftController(homeFloor, idleTimeoutTicks);
-        SimulationEngine engine = new SimulationEngine(
-                controller,
-                minFloor,
-                maxFloor,
-                initialFloor,
-                travelTicksPerFloor,
-                doorTransitionTicks,
-                doorDwellTicks,
-                doorReopenWindowTicks
-        );
+        SimulationEngine engine = SimulationEngine.builder(controller, minFloor, maxFloor)
+                .initialFloor(initialFloor)
+                .travelTicksPerFloor(travelTicksPerFloor)
+                .doorTransitionTicks(doorTransitionTicks)
+                .doorDwellTicks(doorDwellTicks)
+                .doorReopenWindowTicks(doorReopenWindowTicks)
+                .build();
 
         ScenarioRunner runner = new ScenarioRunner(engine, controller);
         runner.run(scenario);

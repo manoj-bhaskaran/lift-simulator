@@ -34,11 +34,11 @@ public class SimulationEngineTest {
 
     @Test
     public void testInitializesAtMinFloor() {
-        SimulationEngine engine = new SimulationEngine(
+        SimulationEngine engine = SimulationEngine.builder(
                 new FixedActionController(Action.IDLE),
                 2,
                 6
-        );
+        ).build();
 
         assertEquals(2, engine.getCurrentState().getFloor());
         assertEquals(Direction.IDLE, engine.getCurrentState().getDirection());
@@ -48,11 +48,11 @@ public class SimulationEngineTest {
     @Test
     public void testMoveUpIncrementsFloorByOne() {
         // Given: lift at floor 0 with doors closed
-        SimulationEngine engine = new SimulationEngine(
+        SimulationEngine engine = SimulationEngine.builder(
                 new FixedActionController(Action.MOVE_UP),
                 0,  // minFloor
                 5   // maxFloor
-        );
+        ).build();
 
         // When: tick with MOVE_UP action
         engine.tick();
@@ -65,11 +65,11 @@ public class SimulationEngineTest {
     @Test
     public void testMoveUpDoesNotExceedTopFloor() {
         // Given: lift at top floor (5) with doors closed
-        SimulationEngine engine = new SimulationEngine(
+        SimulationEngine engine = SimulationEngine.builder(
                 new FixedActionController(Action.MOVE_UP),
                 0,
                 5
-        );
+        ).build();
 
         // Move to top floor
         for (int i = 0; i < 5; i++) {
@@ -88,11 +88,11 @@ public class SimulationEngineTest {
     @Test
     public void testMoveDownDecrementsFloorByOne() {
         // Given: lift at floor 3 with doors closed
-        SimulationEngine engine = new SimulationEngine(
+        SimulationEngine engine = SimulationEngine.builder(
                 new FixedActionController(Action.MOVE_UP),
                 0,
                 5
-        );
+        ).build();
 
         // Move up to floor 3
         for (int i = 0; i < 3; i++) {
@@ -101,36 +101,36 @@ public class SimulationEngineTest {
         assertEquals(3, engine.getCurrentState().getFloor());
 
         // Switch to MOVE_DOWN controller
-        engine = new SimulationEngine(
+        engine = SimulationEngine.builder(
                 new FixedActionController(Action.IDLE),
                 0,
                 5
-        );
+        ).build();
         // Manually advance to floor 3
         for (int i = 0; i < 3; i++) {
-            engine = new SimulationEngine(
+            engine = SimulationEngine.builder(
                     new FixedActionController(Action.MOVE_UP),
                     0,
                     5
-            );
+            ).build();
             for (int j = 0; j <= i; j++) {
                 engine.tick();
             }
         }
 
         // Create new engine at floor 3 going down
-        engine = new SimulationEngine(
+        engine = SimulationEngine.builder(
                 new FixedActionController(Action.MOVE_DOWN),
                 0,
                 5
-        );
+        ).build();
         // Move to floor 3 first
         for (int i = 0; i < 3; i++) {
-            engine = new SimulationEngine(
+            engine = SimulationEngine.builder(
                     new FixedActionController(Action.MOVE_UP),
                     0,
                     5
-            );
+            ).build();
             for (int j = 0; j < 3; j++) {
                 engine.tick();
             }
@@ -153,7 +153,7 @@ public class SimulationEngineTest {
             }
         };
 
-        engine = new SimulationEngine(moveToFloor3ThenDown, 0, 5);
+        engine = SimulationEngine.builder(moveToFloor3ThenDown, 0, 5).build();
 
         // Move up to floor 3
         for (int i = 0; i < 3; i++) {
@@ -177,11 +177,11 @@ public class SimulationEngineTest {
     @Test
     public void testMoveDownDoesNotGoBelowGroundFloor() {
         // Given: lift at ground floor (0) with doors closed
-        SimulationEngine engine = new SimulationEngine(
+        SimulationEngine engine = SimulationEngine.builder(
                 new FixedActionController(Action.MOVE_DOWN),
                 0,
                 5
-        );
+        ).build();
 
         // When: attempt to move down from ground floor
         engine.tick();
@@ -209,7 +209,7 @@ public class SimulationEngineTest {
             }
         };
 
-        SimulationEngine engine = new SimulationEngine(moveUpThenDownPastMin, 0, 3);
+        SimulationEngine engine = SimulationEngine.builder(moveUpThenDownPastMin, 0, 3).build();
 
         // Move up to floor 1
         engine.tick();
@@ -251,7 +251,7 @@ public class SimulationEngineTest {
             }
         };
 
-        SimulationEngine engine = new SimulationEngine(openDoorThenMoveUp, 0, 5);
+        SimulationEngine engine = SimulationEngine.builder(openDoorThenMoveUp, 0, 5).build();
 
         // Open the door (2 ticks)
         engine.tick();  // IDLE -> DOORS_OPENING
@@ -290,7 +290,7 @@ public class SimulationEngineTest {
             }
         };
 
-        SimulationEngine engine = new SimulationEngine(moveUpTwiceThenOpenThenDown, 0, 5);
+        SimulationEngine engine = SimulationEngine.builder(moveUpTwiceThenOpenThenDown, 0, 5).build();
 
         // Move to floor 2
         engine.tick();
@@ -327,7 +327,11 @@ public class SimulationEngineTest {
             }
         };
 
-        SimulationEngine engine = new SimulationEngine(openThenMoveUpDuringClose, 0, 5, 1, 2, 1);
+        SimulationEngine engine = SimulationEngine.builder(openThenMoveUpDuringClose, 0, 5)
+                .travelTicksPerFloor(1)
+                .doorTransitionTicks(2)
+                .doorDwellTicks(1)
+                .build();
 
         engine.tick(); // start opening
         engine.tick(); // doors open
@@ -359,7 +363,7 @@ public class SimulationEngineTest {
             }
         };
 
-        SimulationEngine engine = new SimulationEngine(openThenIdle, 0, 5);
+        SimulationEngine engine = SimulationEngine.builder(openThenIdle, 0, 5).build();
         assertEquals(DoorState.CLOSED, engine.getCurrentState().getDoorState());
 
         // When: OPEN_DOOR action (starts opening)
@@ -389,7 +393,11 @@ public class SimulationEngineTest {
             }
         };
 
-        SimulationEngine engine = new SimulationEngine(openThenIdle, 0, 5, 1, 2, 2);
+        SimulationEngine engine = SimulationEngine.builder(openThenIdle, 0, 5)
+                .travelTicksPerFloor(1)
+                .doorTransitionTicks(2)
+                .doorDwellTicks(2)
+                .build();
 
         // Open the door (2 ticks: OPEN_DOOR -> IDLE)
         engine.tick();  // IDLE -> DOORS_OPENING
@@ -411,11 +419,11 @@ public class SimulationEngineTest {
     @Test
     public void testMoveUpSequence() {
         // Test multiple moves up in sequence
-        SimulationEngine engine = new SimulationEngine(
+        SimulationEngine engine = SimulationEngine.builder(
                 new FixedActionController(Action.MOVE_UP),
                 0,
                 10
-        );
+        ).build();
 
         for (int expectedFloor = 1; expectedFloor <= 10; expectedFloor++) {
             engine.tick();
@@ -443,7 +451,7 @@ public class SimulationEngineTest {
             }
         };
 
-        SimulationEngine engine = new SimulationEngine(moveUpThenDown, 0, 10);
+        SimulationEngine engine = SimulationEngine.builder(moveUpThenDown, 0, 10).build();
 
         // Move up to floor 5
         for (int i = 0; i < 5; i++) {
@@ -466,13 +474,14 @@ public class SimulationEngineTest {
 
     @Test
     public void testMoveUpHonorsTravelTicksPerFloor() {
-        SimulationEngine engine = new SimulationEngine(
+        SimulationEngine engine = SimulationEngine.builder(
                 new FixedActionController(Action.MOVE_UP),
                 0,
-                5,
-                3,
-                2
-        );
+                5
+        )
+                .travelTicksPerFloor(3)
+                .doorTransitionTicks(2)
+                .build();
 
         engine.tick();
         assertEquals(0, engine.getCurrentState().getFloor());
@@ -489,14 +498,15 @@ public class SimulationEngineTest {
 
     @Test
     public void testDoorTransitionConsumesConfiguredTicks() {
-        SimulationEngine engine = new SimulationEngine(
+        SimulationEngine engine = SimulationEngine.builder(
                 new FixedActionController(Action.OPEN_DOOR),
                 0,
-                5,
-                1,
-                3,
-                2
-        );
+                5
+        )
+                .travelTicksPerFloor(1)
+                .doorTransitionTicks(3)
+                .doorDwellTicks(2)
+                .build();
 
         engine.tick();
         assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
@@ -525,7 +535,11 @@ public class SimulationEngineTest {
             }
         };
 
-        SimulationEngine engine = new SimulationEngine(openThenIdle, 0, 5, 1, 2, 3);
+        SimulationEngine engine = SimulationEngine.builder(openThenIdle, 0, 5)
+                .travelTicksPerFloor(1)
+                .doorTransitionTicks(2)
+                .doorDwellTicks(3)
+                .build();
 
         engine.tick(); // start opening
         engine.tick(); // open
@@ -547,21 +561,23 @@ public class SimulationEngineTest {
 
     @Test
     public void testDeterministicResultsForFixedInputs() {
-        SimulationEngine firstRun = new SimulationEngine(
+        SimulationEngine firstRun = SimulationEngine.builder(
                 new FixedActionController(Action.MOVE_UP),
                 0,
-                5,
-                2,
-                2
-        );
+                5
+        )
+                .travelTicksPerFloor(2)
+                .doorTransitionTicks(2)
+                .build();
 
-        SimulationEngine secondRun = new SimulationEngine(
+        SimulationEngine secondRun = SimulationEngine.builder(
                 new FixedActionController(Action.MOVE_UP),
                 0,
-                5,
-                2,
-                2
-        );
+                5
+        )
+                .travelTicksPerFloor(2)
+                .doorTransitionTicks(2)
+                .build();
 
         for (int i = 0; i < 6; i++) {
             assertEquals(firstRun.getCurrentTick(), secondRun.getCurrentTick());
@@ -594,7 +610,12 @@ public class SimulationEngineTest {
         };
 
         // doorTransitionTicks=2, doorDwellTicks=2, doorReopenWindowTicks=2
-        SimulationEngine engine = new SimulationEngine(doorReopenController, 0, 5, 1, 2, 2, 2);
+        SimulationEngine engine = SimulationEngine.builder(doorReopenController, 0, 5)
+                .travelTicksPerFloor(1)
+                .doorTransitionTicks(2)
+                .doorDwellTicks(2)
+                .doorReopenWindowTicks(2)
+                .build();
 
         engine.tick(); // tick 1: start opening
         engine.tick(); // tick 2: doors open
@@ -635,7 +656,12 @@ public class SimulationEngineTest {
         };
 
         // doorTransitionTicks=4, doorDwellTicks=2, doorReopenWindowTicks=2
-        SimulationEngine engine = new SimulationEngine(doorReopenController, 0, 5, 1, 4, 2, 2);
+        SimulationEngine engine = SimulationEngine.builder(doorReopenController, 0, 5)
+                .travelTicksPerFloor(1)
+                .doorTransitionTicks(4)
+                .doorDwellTicks(2)
+                .doorReopenWindowTicks(2)
+                .build();
 
         engine.tick(); // tick 1: start opening
         engine.tick(); // tick 2: opening continues
@@ -680,7 +706,12 @@ public class SimulationEngineTest {
             }
         };
 
-        SimulationEngine engine = new SimulationEngine(doorReopenController, 0, 5, 1, 2, 2, 2);
+        SimulationEngine engine = SimulationEngine.builder(doorReopenController, 0, 5)
+                .travelTicksPerFloor(1)
+                .doorTransitionTicks(2)
+                .doorDwellTicks(2)
+                .doorReopenWindowTicks(2)
+                .build();
 
         engine.tick(); // start opening
         engine.tick(); // doors open
@@ -714,7 +745,12 @@ public class SimulationEngineTest {
         };
 
         // doorReopenWindowTicks=0 means no reopening allowed
-        SimulationEngine engine = new SimulationEngine(doorReopenController, 0, 5, 1, 2, 1, 0);
+        SimulationEngine engine = SimulationEngine.builder(doorReopenController, 0, 5)
+                .travelTicksPerFloor(1)
+                .doorTransitionTicks(2)
+                .doorDwellTicks(1)
+                .doorReopenWindowTicks(0)
+                .build();
 
         engine.tick(); // start opening
         engine.tick(); // doors open
@@ -731,21 +767,41 @@ public class SimulationEngineTest {
     public void testReopenWindowValidation() {
         // Test that doorReopenWindowTicks cannot exceed doorTransitionTicks
         assertThrows(IllegalArgumentException.class, () -> {
-            new SimulationEngine(new FixedActionController(Action.IDLE), 0, 5, 1, 2, 3, 3);
+            SimulationEngine.builder(new FixedActionController(Action.IDLE), 0, 5)
+                    .travelTicksPerFloor(1)
+                    .doorTransitionTicks(2)
+                    .doorDwellTicks(3)
+                    .doorReopenWindowTicks(3)
+                    .build();
         });
 
         // Test that doorReopenWindowTicks cannot be negative (except -1 which is sentinel for default)
         assertThrows(IllegalArgumentException.class, () -> {
-            new SimulationEngine(new FixedActionController(Action.IDLE), 0, 5, 1, 2, 3, -2);
+            SimulationEngine.builder(new FixedActionController(Action.IDLE), 0, 5)
+                    .travelTicksPerFloor(1)
+                    .doorTransitionTicks(2)
+                    .doorDwellTicks(3)
+                    .doorReopenWindowTicks(-2)
+                    .build();
         });
 
         // Test that valid values are accepted
         assertDoesNotThrow(() -> {
-            new SimulationEngine(new FixedActionController(Action.IDLE), 0, 5, 1, 2, 3, 2);
+            SimulationEngine.builder(new FixedActionController(Action.IDLE), 0, 5)
+                    .travelTicksPerFloor(1)
+                    .doorTransitionTicks(2)
+                    .doorDwellTicks(3)
+                    .doorReopenWindowTicks(2)
+                    .build();
         });
 
         assertDoesNotThrow(() -> {
-            new SimulationEngine(new FixedActionController(Action.IDLE), 0, 5, 1, 2, 3, 0);
+            SimulationEngine.builder(new FixedActionController(Action.IDLE), 0, 5)
+                    .travelTicksPerFloor(1)
+                    .doorTransitionTicks(2)
+                    .doorDwellTicks(3)
+                    .doorReopenWindowTicks(0)
+                    .build();
         });
     }
 }
