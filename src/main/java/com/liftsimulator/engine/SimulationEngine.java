@@ -24,6 +24,7 @@ public class SimulationEngine {
     private int doorClosingTicksElapsed;
     private boolean outOfServicePending;
     private boolean outOfServiceDoorsOpened;
+    private int outOfServiceTargetFloor;
 
     public SimulationEngine(LiftController controller, int minFloor, int maxFloor) {
         this(controller, minFloor, maxFloor, 1, 2, 3, -1);
@@ -287,6 +288,17 @@ public class SimulationEngine {
         // Set pending flag to initiate graceful shutdown sequence
         outOfServicePending = true;
         outOfServiceDoorsOpened = false;
+
+        // Determine target floor for graceful shutdown
+        // If moving, complete movement to the next floor in direction of travel
+        if (currentState.getStatus() == LiftStatus.MOVING_UP) {
+            outOfServiceTargetFloor = Math.min(maxFloor, currentState.getFloor() + 1);
+        } else if (currentState.getStatus() == LiftStatus.MOVING_DOWN) {
+            outOfServiceTargetFloor = Math.max(minFloor, currentState.getFloor() - 1);
+        } else {
+            // Not moving, stop at current floor
+            outOfServiceTargetFloor = currentState.getFloor();
+        }
     }
 
     /**
@@ -320,13 +332,20 @@ public class SimulationEngine {
     private void handleOutOfServiceTransition() {
         LiftStatus status = currentState.getStatus();
 
-        // Step 1: If moving, continue until we reach the next floor, then stop
+        // Step 1: If moving, continue until we reach the target floor, then stop
         if (status == LiftStatus.MOVING_UP || status == LiftStatus.MOVING_DOWN) {
-            if (movementTicksRemaining > 0) {
+            if (currentState.getFloor() != outOfServiceTargetFloor) {
+                // Haven't reached target floor yet, continue moving
+                if (movementTicksRemaining > 0) {
+                    advanceMovement();
+                    return;
+                }
+                // Need to start movement to next floor
+                movementTicksRemaining = travelTicksPerFloor;
                 advanceMovement();
                 return;
             }
-            // Movement complete, transition to IDLE
+            // Reached target floor, transition to IDLE
             currentState = new LiftState(currentState.getFloor(), LiftStatus.IDLE);
             return;
         }
