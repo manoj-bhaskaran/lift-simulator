@@ -15,6 +15,9 @@ import java.util.List;
 import java.util.Locale;
 
 public class ScenarioParser {
+    private static final int MAX_EVENTS = 10000;
+    private static final int MAX_TICKS = 1000000;
+
     public ScenarioDefinition parse(Path path) throws IOException {
         try (InputStream inputStream = Files.newInputStream(path)) {
             return parse(inputStream, path.toString());
@@ -65,6 +68,11 @@ public class ScenarioParser {
                 if (trimmed.startsWith("ticks:")) {
                     String value = trimmed.substring("ticks:".length()).trim();
                     totalTicks = Integer.parseInt(value);
+                    if (totalTicks > MAX_TICKS) {
+                        throw new IllegalArgumentException(
+                                "Scenario exceeds maximum tick limit: " + MAX_TICKS
+                        );
+                    }
                     continue;
                 }
 
@@ -127,6 +135,11 @@ public class ScenarioParser {
                 }
                 ScenarioEvent event = parseEvent(tick, action, tokens, sourceName, lineNumber);
                 events.add(event);
+                if (events.size() > MAX_EVENTS) {
+                    throw new IllegalArgumentException(
+                            "Scenario exceeds maximum event limit: " + MAX_EVENTS
+                    );
+                }
             }
         }
 
