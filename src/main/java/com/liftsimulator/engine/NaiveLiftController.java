@@ -120,12 +120,12 @@ public final class NaiveLiftController implements LiftController {
             return false;
         }
 
-        // If already terminal (completed or cancelled), nothing to do
+        // If already terminal (completed or cancelled), nothing to do.
         if (request.isTerminal()) {
             return false;
         }
 
-        // Transition to cancelled state
+        // Transition to cancelled state.
         request.transitionTo(RequestState.CANCELLED);
 
         archiveRequest(request);
@@ -158,7 +158,7 @@ public final class NaiveLiftController implements LiftController {
             }
         }
 
-        // Remove completed requests
+        // Remove completed requests.
         for (LiftRequest request : requestsToComplete) {
             if (request.isTerminal()) {
                 archiveRequest(request);
@@ -197,12 +197,12 @@ public final class NaiveLiftController implements LiftController {
     private Optional<Integer> findNearestRequestedFloor(int currentFloor) {
         Set<Integer> requestedFloors = new TreeSet<>();
 
-        // Collect all requested floors from active requests
+        // Collect all requested floors from active requests.
         for (LiftRequest request : getActiveRequests()) {
             requestedFloors.add(request.getTargetFloor());
         }
 
-        // Find the nearest one
+        // Find the nearest one.
         return requestedFloors.stream()
                 .min((f1, f2) -> {
                     int dist1 = Math.abs(f1 - currentFloor);
@@ -284,15 +284,15 @@ public final class NaiveLiftController implements LiftController {
         }
 
         if (currentStatus == LiftStatus.DOORS_CLOSING) {
-            // Check if a new request arrived for current floor while doors closing
+            // Check if a new request arrived for current floor while doors closing.
             if (hasRequestForFloor(currentFloor)) {
-                // Attempt to reopen doors (will succeed only if within reopen window)
+                // Attempt to reopen doors (will succeed only if within reopen window).
                 return Action.OPEN_DOOR;
             }
             return Action.IDLE;
         }
 
-        // If doors are open, let the engine manage the dwell/close cycle
+        // If doors are open, let the engine manage the dwell/close cycle.
         if (doorState == DoorState.OPEN) {
             if (hasRequestForFloor(currentFloor)) {
                 completeRequestsForFloor(currentFloor);
@@ -300,7 +300,7 @@ public final class NaiveLiftController implements LiftController {
             return Action.IDLE;
         }
 
-        // If at a requested floor, stop first if moving, then open doors
+        // If at a requested floor, stop first if moving, then open doors.
         if (hasRequestForFloor(currentFloor)) {
             if (currentStatus == LiftStatus.MOVING_UP || currentStatus == LiftStatus.MOVING_DOWN) {
                 assignRequestsForFloor(currentFloor);
@@ -316,7 +316,7 @@ public final class NaiveLiftController implements LiftController {
             return Action.OPEN_DOOR;
         }
 
-        // Find nearest requested floor and move towards it
+        // Find nearest requested floor and move towards it.
         Optional<Integer> nearestFloor = findNearestRequestedFloor(currentFloor);
         if (nearestFloor.isPresent()) {
             int targetFloor = nearestFloor.get();
@@ -358,7 +358,7 @@ public final class NaiveLiftController implements LiftController {
             }
         }
 
-        // No requests, stay idle
+        // No requests, stay idle.
         return Action.IDLE;
     }
 
@@ -375,7 +375,7 @@ public final class NaiveLiftController implements LiftController {
      */
     public void takeOutOfService() {
         outOfService = true;
-        // Cancel all active (non-terminal) requests
+        // Cancel all active (non-terminal) requests.
         Set<LiftRequest> activeRequests = new HashSet<>(getActiveRequests());
         for (LiftRequest request : activeRequests) {
             if (!request.isTerminal()) {
@@ -384,7 +384,7 @@ public final class NaiveLiftController implements LiftController {
             }
         }
 
-        // Reset idle tracking and parking state
+        // Reset idle tracking and parking state.
         resetIdleTracking();
     }
 
@@ -395,7 +395,7 @@ public final class NaiveLiftController implements LiftController {
      */
     public void returnToService() {
         outOfService = false;
-        // Reset idle tracking when returning to service
+        // Reset idle tracking when returning to service.
         resetIdleTracking();
     }
 

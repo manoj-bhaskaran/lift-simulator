@@ -184,7 +184,7 @@ class StateTransitionValidatorTest {
 
     @Test
     void testStatesCanStayInSameState() {
-        // All states can remain in the same state (for IDLE action or ongoing operations)
+        // All states can remain in the same state (for IDLE action or ongoing operations).
         for (LiftStatus status : LiftStatus.values()) {
             assertTrue(StateTransitionValidator.isValidTransition(status, status),
                 "State " + status + " should be able to remain in the same state");
