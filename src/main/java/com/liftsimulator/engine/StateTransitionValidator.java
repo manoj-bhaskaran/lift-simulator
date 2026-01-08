@@ -77,11 +77,13 @@ public class StateTransitionValidator {
     }
 
     /**
-     * Determines the next status based on current status and action.
+     * Determines the next lift status based on the current status and requested action.
      *
-     * @param currentStatus The current lift status
-     * @param action The action being performed
-     * @return The next lift status after applying the action
+     * @param currentStatus the current lift status
+     * @param action the action being performed
+     * @return the next lift status after applying the action
+     * @see LiftStatus for the available lift states
+     * @see Action for the set of actions that drive transitions
      */
     public static LiftStatus getNextStatus(LiftStatus currentStatus, Action action) {
         return switch (action) {
@@ -106,11 +108,12 @@ public class StateTransitionValidator {
     }
 
     /**
-     * Validates if a transition from one status to another is valid.
+     * Validates whether a transition between lift statuses is allowed.
      *
-     * @param fromStatus The current status
-     * @param toStatus The target status
+     * @param fromStatus the current status
+     * @param toStatus the target status
      * @return true if the transition is valid, false otherwise
+     * @see LiftStatus for the complete lift state machine
      */
     public static boolean isValidTransition(LiftStatus fromStatus, LiftStatus toStatus) {
         Set<LiftStatus> validNextStates = VALID_TRANSITIONS.get(fromStatus);
@@ -132,11 +135,12 @@ public class StateTransitionValidator {
     }
 
     /**
-     * Validates if an action is allowed in the current status.
+     * Validates whether an action is allowed in the current status.
      *
-     * @param currentStatus The current lift status
-     * @param action The action to validate
+     * @param currentStatus the current lift status
+     * @param action the action to validate
      * @return true if the action is allowed, false otherwise
+     * @see Action for the action set validated by this method
      */
     public static boolean isActionAllowed(LiftStatus currentStatus, Action action) {
         LiftStatus nextStatus = getNextStatus(currentStatus, action);
@@ -146,8 +150,9 @@ public class StateTransitionValidator {
     /**
      * Gets the set of valid next states from the current status.
      *
-     * @param currentStatus The current status
-     * @return Set of valid next states
+     * @param currentStatus the current status
+     * @return set of valid next states
+     * @see LiftStatus for the defined states
      */
     public static Set<LiftStatus> getValidNextStates(LiftStatus currentStatus) {
         return VALID_TRANSITIONS.getOrDefault(currentStatus, EnumSet.noneOf(LiftStatus.class));
