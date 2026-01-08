@@ -129,6 +129,7 @@ ticks: 30
 ```
 
 Each event executes at the specified tick, and the output logs the tick, floor, lift state, and pending requests to help validate complex behavior.
+The scenario runner automatically expands the default floor range (0–10) to include any requested floors, so negative floors in scripted scenarios are supported without extra configuration.
 
 Note: If a `return_to_service` event is scheduled while the lift is still completing the out-of-service shutdown sequence, the return is deferred until the lift reaches the `OUT_OF_SERVICE` state.
 

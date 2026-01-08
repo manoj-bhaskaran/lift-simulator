@@ -8,6 +8,9 @@ import java.nio.file.Path;
 
 public class ScenarioRunnerMain {
     private static final String DEFAULT_SCENARIO_RESOURCE = "/scenarios/demo.scenario";
+    private static final int DEFAULT_MIN_FLOOR = 0;
+    private static final int DEFAULT_MAX_FLOOR = 10;
+    private static final int DEFAULT_INITIAL_FLOOR = 0;
 
     public static void main(String[] args) throws IOException {
         ScenarioParser parser = new ScenarioParser();
@@ -20,7 +23,16 @@ public class ScenarioRunnerMain {
         }
 
         NaiveLiftController controller = new NaiveLiftController();
-        SimulationEngine engine = new SimulationEngine(controller, 0, 10);
+        int minFloor = DEFAULT_MIN_FLOOR;
+        int maxFloor = DEFAULT_MAX_FLOOR;
+        if (scenario.getMinFloor() != null) {
+            minFloor = Math.min(minFloor, scenario.getMinFloor());
+        }
+        if (scenario.getMaxFloor() != null) {
+            maxFloor = Math.max(maxFloor, scenario.getMaxFloor());
+        }
+        int initialFloor = Math.min(Math.max(DEFAULT_INITIAL_FLOOR, minFloor), maxFloor);
+        SimulationEngine engine = new SimulationEngine(controller, minFloor, maxFloor, initialFloor);
 
         ScenarioRunner runner = new ScenarioRunner(engine, controller);
         runner.run(scenario);

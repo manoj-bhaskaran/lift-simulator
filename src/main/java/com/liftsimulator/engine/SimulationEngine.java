@@ -28,7 +28,16 @@ public class SimulationEngine {
     private boolean returnToServicePending;
 
     public SimulationEngine(LiftController controller, int minFloor, int maxFloor) {
-        this(controller, minFloor, maxFloor, 1, 2, 3, -1);
+        this(controller, minFloor, maxFloor, minFloor, 1, 2, 3, -1);
+    }
+
+    public SimulationEngine(
+            LiftController controller,
+            int minFloor,
+            int maxFloor,
+            int initialFloor
+    ) {
+        this(controller, minFloor, maxFloor, initialFloor, 1, 2, 3, -1);
     }
 
     public SimulationEngine(
@@ -38,7 +47,7 @@ public class SimulationEngine {
             int travelTicksPerFloor,
             int doorTransitionTicks
     ) {
-        this(controller, minFloor, maxFloor, travelTicksPerFloor, doorTransitionTicks, 3, -1);
+        this(controller, minFloor, maxFloor, minFloor, travelTicksPerFloor, doorTransitionTicks, 3, -1);
     }
 
     public SimulationEngine(
@@ -49,13 +58,27 @@ public class SimulationEngine {
             int doorTransitionTicks,
             int doorDwellTicks
     ) {
-        this(controller, minFloor, maxFloor, travelTicksPerFloor, doorTransitionTicks, doorDwellTicks, -1);
+        this(controller, minFloor, maxFloor, minFloor, travelTicksPerFloor, doorTransitionTicks, doorDwellTicks, -1);
     }
 
     public SimulationEngine(
             LiftController controller,
             int minFloor,
             int maxFloor,
+            int travelTicksPerFloor,
+            int doorTransitionTicks,
+            int doorDwellTicks,
+            int doorReopenWindowTicks
+    ) {
+        this(controller, minFloor, maxFloor, minFloor, travelTicksPerFloor, doorTransitionTicks, doorDwellTicks,
+            doorReopenWindowTicks);
+    }
+
+    public SimulationEngine(
+            LiftController controller,
+            int minFloor,
+            int maxFloor,
+            int initialFloor,
             int travelTicksPerFloor,
             int doorTransitionTicks,
             int doorDwellTicks,
@@ -82,6 +105,9 @@ public class SimulationEngine {
         if (doorReopenWindowTicks > doorTransitionTicks) {
             throw new IllegalArgumentException("doorReopenWindowTicks cannot exceed doorTransitionTicks");
         }
+        if (initialFloor < minFloor || initialFloor > maxFloor) {
+            throw new IllegalArgumentException("initialFloor must be within minFloor and maxFloor");
+        }
         this.controller = controller;
         this.minFloor = minFloor;
         this.maxFloor = maxFloor;
@@ -94,8 +120,8 @@ public class SimulationEngine {
         this.doorTicksRemaining = 0;
         this.doorDwellTicksRemaining = 0;
         this.doorClosingTicksElapsed = 0;
-        // Initialize lift at minimum floor, idle status
-        this.currentState = new LiftState(minFloor, LiftStatus.IDLE);
+        // Initialize lift at the provided starting floor, idle status
+        this.currentState = new LiftState(initialFloor, LiftStatus.IDLE);
     }
 
     /**
