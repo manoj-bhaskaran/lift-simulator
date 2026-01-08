@@ -91,6 +91,9 @@ Run the test suite with Maven:
 mvn test
 ```
 
+The test suite includes integration coverage for the scenario system using fixtures in
+`src/test/resources/scenarios`.
+
 ## Running the Simulation
 
 Run the demo simulation:
