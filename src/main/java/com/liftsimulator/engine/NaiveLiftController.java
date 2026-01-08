@@ -320,6 +320,12 @@ public class NaiveLiftController implements LiftController {
         if (nearestFloor.isPresent()) {
             int targetFloor = nearestFloor.get();
             assignRequestsForFloor(targetFloor);
+            if (currentStatus == LiftStatus.MOVING_UP && targetFloor < currentFloor) {
+                return Action.IDLE;
+            }
+            if (currentStatus == LiftStatus.MOVING_DOWN && targetFloor > currentFloor) {
+                return Action.IDLE;
+            }
             if (currentFloor < targetFloor) {
                 return Action.MOVE_UP;
             } else if (currentFloor > targetFloor) {
