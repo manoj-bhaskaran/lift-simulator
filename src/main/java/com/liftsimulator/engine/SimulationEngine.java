@@ -299,6 +299,11 @@ public class SimulationEngine {
             // Not moving, stop at current floor
             outOfServiceTargetFloor = currentState.getFloor();
         }
+
+        // If doors are already open, skip remaining dwell time for emergency shutdown
+        if (currentState.getStatus() == LiftStatus.DOORS_OPEN && doorDwellTicksRemaining > 0) {
+            doorDwellTicksRemaining = 0;
+        }
     }
 
     /**
