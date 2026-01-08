@@ -28,6 +28,7 @@ The current version (v0.12.3) implements:
 - **Formal lift state machine** with 7 explicit states (IDLE, MOVING_UP, MOVING_DOWN, DOORS_OPENING, DOORS_OPEN, DOORS_CLOSING, OUT_OF_SERVICE)
 - **Single source of truth**: LiftStatus is the only stored state for the lift, all other properties are derived
 - **State transition validation** ensuring only valid state changes occur (for both lift and requests)
+- **Invalid action reporting** with explicit action results and warning logs that include tick and floor context
 - **Symmetric door behavior**: Both opening and closing are modeled as transitional states
 - **Door reopening window**: Configurable time window during which closing doors can be reopened for new requests at the current floor
 - **Idle parking**: Configurable home floor and idle timeout to park the lift when no requests are pending
