@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add JaCoCo coverage reporting and enforce an 80% line coverage minimum in Maven builds
+
 ## [0.12.3] - 2026-01-11
 
 ### Added

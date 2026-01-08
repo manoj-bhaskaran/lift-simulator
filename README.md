@@ -237,8 +237,10 @@ mvn test
 Run tests with coverage:
 
 ```bash
-mvn test jacoco:report
+mvn test jacoco:report jacoco:check
 ```
+
+The JaCoCo check enforces a minimum 80% line coverage threshold for the project.
 
 ## Request Types: Hall Calls vs. Car Calls
 
