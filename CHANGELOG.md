@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.4] - 2026-01-12
+
 ### Added
 - Add JaCoCo coverage reporting and enforce an 80% line coverage minimum in Maven builds
 - Add integration tests covering scenario parsing, execution, and invalid scenario handling
@@ -16,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extend the move-down test sequence to cover all downward ticks
 
 ### Fixed
+- Validate scenario event ticks to reject negative or malformed values with clear error messages
 - Return explicit action results and log invalid action attempts in the simulation engine to avoid silent failures
 
 ## [0.12.3] - 2026-01-11

@@ -117,7 +117,7 @@ public class ScenarioParser {
                     throw new IllegalArgumentException(errorMessage(sourceName, lineNumber, "Invalid event line: " + line));
                 }
 
-                long tick = Long.parseLong(tokens[0]);
+                long tick = parseTick(tokens[0], sourceName, lineNumber);
                 String action = tokens[1].toLowerCase();
                 Integer floorValue = extractFloorValue(action, tokens);
                 if (floorValue != null) {
@@ -224,6 +224,21 @@ public class ScenarioParser {
 
     private String errorMessage(String sourceName, int lineNumber, String message) {
         return String.format("%s (line %d): %s", sourceName, lineNumber, message);
+    }
+
+    private long parseTick(String token, String sourceName, int lineNumber) {
+        try {
+            long tick = Long.parseLong(token);
+            if (tick < 0) {
+                throw new IllegalArgumentException(errorMessage(sourceName, lineNumber, "Tick must be non-negative"));
+            }
+            return tick;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(
+                    errorMessage(sourceName, lineNumber, "Invalid tick value: " + token),
+                    e
+            );
+        }
     }
 
     private Integer parseIntValue(String trimmed, String prefix) {
