@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.13] - 2026-01-21
+
+### Changed
+- Keep dedicated active/completed request collections in the naive controller to avoid rebuilding active sets during scheduling
+
 ## [0.12.12] - 2026-01-20
 
 ### Changed
