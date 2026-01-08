@@ -34,6 +34,8 @@ public class ScenarioParser {
         String scenarioName = "Unnamed Scenario";
         Integer totalTicks = null;
         List<ScenarioEvent> events = new ArrayList<>();
+        Integer minFloor = null;
+        Integer maxFloor = null;
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
@@ -63,6 +65,11 @@ public class ScenarioParser {
 
                 long tick = Long.parseLong(tokens[0]);
                 String action = tokens[1].toLowerCase();
+                Integer floorValue = extractFloorValue(action, tokens);
+                if (floorValue != null) {
+                    minFloor = minFloor == null ? floorValue : Math.min(minFloor, floorValue);
+                    maxFloor = maxFloor == null ? floorValue : Math.max(maxFloor, floorValue);
+                }
                 ScenarioEvent event = parseEvent(tick, action, tokens, sourceName, lineNumber);
                 events.add(event);
             }
@@ -72,7 +79,17 @@ public class ScenarioParser {
             throw new IllegalArgumentException("Scenario must define ticks in " + sourceName);
         }
 
-        return new ScenarioDefinition(scenarioName, totalTicks, events);
+        return new ScenarioDefinition(scenarioName, totalTicks, events, minFloor, maxFloor);
+    }
+
+    private Integer extractFloorValue(String action, String[] tokens) {
+        if ("car_call".equals(action) && tokens.length >= 4) {
+            return Integer.parseInt(tokens[3]);
+        }
+        if ("hall_call".equals(action) && tokens.length >= 4) {
+            return Integer.parseInt(tokens[3]);
+        }
+        return null;
     }
 
     private ScenarioEvent parseEvent(long tick, String action, String[] tokens, String sourceName, int lineNumber) {
