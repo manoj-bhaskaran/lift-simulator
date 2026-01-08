@@ -347,18 +347,24 @@ public class SimulationEngine {
             }
             // Reached target floor, transition to IDLE
             currentState = new LiftState(currentState.getFloor(), LiftStatus.IDLE);
-            status = LiftStatus.IDLE;  // Update local variable
-            // Fall through to Step 4 to open doors on the same tick
+            status = LiftStatus.IDLE;  // Update local variable to allow fall-through
+            // Fall through to Step 4 to start opening doors on the same tick
         }
 
         // Step 2: If doors are in transition, let them complete
         if (status == LiftStatus.DOORS_OPENING || status == LiftStatus.DOORS_CLOSING) {
             if (doorTicksRemaining > 0) {
                 advanceDoorTransition();
-                return;
+                status = currentState.getStatus();  // Update status after transition
+                if (doorTicksRemaining > 0) {
+                    // Still in transition
+                    return;
+                }
+                // Transition completed on this tick, fall through to next step
+            } else {
+                // Door transition already complete, update status and fall through
+                status = currentState.getStatus();
             }
-            // Door transition complete
-            return;
         }
 
         // Step 3: If doors are open, handle dwell time
