@@ -9,6 +9,11 @@ import com.liftsimulator.domain.LiftStatus;
  * The engine owns time and coordinates state updates.
  */
 public class SimulationEngine {
+    private static final int DEFAULT_TRAVEL_TICKS_PER_FLOOR = 1;
+    private static final int DEFAULT_DOOR_TRANSITION_TICKS = 2;
+    private static final int DEFAULT_DOOR_DWELL_TICKS = 3;
+    private static final int DEFAULT_DOOR_REOPEN_WINDOW_MAX_TICKS = 2;
+    private static final int SENTINEL_USE_DEFAULT = -1;
     private final SimulationClock clock;
     private LiftState currentState;
     private final LiftController controller;
@@ -36,10 +41,10 @@ public class SimulationEngine {
         private final int minFloor;
         private final int maxFloor;
         private int initialFloor;
-        private int travelTicksPerFloor = 1;
-        private int doorTransitionTicks = 2;
-        private int doorDwellTicks = 3;
-        private int doorReopenWindowTicks = -1;
+        private int travelTicksPerFloor = DEFAULT_TRAVEL_TICKS_PER_FLOOR;
+        private int doorTransitionTicks = DEFAULT_DOOR_TRANSITION_TICKS;
+        private int doorDwellTicks = DEFAULT_DOOR_DWELL_TICKS;
+        private int doorReopenWindowTicks = SENTINEL_USE_DEFAULT;
 
         public Builder(LiftController controller, int minFloor, int maxFloor) {
             this.controller = controller;
@@ -90,9 +95,9 @@ public class SimulationEngine {
         }
 
         int configuredDoorReopenWindowTicks = builder.doorReopenWindowTicks;
-        // Use -1 as sentinel for "use default": min(2, doorTransitionTicks) for backward compatibility
-        if (configuredDoorReopenWindowTicks == -1) {
-            configuredDoorReopenWindowTicks = Math.min(2, builder.doorTransitionTicks);
+        // Use sentinel for "use default": min(DEFAULT_DOOR_REOPEN_WINDOW_MAX_TICKS, doorTransitionTicks)
+        if (configuredDoorReopenWindowTicks == SENTINEL_USE_DEFAULT) {
+            configuredDoorReopenWindowTicks = Math.min(DEFAULT_DOOR_REOPEN_WINDOW_MAX_TICKS, builder.doorTransitionTicks);
         }
 
         if (configuredDoorReopenWindowTicks < 0) {
