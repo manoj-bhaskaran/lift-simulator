@@ -5,12 +5,14 @@ import com.liftsimulator.domain.LiftState;
 import com.liftsimulator.domain.LiftStatus;
 
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Core simulation engine that advances time in discrete ticks.
  * The engine owns time and coordinates state updates.
  */
 public class SimulationEngine {
+    private static final Logger LOGGER = Logger.getLogger(SimulationEngine.class.getName());
     private static final int DEFAULT_TRAVEL_TICKS_PER_FLOOR = 1;
     private static final int DEFAULT_DOOR_TRANSITION_TICKS = 2;
     private static final int DEFAULT_DOOR_DWELL_TICKS = 3;
@@ -48,6 +50,8 @@ public class SimulationEngine {
         LiftStatus.IDLE, SimulationEngine::handleIdleTick,
         LiftStatus.OUT_OF_SERVICE, SimulationEngine::handleIdleTick
     );
+
+    private record ActionResult(LiftState state, boolean success) {}
 
     public static Builder builder(LiftController controller, int minFloor, int maxFloor) {
         return new Builder(controller, minFloor, maxFloor);
@@ -167,7 +171,7 @@ public class SimulationEngine {
      * Applies an action to the current state and returns the new state.
      * Enforces state machine transitions and ensures lift never moves with doors open.
      */
-    private LiftState startAction(LiftState state, Action action) {
+    private ActionResult startAction(LiftState state, Action action) {
         int newFloor = state.getFloor();
         LiftStatus currentStatus = state.getStatus();
         LiftStatus newStatus = currentStatus;
@@ -179,8 +183,8 @@ public class SimulationEngine {
              currentStatus == LiftStatus.DOORS_CLOSING ||
              currentStatus == LiftStatus.OUT_OF_SERVICE)) {
             // Invalid state for movement - log warning and return unchanged state
-            StateTransitionValidator.isActionAllowed(currentStatus, action);
-            return state;
+            logInvalidAction(action, currentStatus, state);
+            return new ActionResult(state, false);
         }
 
         switch (action) {
@@ -209,8 +213,8 @@ public class SimulationEngine {
             case OPEN_DOOR:
                 if (currentStatus == LiftStatus.OUT_OF_SERVICE) {
                     // Can't open doors when out of service
-                    StateTransitionValidator.isActionAllowed(currentStatus, action);
-                    return state;
+                    logInvalidAction(action, currentStatus, state);
+                    return new ActionResult(state, false);
                 } else if (currentStatus == LiftStatus.MOVING_UP || currentStatus == LiftStatus.MOVING_DOWN) {
                     // Must stop first before opening doors
                     newStatus = LiftStatus.IDLE;
@@ -227,7 +231,7 @@ public class SimulationEngine {
                 break;
             case CLOSE_DOOR:
                 if (doorDwellTicksRemaining > 0) {
-                    return state;
+                    return new ActionResult(state, true);
                 }
                 if (currentStatus == LiftStatus.DOORS_OPEN || currentStatus == LiftStatus.DOORS_OPENING) {
                     newStatus = LiftStatus.DOORS_CLOSING;
@@ -250,10 +254,18 @@ public class SimulationEngine {
         // Validate the state transition
         if (!StateTransitionValidator.isValidTransition(currentStatus, newStatus)) {
             // Invalid transition - return current state unchanged
-            return state;
+            LOGGER.warning(String.format(
+                "Invalid state transition for action %s: %s -> %s at floor %d (tick %d)",
+                action,
+                currentStatus,
+                newStatus,
+                state.getFloor(),
+                clock.getCurrentTick()
+            ));
+            return new ActionResult(state, false);
         }
 
-        return new LiftState(newFloor, newStatus);
+        return new ActionResult(new LiftState(newFloor, newStatus), true);
     }
 
     public long getCurrentTick() {
@@ -457,7 +469,11 @@ public class SimulationEngine {
 
     private void handleIdleTick(Action action) {
         // Apply action to get new state
-        currentState = startAction(currentState, action);
+        ActionResult result = startAction(currentState, action);
+        currentState = result.state();
+        if (!result.success()) {
+            return;
+        }
 
         if (movementTicksRemaining > 0) {
             advanceMovement();
@@ -466,6 +482,16 @@ public class SimulationEngine {
         } else if (doorDwellTicksRemaining > 0) {
             advanceDoorDwell();
         }
+    }
+
+    private void logInvalidAction(Action action, LiftStatus currentStatus, LiftState state) {
+        LOGGER.warning(String.format(
+            "Invalid action %s attempted in state %s at floor %d (tick %d)",
+            action,
+            currentStatus,
+            state.getFloor(),
+            clock.getCurrentTick()
+        ));
     }
 
     private void advanceMovement() {

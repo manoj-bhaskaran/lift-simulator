@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactor simulation engine tests to use a sequence-based controller helper to reduce boilerplate
 - Extend the move-down test sequence to cover all downward ticks
 
+### Fixed
+- Return explicit action results and log invalid action attempts in the simulation engine to avoid silent failures
+
 ## [0.12.3] - 2026-01-11
 
 ### Added
