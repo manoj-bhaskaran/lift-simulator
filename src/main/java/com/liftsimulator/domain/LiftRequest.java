@@ -51,6 +51,13 @@ public class LiftRequest {
     }
 
     /**
+     * Resets the request ID generator for test isolation.
+     */
+    static void resetIdGenerator() {
+        ID_GENERATOR.set(0);
+    }
+
+    /**
      * Creates a car call request.
      *
      * @param destinationFloor The destination floor selected by the passenger

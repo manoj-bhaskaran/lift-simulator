@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.3] - 2026-01-11
+
+### Added
+- Add a test reset hook for the lift request ID generator to improve test isolation
+
 ## [0.12.2] - 2026-01-10
 
 ### Changed
