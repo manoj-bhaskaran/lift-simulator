@@ -7,7 +7,7 @@
 
     <groupId>com.liftsimulator</groupId>
     <artifactId>lift-simulator</artifactId>
-    <version>0.12.8</version>
+    <version>0.12.9</version>
     <packaging>jar</packaging>
 
     <name>Lift Simulator</name>
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
-            <version>4.8.3.0</version>
+            <version>4.8.6.0</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
