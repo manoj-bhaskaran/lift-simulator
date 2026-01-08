@@ -358,6 +358,10 @@ public class SimulationEngineTest {
                 Action.MOVE_UP,
                 Action.MOVE_UP,
                 Action.IDLE,
+                Action.MOVE_DOWN,
+                Action.MOVE_DOWN,
+                Action.MOVE_DOWN,
+                Action.MOVE_DOWN,
                 Action.MOVE_DOWN
         );
 
