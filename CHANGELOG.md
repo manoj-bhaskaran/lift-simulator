@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.11] - 2026-01-19
+
+### Added
+- Add OWASP Dependency-Check Maven plugin to scan for vulnerable dependencies during builds
+
 ## [0.12.10] - 2026-01-18
 
 ### Fixed
