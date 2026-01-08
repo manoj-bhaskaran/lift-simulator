@@ -347,7 +347,8 @@ public class SimulationEngine {
             }
             // Reached target floor, transition to IDLE
             currentState = new LiftState(currentState.getFloor(), LiftStatus.IDLE);
-            return;
+            status = LiftStatus.IDLE;  // Update local variable
+            // Fall through to Step 4 to open doors on the same tick
         }
 
         // Step 2: If doors are in transition, let them complete
@@ -362,11 +363,7 @@ public class SimulationEngine {
 
         // Step 3: If doors are open, handle dwell time
         if (status == LiftStatus.DOORS_OPEN) {
-            if (doorDwellTicksRemaining > 0) {
-                advanceDoorDwell();
-                return;
-            }
-            // Dwell complete, doors will start closing automatically via advanceDoorDwell
+            advanceDoorDwell();
             return;
         }
 
