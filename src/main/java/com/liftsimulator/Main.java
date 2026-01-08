@@ -26,11 +26,11 @@ public class Main {
         System.out.println("Version: " + resolveVersion());
         System.out.println("Starting simulation...\n");
 
-        // Create naive controller and engine
+        // Create naive controller and engine.
         NaiveLiftController controller = new NaiveLiftController();
         SimulationEngine engine = SimulationEngine.builder(controller, 0, 10).build();
 
-        // Add some requests to simulate real usage
+        // Add some requests to simulate real usage.
         System.out.println("Requests:");
         System.out.println("  - Car call to floor 3");
         System.out.println("  - Hall call from floor 7 going UP");
@@ -44,11 +44,11 @@ public class Main {
         controller.addHallCall(new HallCall(7, Direction.UP));
         controller.addCarCall(new CarCall(5));
 
-        // Add a request that we'll cancel later to demonstrate cancellation
+        // Add a request that we'll cancel later to demonstrate cancellation.
         LiftRequest requestToCancel = LiftRequest.carCall(8);
         controller.addRequest(requestToCancel);
 
-        // Run simulation for 50 ticks to show out-of-service scenario
+        // Run simulation for 50 ticks to show out-of-service scenario.
         int tickCount = 50;
         System.out.println(String.format("%-6s %-8s %-15s %-12s %-10s %-12s %-15s",
                 "Tick", "Floor", "Status", "Direction", "Door", "Requests", "Notes"));
@@ -58,33 +58,33 @@ public class Main {
             LiftState state = engine.getCurrentState();
             String notes = "";
 
-            // Cancel request to floor 8 at tick 15 to demonstrate cancellation
+            // Cancel request to floor 8 at tick 15 to demonstrate cancellation.
             if (i == 15 && !requestToCancel.isTerminal()) {
                 controller.cancelRequest(requestToCancel.getId());
                 notes = "*** CANCELLED request to floor 8 ***";
             }
 
-            // Take lift out of service at tick 25 (graceful shutdown begins)
+            // Take lift out of service at tick 25 (graceful shutdown begins).
             if (i == 25 && state.getStatus() != LiftStatus.OUT_OF_SERVICE) {
                 controller.takeOutOfService();
                 engine.setOutOfService();
                 notes = "*** INITIATING OUT-OF-SERVICE (graceful shutdown) ***";
             }
 
-            // Return lift to service (whenever it's actually OUT_OF_SERVICE)
+            // Return lift to service (whenever it's actually OUT_OF_SERVICE).
             if (i == 35 && state.getStatus() == LiftStatus.OUT_OF_SERVICE) {
                 controller.returnToService();
                 engine.returnToService();
                 notes = "*** RETURNED TO SERVICE ***";
             }
 
-            // Add a new request after returning to service
+            // Add a new request after returning to service.
             if (i == 36) {
                 controller.addCarCall(new CarCall(4));
                 notes = "*** NEW request to floor 4 ***";
             }
 
-            // Add contextual notes
+            // Add contextual notes.
             if (i == 0) notes = "(Starting)";
             if (state.getFloor() == 3 && state.getDoorState() == DoorState.OPEN) {
                 notes = "(Servicing floor 3)";

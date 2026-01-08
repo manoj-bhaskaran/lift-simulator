@@ -73,21 +73,21 @@ class LiftRequestTest {
     void requestProgressesThroughValidLifecycle() {
         LiftRequest request = LiftRequest.hallCall(5, Direction.UP);
 
-        // CREATED -> QUEUED
+        // CREATED -> QUEUED.
         assertEquals(RequestState.CREATED, request.getState());
         request.transitionTo(RequestState.QUEUED);
         assertEquals(RequestState.QUEUED, request.getState());
 
-        // QUEUED -> ASSIGNED
+        // QUEUED -> ASSIGNED.
         request.transitionTo(RequestState.ASSIGNED);
         assertEquals(RequestState.ASSIGNED, request.getState());
 
-        // ASSIGNED -> SERVING
+        // ASSIGNED -> SERVING.
         request.transitionTo(RequestState.SERVING);
         assertEquals(RequestState.SERVING, request.getState());
         assertFalse(request.isTerminal());
 
-        // SERVING -> COMPLETED
+        // SERVING -> COMPLETED.
         request.transitionTo(RequestState.COMPLETED);
         assertEquals(RequestState.COMPLETED, request.getState());
         assertTrue(request.isTerminal());
@@ -95,20 +95,20 @@ class LiftRequestTest {
 
     @Test
     void requestCanBeCancelledFromNonTerminalStates() {
-        // From CREATED
+        // From CREATED.
         LiftRequest request1 = LiftRequest.carCall(5);
         request1.transitionTo(RequestState.CANCELLED);
         assertEquals(RequestState.CANCELLED, request1.getState());
         assertTrue(request1.isTerminal());
 
-        // From QUEUED
+        // From QUEUED.
         LiftRequest request2 = LiftRequest.carCall(5);
         request2.transitionTo(RequestState.QUEUED);
         request2.transitionTo(RequestState.CANCELLED);
         assertEquals(RequestState.CANCELLED, request2.getState());
         assertTrue(request2.isTerminal());
 
-        // From ASSIGNED
+        // From ASSIGNED.
         LiftRequest request3 = LiftRequest.carCall(5);
         request3.transitionTo(RequestState.QUEUED);
         request3.transitionTo(RequestState.ASSIGNED);
@@ -116,7 +116,7 @@ class LiftRequestTest {
         assertEquals(RequestState.CANCELLED, request3.getState());
         assertTrue(request3.isTerminal());
 
-        // From SERVING
+        // From SERVING.
         LiftRequest request4 = LiftRequest.carCall(5);
         request4.transitionTo(RequestState.QUEUED);
         request4.transitionTo(RequestState.ASSIGNED);
@@ -290,8 +290,8 @@ class LiftRequestTest {
         LiftRequest request1 = LiftRequest.carCall(5);
         LiftRequest request2 = LiftRequest.carCall(5);
 
-        assertNotEquals(request1, request2); // Different IDs
-        assertEquals(request1, request1); // Same instance
+        assertNotEquals(request1, request2); // Different IDs.
+        assertEquals(request1, request1); // Same instance.
     }
 
     @Test

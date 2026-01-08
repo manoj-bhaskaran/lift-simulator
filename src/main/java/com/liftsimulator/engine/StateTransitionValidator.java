@@ -16,11 +16,11 @@ import java.util.logging.Logger;
 public class StateTransitionValidator {
     private static final Logger LOGGER = Logger.getLogger(StateTransitionValidator.class.getName());
 
-    // Define valid state transitions based on actions
+    // Define valid state transitions based on actions.
     private static final Map<LiftStatus, Set<LiftStatus>> VALID_TRANSITIONS = new EnumMap<>(LiftStatus.class);
 
     static {
-        // IDLE can transition to: MOVING_UP, MOVING_DOWN, DOORS_OPENING, OUT_OF_SERVICE
+        // IDLE can transition to: MOVING_UP, MOVING_DOWN, DOORS_OPENING, OUT_OF_SERVICE.
         VALID_TRANSITIONS.put(LiftStatus.IDLE, EnumSet.of(
                 LiftStatus.IDLE,
                 LiftStatus.MOVING_UP,
@@ -29,24 +29,30 @@ public class StateTransitionValidator {
                 LiftStatus.OUT_OF_SERVICE
         ));
 
-        // MOVING_UP can transition to: MOVING_UP, IDLE, OUT_OF_SERVICE
-        // Cannot open doors while moving - must stop first
+        /*
+         * MOVING_UP can transition to: MOVING_UP, IDLE, OUT_OF_SERVICE.
+         * Cannot open doors while moving - must stop first.
+         */
         VALID_TRANSITIONS.put(LiftStatus.MOVING_UP, EnumSet.of(
                 LiftStatus.MOVING_UP,
                 LiftStatus.IDLE,
                 LiftStatus.OUT_OF_SERVICE
         ));
 
-        // MOVING_DOWN can transition to: MOVING_DOWN, IDLE, OUT_OF_SERVICE
-        // Cannot open doors while moving - must stop first
+        /*
+         * MOVING_DOWN can transition to: MOVING_DOWN, IDLE, OUT_OF_SERVICE.
+         * Cannot open doors while moving - must stop first.
+         */
         VALID_TRANSITIONS.put(LiftStatus.MOVING_DOWN, EnumSet.of(
                 LiftStatus.MOVING_DOWN,
                 LiftStatus.IDLE,
                 LiftStatus.OUT_OF_SERVICE
         ));
 
-        // DOORS_OPENING can transition to: DOORS_OPEN, DOORS_CLOSING (abort), OUT_OF_SERVICE
-        // Cannot go directly to IDLE - must close doors first
+        /*
+         * DOORS_OPENING can transition to: DOORS_OPEN, DOORS_CLOSING (abort), OUT_OF_SERVICE.
+         * Cannot go directly to IDLE - must close doors first.
+         */
         VALID_TRANSITIONS.put(LiftStatus.DOORS_OPENING, EnumSet.of(
                 LiftStatus.DOORS_OPENING,
                 LiftStatus.DOORS_OPEN,
@@ -54,14 +60,14 @@ public class StateTransitionValidator {
                 LiftStatus.OUT_OF_SERVICE
         ));
 
-        // DOORS_OPEN can transition to: DOORS_CLOSING, OUT_OF_SERVICE
+        // DOORS_OPEN can transition to: DOORS_CLOSING, OUT_OF_SERVICE.
         VALID_TRANSITIONS.put(LiftStatus.DOORS_OPEN, EnumSet.of(
                 LiftStatus.DOORS_OPEN,
                 LiftStatus.DOORS_CLOSING,
                 LiftStatus.OUT_OF_SERVICE
         ));
 
-        // DOORS_CLOSING can transition to: IDLE, DOORS_OPENING (re-open), OUT_OF_SERVICE
+        // DOORS_CLOSING can transition to: IDLE, DOORS_OPENING (re-open), OUT_OF_SERVICE.
         VALID_TRANSITIONS.put(LiftStatus.DOORS_CLOSING, EnumSet.of(
                 LiftStatus.DOORS_CLOSING,
                 LiftStatus.IDLE,
@@ -69,7 +75,7 @@ public class StateTransitionValidator {
                 LiftStatus.OUT_OF_SERVICE
         ));
 
-        // OUT_OF_SERVICE can transition to: IDLE (for maintenance recovery)
+        // OUT_OF_SERVICE can transition to: IDLE (for maintenance recovery).
         VALID_TRANSITIONS.put(LiftStatus.OUT_OF_SERVICE, EnumSet.of(
                 LiftStatus.OUT_OF_SERVICE,
                 LiftStatus.IDLE
@@ -92,7 +98,7 @@ public class StateTransitionValidator {
             case OPEN_DOOR -> LiftStatus.DOORS_OPENING;
             case CLOSE_DOOR -> LiftStatus.DOORS_CLOSING;
             case IDLE -> {
-                // When IDLE action is taken, transition based on current state
+                // When IDLE action is taken, transition based on current state.
                 if (currentStatus == LiftStatus.DOORS_CLOSING) {
                     yield LiftStatus.IDLE;
                 } else if (currentStatus == LiftStatus.DOORS_OPENING) {

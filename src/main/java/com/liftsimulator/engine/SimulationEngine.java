@@ -116,7 +116,7 @@ public final class SimulationEngine {
         }
 
         int configuredDoorReopenWindowTicks = builder.doorReopenWindowTicks;
-        // Use sentinel for "use default": min(DEFAULT_DOOR_REOPEN_WINDOW_MAX_TICKS, doorTransitionTicks)
+        // Use sentinel for "use default": min(DEFAULT_DOOR_REOPEN_WINDOW_MAX_TICKS, doorTransitionTicks).
         if (configuredDoorReopenWindowTicks == SENTINEL_USE_DEFAULT) {
             configuredDoorReopenWindowTicks = Math.min(DEFAULT_DOOR_REOPEN_WINDOW_MAX_TICKS, builder.doorTransitionTicks);
         }
@@ -142,7 +142,7 @@ public final class SimulationEngine {
         this.doorTicksRemaining = 0;
         this.doorDwellTicksRemaining = 0;
         this.doorClosingTicksElapsed = 0;
-        // Initialize lift at the provided starting floor, idle status
+        // Initialize lift at the provided starting floor, idle status.
         this.currentState = new LiftState(builder.initialFloor, LiftStatus.IDLE);
     }
 
@@ -151,19 +151,19 @@ public final class SimulationEngine {
      * The controller decides the next action, which is then applied to update the state.
      */
     public void tick() {
-        // Handle pending out-of-service transition
+        // Handle pending out-of-service transition.
         if (outOfServicePending) {
             handleOutOfServiceTransition();
             clock.tick();
             return;
         }
 
-        // Ask controller for next action
+        // Ask controller for next action.
         Action action = controller.decideNextAction(currentState, clock.getCurrentTick());
 
         TickBehavior behavior = STATE_BEHAVIORS.get(currentState.getStatus());
         behavior.execute(this, action);
-        // Increment tick counter
+        // Increment tick counter.
         clock.tick();
     }
 
@@ -176,13 +176,13 @@ public final class SimulationEngine {
         LiftStatus currentStatus = state.getStatus();
         LiftStatus newStatus = currentStatus;
 
-        // Prevent movement if doors are not closed (enforced by state machine)
+        // Prevent movement if doors are not closed (enforced by state machine).
         if ((action == Action.MOVE_UP || action == Action.MOVE_DOWN) &&
             (currentStatus == LiftStatus.DOORS_OPENING ||
              currentStatus == LiftStatus.DOORS_OPEN ||
              currentStatus == LiftStatus.DOORS_CLOSING ||
              currentStatus == LiftStatus.OUT_OF_SERVICE)) {
-            // Invalid state for movement - log warning and return unchanged state
+            // Invalid state for movement - log warning and return unchanged state.
             logInvalidAction(action, currentStatus, state);
             return new ActionResult(state, false);
         }
@@ -195,7 +195,7 @@ public final class SimulationEngine {
                     doorTicksRemaining = 0;
                     doorDwellTicksRemaining = 0;
                 } else if (newFloor == maxFloor) {
-                    // At top floor, can't move up
+                    // At top floor, can't move up.
                     newStatus = LiftStatus.IDLE;
                 }
                 break;
@@ -206,28 +206,30 @@ public final class SimulationEngine {
                     doorTicksRemaining = 0;
                     doorDwellTicksRemaining = 0;
                 } else if (newFloor == minFloor) {
-                    // At bottom floor, can't move down
+                    // At bottom floor, can't move down.
                     newStatus = LiftStatus.IDLE;
                 }
                 break;
             case OPEN_DOOR:
                 if (currentStatus == LiftStatus.OUT_OF_SERVICE) {
-                    // Can't open doors when out of service
+                    // Can't open doors when out of service.
                     logInvalidAction(action, currentStatus, state);
                     return new ActionResult(state, false);
                 } else if (currentStatus == LiftStatus.MOVING_UP || currentStatus == LiftStatus.MOVING_DOWN) {
-                    // Must stop first before opening doors
+                    // Must stop first before opening doors.
                     newStatus = LiftStatus.IDLE;
                 } else if (currentStatus == LiftStatus.IDLE) {
-                    // Can now start opening doors
+                    // Can now start opening doors.
                     newStatus = LiftStatus.DOORS_OPENING;
                     doorTicksRemaining = doorTransitionTicks;
                     movementTicksRemaining = 0;
                     doorDwellTicksRemaining = 0;
                     doorClosingTicksElapsed = 0;
                 }
-                // Note: DOORS_CLOSING reopen handled in tick() to interrupt in-progress transition
-                // If already DOORS_OPENING or DOORS_OPEN, stay in current state
+                /*
+                 * Note: DOORS_CLOSING reopen handled in tick() to interrupt in-progress transition.
+                 * If already DOORS_OPENING or DOORS_OPEN, stay in current state.
+                 */
                 break;
             case CLOSE_DOOR:
                 if (doorDwellTicksRemaining > 0) {
@@ -238,22 +240,22 @@ public final class SimulationEngine {
                     doorTicksRemaining = doorTransitionTicks;
                     movementTicksRemaining = 0;
                     doorDwellTicksRemaining = 0;
-                    doorClosingTicksElapsed = 0;  // Reset when doors start closing
+                    doorClosingTicksElapsed = 0;  // Reset when doors start closing.
                 }
                 break;
             case IDLE:
-                // Complete transitional states or stop movement
+                // Complete transitional states or stop movement.
                 if (currentStatus == LiftStatus.MOVING_UP ||
                            currentStatus == LiftStatus.MOVING_DOWN) {
                     newStatus = LiftStatus.IDLE;
                 }
-                // Otherwise stay in current status
+                // Otherwise stay in current status.
                 break;
         }
 
-        // Validate the state transition
+        // Validate the state transition.
         if (!StateTransitionValidator.isValidTransition(currentStatus, newStatus)) {
-            // Invalid transition - return current state unchanged
+            // Invalid transition - return current state unchanged.
             LOGGER.warning(String.format(
                 "Invalid state transition for action %s: %s -> %s at floor %d (tick %d)",
                 action,
@@ -298,30 +300,32 @@ public final class SimulationEngine {
             throw new IllegalStateException("Lift is already pending out of service");
         }
 
-        // Validate that we can eventually transition to OUT_OF_SERVICE
+        // Validate that we can eventually transition to OUT_OF_SERVICE.
         if (!StateTransitionValidator.isValidTransition(currentState.getStatus(), LiftStatus.OUT_OF_SERVICE)) {
             throw new IllegalStateException(
                 String.format("Cannot transition to OUT_OF_SERVICE from %s", currentState.getStatus())
             );
         }
 
-        // Set pending flag to initiate graceful shutdown sequence
+        // Set pending flag to initiate graceful shutdown sequence.
         outOfServicePending = true;
         outOfServiceDoorsOpened = currentState.getStatus() == LiftStatus.DOORS_OPEN ||
             currentState.getStatus() == LiftStatus.DOORS_OPENING;
 
-        // Determine target floor for graceful shutdown
-        // If moving, complete movement to the next floor in direction of travel
+        /*
+         * Determine target floor for graceful shutdown.
+         * If moving, complete movement to the next floor in direction of travel.
+         */
         if (currentState.getStatus() == LiftStatus.MOVING_UP) {
             outOfServiceTargetFloor = Math.min(maxFloor, currentState.getFloor() + 1);
         } else if (currentState.getStatus() == LiftStatus.MOVING_DOWN) {
             outOfServiceTargetFloor = Math.max(minFloor, currentState.getFloor() - 1);
         } else {
-            // Not moving, stop at current floor
+            // Not moving, stop at current floor.
             outOfServiceTargetFloor = currentState.getFloor();
         }
 
-        // If doors are already open, skip remaining dwell time for emergency shutdown
+        // If doors are already open, skip remaining dwell time for emergency shutdown.
         if (currentState.getStatus() == LiftStatus.DOORS_OPEN && doorDwellTicksRemaining > 0) {
             doorDwellTicksRemaining = 0;
         }
@@ -347,12 +351,12 @@ public final class SimulationEngine {
             );
         }
 
-        // Validate transition
+        // Validate transition.
         if (!StateTransitionValidator.isValidTransition(LiftStatus.OUT_OF_SERVICE, LiftStatus.IDLE)) {
             throw new IllegalStateException("Cannot transition from OUT_OF_SERVICE to IDLE");
         }
 
-        // Transition to IDLE
+        // Transition to IDLE.
         currentState = new LiftState(currentState.getFloor(), LiftStatus.IDLE);
         returnToServicePending = false;
     }
@@ -364,48 +368,48 @@ public final class SimulationEngine {
     private void handleOutOfServiceTransition() {
         LiftStatus status = currentState.getStatus();
 
-        // Step 1: If moving, continue until we reach the target floor, then stop
+        // Step 1: If moving, continue until we reach the target floor, then stop.
         if (status == LiftStatus.MOVING_UP || status == LiftStatus.MOVING_DOWN) {
             if (currentState.getFloor() != outOfServiceTargetFloor) {
-                // Haven't reached target floor yet, continue moving
+                // Haven't reached target floor yet, continue moving.
                 if (movementTicksRemaining > 0) {
                     advanceMovement();
                     return;
                 }
-                // Need to start movement to next floor
+                // Need to start movement to next floor.
                 movementTicksRemaining = travelTicksPerFloor;
                 advanceMovement();
                 return;
             }
-            // Reached target floor, transition to IDLE
+            // Reached target floor, transition to IDLE.
             currentState = new LiftState(currentState.getFloor(), LiftStatus.IDLE);
-            status = LiftStatus.IDLE;  // Update local variable to allow fall-through
-            // Fall through to Step 4 to start opening doors on the same tick
+            status = LiftStatus.IDLE;  // Update local variable to allow fall-through.
+            // Fall through to Step 4 to start opening doors on the same tick.
         }
 
-        // Step 2: If doors are in transition, let them complete
+        // Step 2: If doors are in transition, let them complete.
         if (status == LiftStatus.DOORS_OPENING || status == LiftStatus.DOORS_CLOSING) {
             if (doorTicksRemaining > 0) {
                 advanceDoorTransition();
-                status = currentState.getStatus();  // Update status after transition
+                status = currentState.getStatus();  // Update status after transition.
                 if (doorTicksRemaining > 0) {
-                    // Still in transition
+                    // Still in transition.
                     return;
                 }
-                // Transition completed on this tick, fall through to next step
+                // Transition completed on this tick, fall through to next step.
             } else {
-                // Door transition already complete, update status and fall through
+                // Door transition already complete, update status and fall through.
                 status = currentState.getStatus();
             }
         }
 
-        // Step 3: If doors are open, handle dwell time
+        // Step 3: If doors are open, handle dwell time.
         if (status == LiftStatus.DOORS_OPEN) {
             advanceDoorDwell();
             return;
         }
 
-        // Step 4: At this point we're IDLE. If we haven't opened doors yet, open them
+        // Step 4: At this point we're IDLE. If we haven't opened doors yet, open them.
         if (status == LiftStatus.IDLE && !outOfServiceDoorsOpened) {
             currentState = new LiftState(currentState.getFloor(), LiftStatus.DOORS_OPENING);
             doorTicksRemaining = doorTransitionTicks;
@@ -415,12 +419,12 @@ public final class SimulationEngine {
             return;
         }
 
-        // Step 5: If we're IDLE and doors have been opened/closed, transition to OUT_OF_SERVICE
+        // Step 5: If we're IDLE and doors have been opened/closed, transition to OUT_OF_SERVICE.
         if (status == LiftStatus.IDLE && outOfServiceDoorsOpened) {
             currentState = new LiftState(currentState.getFloor(), LiftStatus.OUT_OF_SERVICE);
             outOfServicePending = false;
             outOfServiceDoorsOpened = false;
-            // Reset all timing counters
+            // Reset all timing counters.
             movementTicksRemaining = 0;
             doorTicksRemaining = 0;
             doorDwellTicksRemaining = 0;
@@ -442,11 +446,11 @@ public final class SimulationEngine {
 
     private void handleDoorTransitionTick(Action action) {
         if (doorTicksRemaining > 0) {
-            // Special case: check for door reopening during closing
+            // Special case: check for door reopening during closing.
             if (currentState.getStatus() == LiftStatus.DOORS_CLOSING &&
                 action == Action.OPEN_DOOR &&
                 doorClosingTicksElapsed < doorReopenWindowTicks) {
-                // Interrupt closing and start reopening
+                // Interrupt closing and start reopening.
                 currentState = new LiftState(currentState.getFloor(), LiftStatus.DOORS_OPENING);
                 doorTicksRemaining = doorTransitionTicks;
                 doorClosingTicksElapsed = 0;
@@ -468,7 +472,7 @@ public final class SimulationEngine {
     }
 
     private void handleIdleTick(Action action) {
-        // Apply action to get new state
+        // Apply action to get new state.
         ActionResult result = startAction(currentState, action);
         currentState = result.state();
         if (!result.success()) {
@@ -517,7 +521,7 @@ public final class SimulationEngine {
     private void advanceDoorTransition() {
         doorTicksRemaining--;
 
-        // Track elapsed ticks during door closing
+        // Track elapsed ticks during door closing.
         if (currentState.getStatus() == LiftStatus.DOORS_CLOSING) {
             doorClosingTicksElapsed++;
         }
@@ -531,7 +535,7 @@ public final class SimulationEngine {
             newStatus = LiftStatus.DOORS_OPEN;
         } else if (currentState.getStatus() == LiftStatus.DOORS_CLOSING) {
             newStatus = LiftStatus.IDLE;
-            doorClosingTicksElapsed = 0;  // Reset when door closing completes
+            doorClosingTicksElapsed = 0;  // Reset when door closing completes.
         }
 
         if (StateTransitionValidator.isValidTransition(currentState.getStatus(), newStatus)) {
@@ -557,7 +561,7 @@ public final class SimulationEngine {
         if (StateTransitionValidator.isValidTransition(currentState.getStatus(), newStatus)) {
             currentState = new LiftState(currentState.getFloor(), newStatus);
             doorTicksRemaining = doorTransitionTicks;
-            doorClosingTicksElapsed = 0;  // Reset when automatic door closing starts
+            doorClosingTicksElapsed = 0;  // Reset when automatic door closing starts.
             advanceDoorTransition();
         }
     }

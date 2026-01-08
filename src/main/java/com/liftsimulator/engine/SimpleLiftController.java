@@ -17,14 +17,14 @@ public class SimpleLiftController implements LiftController {
         int currentFloor = currentState.getFloor();
         DoorState doorState = currentState.getDoorState();
 
-        // If doors are open, let the engine manage the dwell/close cycle
+        // If doors are open, let the engine manage the dwell/close cycle.
         if (doorState == DoorState.OPEN) {
             return Action.IDLE;
         }
 
-        // If we've reached the target floor, open doors
+        // If we've reached the target floor, open doors.
         if (currentFloor == targetFloor) {
-            // Switch direction and target
+            // Switch direction and target.
             if (movingUp) {
                 movingUp = false;
                 targetFloor = 0;
@@ -35,7 +35,7 @@ public class SimpleLiftController implements LiftController {
             return Action.OPEN_DOOR;
         }
 
-        // Move towards target floor
+        // Move towards target floor.
         if (currentFloor < targetFloor) {
             return Action.MOVE_UP;
         } else if (currentFloor > targetFloor) {

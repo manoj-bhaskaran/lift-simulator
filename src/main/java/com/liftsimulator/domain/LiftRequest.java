@@ -104,11 +104,11 @@ public class LiftRequest {
      */
     private boolean isValidTransition(RequestState from, RequestState to) {
         if (from == to) {
-            return false; // No self-transitions
+            return false; // No self-transitions.
         }
 
         if (TERMINAL_STATES.contains(from)) {
-            return false; // Cannot transition from terminal states
+            return false; // Cannot transition from terminal states.
         }
 
         return switch (from) {
