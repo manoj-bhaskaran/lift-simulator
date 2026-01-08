@@ -18,7 +18,7 @@ public class OutOfServiceTest {
     @BeforeEach
     public void setUp() {
         controller = new NaiveLiftController();
-        engine = new SimulationEngine(controller, 0, 10);
+        engine = SimulationEngine.builder(controller, 0, 10).build();
     }
 
     @Test

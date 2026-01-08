@@ -28,7 +28,7 @@ public class Main {
 
         // Create naive controller and engine
         NaiveLiftController controller = new NaiveLiftController();
-        SimulationEngine engine = new SimulationEngine(controller, 0, 10);
+        SimulationEngine engine = SimulationEngine.builder(controller, 0, 10).build();
 
         // Add some requests to simulate real usage
         System.out.println("Requests:");
