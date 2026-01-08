@@ -109,12 +109,6 @@ public class SimulationEngine {
             return;
         }
 
-        if (movementTicksRemaining == 0 &&
-            (currentState.getStatus() == LiftStatus.MOVING_UP ||
-             currentState.getStatus() == LiftStatus.MOVING_DOWN)) {
-            currentState = new LiftState(currentState.getFloor(), LiftStatus.IDLE);
-        }
-
         // Ask controller for next action
         Action action = controller.decideNextAction(currentState, clock.getCurrentTick());
 
