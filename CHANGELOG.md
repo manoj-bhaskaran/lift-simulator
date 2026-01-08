@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-01-10
+
+### Added
+- Allow scenario files to configure controller and simulation timing parameters (including door dwell time) alongside scripted events
+
 ### Fixed
 - Expand scenario runner floor bounds to include requested negative floors while keeping the default range and starting floor
 

@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.10.2**
+Current version: **0.11.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -20,7 +20,7 @@ The simulation is text-based and designed for clarity over visual appeal.
 
 ## Features
 
-The current version (v0.10.2) implements:
+The current version (v0.11.0) implements:
 - **Out-of-service functionality**: Take lifts out of service safely for maintenance or emergencies, automatically cancelling all pending requests
 - **Request lifecycle management**: Requests are first-class entities with explicit lifecycle states (CREATED → QUEUED → ASSIGNED → SERVING → COMPLETED/CANCELLED)
 - **Request cancellation**: Cancel hall and car calls by request ID at any point before completion
@@ -81,7 +81,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.10.2.jar`.
+The packaged JAR will be in `target/lift-simulator-0.11.0.jar`.
 
 ## Running the Simulation
 
@@ -94,7 +94,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.10.2.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.11.0.jar com.liftsimulator.Main
 ```
 
 The demo runs a pre-configured scenario with several lift requests and displays the simulation state at each tick.
@@ -110,7 +110,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.10.2.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.11.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 Scenario files are plain text with metadata and event lines:
@@ -118,6 +118,15 @@ Scenario files are plain text with metadata and event lines:
 ```text
 name: Demo scenario - multiple events
 ticks: 30
+min_floor: 0
+max_floor: 10
+initial_floor: 0
+travel_ticks_per_floor: 1
+door_transition_ticks: 2
+door_dwell_ticks: 3
+door_reopen_window_ticks: 2
+home_floor: 0
+idle_timeout_ticks: 5
 
 0, car_call, req1, 3
 2, hall_call, req2, 7, UP
@@ -130,6 +139,18 @@ ticks: 30
 
 Each event executes at the specified tick, and the output logs the tick, floor, lift state, and pending requests to help validate complex behavior.
 The scenario runner automatically expands the default floor range (0–10) to include any requested floors, so negative floors in scripted scenarios are supported without extra configuration.
+If you set any of the scenario parameters (e.g., `door_dwell_ticks`), the scenario runner uses them to configure the controller and simulation engine.
+
+Scenario metadata keys:
+
+- **min_floor** / **max_floor**: floor bounds used for the simulation (still expanded to include requested floors)
+- **initial_floor**: starting floor for the lift (clamped to the final min/max range)
+- **travel_ticks_per_floor**: ticks required to travel one floor
+- **door_transition_ticks**: ticks required to open or close doors
+- **door_dwell_ticks**: ticks doors stay open before closing
+- **door_reopen_window_ticks**: ticks during door closing when doors can reopen (0 disables)
+- **home_floor**: idle parking floor for the naive controller
+- **idle_timeout_ticks**: idle ticks before the lift parks at the home floor
 
 Note: If a `return_to_service` event is scheduled while the lift is still completing the out-of-service shutdown sequence, the return is deferred until the lift reaches the `OUT_OF_SERVICE` state.
 

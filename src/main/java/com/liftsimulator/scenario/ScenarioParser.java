@@ -36,6 +36,15 @@ public class ScenarioParser {
         List<ScenarioEvent> events = new ArrayList<>();
         Integer minFloor = null;
         Integer maxFloor = null;
+        Integer configuredMinFloor = null;
+        Integer configuredMaxFloor = null;
+        Integer initialFloor = null;
+        Integer travelTicksPerFloor = null;
+        Integer doorTransitionTicks = null;
+        Integer doorDwellTicks = null;
+        Integer doorReopenWindowTicks = null;
+        Integer homeFloor = null;
+        Integer idleTimeoutTicks = null;
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
@@ -55,6 +64,51 @@ public class ScenarioParser {
                 if (trimmed.startsWith("ticks:")) {
                     String value = trimmed.substring("ticks:".length()).trim();
                     totalTicks = Integer.parseInt(value);
+                    continue;
+                }
+
+                if (trimmed.startsWith("min_floor:")) {
+                    configuredMinFloor = parseIntValue(trimmed, "min_floor:");
+                    continue;
+                }
+
+                if (trimmed.startsWith("max_floor:")) {
+                    configuredMaxFloor = parseIntValue(trimmed, "max_floor:");
+                    continue;
+                }
+
+                if (trimmed.startsWith("initial_floor:")) {
+                    initialFloor = parseIntValue(trimmed, "initial_floor:");
+                    continue;
+                }
+
+                if (trimmed.startsWith("travel_ticks_per_floor:")) {
+                    travelTicksPerFloor = parseIntValue(trimmed, "travel_ticks_per_floor:");
+                    continue;
+                }
+
+                if (trimmed.startsWith("door_transition_ticks:")) {
+                    doorTransitionTicks = parseIntValue(trimmed, "door_transition_ticks:");
+                    continue;
+                }
+
+                if (trimmed.startsWith("door_dwell_ticks:")) {
+                    doorDwellTicks = parseIntValue(trimmed, "door_dwell_ticks:");
+                    continue;
+                }
+
+                if (trimmed.startsWith("door_reopen_window_ticks:")) {
+                    doorReopenWindowTicks = parseIntValue(trimmed, "door_reopen_window_ticks:");
+                    continue;
+                }
+
+                if (trimmed.startsWith("home_floor:")) {
+                    homeFloor = parseIntValue(trimmed, "home_floor:");
+                    continue;
+                }
+
+                if (trimmed.startsWith("idle_timeout_ticks:")) {
+                    idleTimeoutTicks = parseIntValue(trimmed, "idle_timeout_ticks:");
                     continue;
                 }
 
@@ -79,7 +133,22 @@ public class ScenarioParser {
             throw new IllegalArgumentException("Scenario must define ticks in " + sourceName);
         }
 
-        return new ScenarioDefinition(scenarioName, totalTicks, events, minFloor, maxFloor);
+        return new ScenarioDefinition(
+                scenarioName,
+                totalTicks,
+                events,
+                minFloor,
+                maxFloor,
+                configuredMinFloor,
+                configuredMaxFloor,
+                initialFloor,
+                travelTicksPerFloor,
+                doorTransitionTicks,
+                doorDwellTicks,
+                doorReopenWindowTicks,
+                homeFloor,
+                idleTimeoutTicks
+        );
     }
 
     private Integer extractFloorValue(String action, String[] tokens) {
@@ -155,5 +224,10 @@ public class ScenarioParser {
 
     private String errorMessage(String sourceName, int lineNumber, String message) {
         return String.format("%s (line %d): %s", sourceName, lineNumber, message);
+    }
+
+    private Integer parseIntValue(String trimmed, String prefix) {
+        String value = trimmed.substring(prefix.length()).trim();
+        return Integer.parseInt(value);
     }
 }
