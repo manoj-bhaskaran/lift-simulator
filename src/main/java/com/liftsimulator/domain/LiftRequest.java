@@ -96,6 +96,30 @@ public class LiftRequest {
     }
 
     /**
+     * Completes the request by advancing through any intermediate states.
+     */
+    public void completeRequest() {
+        while (!isTerminal() && state != RequestState.SERVING) {
+            transitionTo(nextCompletionState(state));
+        }
+
+        if (state == RequestState.SERVING) {
+            transitionTo(RequestState.COMPLETED);
+        }
+    }
+
+    private RequestState nextCompletionState(RequestState currentState) {
+        return switch (currentState) {
+            case CREATED -> RequestState.QUEUED;
+            case QUEUED -> RequestState.ASSIGNED;
+            case ASSIGNED -> RequestState.SERVING;
+            default -> throw new IllegalStateException(
+                String.format("No completion transition available for request %d in state %s", id, currentState)
+            );
+        };
+    }
+
+    /**
      * Validates whether a state transition is allowed.
      *
      * @param from The current state
