@@ -345,10 +345,12 @@ public final class NaiveLiftController implements LiftController {
             }
 
             if (shouldTrackIdle(currentState)) {
-                if (idleStartTick == null) {
+                Long trackedIdleStartTick = idleStartTick;
+                if (trackedIdleStartTick == null) {
+                    trackedIdleStartTick = currentTick;
                     idleStartTick = currentTick;
                 }
-                long idleTicks = currentTick - idleStartTick;
+                long idleTicks = currentTick - trackedIdleStartTick;
                 if (idleTicks >= idleTimeoutTicks && currentFloor != homeFloor) {
                     parkingInProgress = true;
                     return moveTowardHome(currentFloor);

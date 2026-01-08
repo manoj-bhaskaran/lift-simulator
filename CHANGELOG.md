@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.16] - 2026-01-24
+
+### Fixed
+- Guard idle timeout calculations in the naive controller against null idle tracking state
+
 ## [0.12.15] - 2026-01-23
 
 ### Changed
