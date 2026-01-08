@@ -3,7 +3,7 @@ package com.liftsimulator.scenario;
 import java.util.Collections;
 import java.util.List;
 
-public class ScenarioDefinition {
+public final class ScenarioDefinition {
     private final String name;
     private final int totalTicks;
     private final List<ScenarioEvent> events;

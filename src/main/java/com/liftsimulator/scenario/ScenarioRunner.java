@@ -5,6 +5,7 @@ import com.liftsimulator.domain.LiftState;
 import com.liftsimulator.domain.RequestState;
 import com.liftsimulator.engine.NaiveLiftController;
 import com.liftsimulator.engine.SimulationEngine;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,10 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "ScenarioRunner intentionally shares engine/controller references for simulation."
+)
 public class ScenarioRunner {
     private final SimulationEngine engine;
     private final NaiveLiftController controller;

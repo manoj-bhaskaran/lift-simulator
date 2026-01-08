@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  *
  * Optimization is out of scope; this focuses on correctness first.
  */
-public class NaiveLiftController implements LiftController {
+public final class NaiveLiftController implements LiftController {
     private static final int DEFAULT_HOME_FLOOR = 0;
     private static final int DEFAULT_IDLE_TIMEOUT_TICKS = 5;
 

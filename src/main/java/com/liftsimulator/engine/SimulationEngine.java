@@ -11,7 +11,7 @@ import java.util.logging.Logger;
  * Core simulation engine that advances time in discrete ticks.
  * The engine owns time and coordinates state updates.
  */
-public class SimulationEngine {
+public final class SimulationEngine {
     private static final Logger LOGGER = Logger.getLogger(SimulationEngine.class.getName());
     private static final int DEFAULT_TRAVEL_TICKS_PER_FLOOR = 1;
     private static final int DEFAULT_DOOR_TRANSITION_TICKS = 2;
