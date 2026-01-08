@@ -4,6 +4,8 @@ import com.liftsimulator.domain.Action;
 import com.liftsimulator.domain.LiftState;
 import com.liftsimulator.domain.LiftStatus;
 
+import java.util.Map;
+
 /**
  * Core simulation engine that advances time in discrete ticks.
  * The engine owns time and coordinates state updates.
@@ -31,6 +33,21 @@ public class SimulationEngine {
     private boolean outOfServiceDoorsOpened;
     private int outOfServiceTargetFloor;
     private boolean returnToServicePending;
+
+    @FunctionalInterface
+    private interface TickBehavior {
+        void execute(SimulationEngine engine, Action action);
+    }
+
+    private static final Map<LiftStatus, TickBehavior> STATE_BEHAVIORS = Map.of(
+        LiftStatus.MOVING_UP, SimulationEngine::handleMovementTick,
+        LiftStatus.MOVING_DOWN, SimulationEngine::handleMovementTick,
+        LiftStatus.DOORS_OPENING, SimulationEngine::handleDoorTransitionTick,
+        LiftStatus.DOORS_CLOSING, SimulationEngine::handleDoorTransitionTick,
+        LiftStatus.DOORS_OPEN, SimulationEngine::handleDoorDwellTick,
+        LiftStatus.IDLE, SimulationEngine::handleIdleTick,
+        LiftStatus.OUT_OF_SERVICE, SimulationEngine::handleIdleTick
+    );
 
     public static Builder builder(LiftController controller, int minFloor, int maxFloor) {
         return new Builder(controller, minFloor, maxFloor);
@@ -140,45 +157,8 @@ public class SimulationEngine {
         // Ask controller for next action
         Action action = controller.decideNextAction(currentState, clock.getCurrentTick());
 
-        // Advance any in-progress movement or door transition
-        if (movementTicksRemaining > 0) {
-            advanceMovement();
-            clock.tick();
-            return;
-        }
-
-        if (doorTicksRemaining > 0) {
-            // Special case: check for door reopening during closing
-            if (currentState.getStatus() == LiftStatus.DOORS_CLOSING &&
-                action == Action.OPEN_DOOR &&
-                doorClosingTicksElapsed < doorReopenWindowTicks) {
-                // Interrupt closing and start reopening
-                currentState = new LiftState(currentState.getFloor(), LiftStatus.DOORS_OPENING);
-                doorTicksRemaining = doorTransitionTicks;
-                doorClosingTicksElapsed = 0;
-            }
-            advanceDoorTransition();
-            clock.tick();
-            return;
-        }
-
-        if (doorDwellTicksRemaining > 0) {
-            advanceDoorDwell();
-            clock.tick();
-            return;
-        }
-
-        // Apply action to get new state
-        currentState = startAction(currentState, action);
-
-        if (movementTicksRemaining > 0) {
-            advanceMovement();
-        } else if (doorTicksRemaining > 0) {
-            advanceDoorTransition();
-        } else if (doorDwellTicksRemaining > 0) {
-            advanceDoorDwell();
-        }
-
+        TickBehavior behavior = STATE_BEHAVIORS.get(currentState.getStatus());
+        behavior.execute(this, action);
         // Increment tick counter
         clock.tick();
     }
@@ -436,6 +416,55 @@ public class SimulationEngine {
             if (returnToServicePending) {
                 returnToService();
             }
+        }
+    }
+
+    private void handleMovementTick(Action action) {
+        if (movementTicksRemaining > 0) {
+            advanceMovement();
+            return;
+        }
+
+        handleIdleTick(action);
+    }
+
+    private void handleDoorTransitionTick(Action action) {
+        if (doorTicksRemaining > 0) {
+            // Special case: check for door reopening during closing
+            if (currentState.getStatus() == LiftStatus.DOORS_CLOSING &&
+                action == Action.OPEN_DOOR &&
+                doorClosingTicksElapsed < doorReopenWindowTicks) {
+                // Interrupt closing and start reopening
+                currentState = new LiftState(currentState.getFloor(), LiftStatus.DOORS_OPENING);
+                doorTicksRemaining = doorTransitionTicks;
+                doorClosingTicksElapsed = 0;
+            }
+            advanceDoorTransition();
+            return;
+        }
+
+        handleIdleTick(action);
+    }
+
+    private void handleDoorDwellTick(Action action) {
+        if (doorDwellTicksRemaining > 0) {
+            advanceDoorDwell();
+            return;
+        }
+
+        handleIdleTick(action);
+    }
+
+    private void handleIdleTick(Action action) {
+        // Apply action to get new state
+        currentState = startAction(currentState, action);
+
+        if (movementTicksRemaining > 0) {
+            advanceMovement();
+        } else if (doorTicksRemaining > 0) {
+            advanceDoorTransition();
+        } else if (doorDwellTicksRemaining > 0) {
+            advanceDoorDwell();
         }
     }
 
