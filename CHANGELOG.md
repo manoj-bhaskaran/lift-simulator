@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add JaCoCo coverage reporting and enforce an 80% line coverage minimum in Maven builds
+- Add integration tests covering scenario parsing, execution, and invalid scenario handling
 
 ### Changed
 - Refactor simulation engine tests to use a sequence-based controller helper to reduce boilerplate
