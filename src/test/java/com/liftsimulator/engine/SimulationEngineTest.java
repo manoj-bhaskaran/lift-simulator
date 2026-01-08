@@ -32,6 +32,26 @@ public class SimulationEngineTest {
         }
     }
 
+    /**
+     * Controller that returns a predefined sequence of actions, then idles.
+     */
+    private static class SequenceController implements LiftController {
+        private final Action[] actions;
+        private int index = 0;
+
+        private SequenceController(Action... actions) {
+            this.actions = actions;
+        }
+
+        @Override
+        public Action decideNextAction(LiftState state, long tick) {
+            if (index >= actions.length) {
+                return Action.IDLE;
+            }
+            return actions[index++];
+        }
+    }
+
     @Test
     public void testInitializesAtMinFloor() {
         SimulationEngine engine = SimulationEngine.builder(
@@ -87,73 +107,16 @@ public class SimulationEngineTest {
 
     @Test
     public void testMoveDownDecrementsFloorByOne() {
-        // Given: lift at floor 3 with doors closed
-        SimulationEngine engine = SimulationEngine.builder(
-                new FixedActionController(Action.MOVE_UP),
-                0,
-                5
-        ).build();
+        LiftController moveToFloor3ThenDown = new SequenceController(
+                Action.MOVE_UP,
+                Action.MOVE_UP,
+                Action.MOVE_UP,
+                Action.IDLE,
+                Action.MOVE_DOWN
+        );
 
-        // Move up to floor 3
-        for (int i = 0; i < 3; i++) {
-            engine.tick();
-        }
-        assertEquals(3, engine.getCurrentState().getFloor());
-
-        // Switch to MOVE_DOWN controller
-        engine = SimulationEngine.builder(
-                new FixedActionController(Action.IDLE),
-                0,
-                5
-        ).build();
-        // Manually advance to floor 3
-        for (int i = 0; i < 3; i++) {
-            engine = SimulationEngine.builder(
-                    new FixedActionController(Action.MOVE_UP),
-                    0,
-                    5
-            ).build();
-            for (int j = 0; j <= i; j++) {
-                engine.tick();
-            }
-        }
-
-        // Create new engine at floor 3 going down
-        engine = SimulationEngine.builder(
-                new FixedActionController(Action.MOVE_DOWN),
-                0,
-                5
-        ).build();
-        // Move to floor 3 first
-        for (int i = 0; i < 3; i++) {
-            engine = SimulationEngine.builder(
-                    new FixedActionController(Action.MOVE_UP),
-                    0,
-                    5
-            ).build();
-            for (int j = 0; j < 3; j++) {
-                engine.tick();
-            }
-        }
-
-        // Actually, let me use a better approach with a custom controller
-        LiftController moveToFloor3ThenDown = new LiftController() {
-            private int tickCount = 0;
-
-            @Override
-            public Action decideNextAction(LiftState state, long tick) {
-                tickCount++;
-                if (tickCount <= 3) {
-                    return Action.MOVE_UP;  // Move up to floor 3
-                } else if (tickCount == 4) {
-                    return Action.IDLE;  // Stop before changing direction
-                } else {
-                    return Action.MOVE_DOWN;  // Now move down
-                }
-            }
-        };
-
-        engine = SimulationEngine.builder(moveToFloor3ThenDown, 0, 5).build();
+        SimulationEngine engine = SimulationEngine.builder(moveToFloor3ThenDown, 0, 5)
+                .build();
 
         // Move up to floor 3
         for (int i = 0; i < 3; i++) {
@@ -193,21 +156,12 @@ public class SimulationEngineTest {
 
     @Test
     public void testMoveDownAtBottomFloorSetsDirectionIdle() {
-        LiftController moveUpThenDownPastMin = new LiftController() {
-            private int tickCount = 0;
-
-            @Override
-            public Action decideNextAction(LiftState state, long tick) {
-                tickCount++;
-                if (tickCount == 1) {
-                    return Action.MOVE_UP;  // Move up to floor 1
-                } else if (tickCount == 2) {
-                    return Action.IDLE;  // Stop before changing direction
-                } else {
-                    return Action.MOVE_DOWN;  // Move down
-                }
-            }
-        };
+        LiftController moveUpThenDownPastMin = new SequenceController(
+                Action.MOVE_UP,
+                Action.IDLE,
+                Action.MOVE_DOWN,
+                Action.MOVE_DOWN
+        );
 
         SimulationEngine engine = SimulationEngine.builder(moveUpThenDownPastMin, 0, 3).build();
 
@@ -235,21 +189,11 @@ public class SimulationEngineTest {
     @Test
     public void testLiftDoesNotMoveUpWhenDoorIsOpen() {
         // Given: lift at floor 1 with doors open
-        LiftController openDoorThenMoveUp = new LiftController() {
-            private int tickCount = 0;
-
-            @Override
-            public Action decideNextAction(LiftState state, long tick) {
-                tickCount++;
-                if (tickCount == 1) {
-                    return Action.OPEN_DOOR;  // Start opening
-                } else if (tickCount == 2) {
-                    return Action.IDLE;  // Complete opening
-                } else {
-                    return Action.MOVE_UP;  // Try to move with doors open
-                }
-            }
-        };
+        LiftController openDoorThenMoveUp = new SequenceController(
+                Action.OPEN_DOOR,
+                Action.IDLE,
+                Action.MOVE_UP
+        );
 
         SimulationEngine engine = SimulationEngine.builder(openDoorThenMoveUp, 0, 5).build();
 
@@ -270,25 +214,14 @@ public class SimulationEngineTest {
     @Test
     public void testLiftDoesNotMoveDownWhenDoorIsOpen() {
         // Given: lift at floor 2 with doors open
-        LiftController moveUpTwiceThenOpenThenDown = new LiftController() {
-            private int tickCount = 0;
-
-            @Override
-            public Action decideNextAction(LiftState state, long tick) {
-                tickCount++;
-                if (tickCount <= 2) {
-                    return Action.MOVE_UP;  // Move up to floor 2
-                } else if (tickCount == 3) {
-                    return Action.IDLE;  // Stop before opening doors
-                } else if (tickCount == 4) {
-                    return Action.OPEN_DOOR;  // Start opening doors
-                } else if (tickCount == 5) {
-                    return Action.IDLE;  // Complete opening doors
-                } else {
-                    return Action.MOVE_DOWN;  // Try to move down with doors open
-                }
-            }
-        };
+        LiftController moveUpTwiceThenOpenThenDown = new SequenceController(
+                Action.MOVE_UP,
+                Action.MOVE_UP,
+                Action.IDLE,
+                Action.OPEN_DOOR,
+                Action.IDLE,
+                Action.MOVE_DOWN
+        );
 
         SimulationEngine engine = SimulationEngine.builder(moveUpTwiceThenOpenThenDown, 0, 5).build();
 
@@ -349,19 +282,10 @@ public class SimulationEngineTest {
     @Test
     public void testOpenDoorSetsDoorToOpen() {
         // Given: lift with doors closed
-        LiftController openThenIdle = new LiftController() {
-            private int tickCount = 0;
-
-            @Override
-            public Action decideNextAction(LiftState state, long tick) {
-                tickCount++;
-                if (tickCount == 1) {
-                    return Action.OPEN_DOOR;  // Start opening doors
-                } else {
-                    return Action.IDLE;  // Complete door opening
-                }
-            }
-        };
+        LiftController openThenIdle = new SequenceController(
+                Action.OPEN_DOOR,
+                Action.IDLE
+        );
 
         SimulationEngine engine = SimulationEngine.builder(openThenIdle, 0, 5).build();
         assertEquals(DoorState.CLOSED, engine.getCurrentState().getDoorState());
@@ -380,18 +304,10 @@ public class SimulationEngineTest {
     @Test
     public void testCloseDoorSetsDoorToClosed() {
         // Given: lift with doors open
-        LiftController openThenIdle = new LiftController() {
-            private int tickCount = 0;
-
-            @Override
-            public Action decideNextAction(LiftState state, long tick) {
-                tickCount++;
-                if (tickCount == 1) {
-                    return Action.OPEN_DOOR;  // Start opening
-                }
-                return Action.IDLE;  // Let dwell/close cycle proceed
-            }
-        };
+        LiftController openThenIdle = new SequenceController(
+                Action.OPEN_DOOR,
+                Action.IDLE
+        );
 
         SimulationEngine engine = SimulationEngine.builder(openThenIdle, 0, 5)
                 .travelTicksPerFloor(1)
@@ -435,21 +351,15 @@ public class SimulationEngineTest {
     @Test
     public void testMoveDownSequence() {
         // Test multiple moves down in sequence
-        LiftController moveUpThenDown = new LiftController() {
-            private int tickCount = 0;
-
-            @Override
-            public Action decideNextAction(LiftState state, long tick) {
-                tickCount++;
-                if (tickCount <= 5) {
-                    return Action.MOVE_UP;  // Move up to floor 5
-                } else if (tickCount == 6) {
-                    return Action.IDLE;  // Stop before changing direction
-                } else {
-                    return Action.MOVE_DOWN;  // Move down
-                }
-            }
-        };
+        LiftController moveUpThenDown = new SequenceController(
+                Action.MOVE_UP,
+                Action.MOVE_UP,
+                Action.MOVE_UP,
+                Action.MOVE_UP,
+                Action.MOVE_UP,
+                Action.IDLE,
+                Action.MOVE_DOWN
+        );
 
         SimulationEngine engine = SimulationEngine.builder(moveUpThenDown, 0, 10).build();
 
@@ -522,18 +432,10 @@ public class SimulationEngineTest {
 
     @Test
     public void testDoorDwellTriggersClosingAfterConfiguredTicks() {
-        LiftController openThenIdle = new LiftController() {
-            private int tickCount = 0;
-
-            @Override
-            public Action decideNextAction(LiftState state, long tick) {
-                tickCount++;
-                if (tickCount == 1) {
-                    return Action.OPEN_DOOR;
-                }
-                return Action.IDLE;
-            }
-        };
+        LiftController openThenIdle = new SequenceController(
+                Action.OPEN_DOOR,
+                Action.IDLE
+        );
 
         SimulationEngine engine = SimulationEngine.builder(openThenIdle, 0, 5)
                 .travelTicksPerFloor(1)
