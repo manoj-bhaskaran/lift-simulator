@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.14] - 2026-01-22
+
+### Fixed
+- Enforce scenario tick and event limits to prevent resource exhaustion when parsing scenario files
+
 ## [0.12.13] - 2026-01-21
 
 ### Changed
