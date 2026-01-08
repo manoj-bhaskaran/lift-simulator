@@ -379,8 +379,11 @@ public class OutOfServiceTest {
         // Lift starts servicing floor 3
         engine.tick(); // Floor 1
         engine.tick(); // Floor 2
-        engine.tick(); // Floor 3, stop
+        engine.tick(); // Floor 3, still moving
         assertEquals(3, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.MOVING_UP, engine.getCurrentState().getStatus());
+
+        engine.tick(); // Stop at floor 3
         assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
 
         engine.tick(); // Open doors
