@@ -9,7 +9,9 @@ import com.liftsimulator.domain.LiftState;
 import com.liftsimulator.domain.LiftStatus;
 import com.liftsimulator.domain.RequestState;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -39,7 +41,8 @@ public final class NaiveLiftController implements LiftController {
     private static final int DEFAULT_HOME_FLOOR = 0;
     private static final int DEFAULT_IDLE_TIMEOUT_TICKS = 5;
 
-    private final Set<LiftRequest> requests = new HashSet<>();
+    private final Map<Long, LiftRequest> requestsById = new HashMap<>();
+    private final Set<LiftRequest> activeRequests = new HashSet<>();
     private final int homeFloor;
     private final int idleTimeoutTicks;
     private Long idleStartTick;
@@ -69,7 +72,7 @@ public final class NaiveLiftController implements LiftController {
         }
         LiftRequest request = LiftRequest.carCall(carCall.destinationFloor());
         request.transitionTo(RequestState.QUEUED);
-        requests.add(request);
+        trackRequest(request);
     }
 
     /**
@@ -83,7 +86,7 @@ public final class NaiveLiftController implements LiftController {
         }
         LiftRequest request = LiftRequest.hallCall(hallCall.floor(), hallCall.direction());
         request.transitionTo(RequestState.QUEUED);
-        requests.add(request);
+        trackRequest(request);
     }
 
     /**
@@ -98,7 +101,7 @@ public final class NaiveLiftController implements LiftController {
         if (request.getState() == RequestState.CREATED) {
             request.transitionTo(RequestState.QUEUED);
         }
-        requests.add(request);
+        trackRequest(request);
     }
 
     /**
@@ -110,15 +113,10 @@ public final class NaiveLiftController implements LiftController {
      * @return true if the request was found and cancelled, false if not found or already terminal
      */
     public boolean cancelRequest(long requestId) {
-        Optional<LiftRequest> requestOpt = requests.stream()
-                .filter(request -> request.getId() == requestId)
-                .findFirst();
-
-        if (requestOpt.isEmpty()) {
+        LiftRequest request = requestsById.get(requestId);
+        if (request == null) {
             return false;
         }
-
-        LiftRequest request = requestOpt.get();
 
         // If already terminal (completed or cancelled), nothing to do
         if (request.isTerminal()) {
@@ -129,7 +127,8 @@ public final class NaiveLiftController implements LiftController {
         request.transitionTo(RequestState.CANCELLED);
 
         // Remove from requests set
-        requests.remove(request);
+        activeRequests.remove(request);
+        requestsById.remove(requestId);
 
         return true;
     }
@@ -142,7 +141,7 @@ public final class NaiveLiftController implements LiftController {
      * @param floor the floor to complete requests for
      */
     private void completeRequestsForFloor(int floor) {
-        Set<LiftRequest> completedRequests = requests.stream()
+        Set<LiftRequest> completedRequests = activeRequests.stream()
                 .filter(request -> !request.isTerminal() && request.getTargetFloor() == floor)
                 .collect(Collectors.toSet());
 
@@ -160,7 +159,12 @@ public final class NaiveLiftController implements LiftController {
         }
 
         // Remove completed requests
-        requests.removeIf(LiftRequest::isTerminal);
+        for (LiftRequest request : completedRequests) {
+            if (request.isTerminal()) {
+                activeRequests.remove(request);
+                requestsById.remove(request.getId());
+            }
+        }
     }
 
     /**
@@ -170,7 +174,7 @@ public final class NaiveLiftController implements LiftController {
      * @return true if there is an active request for this floor
      */
     private boolean hasRequestForFloor(int floor) {
-        return requests.stream()
+        return activeRequests.stream()
                 .filter(request -> !request.isTerminal())
                 .anyMatch(request -> request.getTargetFloor() == floor);
     }
@@ -181,9 +185,7 @@ public final class NaiveLiftController implements LiftController {
      * @return set of active requests
      */
     private Set<LiftRequest> getActiveRequests() {
-        return requests.stream()
-                .filter(request -> !request.isTerminal())
-                .collect(Collectors.toSet());
+        return new HashSet<>(activeRequests);
     }
 
     /**
@@ -379,7 +381,8 @@ public final class NaiveLiftController implements LiftController {
         for (LiftRequest request : activeRequests) {
             if (!request.isTerminal()) {
                 request.transitionTo(RequestState.CANCELLED);
-                requests.remove(request);
+                this.activeRequests.remove(request);
+                requestsById.remove(request.getId());
             }
         }
 
@@ -404,6 +407,11 @@ public final class NaiveLiftController implements LiftController {
      * @return a copy of all requests
      */
     public Set<LiftRequest> getRequests() {
-        return new HashSet<>(requests);
+        return new HashSet<>(activeRequests);
+    }
+
+    private void trackRequest(LiftRequest request) {
+        activeRequests.add(request);
+        requestsById.put(request.getId(), request);
     }
 }
