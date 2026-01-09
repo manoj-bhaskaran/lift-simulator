@@ -23,9 +23,7 @@ public class ControllerFactory {
 
         return switch (strategy) {
             case NEAREST_REQUEST_ROUTING -> new NaiveLiftController();
-            case DIRECTIONAL_SCAN -> throw new UnsupportedOperationException(
-                    "DIRECTIONAL_SCAN controller strategy is not yet implemented"
-            );
+            case DIRECTIONAL_SCAN -> new DirectionalScanLiftController();
         };
     }
 
@@ -55,8 +53,10 @@ public class ControllerFactory {
                     idleTimeoutTicks,
                     idleParkingMode
             );
-            case DIRECTIONAL_SCAN -> throw new UnsupportedOperationException(
-                    "DIRECTIONAL_SCAN controller strategy is not yet implemented"
+            case DIRECTIONAL_SCAN -> new DirectionalScanLiftController(
+                    homeFloor,
+                    idleTimeoutTicks,
+                    idleParkingMode
             );
         };
     }

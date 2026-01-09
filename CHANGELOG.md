@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2026-01-10
+
+### Added
+- Directional scan controller implementation that continues in the current direction until requests are serviced
+- Scenario runner support for DIRECTIONAL_SCAN controller strategy
+- Directional scan controller unit tests covering direction commitment and reversal
+
+### Changed
+- Controller factory now instantiates the directional scan controller
+- Scenario and main demo now use a shared request-managing controller interface
+
 ## [0.15.0] - 2026-01-09
 
 ### Added

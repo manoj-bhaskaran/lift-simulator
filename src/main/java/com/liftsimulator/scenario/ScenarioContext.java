@@ -1,6 +1,6 @@
 package com.liftsimulator.scenario;
 
-import com.liftsimulator.engine.NaiveLiftController;
+import com.liftsimulator.engine.RequestManagingLiftController;
 import com.liftsimulator.engine.SimulationEngine;
 
 import java.util.HashMap;
@@ -8,10 +8,10 @@ import java.util.Map;
 
 public class ScenarioContext {
     private final SimulationEngine engine;
-    private final NaiveLiftController controller;
+    private final RequestManagingLiftController controller;
     private final Map<String, Long> requestAliases = new HashMap<>();
 
-    public ScenarioContext(SimulationEngine engine, NaiveLiftController controller) {
+    public ScenarioContext(SimulationEngine engine, RequestManagingLiftController controller) {
         this.engine = engine;
         this.controller = controller;
     }
@@ -20,7 +20,7 @@ public class ScenarioContext {
         return engine;
     }
 
-    public NaiveLiftController getController() {
+    public RequestManagingLiftController getController() {
         return controller;
     }
 

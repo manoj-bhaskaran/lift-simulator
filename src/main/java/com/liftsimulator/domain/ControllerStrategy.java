@@ -11,7 +11,7 @@ public enum ControllerStrategy {
     NEAREST_REQUEST_ROUTING,
 
     /**
-     * Directional scan algorithm (future implementation).
+     * Directional scan algorithm.
      * Continues in the current direction while there are requests in that direction.
      */
     DIRECTIONAL_SCAN

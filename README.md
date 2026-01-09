@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.15.0**
+Current version: **0.16.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -20,8 +20,9 @@ The simulation is text-based and designed for clarity over visual appeal.
 
 ## Features
 
-The current version (v0.14.0) implements:
+The current version (v0.16.0) implements:
 - **Selectable controller strategy**: Choose between different controller algorithms (NEAREST_REQUEST_ROUTING, DIRECTIONAL_SCAN) via enum-based configuration
+- **Directional scan controller**: Implements a SCAN-style algorithm that continues in the current direction until all requests are serviced
 - **Out-of-service functionality**: Take lifts out of service safely for maintenance or emergencies, automatically cancelling all pending requests
 - **Request lifecycle management**: Requests are first-class entities with explicit lifecycle states (CREATED → QUEUED → ASSIGNED → SERVING → COMPLETED/CANCELLED)
 - **Request cancellation**: Cancel hall and car calls by request ID at any point before completion
@@ -42,6 +43,7 @@ The current version (v0.14.0) implements:
 - **Configurable travel, door transition, and door dwell durations** to model time per floor and door cycles
 - **Timed door dwell** with an automatic DOORS_OPEN → DOORS_CLOSING cycle
 - **NaiveLiftController** - A simple controller that services the nearest pending request
+- **DirectionalScanLiftController** - A directional scan controller that batches stops in the current direction
 - **Console output** displaying tick-by-tick lift state (floor, direction, door state, status, request lifecycle)
 - **Request lifecycle visibility** in demo output with compact status display (Q:n, A:n, S:n)
 - **Scenario runner** for scripted simulations with tick-based events and pending request logging
@@ -95,7 +97,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.15.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.16.0.jar`.
 
 ## Running Tests
 
@@ -145,7 +147,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.16.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -154,10 +156,10 @@ The demo runs with a fixed configuration (NEAREST_REQUEST_ROUTING controller, PA
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.16.0.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration
-java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.16.0.jar com.liftsimulator.Main
 ```
 
 **Available Options:**
@@ -176,7 +178,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.16.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -185,13 +187,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.16.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.16.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.16.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**
