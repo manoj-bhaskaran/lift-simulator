@@ -4,6 +4,7 @@ import com.liftsimulator.domain.ControllerStrategy;
 import com.liftsimulator.domain.IdleParkingMode;
 import com.liftsimulator.engine.ControllerFactory;
 import com.liftsimulator.engine.LiftController;
+import com.liftsimulator.engine.NaiveLiftController;
 import com.liftsimulator.engine.SimulationEngine;
 
 import java.io.IOException;
