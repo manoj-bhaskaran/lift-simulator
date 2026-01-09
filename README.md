@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.12.17**
+Current version: **0.14.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -20,7 +20,8 @@ The simulation is text-based and designed for clarity over visual appeal.
 
 ## Features
 
-The current version (v0.12.17) implements:
+The current version (v0.14.0) implements:
+- **Selectable controller strategy**: Choose between different controller algorithms (NEAREST_REQUEST_ROUTING, DIRECTIONAL_SCAN) via enum-based configuration
 - **Out-of-service functionality**: Take lifts out of service safely for maintenance or emergencies, automatically cancelling all pending requests
 - **Request lifecycle management**: Requests are first-class entities with explicit lifecycle states (CREATED → QUEUED → ASSIGNED → SERVING → COMPLETED/CANCELLED)
 - **Request cancellation**: Cancel hall and car calls by request ID at any point before completion
@@ -94,7 +95,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.12.17.jar`.
+The packaged JAR will be in `target/lift-simulator-0.14.0.jar`.
 
 ## Running Tests
 
@@ -144,7 +145,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.12.17.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.14.0.jar com.liftsimulator.Main
 ```
 
 The demo runs a pre-configured scenario with several lift requests and displays the simulation state at each tick.
@@ -160,7 +161,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.12.17.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.14.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 Scenario files are plain text with metadata and event lines. Scenario parsing enforces limits of 1,000,000 ticks and 10,000 events per file:
@@ -202,6 +203,7 @@ Scenario metadata keys:
 - **home_floor**: idle parking floor for the naive controller (used with `PARK_TO_HOME_FLOOR` mode)
 - **idle_timeout_ticks**: idle ticks before the parking behavior activates
 - **idle_parking_mode**: parking behavior when idle (`STAY_AT_CURRENT_FLOOR` or `PARK_TO_HOME_FLOOR`, optional, defaults to `PARK_TO_HOME_FLOOR`)
+- **controller_strategy**: controller algorithm to use (`NEAREST_REQUEST_ROUTING` or `DIRECTIONAL_SCAN`, optional, defaults to `NEAREST_REQUEST_ROUTING`)
 
 Note: If a `return_to_service` event is scheduled while the lift is still completing the out-of-service shutdown sequence, the return is deferred until the lift reaches the `OUT_OF_SERVICE` state.
 
@@ -262,6 +264,54 @@ idle_parking_mode: STAY_AT_CURRENT_FLOOR
 ```
 
 The `idle_parking_mode` parameter is optional and defaults to `PARK_TO_HOME_FLOOR` if not specified.
+
+## Selecting Controller Strategy
+
+You can configure which controller algorithm the lift uses via the `ControllerStrategy` enum:
+
+```java
+// Create controller using factory with desired strategy
+LiftController controller = ControllerFactory.createController(
+    ControllerStrategy.NEAREST_REQUEST_ROUTING,
+    0,                                        // homeFloor
+    5,                                        // idleTimeoutTicks
+    IdleParkingMode.PARK_TO_HOME_FLOOR       // idleParkingMode
+);
+```
+
+**Available strategies:**
+- `ControllerStrategy.NEAREST_REQUEST_ROUTING`: Services the nearest request first (default, uses `NaiveLiftController`)
+- `ControllerStrategy.DIRECTIONAL_SCAN`: Directional scan/elevator algorithm (placeholder for future implementation)
+
+**Factory methods:**
+
+```java
+// With default parameters (home floor 0, idle timeout 5 ticks, park to home floor)
+LiftController controller = ControllerFactory.createController(
+    ControllerStrategy.NEAREST_REQUEST_ROUTING
+);
+
+// With custom parameters
+LiftController controller = ControllerFactory.createController(
+    ControllerStrategy.NEAREST_REQUEST_ROUTING,
+    homeFloor,
+    idleTimeoutTicks,
+    idleParkingMode
+);
+```
+
+**Scenario file configuration:**
+
+```
+controller_strategy: NEAREST_REQUEST_ROUTING
+```
+
+The `controller_strategy` parameter is optional and defaults to `NEAREST_REQUEST_ROUTING` if not specified.
+
+**Notes:**
+- The controller strategy must be selected at system initialization (not runtime switchable)
+- Invalid strategy names in scenario files will throw an `IllegalArgumentException`
+- Unimplemented strategies (like `DIRECTIONAL_SCAN`) will throw an `UnsupportedOperationException`
 
 ## Taking Lifts Out of Service
 

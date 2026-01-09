@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-01-09
+
+### Added
+- Selectable controller strategy with `ControllerStrategy` enum
+  - `NEAREST_REQUEST_ROUTING`: Services nearest request first (current NaiveLiftController behavior, default)
+  - `DIRECTIONAL_SCAN`: Directional scan algorithm (placeholder for future implementation)
+- `ControllerFactory` class for creating controller instances based on strategy
+  - Factory method with default parameters: `createController(ControllerStrategy strategy)`
+  - Factory method with custom parameters: `createController(ControllerStrategy strategy, int homeFloor, int idleTimeoutTicks, IdleParkingMode idleParkingMode)`
+- Scenario file support for `controller_strategy:` configuration parameter
+- Architecture Decision Record (ADR-0005) documenting controller strategy design
+- Comprehensive unit tests for `ControllerFactory` (6 test cases)
+- Integration tests verifying controller selection in scenarios (4 test cases)
+
+### Changed
+- `ScenarioDefinition`, `ScenarioParser`, and `ScenarioRunnerMain` updated to support controller strategy configuration
+- `Main.java` updated to use `ControllerFactory` with explicit `NEAREST_REQUEST_ROUTING` strategy
+- `demo.scenario` updated to include explicit controller strategy configuration
+
+### Design Decisions
+- Enum-based strategy selection provides type safety and compile-time validation
+- Factory pattern centralizes controller instantiation logic
+- Default strategy preserves backward compatibility (NEAREST_REQUEST_ROUTING)
+- Unimplemented strategies (DIRECTIONAL_SCAN) throw `UnsupportedOperationException` with clear error messages
+- Controller strategy is configured at initialization time (not runtime switchable)
+
 ## [0.13.0] - 2026-01-09
 
 ### Added

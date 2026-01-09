@@ -1,5 +1,6 @@
 package com.liftsimulator.scenario;
 
+import com.liftsimulator.domain.ControllerStrategy;
 import com.liftsimulator.domain.Direction;
 import com.liftsimulator.domain.IdleParkingMode;
 import com.liftsimulator.domain.LiftRequest;
@@ -51,6 +52,7 @@ public class ScenarioParser {
         Integer homeFloor = null;
         Integer idleTimeoutTicks = null;
         IdleParkingMode idleParkingMode = null;
+        ControllerStrategy controllerStrategy = null;
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
@@ -135,6 +137,18 @@ public class ScenarioParser {
                     continue;
                 }
 
+                if (trimmed.startsWith("controller_strategy:")) {
+                    String value = trimmed.substring("controller_strategy:".length()).trim();
+                    try {
+                        controllerStrategy = ControllerStrategy.valueOf(value.toUpperCase(Locale.ROOT));
+                    } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException(
+                                errorMessage(sourceName, lineNumber, "Invalid controller_strategy: " + value)
+                        );
+                    }
+                    continue;
+                }
+
                 String[] tokens = trimmed.split("\\s*,\\s*");
                 if (tokens.length < 2) {
                     throw new IllegalArgumentException(errorMessage(sourceName, lineNumber, "Invalid event line: " + line));
@@ -176,7 +190,8 @@ public class ScenarioParser {
                 doorReopenWindowTicks,
                 homeFloor,
                 idleTimeoutTicks,
-                idleParkingMode
+                idleParkingMode,
+                controllerStrategy
         );
     }
 
