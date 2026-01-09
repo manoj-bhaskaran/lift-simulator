@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.1] - 2026-01-09
+
+### Fixed
+- Restore the baseline Flyway migration filename to `V1__init_schema.sql` to avoid duplicate version 1 migrations after upgrading.
+- Document the cleanup step for stale `V1__init.sql` artifacts when upgrading from 0.23.0.
+- Bump project version to 0.23.1 to reflect the migration fix.
+
 ## [0.23.0] - 2026-01-09
 
 ### Added
