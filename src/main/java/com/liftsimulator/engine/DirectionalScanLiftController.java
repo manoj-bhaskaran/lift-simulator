@@ -184,7 +184,7 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
             return false;
         }
         return getActiveRequests().stream()
-                .filter(request -> isEligibleForDirection(request, direction))
+                .filter(request -> !request.isTerminal())
                 .anyMatch(request -> direction == Direction.UP
                         ? request.getTargetFloor() > currentFloor
                         : request.getTargetFloor() < currentFloor);
@@ -230,6 +230,33 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
                         : targetFloor < currentFloor)
                 .sorted(direction == Direction.UP ? Integer::compareTo : (f1, f2) -> Integer.compare(f2, f1))
                 .findFirst();
+    }
+
+    private Optional<Integer> findTurnaroundFloorInDirection(int currentFloor, Direction direction) {
+        if (direction == Direction.IDLE) {
+            return Optional.empty();
+        }
+
+        return getActiveRequests().stream()
+                .filter(request -> !request.isTerminal())
+                .map(LiftRequest::getTargetFloor)
+                .filter(targetFloor -> direction == Direction.UP
+                        ? targetFloor > currentFloor
+                        : targetFloor < currentFloor)
+                .reduce((floor1, floor2) -> direction == Direction.UP
+                        ? Math.max(floor1, floor2)
+                        : Math.min(floor1, floor2));
+    }
+
+    private boolean shouldReverseAtCurrentFloor(int currentFloor) {
+        if (currentDirection == Direction.IDLE) {
+            return false;
+        }
+        if (findTurnaroundFloorInDirection(currentFloor, currentDirection).isPresent()) {
+            return false;
+        }
+        Direction oppositeDirection = currentDirection == Direction.UP ? Direction.DOWN : Direction.UP;
+        return hasRequestForFloor(currentFloor, oppositeDirection);
     }
 
     /**
@@ -358,6 +385,10 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
             return Action.IDLE;
         }
 
+        if (shouldReverseAtCurrentFloor(currentFloor)) {
+            currentDirection = currentDirection == Direction.UP ? Direction.DOWN : Direction.UP;
+        }
+
         // If at a requested floor, stop first if moving, then open doors.
         if (hasRequestForFloor(currentFloor, currentDirection)) {
             if (currentStatus == LiftStatus.MOVING_UP || currentStatus == LiftStatus.MOVING_DOWN) {
@@ -387,12 +418,20 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
             }
         }
 
+        Optional<Integer> turnaroundFloor = findTurnaroundFloorInDirection(currentFloor, currentDirection);
         Optional<Integer> nextFloor = findNextRequestedFloorInDirection(currentFloor, currentDirection);
+        if (nextFloor.isEmpty() && turnaroundFloor.isPresent()) {
+            nextFloor = turnaroundFloor;
+        }
         if (nextFloor.isEmpty()) {
             Direction oppositeDirection = currentDirection == Direction.UP ? Direction.DOWN : Direction.UP;
             if (hasRequestsInDirection(currentFloor, oppositeDirection)) {
                 currentDirection = oppositeDirection;
+                turnaroundFloor = findTurnaroundFloorInDirection(currentFloor, currentDirection);
                 nextFloor = findNextRequestedFloorInDirection(currentFloor, currentDirection);
+                if (nextFloor.isEmpty() && turnaroundFloor.isPresent()) {
+                    nextFloor = turnaroundFloor;
+                }
             } else {
                 currentDirection = Direction.IDLE;
                 return handleIdleParking(currentState, currentTick);

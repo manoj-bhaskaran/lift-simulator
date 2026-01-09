@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.2] - 2026-01-12
+
+### Changed
+- Directional scan controller keeps traveling to the furthest pending stop in the current direction before reversing, even when only opposite-direction hall calls remain
+
+## [0.17.1] - 2026-01-12
+
+### Changed
+- Directional scan controller now rides to the furthest pending stop in the current direction before reversing, even when only opposite-direction hall calls remain
+
 ## [0.17.0] - 2026-01-11
 
 ### Added
