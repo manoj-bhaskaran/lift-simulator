@@ -3,7 +3,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/lift_simulator
     username: lift_admin
-    password: lift_password
+    password: liftpassword
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5
