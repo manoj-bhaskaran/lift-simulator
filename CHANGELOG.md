@@ -5,6 +5,102 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.2] - 2026-01-09
+
+### Fixed
+- Remove the unused Flyway PostgreSQL module dependency so Maven resolves Flyway from Spring Boot's managed version.
+- Bump project version to 0.22.2 to reflect the build fix.
+
+## [0.22.1] - 2026-01-09
+
+### Fixed
+- Add an explicit Flyway PostgreSQL artifact version in the Maven POM to restore dependency resolution.
+- Bump project version to 0.22.1 to reflect the build fix.
+
+## [0.22.0] - 2026-01-09
+
+### Added
+- **PostgreSQL database connectivity**: Integrated PostgreSQL as the primary database for the Lift Config Service backend
+  - Spring Data JPA for database access layer
+  - PostgreSQL JDBC driver for database connectivity
+  - HikariCP connection pooling (via Spring Boot defaults)
+  - Configured for local development with dedicated database and user
+- **Flyway database migration management**: Version-controlled schema migrations with automatic execution on startup
+  - Flyway Core for migration engine
+  - Flyway PostgreSQL-specific support
+  - Initial baseline migration (V1__init_schema.sql) creating schema metadata tracking table
+  - Automatic `flyway_schema_history` table creation for migration tracking
+  - Baseline-on-migrate enabled for smooth initial setup
+- **Profile-based configuration**: Separation of environment-specific settings
+  - New `application-dev.yml` for development profile with PostgreSQL configuration
+  - Default profile set to `dev` in `application.properties`
+  - Database connection settings: `localhost:5432/lift_simulator`
+  - Development credentials: `lift_admin` user with secure password
+  - Connection pool tuning: max 5 connections, min 2 idle, 30s timeout
+- **JPA/Hibernate configuration**: Optimized for development and PostgreSQL
+  - PostgreSQL dialect configured
+  - DDL auto-validation (validate-only, no auto-generation)
+  - SQL logging enabled in dev profile for debugging
+  - Formatted SQL output with comments
+  - Batch processing optimized (batch size 20, ordered inserts/updates)
+  - Open-in-view disabled for better transaction management
+- **Database schema initialization**:
+  - `schema_metadata` table tracking application versions and schema changes
+  - Indexed version column for efficient lookups
+  - Comprehensive table and column comments for documentation
+  - Initial version record (0.22.0) inserted automatically
+- **Documentation enhancements**:
+  - Comprehensive "Database Setup" section in README with step-by-step instructions
+  - PostgreSQL prerequisites and installation verification
+  - Database and user creation commands
+  - Connection verification steps
+  - Configuration profiles explanation
+  - Troubleshooting guide for common database issues
+  - Schema overview and future migration guidance
+- **Architecture Decision Record**: ADR-0007 documenting PostgreSQL and Flyway integration rationale (see `docs/decisions/0007-postgresql-flyway-integration.md`)
+
+### Changed
+- Version bumped from 0.21.0 to 0.22.0
+- `application.properties` now includes database-related settings
+- Spring Boot application now requires PostgreSQL database to start
+- README updated with database setup instructions and new version references
+- Build artifact name updated to `lift-simulator-0.22.0.jar`
+
+### Technical Details
+- **Dependencies added**:
+  - `spring-boot-starter-data-jpa` - JPA and Hibernate ORM
+  - `postgresql` (runtime scope) - PostgreSQL JDBC driver
+  - `flyway-core` - Database migration framework
+  - `flyway-database-postgresql` - PostgreSQL-specific Flyway support
+- **Database schema version**: V1 (baseline)
+- **Flyway settings**:
+  - Migration location: `classpath:db/migration`
+  - Baseline version: 0
+  - Validation enabled on migrate
+  - Out-of-order migrations disabled
+- **Hibernate settings**:
+  - Dialect: `org.hibernate.dialect.PostgreSQLDialect`
+  - DDL auto: `validate` (production-safe, no auto-schema changes)
+  - SQL logging: DEBUG level in dev profile
+  - Parameter binding trace: TRACE level for troubleshooting
+- **Connection pool** (HikariCP):
+  - Maximum pool size: 5 connections
+  - Minimum idle: 2 connections
+  - Connection timeout: 30 seconds
+  - Idle timeout: 10 minutes
+  - Max lifetime: 30 minutes
+- Database configuration follows Spring Boot best practices for production readiness
+- Clear separation between base configuration and profile-specific settings
+- Migration-first approach ensures consistent schema across environments
+
+### Migration Notes
+For developers updating from v0.21.0:
+1. Install PostgreSQL 12 or later
+2. Create database and user as documented in README
+3. Run `mvn clean install` to download new dependencies
+4. Start the application - Flyway will initialize the schema automatically
+5. Verify schema with: `psql -U lift_admin -d lift_simulator -c "\dt"`
+
 ## [0.21.0] - 2026-01-09
 
 ### Added
