@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -305,7 +306,7 @@ public class Main {
     }
 
     private static ControllerStrategy parseControllerStrategy(String strategy) {
-        return switch (strategy.toLowerCase()) {
+        return switch (strategy.toLowerCase(Locale.ROOT)) {
             case "nearest-request" -> ControllerStrategy.NEAREST_REQUEST_ROUTING;
             case "directional-scan" -> ControllerStrategy.DIRECTIONAL_SCAN;
             default -> throw new IllegalArgumentException("Unknown strategy: " + strategy);
