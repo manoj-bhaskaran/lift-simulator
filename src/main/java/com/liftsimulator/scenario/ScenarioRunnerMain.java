@@ -1,5 +1,6 @@
 package com.liftsimulator.scenario;
 
+import com.liftsimulator.domain.IdleParkingMode;
 import com.liftsimulator.engine.NaiveLiftController;
 import com.liftsimulator.engine.SimulationEngine;
 
@@ -17,6 +18,7 @@ public class ScenarioRunnerMain {
     private static final int DEFAULT_DOOR_REOPEN_WINDOW_TICKS = -1;
     private static final int DEFAULT_HOME_FLOOR = 0;
     private static final int DEFAULT_IDLE_TIMEOUT_TICKS = 5;
+    private static final IdleParkingMode DEFAULT_IDLE_PARKING_MODE = IdleParkingMode.PARK_TO_HOME_FLOOR;
 
     public static void main(String[] args) throws IOException {
         ScenarioParser parser = new ScenarioParser();
@@ -54,8 +56,11 @@ public class ScenarioRunnerMain {
         int idleTimeoutTicks = scenario.getIdleTimeoutTicks() != null
                 ? scenario.getIdleTimeoutTicks()
                 : DEFAULT_IDLE_TIMEOUT_TICKS;
+        IdleParkingMode idleParkingMode = scenario.getIdleParkingMode() != null
+                ? scenario.getIdleParkingMode()
+                : DEFAULT_IDLE_PARKING_MODE;
 
-        NaiveLiftController controller = new NaiveLiftController(homeFloor, idleTimeoutTicks);
+        NaiveLiftController controller = new NaiveLiftController(homeFloor, idleTimeoutTicks, idleParkingMode);
         SimulationEngine engine = SimulationEngine.builder(controller, minFloor, maxFloor)
                 .initialFloor(initialFloor)
                 .travelTicksPerFloor(travelTicksPerFloor)

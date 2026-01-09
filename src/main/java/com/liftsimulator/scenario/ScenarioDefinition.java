@@ -1,5 +1,7 @@
 package com.liftsimulator.scenario;
 
+import com.liftsimulator.domain.IdleParkingMode;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -18,9 +20,10 @@ public final class ScenarioDefinition {
     private final Integer doorReopenWindowTicks;
     private final Integer homeFloor;
     private final Integer idleTimeoutTicks;
+    private final IdleParkingMode idleParkingMode;
 
     public ScenarioDefinition(String name, int totalTicks, List<ScenarioEvent> events) {
-        this(name, totalTicks, events, null, null, null, null, null, null, null, null, null, null, null);
+        this(name, totalTicks, events, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public ScenarioDefinition(
@@ -37,7 +40,8 @@ public final class ScenarioDefinition {
             Integer doorDwellTicks,
             Integer doorReopenWindowTicks,
             Integer homeFloor,
-            Integer idleTimeoutTicks
+            Integer idleTimeoutTicks,
+            IdleParkingMode idleParkingMode
     ) {
         if (totalTicks <= 0) {
             throw new IllegalArgumentException("totalTicks must be > 0");
@@ -56,6 +60,7 @@ public final class ScenarioDefinition {
         this.doorReopenWindowTicks = doorReopenWindowTicks;
         this.homeFloor = homeFloor;
         this.idleTimeoutTicks = idleTimeoutTicks;
+        this.idleParkingMode = idleParkingMode;
     }
 
     public String getName() {
@@ -112,5 +117,9 @@ public final class ScenarioDefinition {
 
     public Integer getIdleTimeoutTicks() {
         return idleTimeoutTicks;
+    }
+
+    public IdleParkingMode getIdleParkingMode() {
+        return idleParkingMode;
     }
 }
