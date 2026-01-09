@@ -6,8 +6,11 @@ import com.liftsimulator.domain.RequestState;
 import com.liftsimulator.engine.RequestManagingLiftController;
 import com.liftsimulator.engine.SimulationEngine;
 
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
@@ -22,7 +25,9 @@ public class ScenarioRunner {
     }
 
     public void run(ScenarioDefinition scenario) {
-        ScenarioContext context = new ScenarioContext(engine, controller);
+        Map<Long, RequestLifecycle> lifecycles = new LinkedHashMap<>();
+        ScenarioContext context = new ScenarioContext(engine, controller,
+                request -> recordRequestCreation(request, engine.getCurrentTick(), lifecycles));
         Map<Long, List<ScenarioEvent>> eventsByTick = scenario.getEvents().stream()
                 .collect(Collectors.groupingBy(ScenarioEvent::tick));
 
@@ -35,24 +40,43 @@ public class ScenarioRunner {
         System.out.println("-------------------------------------------------------------------------------------------");
 
         for (int i = 0; i < scenario.getTotalTicks(); i++) {
-            List<ScenarioEvent> events = eventsByTick.getOrDefault(engine.getCurrentTick(), List.of());
+            long currentTick = engine.getCurrentTick();
+            List<ScenarioEvent> events = eventsByTick.getOrDefault(currentTick, List.of());
             String eventNotes = applyEvents(events, context);
 
             LiftState state = engine.getCurrentState();
+            recordActiveRequests(controller, currentTick, lifecycles);
             String pendingRequests = formatPendingRequests(controller);
 
             System.out.println(String.format("%-6d %-6d %-15s %-30s %-30s",
-                    engine.getCurrentTick(),
+                    currentTick,
                     state.getFloor(),
                     state.getStatus(),
                     pendingRequests,
                     eventNotes));
 
             engine.tick();
+            recordTerminalRequests(currentTick, lifecycles);
         }
 
         System.out.println();
         System.out.println("Scenario completed.");
+
+        System.out.println("\nRequest lifecycle summary:");
+        System.out.println(String.format("%-40s %-14s %-24s", "Request", "Created Tick", "Completed/Cancelled Tick"));
+        System.out.println("----------------------------------------------------------------------------------------");
+        lifecycles.values().stream()
+                .sorted(Comparator.comparingLong(RequestLifecycle::createdTick)
+                        .thenComparing(lifecycle -> lifecycle.request().getId()))
+                .forEach(lifecycle -> {
+                    String completion = lifecycle.terminalTick() == null
+                            ? "-"
+                            : lifecycle.terminalTick() + " (" + lifecycle.terminalState() + ")";
+                    System.out.println(String.format("%-40s %-14d %-24s",
+                            formatRequestDescription(lifecycle.request()),
+                            lifecycle.createdTick(),
+                            completion));
+                });
     }
 
     private String applyEvents(List<ScenarioEvent> events, ScenarioContext context) {
@@ -104,6 +128,76 @@ public class ScenarioRunner {
                 sb.append(" ");
             }
             sb.append(label).append(":").append(count);
+        }
+    }
+
+    private void recordActiveRequests(RequestManagingLiftController controller,
+                                      long tick,
+                                      Map<Long, RequestLifecycle> lifecycles) {
+        for (LiftRequest request : controller.getRequests()) {
+            recordRequestCreation(request, tick, lifecycles);
+        }
+    }
+
+    private void recordRequestCreation(LiftRequest request, long tick, Map<Long, RequestLifecycle> lifecycles) {
+        lifecycles.computeIfAbsent(request.getId(), id -> new RequestLifecycle(request, tick));
+    }
+
+    private void recordTerminalRequests(long tick, Map<Long, RequestLifecycle> lifecycles) {
+        for (RequestLifecycle lifecycle : lifecycles.values()) {
+            if (lifecycle.terminalTick() != null || !lifecycle.request().isTerminal()) {
+                continue;
+            }
+            lifecycle.markTerminal(tick, lifecycle.request().getState());
+        }
+    }
+
+    private String formatRequestDescription(LiftRequest request) {
+        return switch (request.getType()) {
+            case CAR_CALL -> {
+                Integer origin = request.getOriginFloor();
+                Integer destination = request.getDestinationFloor();
+                if (origin != null && destination != null) {
+                    yield String.format("Car call from floor %d to floor %d", origin, destination);
+                }
+                yield String.format("Car call to floor %d", Objects.requireNonNull(destination));
+            }
+            case HALL_CALL -> String.format("Hall call from floor %d (%s)",
+                    request.getOriginFloor(),
+                    request.getDirection());
+        };
+    }
+
+    private static final class RequestLifecycle {
+        private final LiftRequest request;
+        private final long createdTick;
+        private Long terminalTick;
+        private RequestState terminalState;
+
+        private RequestLifecycle(LiftRequest request, long createdTick) {
+            this.request = request;
+            this.createdTick = createdTick;
+        }
+
+        private LiftRequest request() {
+            return request;
+        }
+
+        private long createdTick() {
+            return createdTick;
+        }
+
+        private Long terminalTick() {
+            return terminalTick;
+        }
+
+        private RequestState terminalState() {
+            return terminalState;
+        }
+
+        private void markTerminal(long tick, RequestState state) {
+            this.terminalTick = tick;
+            this.terminalState = state;
         }
     }
 }
