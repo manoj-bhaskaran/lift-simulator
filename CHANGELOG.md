@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0] - 2026-01-09
+
+### Added
+- **Directional/SCAN controller integration**: DirectionalScanLiftController is now fully integrated with the simulation lifecycle
+  - Accepts new requests during movement and schedules them according to directional rules
+  - Recomputes next target stop dynamically without breaking invariants
+  - Updates targets appropriately at floor arrivals and door cycles
+  - Maintains key invariants: no duplicate servicing, no lost requests
+  - Full compatibility with existing door open/close timing semantics
+- Command-line flag `--strategy=<strategy>` for Main demo application to select controller strategy
+  - Valid values: `nearest-request` (default), `directional-scan`
+  - Example: `java -jar lift-simulator.jar --strategy=directional-scan`
+- Comprehensive end-to-end integration tests for DirectionalScanLiftController (DirectionalScanIntegrationTest.java)
+  - Tests request acceptance during movement
+  - Tests proper direction-aware scheduling of hall calls
+  - Tests request cancellation handling
+  - Tests out-of-service and return-to-service scenarios
+  - Tests complex multi-request scenarios ensuring no lost requests
+  - Validates no duplicate servicing through state transition tracking
+- Detailed README documentation of controller strategies
+  - Comparison between Nearest Request Routing and Directional Scan algorithms
+  - Example scenarios demonstrating directional scan behavior
+  - Documentation of advantages and use cases for each strategy
+  - Clear explanation of hall call filtering and direction commitment
+
+### Changed
+- Main.java now supports `--strategy` command-line argument for controller selection
+- Main.java help text updated to document the new `--strategy` flag
+- README updated with comprehensive DirectionalScanLiftController documentation
+- README demo configuration section updated to show controller selection examples
+
+### Technical Details
+- DirectionalScanLiftController was implemented in v0.16.0 but not integrated with the main application
+- This release completes the integration, making the controller usable in the demo application
+- Regression testing confirms NaiveLiftController (nearest-request) continues to work unchanged
+- All existing tests pass, confirming no behavioral regressions
+
 ## [0.18.1] - 2026-01-12
 
 ### Fixed

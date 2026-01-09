@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.18.1**
+Current version: **0.19.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -20,7 +20,7 @@ The simulation is text-based and designed for clarity over visual appeal.
 
 ## Features
 
-The current version (v0.18.1) implements:
+The current version (v0.19.0) implements:
 - **Selectable controller strategy**: Choose between different controller algorithms (NEAREST_REQUEST_ROUTING, DIRECTIONAL_SCAN) via enum-based configuration
 - **Directional scan controller**: Implements a SCAN-style algorithm that continues in the current direction until all requests are serviced
 - **Hall-call direction filtering**: Opposite-direction hall calls are deferred until after the directional scan reverses, with reversal occurring at the furthest pending stop in the current travel direction
@@ -99,7 +99,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.18.1.jar`.
+The packaged JAR will be in `target/lift-simulator-0.19.0.jar`.
 
 ## Running Tests
 
@@ -149,23 +149,30 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.18.1.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
 
-The demo runs with a fixed configuration (NEAREST_REQUEST_ROUTING controller, PARK_TO_HOME_FLOOR idle parking). The only command-line option is the help flag:
+The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.18.1.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.Main --help
 
-# Run with the default demo configuration
-java -cp target/lift-simulator-0.18.1.jar com.liftsimulator.Main
+# Run with the default demo configuration (nearest-request routing)
+java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.Main
+
+# Run with directional scan controller
+java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.Main --strategy=directional-scan
+
+# Run with nearest-request routing controller (explicit)
+java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
 - `-h, --help`: Show help message
+- `--strategy=<strategy>`: Controller strategy to use (nearest-request or directional-scan)
 
 The demo runs a pre-configured scenario with several lift requests and displays the simulation state at each tick.
 
@@ -180,7 +187,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.18.1.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -189,13 +196,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.18.1.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.18.1.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.18.1.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**
@@ -320,7 +327,7 @@ LiftController controller = ControllerFactory.createController(
 
 **Available strategies:**
 - `ControllerStrategy.NEAREST_REQUEST_ROUTING`: Services the nearest request first (default, uses `NaiveLiftController`)
-- `ControllerStrategy.DIRECTIONAL_SCAN`: Directional scan/elevator algorithm (placeholder for future implementation)
+- `ControllerStrategy.DIRECTIONAL_SCAN`: Directional scan/elevator algorithm (uses `DirectionalScanLiftController`)
 
 **Factory methods:**
 
@@ -350,7 +357,62 @@ The `controller_strategy` parameter is optional and defaults to `NEAREST_REQUEST
 **Notes:**
 - The controller strategy must be selected at system initialization (not runtime switchable)
 - Invalid strategy names in scenario files will throw an `IllegalArgumentException`
-- Unimplemented strategies (like `DIRECTIONAL_SCAN`) will throw an `UnsupportedOperationException`
+
+## Controller Strategies
+
+### Nearest Request Routing (NaiveLiftController)
+
+The nearest request routing strategy services the closest requested floor first, regardless of direction. This is a simple but inefficient algorithm that can result in excessive back-and-forth movement.
+
+**Behavior:**
+- Selects the nearest floor with a pending request
+- Services requests immediately upon arrival
+- No batching or direction preference
+- Best suited for low-traffic scenarios
+
+**Use case:** Simple lifts with minimal traffic where efficiency isn't critical.
+
+### Directional Scan (DirectionalScanLiftController)
+
+The directional scan strategy implements a SCAN-style algorithm that continues in the current direction until all requests in that direction are serviced, then reverses.
+
+**Behavior:**
+- **Direction commitment:** Once moving in a direction, continues until no more requests exist ahead
+- **Hall call filtering:** Only services hall calls that match the current travel direction
+  - Example: While going UP, only services hall calls with direction=UP
+  - Exception: Car calls are always eligible (passengers already onboard)
+- **Reversal logic:** Reverses at the furthest pending stop in the current direction
+- **Efficient batching:** Reduces back-and-forth movement by servicing multiple requests in one sweep
+- **Direction selection:** When idle, selects initial direction based on nearest request
+
+**Example scenario:**
+```
+Lift at floor 0, requests:
+- Hall call: floor 2, UP
+- Car call: floor 5
+- Hall call: floor 3, DOWN
+
+Execution:
+1. Select UP direction (floor 2 is nearest)
+2. Service floor 2 (hall call UP) ✓
+3. Continue to floor 5 (car call) ✓
+4. No more requests going UP, reverse to DOWN
+5. Service floor 3 (hall call DOWN) ✓
+```
+
+**Advantages:**
+- Reduces average wait time in moderate to high traffic
+- Minimizes unnecessary direction changes
+- More predictable behavior for passengers
+- Better energy efficiency
+
+**Use case:** Most real-world elevator scenarios, especially multi-floor buildings with moderate traffic.
+
+**Key invariants maintained:**
+- No duplicate servicing of requests
+- No lost requests during movement
+- Compatible with door open/close timing semantics
+- Requests can be added during movement and will be scheduled according to rules
 
 ## Taking Lifts Out of Service
 
