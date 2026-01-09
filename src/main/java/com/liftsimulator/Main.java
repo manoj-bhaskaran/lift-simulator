@@ -5,6 +5,7 @@ import com.liftsimulator.domain.ControllerStrategy;
 import com.liftsimulator.domain.Direction;
 import com.liftsimulator.domain.DoorState;
 import com.liftsimulator.domain.HallCall;
+import com.liftsimulator.domain.IdleParkingMode;
 import com.liftsimulator.domain.LiftRequest;
 import com.liftsimulator.domain.LiftState;
 import com.liftsimulator.domain.LiftStatus;
@@ -23,15 +24,44 @@ import java.util.stream.Collectors;
  * Runs a demonstration of the NaiveLiftController with realistic scenarios.
  */
 public class Main {
+    private static final ControllerStrategy DEFAULT_CONTROLLER_STRATEGY = ControllerStrategy.NEAREST_REQUEST_ROUTING;
+    private static final IdleParkingMode DEFAULT_IDLE_PARKING_MODE = IdleParkingMode.PARK_TO_HOME_FLOOR;
+
     public static void main(String[] args) {
+        // Parse command-line arguments.
+        ControllerStrategy controllerStrategy = DEFAULT_CONTROLLER_STRATEGY;
+        IdleParkingMode idleParkingMode = DEFAULT_IDLE_PARKING_MODE;
+
+        for (String arg : args) {
+            if (arg.equals("--help") || arg.equals("-h")) {
+                printUsage();
+                System.exit(0);
+            } else {
+                System.err.println("Unknown argument: " + arg);
+                printUsage();
+                System.exit(1);
+            }
+        }
+
+        // Validate controller strategy compatibility.
+        if (controllerStrategy != ControllerStrategy.NEAREST_REQUEST_ROUTING) {
+            System.err.println("Error: " + controllerStrategy + " is not yet implemented.");
+            System.err.println("Currently only NEAREST_REQUEST_ROUTING is supported.");
+            System.exit(1);
+        }
+
         System.out.println("=== Lift Simulator - NaiveLiftController Demo ===");
         System.out.println("Version: " + resolveVersion());
-        System.out.println("Controller Strategy: " + ControllerStrategy.NEAREST_REQUEST_ROUTING);
+        System.out.println("Controller Strategy: " + controllerStrategy);
+        System.out.println("Idle Parking Mode: " + idleParkingMode);
         System.out.println("Starting simulation...\n");
 
-        // Create controller using factory with default strategy.
+        // Create controller using factory with configured strategy and parking mode.
         NaiveLiftController controller = (NaiveLiftController) ControllerFactory.createController(
-                ControllerStrategy.NEAREST_REQUEST_ROUTING
+                controllerStrategy,
+                0,                    // homeFloor
+                5,                    // idleTimeoutTicks
+                idleParkingMode
         );
         SimulationEngine engine = SimulationEngine.builder(controller, 0, 10).build();
 
@@ -154,6 +184,17 @@ public class Main {
         if (serving > 0) sb.append("S:").append(serving).append(" ");
 
         return sb.toString().trim();
+    }
+
+    private static void printUsage() {
+        System.out.println("Usage: java -jar lift-simulator.jar [OPTIONS]");
+        System.out.println();
+        System.out.println("Options:");
+        System.out.println("  -h, --help                      Show this help message");
+        System.out.println();
+        System.out.println("Examples:");
+        System.out.println("  java -jar lift-simulator.jar");
+        System.out.println("  java -jar lift-simulator.jar --help");
     }
 
     private static String resolveVersion() {

@@ -25,11 +25,28 @@ public class ScenarioRunnerMain {
     private static final ControllerStrategy DEFAULT_CONTROLLER_STRATEGY = ControllerStrategy.NEAREST_REQUEST_ROUTING;
 
     public static void main(String[] args) throws IOException {
+        // Parse command-line arguments.
+        String scenarioPath = null;
+
+        for (String arg : args) {
+            if (arg.equals("--help") || arg.equals("-h")) {
+                printUsage();
+                System.exit(0);
+            } else if (!arg.startsWith("-")) {
+                // This is the scenario file path.
+                scenarioPath = arg;
+            } else {
+                System.err.println("Unknown argument: " + arg);
+                printUsage();
+                System.exit(1);
+            }
+        }
+
         ScenarioParser parser = new ScenarioParser();
         ScenarioDefinition scenario;
 
-        if (args.length > 0) {
-            scenario = parser.parse(Path.of(args[0]));
+        if (scenarioPath != null) {
+            scenario = parser.parse(Path.of(scenarioPath));
         } else {
             scenario = parser.parseResource(DEFAULT_SCENARIO_RESOURCE);
         }
@@ -76,6 +93,13 @@ public class ScenarioRunnerMain {
             );
         }
 
+        // Print configuration.
+        System.out.println("=== Lift Simulator - Scenario Runner ===");
+        System.out.println("Scenario: " + (scenarioPath != null ? scenarioPath : DEFAULT_SCENARIO_RESOURCE));
+        System.out.println("Controller Strategy: " + controllerStrategy);
+        System.out.println("Idle Parking Mode: " + idleParkingMode);
+        System.out.println();
+
         NaiveLiftController controller = (NaiveLiftController) ControllerFactory.createController(
                 controllerStrategy,
                 homeFloor,
@@ -92,5 +116,20 @@ public class ScenarioRunnerMain {
 
         ScenarioRunner runner = new ScenarioRunner(engine, controller);
         runner.run(scenario);
+    }
+
+    private static void printUsage() {
+        System.out.println("Usage: java -cp lift-simulator.jar com.liftsimulator.scenario.ScenarioRunnerMain [OPTIONS] [SCENARIO_FILE]");
+        System.out.println();
+        System.out.println("Arguments:");
+        System.out.println("  SCENARIO_FILE                   Path to scenario file (optional, uses demo.scenario if not provided)");
+        System.out.println();
+        System.out.println("Options:");
+        System.out.println("  -h, --help                      Show this help message");
+        System.out.println();
+        System.out.println("Examples:");
+        System.out.println("  java -cp lift-simulator.jar com.liftsimulator.scenario.ScenarioRunnerMain");
+        System.out.println("  java -cp lift-simulator.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario");
+        System.out.println("  java -cp lift-simulator.jar com.liftsimulator.scenario.ScenarioRunnerMain --help");
     }
 }

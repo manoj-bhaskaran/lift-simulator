@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.14.0**
+Current version: **0.15.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -95,7 +95,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.14.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.15.0.jar`.
 
 ## Running Tests
 
@@ -145,8 +145,23 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.14.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.Main
 ```
+
+### Configuring the Demo
+
+The demo runs with a fixed configuration (NEAREST_REQUEST_ROUTING controller, PARK_TO_HOME_FLOOR idle parking). The only command-line option is the help flag:
+
+```bash
+# Show help
+java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.Main --help
+
+# Run with the default demo configuration
+java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.Main
+```
+
+**Available Options:**
+- `-h, --help`: Show help message
 
 The demo runs a pre-configured scenario with several lift requests and displays the simulation state at each tick.
 
@@ -161,8 +176,28 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.14.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
+
+### Configuring Scenario Runner
+
+The scenario runner relies on scenario file settings for controller strategy and idle parking mode. The only command-line option is the help flag:
+
+```bash
+# Show help
+java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+
+# Run with default demo scenario
+java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
+
+# Run a custom scenario
+java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+```
+
+**Available Options:**
+- `-h, --help`: Show help message
+
+Scenario file settings take precedence over defaults.
 
 Scenario files are plain text with metadata and event lines. Scenario parsing enforces limits of 1,000,000 ticks and 10,000 events per file:
 

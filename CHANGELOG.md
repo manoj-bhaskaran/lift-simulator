@@ -5,7 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.15.0] - 2026-01-09
+
+### Added
+- Explicit `idle_parking_mode` configuration in `demo.scenario` with inline documentation
+- Comments in `demo.scenario` documenting available controller configuration options
+- Comprehensive README documentation for command-line usage of both demo and scenario runner
+
+### Changed
+- Demo and scenario runner now display selected controller strategy and idle parking mode at startup
+- Demo.scenario now explicitly shows both controller_strategy and idle_parking_mode with comments
+- Demo and scenario runner only expose `--help` on the command line; controller strategy and idle parking mode are configured via scenario files or defaults
 
 ## [0.14.0] - 2026-01-09
 
