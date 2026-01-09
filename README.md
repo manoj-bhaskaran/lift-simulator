@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.23.1**
+Current version: **0.23.2**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -34,7 +34,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.23.1.jar
+java -jar target/lift-simulator-0.23.2.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -139,11 +139,11 @@ Future migrations will extend lift configuration metadata, simulation runs, and 
 **Migration errors:**
 - Check Flyway history: `SELECT * FROM flyway_schema_history;`
 - For development, you can reset the database: `DROP DATABASE lift_simulator; CREATE DATABASE lift_simulator;`
-- If you upgraded from 0.23.0 and see "Found more than one migration with version 1", run `mvn clean` or delete `target/classes/db/migration/V1__init.sql` so only `V1__init_schema.sql` remains.
+- If you upgraded from 0.23.0 and see "Found more than one migration with version 1", run `mvn clean` once to clear stale build artifacts; the build now removes old migration resources automatically.
 
 ## Features
 
-The current version (v0.23.1) implements:
+The current version (v0.23.2) implements:
 - **Selectable controller strategy**: Choose between different controller algorithms (NEAREST_REQUEST_ROUTING, DIRECTIONAL_SCAN) via enum-based configuration
 - **Directional scan controller**: Implements a SCAN-style algorithm that continues in the current direction until all requests are serviced
 - **Hall-call direction filtering**: Opposite-direction hall calls are deferred until after the directional scan reverses, with reversal occurring at the furthest pending stop in the current travel direction
