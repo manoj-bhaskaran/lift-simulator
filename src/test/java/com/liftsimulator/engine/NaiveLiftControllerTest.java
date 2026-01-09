@@ -811,10 +811,15 @@ public class NaiveLiftControllerTest {
 
         engine.tick(); // tick 4 -> arrive at home floor.
         assertEquals(3, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.MOVING_UP, engine.getCurrentState().getStatus());
+
+        // Should stop at home floor.
+        engine.tick(); // tick 5 -> stop.
+        assertEquals(3, engine.getCurrentState().getFloor());
         assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
 
         // Should stay at home floor.
-        engine.tick(); // tick 5.
+        engine.tick(); // tick 6.
         assertEquals(3, engine.getCurrentState().getFloor());
         assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
     }
