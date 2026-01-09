@@ -37,13 +37,16 @@ public class DirectionalScanIntegrationTest {
                 .build();
 
         // Add requests that should be serviced in directional scan order
-        controller.addCarCall(new CarCall(3));
-        controller.addHallCall(new HallCall(7, Direction.UP));
-        controller.addCarCall(new CarCall(5));
+        LiftRequest req1 = LiftRequest.carCall(3);
+        LiftRequest req2 = LiftRequest.hallCall(7, Direction.UP);
+        LiftRequest req3 = LiftRequest.carCall(5);
 
-        // Track initial requests
-        Set<LiftRequest> initialRequests = controller.getRequests();
-        assertEquals(3, initialRequests.size());
+        controller.addRequest(req1);
+        controller.addRequest(req2);
+        controller.addRequest(req3);
+
+        // Verify requests were added
+        assertEquals(3, controller.getRequests().size());
 
         // Run simulation until all requests are completed
         int maxTicks = 100;
@@ -54,12 +57,13 @@ public class DirectionalScanIntegrationTest {
             tickCount++;
         }
 
-        // Verify all requests were completed
-        Set<LiftRequest> finalRequests = controller.getRequests();
-        long completedCount = finalRequests.stream()
-                .filter(r -> r.getState() == RequestState.COMPLETED)
-                .count();
-        assertEquals(3, completedCount, "All requests should be completed");
+        // Verify all requests were completed by checking their individual states
+        assertEquals(RequestState.COMPLETED, req1.getState(), "Request 1 should be completed");
+        assertEquals(RequestState.COMPLETED, req2.getState(), "Request 2 should be completed");
+        assertEquals(RequestState.COMPLETED, req3.getState(), "Request 3 should be completed");
+
+        // Verify all requests removed from active set
+        assertEquals(0, controller.getRequests().size(), "All requests should be removed from active set");
 
         // Verify simulation completed in reasonable time
         assertTrue(tickCount < maxTicks, "Simulation should complete within max ticks");
@@ -172,9 +176,11 @@ public class DirectionalScanIntegrationTest {
                 .initialFloor(0)
                 .build();
 
-        // Add some requests
-        controller.addCarCall(new CarCall(5));
-        controller.addCarCall(new CarCall(7));
+        // Add some requests and track them
+        LiftRequest req1 = LiftRequest.carCall(5);
+        LiftRequest req2 = LiftRequest.carCall(7);
+        controller.addRequest(req1);
+        controller.addRequest(req2);
 
         // Run a few ticks
         for (int i = 0; i < 5; i++) {
@@ -193,12 +199,12 @@ public class DirectionalScanIntegrationTest {
 
         assertEquals(LiftStatus.OUT_OF_SERVICE, engine.getCurrentState().getStatus());
 
-        // All requests should be cancelled
-        Set<LiftRequest> requests = controller.getRequests();
-        long cancelledCount = requests.stream()
-                .filter(r -> r.getState() == RequestState.CANCELLED)
-                .count();
-        assertEquals(2, cancelledCount, "All requests should be cancelled when out of service");
+        // All requests should be cancelled by checking their states directly
+        assertEquals(RequestState.CANCELLED, req1.getState(), "Request 1 should be cancelled");
+        assertEquals(RequestState.CANCELLED, req2.getState(), "Request 2 should be cancelled");
+
+        // Active requests should be empty
+        assertEquals(0, controller.getRequests().size(), "All requests should be removed from active set");
 
         // Return to service
         controller.returnToService();
