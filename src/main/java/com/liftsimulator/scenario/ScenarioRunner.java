@@ -3,7 +3,7 @@ package com.liftsimulator.scenario;
 import com.liftsimulator.domain.LiftRequest;
 import com.liftsimulator.domain.LiftState;
 import com.liftsimulator.domain.RequestState;
-import com.liftsimulator.engine.NaiveLiftController;
+import com.liftsimulator.engine.RequestManagingLiftController;
 import com.liftsimulator.engine.SimulationEngine;
 
 import java.util.List;
@@ -14,9 +14,9 @@ import java.util.stream.Collectors;
 
 public class ScenarioRunner {
     private final SimulationEngine engine;
-    private final NaiveLiftController controller;
+    private final RequestManagingLiftController controller;
 
-    public ScenarioRunner(SimulationEngine engine, NaiveLiftController controller) {
+    public ScenarioRunner(SimulationEngine engine, RequestManagingLiftController controller) {
         this.engine = engine;
         this.controller = controller;
     }
@@ -67,7 +67,7 @@ public class ScenarioRunner {
         return joiner.toString();
     }
 
-    private String formatPendingRequests(NaiveLiftController controller) {
+    private String formatPendingRequests(RequestManagingLiftController controller) {
         Set<LiftRequest> activeRequests = controller.getRequests().stream()
                 .filter(request -> !request.isTerminal())
                 .collect(Collectors.toSet());

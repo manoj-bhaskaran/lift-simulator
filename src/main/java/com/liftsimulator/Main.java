@@ -11,7 +11,7 @@ import com.liftsimulator.domain.LiftState;
 import com.liftsimulator.domain.LiftStatus;
 import com.liftsimulator.domain.RequestState;
 import com.liftsimulator.engine.ControllerFactory;
-import com.liftsimulator.engine.NaiveLiftController;
+import com.liftsimulator.engine.RequestManagingLiftController;
 import com.liftsimulator.engine.SimulationEngine;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 /**
  * Main entry point for the lift simulator.
- * Runs a demonstration of the NaiveLiftController with realistic scenarios.
+ * Runs a demonstration of a lift controller with realistic scenarios.
  */
 public class Main {
     private static final ControllerStrategy DEFAULT_CONTROLLER_STRATEGY = ControllerStrategy.NEAREST_REQUEST_ROUTING;
@@ -43,21 +43,14 @@ public class Main {
             }
         }
 
-        // Validate controller strategy compatibility.
-        if (controllerStrategy != ControllerStrategy.NEAREST_REQUEST_ROUTING) {
-            System.err.println("Error: " + controllerStrategy + " is not yet implemented.");
-            System.err.println("Currently only NEAREST_REQUEST_ROUTING is supported.");
-            System.exit(1);
-        }
-
-        System.out.println("=== Lift Simulator - NaiveLiftController Demo ===");
+        System.out.println("=== Lift Simulator - Controller Demo ===");
         System.out.println("Version: " + resolveVersion());
         System.out.println("Controller Strategy: " + controllerStrategy);
         System.out.println("Idle Parking Mode: " + idleParkingMode);
         System.out.println("Starting simulation...\n");
 
         // Create controller using factory with configured strategy and parking mode.
-        NaiveLiftController controller = (NaiveLiftController) ControllerFactory.createController(
+        RequestManagingLiftController controller = (RequestManagingLiftController) ControllerFactory.createController(
                 controllerStrategy,
                 0,                    // homeFloor
                 5,                    // idleTimeoutTicks
@@ -149,7 +142,7 @@ public class Main {
         }
 
         System.out.println("\nSimulation completed successfully!");
-        System.out.println("All requests serviced using naive scheduling (nearest floor first).");
+        System.out.println("All requests serviced using " + controllerStrategy + " scheduling.");
         System.out.println("\nKey events:");
         System.out.println("  - Request to floor 8 was cancelled at tick 15 and never serviced.");
         System.out.println("  - Out-of-service initiated at tick 25 with graceful shutdown sequence:");
@@ -165,7 +158,7 @@ public class Main {
      * Formats a compact summary of active request states.
      * Shows count of requests in each lifecycle state (e.g., "Q:2 A:1 S:1").
      */
-    private static String formatRequestStatus(NaiveLiftController controller) {
+    private static String formatRequestStatus(RequestManagingLiftController controller) {
         Map<RequestState, Long> stateCounts = controller.getRequests().stream()
                 .filter(request -> !request.isTerminal())
                 .collect(Collectors.groupingBy(LiftRequest::getState, Collectors.counting()));

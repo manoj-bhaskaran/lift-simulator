@@ -3,8 +3,7 @@ package com.liftsimulator.scenario;
 import com.liftsimulator.domain.ControllerStrategy;
 import com.liftsimulator.domain.IdleParkingMode;
 import com.liftsimulator.engine.ControllerFactory;
-import com.liftsimulator.engine.LiftController;
-import com.liftsimulator.engine.NaiveLiftController;
+import com.liftsimulator.engine.RequestManagingLiftController;
 import com.liftsimulator.engine.SimulationEngine;
 
 import java.io.IOException;
@@ -84,15 +83,6 @@ public class ScenarioRunnerMain {
                 ? scenario.getControllerStrategy()
                 : DEFAULT_CONTROLLER_STRATEGY;
 
-        // Note: Scenarios currently require NaiveLiftController for request management.
-        // If a non-NEAREST_REQUEST_ROUTING strategy is specified, we reject it for now.
-        if (controllerStrategy != ControllerStrategy.NEAREST_REQUEST_ROUTING) {
-            throw new UnsupportedOperationException(
-                    "Scenarios currently only support NEAREST_REQUEST_ROUTING controller strategy. " +
-                    "Strategy " + controllerStrategy + " is not compatible with scenario execution."
-            );
-        }
-
         // Print configuration.
         System.out.println("=== Lift Simulator - Scenario Runner ===");
         System.out.println("Scenario: " + (scenarioPath != null ? scenarioPath : DEFAULT_SCENARIO_RESOURCE));
@@ -100,7 +90,7 @@ public class ScenarioRunnerMain {
         System.out.println("Idle Parking Mode: " + idleParkingMode);
         System.out.println();
 
-        NaiveLiftController controller = (NaiveLiftController) ControllerFactory.createController(
+        RequestManagingLiftController controller = (RequestManagingLiftController) ControllerFactory.createController(
                 controllerStrategy,
                 homeFloor,
                 idleTimeoutTicks,

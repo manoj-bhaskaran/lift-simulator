@@ -33,34 +33,24 @@ public class ControllerFactoryTest {
     }
 
     @Test
-    public void testCreateControllerWithDirectionalScanThrowsUnsupportedOperationException() {
-        UnsupportedOperationException exception = assertThrows(
-                UnsupportedOperationException.class,
-                () -> ControllerFactory.createController(ControllerStrategy.DIRECTIONAL_SCAN)
-        );
+    public void testCreateControllerWithDirectionalScan() {
+        LiftController controller = ControllerFactory.createController(ControllerStrategy.DIRECTIONAL_SCAN);
 
-        assertEquals(
-                "DIRECTIONAL_SCAN controller strategy is not yet implemented",
-                exception.getMessage()
-        );
+        assertNotNull(controller);
+        assertTrue(controller instanceof DirectionalScanLiftController);
     }
 
     @Test
-    public void testCreateControllerWithDirectionalScanAndParametersThrowsUnsupportedOperationException() {
-        UnsupportedOperationException exception = assertThrows(
-                UnsupportedOperationException.class,
-                () -> ControllerFactory.createController(
-                        ControllerStrategy.DIRECTIONAL_SCAN,
-                        5,
-                        10,
-                        IdleParkingMode.PARK_TO_HOME_FLOOR
-                )
+    public void testCreateControllerWithDirectionalScanAndParameters() {
+        LiftController controller = ControllerFactory.createController(
+                ControllerStrategy.DIRECTIONAL_SCAN,
+                5,
+                10,
+                IdleParkingMode.PARK_TO_HOME_FLOOR
         );
 
-        assertEquals(
-                "DIRECTIONAL_SCAN controller strategy is not yet implemented",
-                exception.getMessage()
-        );
+        assertNotNull(controller);
+        assertTrue(controller instanceof DirectionalScanLiftController);
     }
 
     @Test

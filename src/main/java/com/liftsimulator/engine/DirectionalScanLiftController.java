@@ -2,6 +2,7 @@ package com.liftsimulator.engine;
 
 import com.liftsimulator.domain.Action;
 import com.liftsimulator.domain.CarCall;
+import com.liftsimulator.domain.Direction;
 import com.liftsimulator.domain.DoorState;
 import com.liftsimulator.domain.HallCall;
 import com.liftsimulator.domain.IdleParkingMode;
@@ -20,26 +21,11 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
- * A naive lift controller that implements basic scheduling logic.
- * This controller manages lift requests as first-class entities with
- * explicit lifecycle states, servicing requests by moving to the nearest requested floor.
- *
- * Decision rules:
- * - When the lift reaches a requested floor, open the doors
- * - When doors are open and dwell time has elapsed, close the doors
- * - Otherwise, move toward the nearest floor with a pending request
- *
- * Request lifecycle:
- * - CREATED: Request is created
- * - QUEUED: Request is added to the controller's queue
- * - ASSIGNED: Request is assigned to the lift for service
- * - SERVING: Lift is actively serving the request
- * - COMPLETED: Request has been successfully fulfilled
- * - CANCELLED: Request was cancelled before completion
- *
- * Optimization is out of scope; this focuses on correctness first.
+ * Implements a directional scan controller.
+ * The controller maintains travel direction and services all requests in that direction
+ * before reversing (or idling if none).
  */
-public final class NaiveLiftController implements RequestManagingLiftController {
+public final class DirectionalScanLiftController implements RequestManagingLiftController {
     private static final int DEFAULT_HOME_FLOOR = 0;
     private static final int DEFAULT_IDLE_TIMEOUT_TICKS = 5;
     private static final IdleParkingMode DEFAULT_IDLE_PARKING_MODE = IdleParkingMode.PARK_TO_HOME_FLOOR;
@@ -53,16 +39,17 @@ public final class NaiveLiftController implements RequestManagingLiftController 
     private Long idleStartTick;
     private boolean parkingInProgress;
     private boolean outOfService;
+    private Direction currentDirection = Direction.IDLE;
 
-    public NaiveLiftController() {
+    public DirectionalScanLiftController() {
         this(DEFAULT_HOME_FLOOR, DEFAULT_IDLE_TIMEOUT_TICKS, DEFAULT_IDLE_PARKING_MODE);
     }
 
-    public NaiveLiftController(int homeFloor, int idleTimeoutTicks) {
+    public DirectionalScanLiftController(int homeFloor, int idleTimeoutTicks) {
         this(homeFloor, idleTimeoutTicks, DEFAULT_IDLE_PARKING_MODE);
     }
 
-    public NaiveLiftController(int homeFloor, int idleTimeoutTicks, IdleParkingMode idleParkingMode) {
+    public DirectionalScanLiftController(int homeFloor, int idleTimeoutTicks, IdleParkingMode idleParkingMode) {
         if (idleTimeoutTicks < 0) {
             throw new IllegalArgumentException("idleTimeoutTicks must be >= 0");
         }
@@ -189,6 +176,16 @@ public final class NaiveLiftController implements RequestManagingLiftController 
         return Collections.unmodifiableSet(activeRequests);
     }
 
+    private boolean hasRequestsInDirection(int currentFloor, Direction direction) {
+        if (direction == Direction.IDLE) {
+            return false;
+        }
+        return getActiveRequests().stream()
+                .anyMatch(request -> direction == Direction.UP
+                        ? request.getTargetFloor() > currentFloor
+                        : request.getTargetFloor() < currentFloor);
+    }
+
     /**
      * Finds the nearest floor with a pending request.
      * Assigns requests to the lift when they are selected for service.
@@ -216,27 +213,40 @@ public final class NaiveLiftController implements RequestManagingLiftController 
                 });
     }
 
+    private Optional<Integer> findNextRequestedFloorInDirection(int currentFloor, Direction direction) {
+        if (direction == Direction.IDLE) {
+            return Optional.empty();
+        }
+
+        return getActiveRequests().stream()
+                .map(LiftRequest::getTargetFloor)
+                .filter(targetFloor -> direction == Direction.UP
+                        ? targetFloor > currentFloor
+                        : targetFloor < currentFloor)
+                .sorted(direction == Direction.UP ? Integer::compareTo : (f1, f2) -> Integer.compare(f2, f1))
+                .findFirst();
+    }
+
     /**
      * Assigns requests for the target floor to the lift.
-     * Transitions requests from QUEUED to ASSIGNED.
+     * Changes state from QUEUED to ASSIGNED.
      *
-     * @param targetFloor the floor being targeted
+     * @param targetFloor floor that lift will go to.
      */
     private void assignRequestsForFloor(int targetFloor) {
-        getActiveRequests().stream()
+        activeRequests.stream()
                 .filter(request -> request.getTargetFloor() == targetFloor)
                 .filter(request -> request.getState() == RequestState.QUEUED)
                 .forEach(request -> request.transitionTo(RequestState.ASSIGNED));
     }
 
     /**
-     * Marks assigned requests as being served.
-     * Transitions requests from ASSIGNED to SERVING.
+     * Marks assigned requests for the target floor as SERVING.
      *
-     * @param targetFloor the floor being served
+     * @param targetFloor floor that lift is now serving.
      */
     private void serveRequestsForFloor(int targetFloor) {
-        getActiveRequests().stream()
+        activeRequests.stream()
                 .filter(request -> request.getTargetFloor() == targetFloor)
                 .filter(request -> request.getState() == RequestState.ASSIGNED)
                 .forEach(request -> request.transitionTo(RequestState.SERVING));
@@ -257,6 +267,35 @@ public final class NaiveLiftController implements RequestManagingLiftController 
         }
         if (currentFloor > homeFloor) {
             return Action.MOVE_DOWN;
+        }
+        return Action.IDLE;
+    }
+
+    private Action handleIdleParking(LiftState currentState, long currentTick) {
+        int currentFloor = currentState.getFloor();
+        if (parkingInProgress) {
+            if (currentFloor == homeFloor) {
+                parkingInProgress = false;
+                idleStartTick = currentTick;
+                return Action.IDLE;
+            }
+            return moveTowardHome(currentFloor);
+        }
+
+        if (shouldTrackIdle(currentState)) {
+            Long trackedIdleStartTick = idleStartTick;
+            if (trackedIdleStartTick == null) {
+                trackedIdleStartTick = currentTick;
+                idleStartTick = currentTick;
+            }
+            long idleTicks = currentTick - trackedIdleStartTick;
+            if (idleTicks >= idleTimeoutTicks && currentFloor != homeFloor
+                    && idleParkingMode == IdleParkingMode.PARK_TO_HOME_FLOOR) {
+                parkingInProgress = true;
+                return moveTowardHome(currentFloor);
+            }
+        } else {
+            idleStartTick = null;
         }
         return Action.IDLE;
     }
@@ -318,53 +357,45 @@ public final class NaiveLiftController implements RequestManagingLiftController 
             return Action.OPEN_DOOR;
         }
 
-        // Find nearest requested floor and move towards it.
-        Optional<Integer> nearestFloor = findNearestRequestedFloor(currentFloor);
-        if (nearestFloor.isPresent()) {
-            int targetFloor = nearestFloor.get();
-            assignRequestsForFloor(targetFloor);
-            if (currentStatus == LiftStatus.MOVING_UP && targetFloor < currentFloor) {
-                return Action.IDLE;
-            }
-            if (currentStatus == LiftStatus.MOVING_DOWN && targetFloor > currentFloor) {
-                return Action.IDLE;
-            }
-            if (currentFloor < targetFloor) {
-                return Action.MOVE_UP;
-            } else if (currentFloor > targetFloor) {
-                return Action.MOVE_DOWN;
-            }
-        }
-
         if (!hasActiveRequests) {
-            if (parkingInProgress) {
-                if (currentFloor == homeFloor) {
-                    parkingInProgress = false;
-                    idleStartTick = currentTick;
-                    return Action.IDLE;
-                }
-                return moveTowardHome(currentFloor);
-            }
+            currentDirection = Direction.IDLE;
+            return handleIdleParking(currentState, currentTick);
+        }
 
-            if (shouldTrackIdle(currentState)) {
-                Long trackedIdleStartTick = idleStartTick;
-                if (trackedIdleStartTick == null) {
-                    trackedIdleStartTick = currentTick;
-                    idleStartTick = currentTick;
-                }
-                long idleTicks = currentTick - trackedIdleStartTick;
-                if (idleTicks >= idleTimeoutTicks && currentFloor != homeFloor
-                        && idleParkingMode == IdleParkingMode.PARK_TO_HOME_FLOOR) {
-                    parkingInProgress = true;
-                    return moveTowardHome(currentFloor);
-                }
-            } else {
-                idleStartTick = null;
+        if (currentDirection == Direction.IDLE) {
+            Optional<Integer> nearestFloor = findNearestRequestedFloor(currentFloor);
+            if (nearestFloor.isPresent()) {
+                int targetFloor = nearestFloor.get();
+                currentDirection = targetFloor > currentFloor ? Direction.UP : Direction.DOWN;
             }
         }
 
-        // No requests, stay idle.
-        return Action.IDLE;
+        Optional<Integer> nextFloor = findNextRequestedFloorInDirection(currentFloor, currentDirection);
+        if (nextFloor.isEmpty()) {
+            Direction oppositeDirection = currentDirection == Direction.UP ? Direction.DOWN : Direction.UP;
+            if (hasRequestsInDirection(currentFloor, oppositeDirection)) {
+                currentDirection = oppositeDirection;
+                nextFloor = findNextRequestedFloorInDirection(currentFloor, currentDirection);
+            } else {
+                currentDirection = Direction.IDLE;
+                return handleIdleParking(currentState, currentTick);
+            }
+        }
+
+        int targetFloor = nextFloor.orElse(currentFloor);
+        assignRequestsForFloor(targetFloor);
+
+        if (currentDirection == Direction.UP) {
+            if (currentStatus == LiftStatus.MOVING_DOWN) {
+                return Action.IDLE;
+            }
+            return currentFloor < targetFloor ? Action.MOVE_UP : Action.IDLE;
+        }
+
+        if (currentStatus == LiftStatus.MOVING_UP) {
+            return Action.IDLE;
+        }
+        return currentFloor > targetFloor ? Action.MOVE_DOWN : Action.IDLE;
     }
 
     /**
@@ -391,6 +422,7 @@ public final class NaiveLiftController implements RequestManagingLiftController 
 
         // Reset idle tracking and parking state.
         resetIdleTracking();
+        currentDirection = Direction.IDLE;
     }
 
     /**
@@ -402,6 +434,7 @@ public final class NaiveLiftController implements RequestManagingLiftController 
         outOfService = false;
         // Reset idle tracking when returning to service.
         resetIdleTracking();
+        currentDirection = Direction.IDLE;
     }
 
     /**
