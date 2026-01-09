@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0] - 2026-01-09
+
+### Added
+- **Comprehensive scenario-based test suite** for both controller strategies (ControllerScenarioTest.java)
+  - Reusable `ScenarioHarness` test utility for deterministic scenario testing
+    - Supports tick simulation with configurable timing parameters
+    - Request injection at specific ticks (hall calls and car calls)
+    - Service event logging with floor and direction tracking
+    - Assertion utilities for service order, direction transitions, and queue state
+  - **DirectionalScan controller scenario tests** validating scheduling outcomes:
+    - Canonical scenario from README documentation (floor 2 UP, floor 5 car, floor 3 DOWN)
+    - Mixed calls above and below while moving (validates direction commitment)
+    - Idle to direction selection to completion with multiple reversals
+    - Single direction multiple stops (validates batching efficiency)
+    - Alternating directions with hall and car calls
+    - Service order precisely asserted with expected floor sequences
+    - Direction transitions validated (UP sweep, reversal, DOWN sweep)
+  - **NaiveLift controller scenario tests** protecting current behavior:
+    - Nearest-first routing validation
+    - Back-and-forth movement patterns (demonstrates inefficiency vs directional)
+    - Mixed call types (hall and car calls)
+    - Dynamic request addition during movement
+    - Single request baseline test
+  - **Comparison test** running identical scenario with both strategies to highlight differences
+- All scenario tests verify:
+  - Deterministic and reliable execution
+  - All requests reach COMPLETED state
+  - Queue is fully cleared after scenario completion
+  - No lost or duplicated requests
+
+### Changed
+- Test suite now provides comprehensive coverage of realistic multi-request routing scenarios
+- Both controller strategies protected against behavioral regressions through scenario tests
+
+### Technical Details
+- ScenarioHarness tracks last moving direction to accurately log service events
+- Tests use realistic timing: 1 tick/floor travel, 2 ticks door transition, 3 ticks door dwell
+- Maximum tick limits prevent infinite loops while allowing sufficient time for complex scenarios
+- Service event logging captures tick, floor, and direction for detailed assertions
+
 ## [0.19.0] - 2026-01-09
 
 ### Added
