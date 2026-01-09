@@ -1,12 +1,17 @@
 package com.liftsimulator.scenario;
 
+import com.liftsimulator.domain.ControllerStrategy;
 import com.liftsimulator.domain.LiftState;
 import com.liftsimulator.domain.LiftStatus;
+import com.liftsimulator.engine.ControllerFactory;
+import com.liftsimulator.engine.LiftController;
 import com.liftsimulator.engine.NaiveLiftController;
 import com.liftsimulator.engine.SimulationEngine;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -69,5 +74,43 @@ public class ScenarioIntegrationTest {
                 () -> parser.parseResource("/scenarios/invalid.scenario"));
 
         assertTrue(exception.getMessage().contains("Unknown action"));
+    }
+
+    @Test
+    void testScenarioWithControllerStrategy() throws Exception {
+        ScenarioParser parser = new ScenarioParser();
+        ScenarioDefinition scenario = parser.parseResource("/scenarios/demo.scenario");
+
+        // Verify the controller strategy is parsed correctly
+        assertNotNull(scenario.getControllerStrategy());
+        assertEquals(ControllerStrategy.NEAREST_REQUEST_ROUTING, scenario.getControllerStrategy());
+    }
+
+    @Test
+    void testScenarioWithoutControllerStrategyUsesNull() throws Exception {
+        ScenarioParser parser = new ScenarioParser();
+        ScenarioDefinition scenario = parser.parseResource("/scenarios/test.scenario");
+
+        // Scenarios without controller_strategy should have null
+        assertNull(scenario.getControllerStrategy());
+    }
+
+    @Test
+    void testControllerFactoryCreatesCorrectInstance() {
+        ControllerStrategy strategy = ControllerStrategy.NEAREST_REQUEST_ROUTING;
+        LiftController controller = ControllerFactory.createController(strategy);
+
+        assertNotNull(controller);
+        assertTrue(controller instanceof NaiveLiftController);
+    }
+
+    @Test
+    void testInvalidControllerStrategyInScenario() {
+        ScenarioParser parser = new ScenarioParser();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> parser.parseResource("/scenarios/invalid_controller_strategy.scenario"));
+
+        assertTrue(exception.getMessage().contains("Invalid controller_strategy"));
     }
 }

@@ -10,6 +10,7 @@ door_dwell_ticks: 3
 door_reopen_window_ticks: 2
 home_floor: 0
 idle_timeout_ticks: 5
+controller_strategy: NEAREST_REQUEST_ROUTING
 
 # Format: tick, action, alias, args...
 # Actions: car_call, hall_call, cancel, out_of_service, return_to_service

@@ -1,7 +1,9 @@
 package com.liftsimulator.scenario;
 
+import com.liftsimulator.domain.ControllerStrategy;
 import com.liftsimulator.domain.IdleParkingMode;
-import com.liftsimulator.engine.NaiveLiftController;
+import com.liftsimulator.engine.ControllerFactory;
+import com.liftsimulator.engine.LiftController;
 import com.liftsimulator.engine.SimulationEngine;
 
 import java.io.IOException;
@@ -19,6 +21,7 @@ public class ScenarioRunnerMain {
     private static final int DEFAULT_HOME_FLOOR = 0;
     private static final int DEFAULT_IDLE_TIMEOUT_TICKS = 5;
     private static final IdleParkingMode DEFAULT_IDLE_PARKING_MODE = IdleParkingMode.PARK_TO_HOME_FLOOR;
+    private static final ControllerStrategy DEFAULT_CONTROLLER_STRATEGY = ControllerStrategy.NEAREST_REQUEST_ROUTING;
 
     public static void main(String[] args) throws IOException {
         ScenarioParser parser = new ScenarioParser();
@@ -59,8 +62,16 @@ public class ScenarioRunnerMain {
         IdleParkingMode idleParkingMode = scenario.getIdleParkingMode() != null
                 ? scenario.getIdleParkingMode()
                 : DEFAULT_IDLE_PARKING_MODE;
+        ControllerStrategy controllerStrategy = scenario.getControllerStrategy() != null
+                ? scenario.getControllerStrategy()
+                : DEFAULT_CONTROLLER_STRATEGY;
 
-        NaiveLiftController controller = new NaiveLiftController(homeFloor, idleTimeoutTicks, idleParkingMode);
+        LiftController controller = ControllerFactory.createController(
+                controllerStrategy,
+                homeFloor,
+                idleTimeoutTicks,
+                idleParkingMode
+        );
         SimulationEngine engine = SimulationEngine.builder(controller, minFloor, maxFloor)
                 .initialFloor(initialFloor)
                 .travelTicksPerFloor(travelTicksPerFloor)

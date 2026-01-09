@@ -1,8 +1,7 @@
 package com.liftsimulator;
 
-import com.liftsimulator.engine.NaiveLiftController;
-import com.liftsimulator.engine.SimulationEngine;
 import com.liftsimulator.domain.CarCall;
+import com.liftsimulator.domain.ControllerStrategy;
 import com.liftsimulator.domain.Direction;
 import com.liftsimulator.domain.DoorState;
 import com.liftsimulator.domain.HallCall;
@@ -10,6 +9,9 @@ import com.liftsimulator.domain.LiftRequest;
 import com.liftsimulator.domain.LiftState;
 import com.liftsimulator.domain.LiftStatus;
 import com.liftsimulator.domain.RequestState;
+import com.liftsimulator.engine.ControllerFactory;
+import com.liftsimulator.engine.NaiveLiftController;
+import com.liftsimulator.engine.SimulationEngine;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -24,10 +26,13 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("=== Lift Simulator - NaiveLiftController Demo ===");
         System.out.println("Version: " + resolveVersion());
+        System.out.println("Controller Strategy: " + ControllerStrategy.NEAREST_REQUEST_ROUTING);
         System.out.println("Starting simulation...\n");
 
-        // Create naive controller and engine.
-        NaiveLiftController controller = new NaiveLiftController();
+        // Create controller using factory with default strategy.
+        NaiveLiftController controller = (NaiveLiftController) ControllerFactory.createController(
+                ControllerStrategy.NEAREST_REQUEST_ROUTING
+        );
         SimulationEngine engine = SimulationEngine.builder(controller, 0, 10).build();
 
         // Add some requests to simulate real usage.
