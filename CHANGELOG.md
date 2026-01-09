@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.5] - 2026-01-09
+
+### Fixed
+- Document cleanup steps for legacy `public.schema_metadata`.
+- Bump project version to 0.23.5 to reflect the legacy schema guidance.
+
+## [0.23.4] - 2026-01-09
+
+### Fixed
+- Document cleanup steps when Flyway history exists in the `public` schema.
+- Bump project version to 0.23.4 to reflect the schema-history guidance.
+
+## [0.23.3] - 2026-01-09
+
+### Fixed
+- Configure Flyway to target the `lift_simulator` schema so baseline migrations create the expected tables.
+- Document the schema-specific Flyway behavior and update database setup guidance.
+- Bump project version to 0.23.3 to reflect the schema migration fix.
+
 ## [0.23.2] - 2026-01-09
 
 ### Fixed
