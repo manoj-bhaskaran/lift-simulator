@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.1] - 2026-01-09
+
+### Fixed
+- Add an explicit Flyway PostgreSQL artifact version in the Maven POM to restore dependency resolution.
+- Bump project version to 0.22.1 to reflect the build fix.
+
 ## [0.22.0] - 2026-01-09
 
 ### Added
