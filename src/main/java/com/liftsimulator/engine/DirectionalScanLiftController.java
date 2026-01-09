@@ -248,19 +248,11 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
                         : Math.min(floor1, floor2));
     }
 
-    private Optional<Integer> findNextStopOrTurnaroundFloor(int currentFloor, Direction direction) {
-        Optional<Integer> nextStop = findNextRequestedFloorInDirection(currentFloor, direction);
-        if (nextStop.isPresent()) {
-            return nextStop;
-        }
-        return findTurnaroundFloorInDirection(currentFloor, direction);
-    }
-
     private boolean shouldReverseAtCurrentFloor(int currentFloor) {
         if (currentDirection == Direction.IDLE) {
             return false;
         }
-        if (findNextRequestedFloorInDirection(currentFloor, currentDirection).isPresent()) {
+        if (findTurnaroundFloorInDirection(currentFloor, currentDirection).isPresent()) {
             return false;
         }
         Direction oppositeDirection = currentDirection == Direction.UP ? Direction.DOWN : Direction.UP;
@@ -426,12 +418,20 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
             }
         }
 
-        Optional<Integer> nextFloor = findNextStopOrTurnaroundFloor(currentFloor, currentDirection);
+        Optional<Integer> turnaroundFloor = findTurnaroundFloorInDirection(currentFloor, currentDirection);
+        Optional<Integer> nextFloor = findNextRequestedFloorInDirection(currentFloor, currentDirection);
+        if (nextFloor.isEmpty() && turnaroundFloor.isPresent()) {
+            nextFloor = turnaroundFloor;
+        }
         if (nextFloor.isEmpty()) {
             Direction oppositeDirection = currentDirection == Direction.UP ? Direction.DOWN : Direction.UP;
             if (hasRequestsInDirection(currentFloor, oppositeDirection)) {
                 currentDirection = oppositeDirection;
-                nextFloor = findNextStopOrTurnaroundFloor(currentFloor, currentDirection);
+                turnaroundFloor = findTurnaroundFloorInDirection(currentFloor, currentDirection);
+                nextFloor = findNextRequestedFloorInDirection(currentFloor, currentDirection);
+                if (nextFloor.isEmpty() && turnaroundFloor.isPresent()) {
+                    nextFloor = turnaroundFloor;
+                }
             } else {
                 currentDirection = Direction.IDLE;
                 return handleIdleParking(currentState, currentTick);
