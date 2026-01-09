@@ -33,7 +33,7 @@ The current version (v0.12.17) implements:
 - **Invalid action reporting** with explicit action results and warning logs that include tick and floor context
 - **Symmetric door behavior**: Both opening and closing are modeled as transitional states
 - **Door reopening window**: Configurable time window during which closing doors can be reopened for new requests at the current floor
-- **Idle parking**: Configurable home floor and idle timeout to park the lift when no requests are pending
+- **Configurable idle parking**: Choose between staying at current floor or parking to home floor when idle, with configurable timeout
 - **Defensive idle tracking**: Idle timeout calculations guard against unset idle tracking state
 - **Single lift simulation** operating between configurable floor ranges
 - **Tick-based simulation engine** that advances time in discrete steps
@@ -199,8 +199,9 @@ Scenario metadata keys:
 - **door_transition_ticks**: ticks required to open or close doors
 - **door_dwell_ticks**: ticks doors stay open before closing
 - **door_reopen_window_ticks**: ticks during door closing when doors can reopen (0 disables)
-- **home_floor**: idle parking floor for the naive controller
-- **idle_timeout_ticks**: idle ticks before the lift parks at the home floor
+- **home_floor**: idle parking floor for the naive controller (used with `PARK_TO_HOME_FLOOR` mode)
+- **idle_timeout_ticks**: idle ticks before the parking behavior activates
+- **idle_parking_mode**: parking behavior when idle (`STAY_AT_CURRENT_FLOOR` or `PARK_TO_HOME_FLOOR`, optional, defaults to `PARK_TO_HOME_FLOOR`)
 
 Note: If a `return_to_service` event is scheduled while the lift is still completing the out-of-service shutdown sequence, the return is deferred until the lift reaches the `OUT_OF_SERVICE` state.
 
@@ -229,17 +230,38 @@ SimulationEngine engine = SimulationEngine.builder(controller, 0, 10)
 
 ## Configuring Idle Parking
 
-You can configure the home floor and idle timeout for the naive controller:
+You can configure the home floor, idle timeout, and parking behavior for the naive controller:
 
 ```java
 NaiveLiftController controller = new NaiveLiftController(
-    0, // homeFloor
-    5  // idleTimeoutTicks
+    0,                                        // homeFloor
+    5,                                        // idleTimeoutTicks
+    IdleParkingMode.PARK_TO_HOME_FLOOR       // idleParkingMode
 );
 ```
 
-- **homeFloor**: The floor to park on when idle
-- **idleTimeoutTicks**: How many idle ticks before the lift starts parking (0 means park immediately)
+- **homeFloor**: The floor to park on when idle (used only with `PARK_TO_HOME_FLOOR` mode)
+- **idleTimeoutTicks**: How many idle ticks before the parking behavior activates (0 means activate immediately)
+- **idleParkingMode**: The parking behavior when idle timeout is reached (optional, defaults to `PARK_TO_HOME_FLOOR`)
+  - `IdleParkingMode.STAY_AT_CURRENT_FLOOR`: Lift stays at current floor indefinitely when idle
+  - `IdleParkingMode.PARK_TO_HOME_FLOOR`: Lift moves to home floor after idle timeout (existing behavior)
+
+**Backward compatibility**: The two-parameter constructor defaults to `PARK_TO_HOME_FLOOR` mode:
+
+```java
+// This uses PARK_TO_HOME_FLOOR mode by default
+NaiveLiftController controller = new NaiveLiftController(0, 5);
+```
+
+**Scenario file configuration:**
+
+```
+home_floor: 0
+idle_timeout_ticks: 5
+idle_parking_mode: STAY_AT_CURRENT_FLOOR
+```
+
+The `idle_parking_mode` parameter is optional and defaults to `PARK_TO_HOME_FLOOR` if not specified.
 
 ## Taking Lifts Out of Service
 
