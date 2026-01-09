@@ -167,7 +167,7 @@ public class Main {
         System.out.println(String.format("%-40s %-14s %-24s", "Request", "Created Tick", "Completed/Cancelled Tick"));
         System.out.println("----------------------------------------------------------------------------------------");
         lifecycles.values().stream()
-                .sorted(Comparator.comparingInt(RequestLifecycle::createdTick)
+                .sorted(Comparator.comparingLong(RequestLifecycle::createdTick)
                         .thenComparing(lifecycle -> lifecycle.request().getId()))
                 .forEach(lifecycle -> {
                     String completion = lifecycle.terminalTick() == null
@@ -206,7 +206,7 @@ public class Main {
     }
 
     private static void recordRequestCreations(RequestManagingLiftController controller,
-                                               int tick,
+                                               long tick,
                                                Map<Long, RequestLifecycle> lifecycles) {
         for (LiftRequest request : controller.getRequests()) {
             lifecycles.computeIfAbsent(request.getId(), id -> new RequestLifecycle(request, tick));
@@ -214,7 +214,7 @@ public class Main {
     }
 
     private static void recordTerminalRequests(RequestManagingLiftController controller,
-                                               int tick,
+                                               long tick,
                                                Map<Long, RequestLifecycle> lifecycles) {
         for (LiftRequest request : controller.getRequests()) {
             if (!request.isTerminal()) {
@@ -247,11 +247,11 @@ public class Main {
 
     private static final class RequestLifecycle {
         private final LiftRequest request;
-        private final int createdTick;
-        private Integer terminalTick;
+        private final long createdTick;
+        private Long terminalTick;
         private RequestState terminalState;
 
-        private RequestLifecycle(LiftRequest request, int createdTick) {
+        private RequestLifecycle(LiftRequest request, long createdTick) {
             this.request = request;
             this.createdTick = createdTick;
         }
@@ -260,11 +260,11 @@ public class Main {
             return request;
         }
 
-        private int createdTick() {
+        private long createdTick() {
             return createdTick;
         }
 
-        private Integer terminalTick() {
+        private Long terminalTick() {
             return terminalTick;
         }
 
@@ -272,7 +272,7 @@ public class Main {
             return terminalState;
         }
 
-        private void markTerminal(int tick, RequestState state) {
+        private void markTerminal(long tick, RequestState state) {
             this.terminalTick = tick;
             this.terminalState = state;
         }
