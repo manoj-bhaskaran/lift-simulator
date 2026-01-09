@@ -626,14 +626,75 @@ src/
 │       └── StateTransitionValidator.java  # State machine validator
 └── test/java/com/liftsimulator/
     ├── domain/
-    │   └── LiftRequestTest.java           # Request lifecycle tests
+    │   └── LiftRequestTest.java                 # Request lifecycle tests
     ├── engine/
-    │   ├── LiftRequestLifecycleTest.java  # Controller integration tests
-    │   ├── NaiveLiftControllerTest.java   # Controller unit tests
-    │   ├── OutOfServiceTest.java          # Out-of-service tests
-    │   └── SimulationEngineTest.java      # Engine unit tests
-    └── ...                                # Additional tests
+    │   ├── ControllerScenarioTest.java          # Scenario-based routing tests (NEW)
+    │   ├── DirectionalScanIntegrationTest.java  # Directional controller integration tests
+    │   ├── LiftRequestLifecycleTest.java        # Controller integration tests
+    │   ├── NaiveLiftControllerTest.java         # Controller unit tests
+    │   ├── OutOfServiceTest.java                # Out-of-service tests
+    │   └── SimulationEngineTest.java            # Engine unit tests
+    └── ...                                      # Additional tests
 ```
+
+## Testing
+
+The project includes comprehensive test coverage across multiple levels:
+
+### Unit Tests
+- **LiftRequestTest**: Tests request lifecycle state transitions (CREATED → QUEUED → ASSIGNED → SERVING → COMPLETED)
+- **NaiveLiftControllerTest**: 50+ tests covering nearest-request logic, door handling, cancellation, idle parking
+- **DirectionalScanLiftControllerTest**: Tests direction selection, commitment, reversal, hall call filtering
+- **SimulationEngineTest**: Tests tick mechanism, state transitions, door cycles
+
+### Integration Tests
+- **DirectionalScanIntegrationTest**: End-to-end tests with SimulationEngine
+  - Multi-request scenarios
+  - Dynamic request addition during movement
+  - Cancellation handling
+  - Out-of-service scenarios
+  - Direction-aware scheduling validation
+- **LiftRequestLifecycleTest**: Tests request state tracking through full simulation
+
+### Scenario Tests (NEW)
+- **ControllerScenarioTest**: Comprehensive scenario-based test suite for both controller strategies
+  - Provides `ScenarioHarness` utility for deterministic scenario testing
+  - Tests realistic multi-request routing scenarios
+  - Validates service order, direction transitions, and queue management
+  - Protects both NaiveLift and DirectionalScan strategies from behavioral regressions
+
+**Example scenario tests:**
+- **Canonical DirectionalScan scenario**: Validates deferred hall call servicing (from README documentation)
+- **Mixed calls while moving**: Tests direction commitment with requests above and below current position
+- **Idle → commit → clear → reverse**: Tests complete direction selection and reversal cycle
+- **Comparison tests**: Runs identical scenarios with both strategies to highlight behavioral differences
+
+### Running Tests
+
+Run all tests:
+```bash
+mvn test
+```
+
+Run specific test class:
+```bash
+mvn test -Dtest=ControllerScenarioTest
+```
+
+Run specific test method:
+```bash
+mvn test -Dtest=ControllerScenarioTest#testDirectionalScan_CanonicalScenario_FromReadme
+```
+
+Generate coverage report (requires 80% line coverage):
+```bash
+mvn jacoco:report
+# Report available at target/site/jacoco/index.html
+```
+
+### Test Coverage Requirements
+
+The project enforces a minimum of **80% line coverage** through JaCoCo. The build will fail if coverage falls below this threshold.
 
 ## Architecture Decisions
 
