@@ -32,30 +32,12 @@ public class Main {
         ControllerStrategy controllerStrategy = DEFAULT_CONTROLLER_STRATEGY;
         IdleParkingMode idleParkingMode = DEFAULT_IDLE_PARKING_MODE;
 
-        for (int i = 0; i < args.length; i++) {
-            if ((args[i].equals("--controller") || args[i].equals("-c")) && i + 1 < args.length) {
-                try {
-                    controllerStrategy = ControllerStrategy.valueOf(args[i + 1]);
-                    i++;
-                } catch (IllegalArgumentException e) {
-                    System.err.println("Invalid controller strategy: " + args[i + 1]);
-                    System.err.println("Valid options: NEAREST_REQUEST_ROUTING, DIRECTIONAL_SCAN");
-                    System.exit(1);
-                }
-            } else if ((args[i].equals("--idle-parking") || args[i].equals("-p")) && i + 1 < args.length) {
-                try {
-                    idleParkingMode = IdleParkingMode.valueOf(args[i + 1]);
-                    i++;
-                } catch (IllegalArgumentException e) {
-                    System.err.println("Invalid idle parking mode: " + args[i + 1]);
-                    System.err.println("Valid options: STAY_AT_CURRENT_FLOOR, PARK_TO_HOME_FLOOR");
-                    System.exit(1);
-                }
-            } else if (args[i].equals("--help") || args[i].equals("-h")) {
+        for (String arg : args) {
+            if (arg.equals("--help") || arg.equals("-h")) {
                 printUsage();
                 System.exit(0);
             } else {
-                System.err.println("Unknown argument: " + args[i]);
+                System.err.println("Unknown argument: " + arg);
                 printUsage();
                 System.exit(1);
             }
@@ -208,19 +190,11 @@ public class Main {
         System.out.println("Usage: java -jar lift-simulator.jar [OPTIONS]");
         System.out.println();
         System.out.println("Options:");
-        System.out.println("  -c, --controller STRATEGY       Controller strategy to use");
-        System.out.println("                                  (NEAREST_REQUEST_ROUTING, DIRECTIONAL_SCAN)");
-        System.out.println("                                  Default: NEAREST_REQUEST_ROUTING");
-        System.out.println("  -p, --idle-parking MODE         Idle parking mode");
-        System.out.println("                                  (STAY_AT_CURRENT_FLOOR, PARK_TO_HOME_FLOOR)");
-        System.out.println("                                  Default: PARK_TO_HOME_FLOOR");
         System.out.println("  -h, --help                      Show this help message");
         System.out.println();
         System.out.println("Examples:");
         System.out.println("  java -jar lift-simulator.jar");
-        System.out.println("  java -jar lift-simulator.jar --controller NEAREST_REQUEST_ROUTING");
-        System.out.println("  java -jar lift-simulator.jar --idle-parking STAY_AT_CURRENT_FLOOR");
-        System.out.println("  java -jar lift-simulator.jar -c NEAREST_REQUEST_ROUTING -p PARK_TO_HOME_FLOOR");
+        System.out.println("  java -jar lift-simulator.jar --help");
     }
 
     private static String resolveVersion() {
