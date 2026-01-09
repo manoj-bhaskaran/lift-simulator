@@ -66,7 +66,16 @@ public class ScenarioRunnerMain {
                 ? scenario.getControllerStrategy()
                 : DEFAULT_CONTROLLER_STRATEGY;
 
-        LiftController controller = ControllerFactory.createController(
+        // Note: Scenarios currently require NaiveLiftController for request management.
+        // If a non-NEAREST_REQUEST_ROUTING strategy is specified, we reject it for now.
+        if (controllerStrategy != ControllerStrategy.NEAREST_REQUEST_ROUTING) {
+            throw new UnsupportedOperationException(
+                    "Scenarios currently only support NEAREST_REQUEST_ROUTING controller strategy. " +
+                    "Strategy " + controllerStrategy + " is not compatible with scenario execution."
+            );
+        }
+
+        NaiveLiftController controller = (NaiveLiftController) ControllerFactory.createController(
                 controllerStrategy,
                 homeFloor,
                 idleTimeoutTicks,
