@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.23.2**
+Current version: **0.23.5**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -34,7 +34,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.23.2.jar
+java -jar target/lift-simulator-0.23.5.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -86,7 +86,8 @@ The backend uses PostgreSQL with Flyway for schema migrations. Follow these step
    CREATE USER lift_admin WITH PASSWORD 'liftpassword';
    GRANT ALL PRIVILEGES ON DATABASE lift_simulator TO lift_admin;
    \c lift_simulator
-   GRANT ALL ON SCHEMA public TO lift_admin;
+   CREATE SCHEMA IF NOT EXISTS lift_simulator AUTHORIZATION lift_admin;
+   GRANT ALL ON SCHEMA lift_simulator TO lift_admin;
    \q
    ```
 
@@ -97,8 +98,9 @@ The backend uses PostgreSQL with Flyway for schema migrations. Follow these step
    ```
 
 4. **Run the Application**:
-   When you start the Spring Boot application, Flyway will automatically:
-   - Create the `flyway_schema_history` table
+When you start the Spring Boot application, Flyway will automatically:
+   - Create the `lift_simulator` schema (if it does not exist yet)
+   - Create the `flyway_schema_history` table inside the `lift_simulator` schema
    - Execute all pending migrations from `src/main/resources/db/migration/`
    - Initialize the schema with the baseline version
 
@@ -119,8 +121,8 @@ SPRING_PROFILES_ACTIVE=prod mvn spring-boot:run
 #### Database Schema
 
 The initial schema (V1) includes:
-- `lift_simulator` - Application schema for lift configuration data
-- `flyway_schema_history` - Flyway migration tracking (auto-created)
+- `lift_simulator` - Application schema for lift configuration data (Flyway default)
+- `lift_simulator.flyway_schema_history` - Flyway migration tracking (auto-created)
 - `lift_system` - Lift system configuration roots
 - `lift_system_version` - Versioned lift configuration payloads (JSONB)
 
@@ -134,16 +136,18 @@ Future migrations will extend lift configuration metadata, simulation runs, and 
 
 **Permission denied errors:**
 - Verify the database user has proper permissions: `GRANT ALL PRIVILEGES ON DATABASE lift_simulator TO lift_admin;`
-- Ensure schema-level permissions: `GRANT ALL ON SCHEMA public TO lift_admin;`
+- Ensure schema-level permissions: `GRANT ALL ON SCHEMA lift_simulator TO lift_admin;`
 
 **Migration errors:**
 - Check Flyway history: `SELECT * FROM flyway_schema_history;`
 - For development, you can reset the database: `DROP DATABASE lift_simulator; CREATE DATABASE lift_simulator;`
+- If `public.flyway_schema_history` exists from earlier runs, drop it and restart the app so Flyway recreates history in `lift_simulator`: `DROP TABLE public.flyway_schema_history;`
+- If a legacy `public.schema_metadata` table exists from older releases, it can be dropped; current migrations do not use it: `DROP TABLE public.schema_metadata;`
 - If you upgraded from 0.23.0 and see "Found more than one migration with version 1", run `mvn clean` once to clear stale build artifacts; the build now removes old migration resources automatically.
 
 ## Features
 
-The current version (v0.23.2) implements:
+The current version (v0.23.5) implements:
 - **Selectable controller strategy**: Choose between different controller algorithms (NEAREST_REQUEST_ROUTING, DIRECTIONAL_SCAN) via enum-based configuration
 - **Directional scan controller**: Implements a SCAN-style algorithm that continues in the current direction until all requests are serviced
 - **Hall-call direction filtering**: Opposite-direction hall calls are deferred until after the directional scan reverses, with reversal occurring at the furthest pending stop in the current travel direction
@@ -222,7 +226,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.23.1.jar`.
+The packaged JAR will be in `target/lift-simulator-0.23.5.jar`.
 
 ## Running Tests
 
@@ -272,7 +276,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.23.1.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.23.5.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -281,16 +285,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.23.1.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.23.5.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.23.1.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.23.5.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.23.1.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.23.5.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.23.1.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.23.5.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -310,7 +314,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.23.1.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.23.5.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -319,13 +323,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.23.1.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.23.5.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.23.1.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.23.5.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.23.1.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.23.5.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**

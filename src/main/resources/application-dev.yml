@@ -29,6 +29,9 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    schemas: lift_simulator
+    default-schema: lift_simulator
+    create-schemas: true
     baseline-on-migrate: true
     baseline-version: 0
     validate-on-migrate: true
