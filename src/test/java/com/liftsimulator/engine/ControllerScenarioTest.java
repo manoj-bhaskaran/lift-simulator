@@ -405,7 +405,7 @@ public class ControllerScenarioTest {
         // Expected: 5 -> 3 -> 7 (nearest first)
 
         ScenarioHarness harness = new ScenarioHarness(
-                ControllerStrategy.NAIVE, 5, 0, 10);
+                ControllerStrategy.NEAREST_REQUEST_ROUTING, 5, 0, 10);
 
         LiftRequest req3 = harness.addCarCall(3);
         LiftRequest req7 = harness.addCarCall(7);
@@ -431,7 +431,7 @@ public class ControllerScenarioTest {
         // (not optimized for direction)
 
         ScenarioHarness harness = new ScenarioHarness(
-                ControllerStrategy.NAIVE, 0, 0, 10);
+                ControllerStrategy.NEAREST_REQUEST_ROUTING, 0, 0, 10);
 
         LiftRequest req3Down = harness.addHallCall(3, Direction.DOWN);
         LiftRequest req5Up = harness.addHallCall(5, Direction.UP);
@@ -455,7 +455,7 @@ public class ControllerScenarioTest {
         // Requests: hall 2 UP, car 8, hall 6 DOWN, car 4
 
         ScenarioHarness harness = new ScenarioHarness(
-                ControllerStrategy.NAIVE, 5, 0, 10);
+                ControllerStrategy.NEAREST_REQUEST_ROUTING, 5, 0, 10);
 
         LiftRequest req2Up = harness.addHallCall(2, Direction.UP);
         LiftRequest req8Car = harness.addCarCall(8);
@@ -492,7 +492,7 @@ public class ControllerScenarioTest {
         // Start with request to floor 8, then add floor 5 while moving
 
         ScenarioHarness harness = new ScenarioHarness(
-                ControllerStrategy.NAIVE, 0, 0, 10);
+                ControllerStrategy.NEAREST_REQUEST_ROUTING, 0, 0, 10);
 
         LiftRequest req8 = harness.addCarCall(8);
 
@@ -523,7 +523,7 @@ public class ControllerScenarioTest {
         // Lift at floor 0, request to floor 5
 
         ScenarioHarness harness = new ScenarioHarness(
-                ControllerStrategy.NAIVE, 0, 0, 10);
+                ControllerStrategy.NEAREST_REQUEST_ROUTING, 0, 0, 10);
 
         LiftRequest req = harness.addCarCall(5);
 
@@ -553,7 +553,7 @@ public class ControllerScenarioTest {
 
         // Naive
         ScenarioHarness naive = new ScenarioHarness(
-                ControllerStrategy.NAIVE, 0, 0, 10);
+                ControllerStrategy.NEAREST_REQUEST_ROUTING, 0, 0, 10);
         LiftRequest n1 = naive.addHallCall(3, Direction.DOWN);
         LiftRequest n2 = naive.addHallCall(5, Direction.UP);
         LiftRequest n3 = naive.addCarCall(7);
