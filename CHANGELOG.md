@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-01-09
+
+### Added
+- Command-line configuration options for the demo (`Main.java`)
+  - `--controller` / `-c` flag to select controller strategy (NEAREST_REQUEST_ROUTING, DIRECTIONAL_SCAN)
+  - `--idle-parking` / `-p` flag to select idle parking mode (STAY_AT_CURRENT_FLOOR, PARK_TO_HOME_FLOOR)
+  - `--help` / `-h` flag to display usage information
+  - Configuration display in demo output showing selected controller strategy and idle parking mode
+- Command-line configuration options for the scenario runner (`ScenarioRunnerMain.java`)
+  - `--controller` / `-c` flag to override scenario file controller strategy
+  - `--idle-parking` / `-p` flag to override scenario file idle parking mode
+  - `--help` / `-h` flag to display usage information
+  - Configuration display in scenario runner output showing active settings and whether they were overridden
+- Explicit `idle_parking_mode` configuration in `demo.scenario` with inline documentation
+- Comments in `demo.scenario` documenting available controller configuration options
+- Comprehensive README documentation for command-line usage of both demo and scenario runner
+
+### Changed
+- Demo and scenario runner now display selected controller strategy and idle parking mode at startup
+- Demo.scenario now explicitly shows both controller_strategy and idle_parking_mode with comments
+
+### Design Decisions
+- Command-line arguments use long form (`--controller`) and short form (`-c`) for usability
+- Command-line overrides take precedence over scenario file settings for flexibility
+- Invalid argument values provide clear error messages with valid options
+- Sensible defaults match current behavior (NEAREST_REQUEST_ROUTING, PARK_TO_HOME_FLOOR)
+- Configuration is visible and unambiguous in demo output
+
 ## [0.14.0] - 2026-01-09
 
 ### Added
