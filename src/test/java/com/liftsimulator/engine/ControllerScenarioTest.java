@@ -252,12 +252,14 @@ public class ControllerScenarioTest {
         // - Floor 2 UP (below, but wants to go up)
         //
         // Expected behavior:
-        // 1. Continue UP to service 6, 7, 8
+        // By tick 5, lift is at or near floor 8 (already passed 6, 7)
+        // 1. Service floor 8 (already committed)
         // 2. Reverse to DOWN
         // 3. Service floor 3 DOWN
-        // 4. Cannot service floor 2 UP while going DOWN (deferred)
-        // 5. Reverse to UP
-        // 6. Service floor 2 UP
+        // 4. Ride to turnaround floor 2 (furthest floor below in DOWN direction)
+        // 5. Service floor 2 (at turnaround point)
+        // 6. Reverse to UP
+        // 7. Service floor 6 UP, then 7 UP (requests that were behind)
 
         ScenarioHarness harness = new ScenarioHarness(
                 ControllerStrategy.DIRECTIONAL_SCAN, 5, 0, 10);
@@ -265,10 +267,10 @@ public class ControllerScenarioTest {
         // Initial car call to get lift moving up
         LiftRequest initialCall = harness.addCarCall(8);
 
-        // Run until lift starts moving
+        // Run until lift has moved (at tick 5, likely at or near floor 8)
         harness.runUntilTick(5);
 
-        // Now add requests while lift is moving up
+        // Now add requests while lift is at/near floor 8
         LiftRequest req6Up = harness.addHallCall(6, Direction.UP);
         LiftRequest req7Up = harness.addHallCall(7, Direction.UP);
         LiftRequest req3Down = harness.addHallCall(3, Direction.DOWN);
@@ -284,8 +286,8 @@ public class ControllerScenarioTest {
         harness.assertRequestState(req3Down, RequestState.COMPLETED);
         harness.assertRequestState(req2Up, RequestState.COMPLETED);
 
-        // Assert service order: upward sweep (6, 7, 8), then down (3), then up again (2)
-        harness.assertServiceOrder(List.of(6, 7, 8, 3, 2));
+        // Assert service order: 8 (committed), DOWN sweep (3, 2 at turnaround), UP sweep (6, 7)
+        harness.assertServiceOrder(List.of(8, 3, 2, 6, 7));
 
         harness.assertQueueCleared();
     }
@@ -302,11 +304,14 @@ public class ControllerScenarioTest {
         //
         // Expected behavior:
         // 1. Idle at floor 5
-        // 2. Choose UP direction (floor 7 is closer than floor 3)
-        // 3. Commit to UP: service 7 UP (deferred), 8 UP, 9 car
-        // 4. Clear upward requests
-        // 5. Reverse to DOWN
-        // 6. Service 7 DOWN, 3 DOWN, 2 car
+        // 2. Nearest floors: 3 (dist 2), 7 (dist 2) - tie resolved by choosing lower floor (3)
+        // 3. Choose DOWN direction (floor 3 selected)
+        // 4. Commit to DOWN: service 3 DOWN, 2 car
+        // 5. Clear downward requests
+        // 6. Reverse to UP
+        // 7. Service 8 UP, 9 car
+        // 8. Reverse to DOWN again
+        // 9. Service 7 DOWN
 
         ScenarioHarness harness = new ScenarioHarness(
                 ControllerStrategy.DIRECTIONAL_SCAN, 5, 0, 10);
@@ -331,10 +336,10 @@ public class ControllerScenarioTest {
         harness.assertRequestState(req3Down, RequestState.COMPLETED);
         harness.assertRequestState(req2Car, RequestState.COMPLETED);
 
-        // Service order: UP sweep (8, 9), then DOWN sweep (7, 3, 2)
-        harness.assertServiceOrder(List.of(8, 9, 7, 3, 2));
+        // Service order: DOWN sweep (3, 2), UP sweep (8, 9), DOWN again (7)
+        harness.assertServiceOrder(List.of(3, 2, 8, 9, 7));
 
-        // Floor 7 serviced with DOWN direction (after reversal)
+        // Floor 7 serviced with DOWN direction (after second reversal)
         harness.assertServiceWithDirection(7, Direction.DOWN);
 
         harness.assertQueueCleared();
@@ -372,7 +377,9 @@ public class ControllerScenarioTest {
         // Lift at floor 5
         // Requests: 8 UP, 2 DOWN, 9 car call, 1 car call
         //
-        // Expected: 5 -> 8 (UP) -> 9 (car) -> 2 (DOWN) -> 1 (car)
+        // Nearest floors: 2 (dist 3), 8 (dist 3) - tie resolved by choosing lower floor (2)
+        // Direction: DOWN (2 < 5)
+        // Expected: 5 -> 2 (DOWN) -> 1 (car) -> 8 (UP) -> 9 (car)
 
         ScenarioHarness harness = new ScenarioHarness(
                 ControllerStrategy.DIRECTIONAL_SCAN, 5, 0, 10);
@@ -389,7 +396,7 @@ public class ControllerScenarioTest {
         harness.assertRequestState(req9Car, RequestState.COMPLETED);
         harness.assertRequestState(req1Car, RequestState.COMPLETED);
 
-        harness.assertServiceOrder(List.of(8, 9, 2, 1));
+        harness.assertServiceOrder(List.of(2, 1, 8, 9));
         harness.assertQueueCleared();
     }
 
