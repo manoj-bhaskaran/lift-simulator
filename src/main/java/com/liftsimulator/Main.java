@@ -39,6 +39,16 @@ public class Main {
             if (arg.equals("--help") || arg.equals("-h")) {
                 printUsage();
                 System.exit(0);
+            } else if (arg.startsWith("--strategy=")) {
+                String strategy = arg.substring("--strategy=".length());
+                try {
+                    controllerStrategy = parseControllerStrategy(strategy);
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Invalid strategy: " + strategy);
+                    System.err.println("Valid strategies: nearest-request, directional-scan");
+                    printUsage();
+                    System.exit(1);
+                }
             } else {
                 System.err.println("Unknown argument: " + arg);
                 printUsage();
@@ -283,10 +293,23 @@ public class Main {
         System.out.println();
         System.out.println("Options:");
         System.out.println("  -h, --help                      Show this help message");
+        System.out.println("  --strategy=<strategy>           Controller strategy to use");
+        System.out.println("                                  Valid values: nearest-request, directional-scan");
+        System.out.println("                                  Default: nearest-request");
         System.out.println();
         System.out.println("Examples:");
         System.out.println("  java -jar lift-simulator.jar");
+        System.out.println("  java -jar lift-simulator.jar --strategy=directional-scan");
+        System.out.println("  java -jar lift-simulator.jar --strategy=nearest-request");
         System.out.println("  java -jar lift-simulator.jar --help");
+    }
+
+    private static ControllerStrategy parseControllerStrategy(String strategy) {
+        return switch (strategy.toLowerCase()) {
+            case "nearest-request" -> ControllerStrategy.NEAREST_REQUEST_ROUTING;
+            case "directional-scan" -> ControllerStrategy.DIRECTIONAL_SCAN;
+            default -> throw new IllegalArgumentException("Unknown strategy: " + strategy);
+        };
     }
 
     private static String resolveVersion() {
