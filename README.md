@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.17.2**
+Current version: **0.18.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -20,7 +20,7 @@ The simulation is text-based and designed for clarity over visual appeal.
 
 ## Features
 
-The current version (v0.17.2) implements:
+The current version (v0.18.0) implements:
 - **Selectable controller strategy**: Choose between different controller algorithms (NEAREST_REQUEST_ROUTING, DIRECTIONAL_SCAN) via enum-based configuration
 - **Directional scan controller**: Implements a SCAN-style algorithm that continues in the current direction until all requests are serviced
 - **Hall-call direction filtering**: Opposite-direction hall calls are deferred until after the directional scan reverses, with reversal occurring at the furthest pending stop in the current travel direction
@@ -47,6 +47,7 @@ The current version (v0.17.2) implements:
 - **DirectionalScanLiftController** - A directional scan controller that batches stops in the current direction
 - **Console output** displaying tick-by-tick lift state (floor, direction, door state, status, request lifecycle)
 - **Request lifecycle visibility** in demo output with compact status display (Q:n, A:n, S:n)
+- **Request lifecycle summary table** in demo output showing created/completed or cancelled ticks per request
 - **Scenario runner** for scripted simulations with tick-based events and pending request logging
 - **Request types**: Car calls (from inside the lift) and hall calls (from a floor)
 - **Safety enforcement**: Lift cannot move with doors open, doors cannot open while moving
@@ -98,7 +99,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.17.2.jar`.
+The packaged JAR will be in `target/lift-simulator-0.18.0.jar`.
 
 ## Running Tests
 
@@ -148,7 +149,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.17.2.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.18.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -157,10 +158,10 @@ The demo runs with a fixed configuration (NEAREST_REQUEST_ROUTING controller, PA
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.17.2.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.18.0.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration
-java -cp target/lift-simulator-0.17.2.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.18.0.jar com.liftsimulator.Main
 ```
 
 **Available Options:**
@@ -179,7 +180,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.17.2.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.18.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -188,13 +189,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.17.2.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.18.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.17.2.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.18.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.17.2.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.18.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**
