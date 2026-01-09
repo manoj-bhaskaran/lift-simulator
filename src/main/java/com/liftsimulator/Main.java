@@ -15,7 +15,10 @@ import com.liftsimulator.engine.RequestManagingLiftController;
 import com.liftsimulator.engine.SimulationEngine;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -57,6 +60,7 @@ public class Main {
                 idleParkingMode
         );
         SimulationEngine engine = SimulationEngine.builder(controller, 0, 10).build();
+        Map<Long, RequestLifecycle> lifecycles = new LinkedHashMap<>();
 
         // Add some requests to simulate real usage.
         System.out.println("Requests:");
@@ -75,6 +79,7 @@ public class Main {
         // Add a request that we'll cancel later to demonstrate cancellation.
         LiftRequest requestToCancel = LiftRequest.carCall(8);
         controller.addRequest(requestToCancel);
+        recordRequestCreations(controller, engine.getCurrentTick(), lifecycles);
 
         // Run simulation for 50 ticks to show out-of-service scenario.
         int tickCount = 50;
@@ -112,6 +117,9 @@ public class Main {
                 notes = "*** NEW request to floor 4 ***";
             }
 
+            recordRequestCreations(controller, engine.getCurrentTick(), lifecycles);
+            recordTerminalRequests(controller, engine.getCurrentTick(), lifecycles);
+
             // Add contextual notes.
             if (i == 0) notes = "(Starting)";
             if (state.getFloor() == 3 && state.getDoorState() == DoorState.OPEN) {
@@ -141,6 +149,8 @@ public class Main {
             engine.tick();
         }
 
+        recordTerminalRequests(controller, engine.getCurrentTick(), lifecycles);
+
         System.out.println("\nSimulation completed successfully!");
         System.out.println("All requests serviced using " + controllerStrategy + " scheduling.");
         System.out.println("\nKey events:");
@@ -152,6 +162,22 @@ public class Main {
         System.out.println("    * Transitions to OUT_OF_SERVICE state");
         System.out.println("  - Lift returned to service at tick 35.");
         System.out.println("  - New request to floor 4 added and serviced after returning to service.");
+
+        System.out.println("\nRequest lifecycle summary:");
+        System.out.println(String.format("%-40s %-14s %-24s", "Request", "Created Tick", "Completed/Cancelled Tick"));
+        System.out.println("----------------------------------------------------------------------------------------");
+        lifecycles.values().stream()
+                .sorted(Comparator.comparingInt(RequestLifecycle::createdTick)
+                        .thenComparing(lifecycle -> lifecycle.request().getId()))
+                .forEach(lifecycle -> {
+                    String completion = lifecycle.terminalTick() == null
+                            ? "-"
+                            : lifecycle.terminalTick() + " (" + lifecycle.terminalState() + ")";
+                    System.out.println(String.format("%-40s %-14d %-24s",
+                            formatRequestDescription(lifecycle.request()),
+                            lifecycle.createdTick(),
+                            completion));
+                });
     }
 
     /**
@@ -177,6 +203,79 @@ public class Main {
         if (serving > 0) sb.append("S:").append(serving).append(" ");
 
         return sb.toString().trim();
+    }
+
+    private static void recordRequestCreations(RequestManagingLiftController controller,
+                                               int tick,
+                                               Map<Long, RequestLifecycle> lifecycles) {
+        for (LiftRequest request : controller.getRequests()) {
+            lifecycles.computeIfAbsent(request.getId(), id -> new RequestLifecycle(request, tick));
+        }
+    }
+
+    private static void recordTerminalRequests(RequestManagingLiftController controller,
+                                               int tick,
+                                               Map<Long, RequestLifecycle> lifecycles) {
+        for (LiftRequest request : controller.getRequests()) {
+            if (!request.isTerminal()) {
+                continue;
+            }
+            RequestLifecycle lifecycle = lifecycles.computeIfAbsent(
+                    request.getId(),
+                    id -> new RequestLifecycle(request, tick));
+            if (lifecycle.terminalTick() == null) {
+                lifecycle.markTerminal(tick, request.getState());
+            }
+        }
+    }
+
+    private static String formatRequestDescription(LiftRequest request) {
+        return switch (request.getType()) {
+            case CAR_CALL -> {
+                Integer origin = request.getOriginFloor();
+                Integer destination = request.getDestinationFloor();
+                if (origin != null && destination != null) {
+                    yield String.format("Car call from floor %d to floor %d", origin, destination);
+                }
+                yield String.format("Car call to floor %d", Objects.requireNonNull(destination));
+            }
+            case HALL_CALL -> String.format("Hall call from floor %d (%s)",
+                    request.getOriginFloor(),
+                    request.getDirection());
+        };
+    }
+
+    private static final class RequestLifecycle {
+        private final LiftRequest request;
+        private final int createdTick;
+        private Integer terminalTick;
+        private RequestState terminalState;
+
+        private RequestLifecycle(LiftRequest request, int createdTick) {
+            this.request = request;
+            this.createdTick = createdTick;
+        }
+
+        private LiftRequest request() {
+            return request;
+        }
+
+        private int createdTick() {
+            return createdTick;
+        }
+
+        private Integer terminalTick() {
+            return terminalTick;
+        }
+
+        private RequestState terminalState() {
+            return terminalState;
+        }
+
+        private void markTerminal(int tick, RequestState state) {
+            this.terminalTick = tick;
+            this.terminalState = state;
+        }
     }
 
     private static void printUsage() {
