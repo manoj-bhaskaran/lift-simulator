@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.19.0**
+Current version: **0.21.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -18,9 +18,47 @@ The Lift Simulator is an iterative project to model and test lift controller alg
 
 The simulation is text-based and designed for clarity over visual appeal.
 
+## Admin UI Backend
+
+The project includes a Spring Boot backend service (`Lift Config Service`) that provides a RESTful API for managing lift simulator configurations. This backend will serve as the foundation for a future admin UI.
+
+### Running the Backend
+
+Start the Spring Boot application:
+
+```bash
+mvn spring-boot:run
+```
+
+Or build and run the JAR:
+
+```bash
+mvn clean package
+java -jar target/lift-simulator-0.21.0.jar
+```
+
+The backend will start on `http://localhost:8080`.
+
+### Available Endpoints
+
+- **Custom Health Check**: `GET http://localhost:8080/api/health`
+  - Returns custom health status with service name and timestamp
+- **Actuator Health**: `GET http://localhost:8080/actuator/health`
+  - Returns detailed Spring Boot actuator health information
+- **Actuator Info**: `GET http://localhost:8080/actuator/info`
+  - Returns application information
+
+### Configuration
+
+The backend is configured via `src/main/resources/application.properties`:
+- Application name: `lift-config-service`
+- Server port: `8080`
+- Logging level: `INFO` (root), `DEBUG` (com.liftsimulator package)
+- Actuator endpoints: health, info
+
 ## Features
 
-The current version (v0.19.0) implements:
+The current version (v0.21.0) implements:
 - **Selectable controller strategy**: Choose between different controller algorithms (NEAREST_REQUEST_ROUTING, DIRECTIONAL_SCAN) via enum-based configuration
 - **Directional scan controller**: Implements a SCAN-style algorithm that continues in the current direction until all requests are serviced
 - **Hall-call direction filtering**: Opposite-direction hall calls are deferred until after the directional scan reverses, with reversal occurring at the furthest pending stop in the current travel direction
@@ -99,7 +137,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.19.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.21.0.jar`.
 
 ## Running Tests
 
@@ -149,7 +187,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.21.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -158,16 +196,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.21.0.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.21.0.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.21.0.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.21.0.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -187,7 +225,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.21.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -196,13 +234,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.21.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.21.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.19.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.21.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**
@@ -606,17 +644,25 @@ Valid transitions are managed by the `StateTransitionValidator` class, which ens
 src/
 ├── main/java/com/liftsimulator/
 │   ├── Main.java                          # Entry point and demo
+│   ├── admin/                             # Spring Boot admin backend
+│   │   ├── LiftConfigServiceApplication.java  # Spring Boot main class
+│   │   ├── controller/                    # REST controllers
+│   │   │   └── HealthController.java      # Health check endpoint
+│   │   ├── service/                       # Business logic services
+│   │   ├── repository/                    # Data access layer
+│   │   ├── domain/                        # Backend domain models
+│   │   └── dto/                           # Data transfer objects
 │   ├── domain/                            # Core domain models
 │   │   ├── Action.java                    # Actions the lift can take
 │   │   ├── CarCall.java                   # Request from inside lift (legacy)
 │   │   ├── Direction.java                 # UP, DOWN, IDLE
 │   │   ├── DoorState.java                 # OPEN, CLOSED
 │   │   ├── HallCall.java                  # Request from a floor (legacy)
-│   │   ├── LiftRequest.java               # First-class request entity (NEW)
+│   │   ├── LiftRequest.java               # First-class request entity
 │   │   ├── LiftState.java                 # Immutable lift state
 │   │   ├── LiftStatus.java                # Lift state machine enum
-│   │   ├── RequestState.java              # Request lifecycle enum (NEW)
-│   │   └── RequestType.java               # HALL_CALL or CAR_CALL (NEW)
+│   │   ├── RequestState.java              # Request lifecycle enum
+│   │   └── RequestType.java               # HALL_CALL or CAR_CALL
 │   └── engine/                            # Simulation engine and controllers
 │       ├── LiftController.java            # Controller interface
 │       ├── NaiveLiftController.java       # Simple nearest-floor controller
@@ -628,7 +674,7 @@ src/
     ├── domain/
     │   └── LiftRequestTest.java                 # Request lifecycle tests
     ├── engine/
-    │   ├── ControllerScenarioTest.java          # Scenario-based routing tests (NEW)
+    │   ├── ControllerScenarioTest.java          # Scenario-based routing tests
     │   ├── DirectionalScanIntegrationTest.java  # Directional controller integration tests
     │   ├── LiftRequestLifecycleTest.java        # Controller integration tests
     │   ├── NaiveLiftControllerTest.java         # Controller unit tests
@@ -702,6 +748,9 @@ See [docs/decisions](docs/decisions) for Architecture Decision Records (ADRs):
 - [ADR-0001: Tick-Based Simulation](docs/decisions/0001-tick-based-simulation.md)
 - [ADR-0002: Single Source of Truth for Lift State](docs/decisions/0002-single-source-of-truth-state.md)
 - [ADR-0003: Request Lifecycle Management](docs/decisions/0003-request-lifecycle-management.md)
+- [ADR-0004: Configurable Idle Parking Mode](docs/decisions/0004-configurable-idle-parking-mode.md)
+- [ADR-0005: Selectable Controller Strategy](docs/decisions/0005-selectable-controller-strategy.md)
+- [ADR-0006: Spring Boot Admin Backend](docs/decisions/0006-spring-boot-admin-backend.md)
 
 ## License
 

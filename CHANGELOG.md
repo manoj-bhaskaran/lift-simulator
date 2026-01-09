@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2026-01-09
+
+### Added
+- **Spring Boot backend for Lift Config Service**: Bootstrapped a runnable Spring Boot backend skeleton for managing lift simulator configurations
+  - Spring Boot 3.2.1 with Maven configuration
+  - Standard package structure: `admin/controller`, `admin/service`, `admin/repository`, `admin/domain`, `admin/dto`
+  - Spring Boot application class: `LiftConfigServiceApplication`
+  - Custom health endpoint at `/api/health` returning service name, status, and timestamp
+  - Spring Boot Actuator for production-ready health monitoring at `/actuator/health` and `/actuator/info`
+  - Application configuration via `application.properties`:
+    - Application name: `lift-config-service`
+    - Server port: 8080
+    - Logging: INFO level (root), DEBUG level (com.liftsimulator package)
+    - Custom console and file logging patterns
+  - Cross-platform support: Runs on Windows, Linux, and macOS with Java 17+
+- Documentation in README:
+  - "Admin UI Backend" section with setup and running instructions
+  - Available endpoints documentation
+  - Configuration details
+  - Updated project structure showing new admin package hierarchy
+
+### Changed
+- Maven POM now inherits from `spring-boot-starter-parent` for Spring Boot dependency management
+- Project description updated to reflect Spring Boot backend integration
+- Version bumped from 0.20.0 to 0.21.0
+
+### Technical Details
+- Uses Spring Boot 3.2.1 (requires Java 17+)
+- Spring Boot Web Starter for RESTful API capabilities
+- Spring Boot Actuator for health monitoring and metrics
+- Existing lift simulator functionality remains unchanged and independent
+- Backend provides foundation for future admin UI development
+
 ## [0.20.0] - 2026-01-09
 
 ### Added
