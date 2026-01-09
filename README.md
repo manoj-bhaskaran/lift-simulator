@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.21.0**
+Current version: **0.22.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -34,7 +34,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.21.0.jar
+java -jar target/lift-simulator-0.22.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -53,12 +53,94 @@ The backend will start on `http://localhost:8080`.
 The backend is configured via `src/main/resources/application.properties`:
 - Application name: `lift-config-service`
 - Server port: `8080`
+- Active profile: `dev` (default)
 - Logging level: `INFO` (root), `DEBUG` (com.liftsimulator package)
 - Actuator endpoints: health, info
 
+### Database Setup
+
+The backend uses PostgreSQL with Flyway for schema migrations. Follow these steps to set up the database:
+
+#### Prerequisites
+
+- PostgreSQL 12 or later installed and running
+
+#### Setup Steps
+
+1. **Start PostgreSQL Service** (if not already running):
+   ```bash
+   # Linux/Ubuntu
+   sudo service postgresql start
+
+   # macOS with Homebrew
+   brew services start postgresql
+   ```
+
+2. **Create Database and User**:
+   ```bash
+   # Connect to PostgreSQL as superuser
+   sudo -u postgres psql
+
+   # Execute these commands in the psql prompt:
+   CREATE DATABASE lift_simulator;
+   CREATE USER lift_admin WITH PASSWORD 'lift_password';
+   GRANT ALL PRIVILEGES ON DATABASE lift_simulator TO lift_admin;
+   \c lift_simulator
+   GRANT ALL ON SCHEMA public TO lift_admin;
+   \q
+   ```
+
+3. **Verify Database Connection**:
+   ```bash
+   psql -h localhost -U lift_admin -d lift_simulator
+   # Password: lift_password
+   ```
+
+4. **Run the Application**:
+   When you start the Spring Boot application, Flyway will automatically:
+   - Create the `flyway_schema_history` table
+   - Execute all pending migrations from `src/main/resources/db/migration/`
+   - Initialize the schema with the baseline version
+
+#### Configuration Profiles
+
+The application supports different profiles for different environments:
+
+- **dev** (default): Uses local PostgreSQL with connection pooling
+  - Configuration: `src/main/resources/application-dev.yml`
+  - Database: `localhost:5432/lift_simulator`
+  - User: `lift_admin` / `lift_password`
+
+To use a different profile, set the `SPRING_PROFILES_ACTIVE` environment variable:
+```bash
+SPRING_PROFILES_ACTIVE=prod mvn spring-boot:run
+```
+
+#### Database Schema
+
+The initial schema (V1) includes:
+- `flyway_schema_history` - Flyway migration tracking (auto-created)
+- `schema_metadata` - Application version and schema metadata
+
+Future migrations will add tables for lift configurations, simulation runs, and other entities.
+
+#### Troubleshooting
+
+**Connection refused errors:**
+- Ensure PostgreSQL is running: `sudo service postgresql status`
+- Check the connection settings in `application-dev.yml`
+
+**Permission denied errors:**
+- Verify the database user has proper permissions: `GRANT ALL PRIVILEGES ON DATABASE lift_simulator TO lift_admin;`
+- Ensure schema-level permissions: `GRANT ALL ON SCHEMA public TO lift_admin;`
+
+**Migration errors:**
+- Check Flyway history: `SELECT * FROM flyway_schema_history;`
+- For development, you can reset the database: `DROP DATABASE lift_simulator; CREATE DATABASE lift_simulator;`
+
 ## Features
 
-The current version (v0.21.0) implements:
+The current version (v0.22.0) implements:
 - **Selectable controller strategy**: Choose between different controller algorithms (NEAREST_REQUEST_ROUTING, DIRECTIONAL_SCAN) via enum-based configuration
 - **Directional scan controller**: Implements a SCAN-style algorithm that continues in the current direction until all requests are serviced
 - **Hall-call direction filtering**: Opposite-direction hall calls are deferred until after the directional scan reverses, with reversal occurring at the furthest pending stop in the current travel direction
@@ -137,7 +219,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.21.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.22.0.jar`.
 
 ## Running Tests
 
