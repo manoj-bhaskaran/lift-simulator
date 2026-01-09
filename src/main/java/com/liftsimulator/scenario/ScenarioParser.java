@@ -1,6 +1,7 @@
 package com.liftsimulator.scenario;
 
 import com.liftsimulator.domain.Direction;
+import com.liftsimulator.domain.IdleParkingMode;
 import com.liftsimulator.domain.LiftRequest;
 
 import java.io.BufferedReader;
@@ -49,6 +50,7 @@ public class ScenarioParser {
         Integer doorReopenWindowTicks = null;
         Integer homeFloor = null;
         Integer idleTimeoutTicks = null;
+        IdleParkingMode idleParkingMode = null;
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
@@ -121,6 +123,18 @@ public class ScenarioParser {
                     continue;
                 }
 
+                if (trimmed.startsWith("idle_parking_mode:")) {
+                    String value = trimmed.substring("idle_parking_mode:".length()).trim();
+                    try {
+                        idleParkingMode = IdleParkingMode.valueOf(value.toUpperCase(Locale.ROOT));
+                    } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException(
+                                errorMessage(sourceName, lineNumber, "Invalid idle_parking_mode: " + value)
+                        );
+                    }
+                    continue;
+                }
+
                 String[] tokens = trimmed.split("\\s*,\\s*");
                 if (tokens.length < 2) {
                     throw new IllegalArgumentException(errorMessage(sourceName, lineNumber, "Invalid event line: " + line));
@@ -161,7 +175,8 @@ public class ScenarioParser {
                 doorDwellTicks,
                 doorReopenWindowTicks,
                 homeFloor,
-                idleTimeoutTicks
+                idleTimeoutTicks,
+                idleParkingMode
         );
     }
 

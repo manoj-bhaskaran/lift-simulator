@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-01-09
+
+### Added
+- Configurable idle parking mode with `IdleParkingMode` enum
+  - `STAY_AT_CURRENT_FLOOR`: Lift remains at current floor when idle (no parking movement)
+  - `PARK_TO_HOME_FLOOR`: Lift moves to home floor after idle timeout (existing behavior, now default)
+- Three-parameter `NaiveLiftController` constructor accepting `homeFloor`, `idleTimeoutTicks`, and `idleParkingMode`
+- Scenario file support for `idle_parking_mode:` configuration parameter
+- Architecture Decision Record (ADR-0004) documenting idle parking mode design
+- Comprehensive unit tests for both parking modes (6 new test cases)
+
+### Changed
+- Idle parking logic now respects configured mode (only initiates parking movement when mode is `PARK_TO_HOME_FLOOR`)
+- `ScenarioDefinition`, `ScenarioParser`, and `ScenarioRunnerMain` updated to support idle parking mode configuration
+
 ## [0.12.17] - 2026-01-25
 
 ### Changed

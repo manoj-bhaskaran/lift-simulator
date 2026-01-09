@@ -716,4 +716,201 @@ public class NaiveLiftControllerTest {
         Action idleAction = controller.decideNextAction(state, 1);
         assertEquals(Action.IDLE, idleAction);
     }
+
+    @Test
+    public void testStaysAtCurrentFloorWithStayMode() {
+        // Test that lift stays at current floor when mode is STAY_AT_CURRENT_FLOOR.
+        NaiveLiftController stayController = new NaiveLiftController(2, 3, IdleParkingMode.STAY_AT_CURRENT_FLOOR);
+        SimulationEngine engine = SimulationEngine.builder(stayController, 0, 5).build();
+
+        // Start at floor 0, idle timeout is 3 ticks.
+        assertEquals(0, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+
+        // Wait through idle timeout period.
+        engine.tick(); // tick 0.
+        assertEquals(0, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+
+        engine.tick(); // tick 1.
+        assertEquals(0, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+
+        engine.tick(); // tick 2.
+        assertEquals(0, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+
+        // After timeout, lift should STAY at floor 0 (not move to home floor 2).
+        engine.tick(); // tick 3 -> timeout reached.
+        assertEquals(0, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+
+        // Continue idling at floor 0.
+        engine.tick(); // tick 4.
+        assertEquals(0, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+
+        engine.tick(); // tick 5.
+        assertEquals(0, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+    }
+
+    @Test
+    public void testStaysAtCurrentFloorWithStayModeAtNonZeroFloor() {
+        // Test that lift stays at current floor even when not at floor 0.
+        NaiveLiftController stayController = new NaiveLiftController(0, 2, IdleParkingMode.STAY_AT_CURRENT_FLOOR);
+        SimulationEngine engine = SimulationEngine.builder(stayController, 0, 5)
+                .initialFloor(4)
+                .build();
+
+        // Start at floor 4, home is floor 0, idle timeout is 2 ticks.
+        assertEquals(4, engine.getCurrentState().getFloor());
+
+        // Wait through idle timeout period.
+        engine.tick(); // tick 0.
+        assertEquals(4, engine.getCurrentState().getFloor());
+
+        engine.tick(); // tick 1.
+        assertEquals(4, engine.getCurrentState().getFloor());
+
+        // After timeout, lift should STAY at floor 4 (not move to home floor 0).
+        engine.tick(); // tick 2 -> timeout reached.
+        assertEquals(4, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+
+        // Continue idling at floor 4.
+        engine.tick(); // tick 3.
+        assertEquals(4, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+    }
+
+    @Test
+    public void testParksToHomeFloorWithParkMode() {
+        // Test that lift parks to home floor when mode is PARK_TO_HOME_FLOOR.
+        NaiveLiftController parkController = new NaiveLiftController(3, 2, IdleParkingMode.PARK_TO_HOME_FLOOR);
+        SimulationEngine engine = SimulationEngine.builder(parkController, 0, 5)
+                .initialFloor(0)
+                .build();
+
+        // Start at floor 0, home is floor 3, idle timeout is 2 ticks.
+        assertEquals(0, engine.getCurrentState().getFloor());
+
+        // Wait through idle timeout period.
+        engine.tick(); // tick 0.
+        assertEquals(0, engine.getCurrentState().getFloor());
+
+        engine.tick(); // tick 1.
+        assertEquals(0, engine.getCurrentState().getFloor());
+
+        // After timeout, lift should start moving to home floor 3.
+        engine.tick(); // tick 2 -> start parking.
+        assertEquals(1, engine.getCurrentState().getFloor());
+
+        engine.tick(); // tick 3 -> continue parking.
+        assertEquals(2, engine.getCurrentState().getFloor());
+
+        engine.tick(); // tick 4 -> arrive at home floor.
+        assertEquals(3, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.MOVING_UP, engine.getCurrentState().getStatus());
+
+        // Should stop at home floor.
+        engine.tick(); // tick 5 -> stop.
+        assertEquals(3, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+
+        // Should stay at home floor.
+        engine.tick(); // tick 6.
+        assertEquals(3, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+    }
+
+    @Test
+    public void testIdleTimeIncrementsSameForBothModes() {
+        // Test that idle time tracking works the same for both modes.
+        // Only difference is what happens after timeout.
+
+        // Create two controllers with same timeout but different modes.
+        NaiveLiftController stayController = new NaiveLiftController(5, 3, IdleParkingMode.STAY_AT_CURRENT_FLOOR);
+        NaiveLiftController parkController = new NaiveLiftController(5, 3, IdleParkingMode.PARK_TO_HOME_FLOOR);
+
+        // Both should idle for the same duration before acting.
+        LiftState idleState = new LiftState(2, LiftStatus.IDLE);
+
+        // Before timeout, both should remain idle.
+        assertEquals(Action.IDLE, stayController.decideNextAction(idleState, 0));
+        assertEquals(Action.IDLE, parkController.decideNextAction(idleState, 0));
+
+        assertEquals(Action.IDLE, stayController.decideNextAction(idleState, 1));
+        assertEquals(Action.IDLE, parkController.decideNextAction(idleState, 1));
+
+        assertEquals(Action.IDLE, stayController.decideNextAction(idleState, 2));
+        assertEquals(Action.IDLE, parkController.decideNextAction(idleState, 2));
+
+        // After timeout (tick 3), behavior differs:
+        // - STAY mode: remains idle at floor 2
+        // - PARK mode: moves toward home floor 5
+        assertEquals(Action.IDLE, stayController.decideNextAction(idleState, 3));
+        assertEquals(Action.MOVE_UP, parkController.decideNextAction(idleState, 3));
+    }
+
+    @Test
+    public void testStayModeWithRequestInterruption() {
+        // Test that STAY mode still responds to requests normally.
+        NaiveLiftController stayController = new NaiveLiftController(0, 1, IdleParkingMode.STAY_AT_CURRENT_FLOOR);
+        SimulationEngine engine = SimulationEngine.builder(stayController, 0, 5)
+                .initialFloor(3)
+                .build();
+
+        // Start at floor 3, wait through timeout.
+        engine.tick(); // tick 0.
+        assertEquals(3, engine.getCurrentState().getFloor());
+
+        engine.tick(); // tick 1 -> timeout reached, but stays at floor 3.
+        assertEquals(3, engine.getCurrentState().getFloor());
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+
+        // Add a request to floor 1.
+        stayController.addCarCall(new CarCall(1));
+
+        // Lift should move to serve the request.
+        engine.tick(); // tick 2 -> start moving down.
+        assertEquals(2, engine.getCurrentState().getFloor());
+
+        engine.tick(); // tick 3 -> continue moving.
+        assertEquals(1, engine.getCurrentState().getFloor());
+
+        // Should stop and open doors.
+        engine.tick(); // tick 4 -> stop at floor 1.
+        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
+
+        engine.tick(); // tick 5 -> open doors.
+        assertEquals(LiftStatus.DOORS_OPENING, engine.getCurrentState().getStatus());
+    }
+
+    @Test
+    public void testIdleTimeOnlyTrackedWhenDoorsClosedForBothModes() {
+        // Test that idle time is only tracked when doors are closed (both modes).
+        NaiveLiftController stayController = new NaiveLiftController(5, 2, IdleParkingMode.STAY_AT_CURRENT_FLOOR);
+
+        // Doors open - idle time should NOT increment.
+        LiftState doorsOpenState = new LiftState(2, LiftStatus.DOORS_OPEN);
+        assertEquals(Action.IDLE, stayController.decideNextAction(doorsOpenState, 0));
+        assertEquals(Action.IDLE, stayController.decideNextAction(doorsOpenState, 1));
+        assertEquals(Action.IDLE, stayController.decideNextAction(doorsOpenState, 2));
+        assertEquals(Action.IDLE, stayController.decideNextAction(doorsOpenState, 3));
+
+        // Now doors closed - idle time should start tracking from this tick.
+        LiftState doorsClosedState = new LiftState(2, LiftStatus.IDLE);
+        assertEquals(Action.IDLE, stayController.decideNextAction(doorsClosedState, 10)); // Start idle tracking.
+        assertEquals(Action.IDLE, stayController.decideNextAction(doorsClosedState, 11)); // Still tracking.
+
+        // After timeout of 2 ticks from when doors closed, STAY mode should still idle.
+        assertEquals(Action.IDLE, stayController.decideNextAction(doorsClosedState, 12)); // 2 ticks elapsed.
+
+        // Verify PARK mode would move after same timeout.
+        NaiveLiftController parkController = new NaiveLiftController(5, 2, IdleParkingMode.PARK_TO_HOME_FLOOR);
+        assertEquals(Action.IDLE, parkController.decideNextAction(doorsClosedState, 20)); // Start tracking.
+        assertEquals(Action.IDLE, parkController.decideNextAction(doorsClosedState, 21)); // Still tracking.
+        assertEquals(Action.MOVE_UP, parkController.decideNextAction(doorsClosedState, 22)); // Timeout - move to home.
+    }
 }

@@ -4,6 +4,7 @@ import com.liftsimulator.domain.Action;
 import com.liftsimulator.domain.CarCall;
 import com.liftsimulator.domain.DoorState;
 import com.liftsimulator.domain.HallCall;
+import com.liftsimulator.domain.IdleParkingMode;
 import com.liftsimulator.domain.LiftRequest;
 import com.liftsimulator.domain.LiftState;
 import com.liftsimulator.domain.LiftStatus;
@@ -41,26 +42,36 @@ import java.util.stream.Collectors;
 public final class NaiveLiftController implements LiftController {
     private static final int DEFAULT_HOME_FLOOR = 0;
     private static final int DEFAULT_IDLE_TIMEOUT_TICKS = 5;
+    private static final IdleParkingMode DEFAULT_IDLE_PARKING_MODE = IdleParkingMode.PARK_TO_HOME_FLOOR;
 
     private final Map<Long, LiftRequest> requestsById = new HashMap<>();
     private final Set<LiftRequest> activeRequests = new HashSet<>();
     private final Set<LiftRequest> completedRequests = new HashSet<>();
     private final int homeFloor;
     private final int idleTimeoutTicks;
+    private final IdleParkingMode idleParkingMode;
     private Long idleStartTick;
     private boolean parkingInProgress;
     private boolean outOfService;
 
     public NaiveLiftController() {
-        this(DEFAULT_HOME_FLOOR, DEFAULT_IDLE_TIMEOUT_TICKS);
+        this(DEFAULT_HOME_FLOOR, DEFAULT_IDLE_TIMEOUT_TICKS, DEFAULT_IDLE_PARKING_MODE);
     }
 
     public NaiveLiftController(int homeFloor, int idleTimeoutTicks) {
+        this(homeFloor, idleTimeoutTicks, DEFAULT_IDLE_PARKING_MODE);
+    }
+
+    public NaiveLiftController(int homeFloor, int idleTimeoutTicks, IdleParkingMode idleParkingMode) {
         if (idleTimeoutTicks < 0) {
             throw new IllegalArgumentException("idleTimeoutTicks must be >= 0");
         }
+        if (idleParkingMode == null) {
+            throw new IllegalArgumentException("idleParkingMode must not be null");
+        }
         this.homeFloor = homeFloor;
         this.idleTimeoutTicks = idleTimeoutTicks;
+        this.idleParkingMode = idleParkingMode;
     }
 
     /**
@@ -342,7 +353,8 @@ public final class NaiveLiftController implements LiftController {
                     idleStartTick = currentTick;
                 }
                 long idleTicks = currentTick - trackedIdleStartTick;
-                if (idleTicks >= idleTimeoutTicks && currentFloor != homeFloor) {
+                if (idleTicks >= idleTimeoutTicks && currentFloor != homeFloor
+                        && idleParkingMode == IdleParkingMode.PARK_TO_HOME_FLOOR) {
                     parkingInProgress = true;
                     return moveTowardHome(currentFloor);
                 }
