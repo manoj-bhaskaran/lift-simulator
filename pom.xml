@@ -14,7 +14,7 @@
 
     <groupId>com.liftsimulator</groupId>
     <artifactId>lift-simulator</artifactId>
-    <version>0.23.1</version>
+    <version>0.23.2</version>
     <packaging>jar</packaging>
 
     <name>Lift Simulator</name>
@@ -88,6 +88,25 @@
             </resource>
         </resources>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>clean-stale-migrations</id>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <target>
+                                <delete dir="${project.build.outputDirectory}/db/migration" quiet="true"/>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
