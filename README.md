@@ -150,27 +150,17 @@ java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.Main
 
 ### Configuring the Demo
 
-The demo supports command-line options to select controller strategy and idle parking mode:
+The demo runs with a fixed configuration (NEAREST_REQUEST_ROUTING controller, PARK_TO_HOME_FLOOR idle parking). The only command-line option is the help flag:
 
 ```bash
 # Show help
 java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.Main --help
 
-# Run with default configuration (NEAREST_REQUEST_ROUTING controller, PARK_TO_HOME_FLOOR parking)
+# Run with the default demo configuration
 java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.Main
-
-# Use STAY_AT_CURRENT_FLOOR parking mode
-java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.Main --idle-parking STAY_AT_CURRENT_FLOOR
-
-# Specify both controller and parking mode
-java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.Main -c NEAREST_REQUEST_ROUTING -p PARK_TO_HOME_FLOOR
 ```
 
 **Available Options:**
-- `-c, --controller STRATEGY`: Controller strategy (`NEAREST_REQUEST_ROUTING`, `DIRECTIONAL_SCAN`)
-  - Default: `NEAREST_REQUEST_ROUTING`
-- `-p, --idle-parking MODE`: Idle parking mode (`STAY_AT_CURRENT_FLOOR`, `PARK_TO_HOME_FLOOR`)
-  - Default: `PARK_TO_HOME_FLOOR`
 - `-h, --help`: Show help message
 
 The demo runs a pre-configured scenario with several lift requests and displays the simulation state at each tick.
@@ -191,7 +181,7 @@ java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.scenario.ScenarioRun
 
 ### Configuring Scenario Runner
 
-The scenario runner supports command-line options to override scenario file settings:
+The scenario runner relies on scenario file settings for controller strategy and idle parking mode. The only command-line option is the help flag:
 
 ```bash
 # Show help
@@ -200,19 +190,14 @@ java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.scenario.ScenarioRun
 # Run with default demo scenario
 java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
-# Override idle parking mode for the demo scenario
-java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --idle-parking STAY_AT_CURRENT_FLOOR
-
-# Run custom scenario with overridden settings
-java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.scenario.ScenarioRunnerMain -c NEAREST_REQUEST_ROUTING -p PARK_TO_HOME_FLOOR custom.scenario
+# Run a custom scenario
+java -cp target/lift-simulator-0.15.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**
-- `-c, --controller STRATEGY`: Controller strategy (overrides scenario file)
-- `-p, --idle-parking MODE`: Idle parking mode (overrides scenario file)
 - `-h, --help`: Show help message
 
-Command-line options take precedence over scenario file settings, which take precedence over defaults.
+Scenario file settings take precedence over defaults.
 
 Scenario files are plain text with metadata and event lines. Scenario parsing enforces limits of 1,000,000 ticks and 10,000 events per file:
 
