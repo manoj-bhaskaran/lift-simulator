@@ -231,7 +231,7 @@ public class ScenarioParser {
         String description = String.format("Car call %s to %d", alias, destination);
         return new ScenarioEvent(tick, description, context -> {
             LiftRequest request = LiftRequest.carCall(destination);
-            context.getController().addRequest(request);
+            context.addRequest(request);
             context.registerAlias(alias, request.getId());
         });
     }
@@ -246,7 +246,7 @@ public class ScenarioParser {
         String description = String.format("Hall call %s at %d %s", alias, floor, direction);
         return new ScenarioEvent(tick, description, context -> {
             LiftRequest request = LiftRequest.hallCall(floor, direction);
-            context.getController().addRequest(request);
+            context.addRequest(request);
             context.registerAlias(alias, request.getId());
         });
     }
