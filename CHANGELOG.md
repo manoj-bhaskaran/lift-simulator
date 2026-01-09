@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0] - 2026-01-09
+
+### Added
+- Create the initial lift configuration schema with Flyway migration `V1__init.sql`.
+- Add the `lift_simulator` schema with `lift_system` and `lift_system_version` tables for versioned JSONB configurations.
+- Include publish status fields, foreign keys, and indexes for lift system versions.
+
+### Changed
+- Bump project version to 0.23.0 to reflect the new database schema.
+
 ## [0.22.3] - 2026-01-09
 
 ### Fixed
