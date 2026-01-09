@@ -14,7 +14,7 @@
 
     <groupId>com.liftsimulator</groupId>
     <artifactId>lift-simulator</artifactId>
-    <version>0.23.5</version>
+    <version>0.23.6</version>
     <packaging>jar</packaging>
 
     <name>Lift Simulator</name>
@@ -95,7 +95,7 @@
                 <executions>
                     <execution>
                         <id>clean-stale-migrations</id>
-                        <phase>process-resources</phase>
+                        <phase>generate-resources</phase>
                         <configuration>
                             <target>
                                 <delete dir="${project.build.outputDirectory}/db/migration" quiet="true"/>
