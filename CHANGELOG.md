@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2026-01-11
+
+### Added
+- Directional scan controller tests covering hall-call direction filtering and car-call eligibility
+
+### Changed
+- Directional scan controller now defers opposite-direction hall calls until after reversal and filters stop eligibility by hall-call direction
+
 ## [0.16.0] - 2026-01-10
 
 ### Added

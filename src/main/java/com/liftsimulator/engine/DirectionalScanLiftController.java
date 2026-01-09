@@ -10,6 +10,7 @@ import com.liftsimulator.domain.LiftRequest;
 import com.liftsimulator.domain.LiftState;
 import com.liftsimulator.domain.LiftStatus;
 import com.liftsimulator.domain.RequestState;
+import com.liftsimulator.domain.RequestType;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -138,9 +139,10 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
      *
      * @param floor the floor to complete requests for
      */
-    private void completeRequestsForFloor(int floor) {
+    private void completeRequestsForFloor(int floor, Direction direction) {
         Set<LiftRequest> requestsToComplete = activeRequests.stream()
                 .filter(request -> !request.isTerminal() && request.getTargetFloor() == floor)
+                .filter(request -> isEligibleForDirection(request, direction))
                 .collect(Collectors.toSet());
 
         for (LiftRequest request : requestsToComplete) {
@@ -161,9 +163,10 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
      * @param floor the floor to check
      * @return true if there is an active request for this floor
      */
-    private boolean hasRequestForFloor(int floor) {
+    private boolean hasRequestForFloor(int floor, Direction direction) {
         return activeRequests.stream()
                 .filter(request -> !request.isTerminal())
+                .filter(request -> isEligibleForDirection(request, direction))
                 .anyMatch(request -> request.getTargetFloor() == floor);
     }
 
@@ -181,6 +184,7 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
             return false;
         }
         return getActiveRequests().stream()
+                .filter(request -> isEligibleForDirection(request, direction))
                 .anyMatch(request -> direction == Direction.UP
                         ? request.getTargetFloor() > currentFloor
                         : request.getTargetFloor() < currentFloor);
@@ -219,6 +223,7 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
         }
 
         return getActiveRequests().stream()
+                .filter(request -> isEligibleForDirection(request, direction))
                 .map(LiftRequest::getTargetFloor)
                 .filter(targetFloor -> direction == Direction.UP
                         ? targetFloor > currentFloor
@@ -233,9 +238,10 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
      *
      * @param targetFloor floor that lift will go to.
      */
-    private void assignRequestsForFloor(int targetFloor) {
+    private void assignRequestsForFloor(int targetFloor, Direction direction) {
         activeRequests.stream()
                 .filter(request -> request.getTargetFloor() == targetFloor)
+                .filter(request -> isEligibleForDirection(request, direction))
                 .filter(request -> request.getState() == RequestState.QUEUED)
                 .forEach(request -> request.transitionTo(RequestState.ASSIGNED));
     }
@@ -245,9 +251,10 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
      *
      * @param targetFloor floor that lift is now serving.
      */
-    private void serveRequestsForFloor(int targetFloor) {
+    private void serveRequestsForFloor(int targetFloor, Direction direction) {
         activeRequests.stream()
                 .filter(request -> request.getTargetFloor() == targetFloor)
+                .filter(request -> isEligibleForDirection(request, direction))
                 .filter(request -> request.getState() == RequestState.ASSIGNED)
                 .forEach(request -> request.transitionTo(RequestState.SERVING));
     }
@@ -300,6 +307,16 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
         return Action.IDLE;
     }
 
+    private boolean isEligibleForDirection(LiftRequest request, Direction direction) {
+        if (direction == Direction.IDLE) {
+            return true;
+        }
+        if (request.getType() == RequestType.HALL_CALL) {
+            return request.getDirection() == direction;
+        }
+        return true;
+    }
+
     @Override
     public Action decideNextAction(LiftState currentState, long currentTick) {
         int currentFloor = currentState.getFloor();
@@ -317,16 +334,16 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
 
         // Allow door transitions to complete before evaluating movement.
         if (currentStatus == LiftStatus.DOORS_OPENING) {
-            if (hasRequestForFloor(currentFloor)) {
-                serveRequestsForFloor(currentFloor);
-                completeRequestsForFloor(currentFloor);
+            if (hasRequestForFloor(currentFloor, currentDirection)) {
+                serveRequestsForFloor(currentFloor, currentDirection);
+                completeRequestsForFloor(currentFloor, currentDirection);
             }
             return Action.IDLE;
         }
 
         if (currentStatus == LiftStatus.DOORS_CLOSING) {
             // Check if a new request arrived for current floor while doors closing.
-            if (hasRequestForFloor(currentFloor)) {
+            if (hasRequestForFloor(currentFloor, currentDirection)) {
                 // Attempt to reopen doors (will succeed only if within reopen window).
                 return Action.OPEN_DOOR;
             }
@@ -335,25 +352,25 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
 
         // If doors are open, let the engine manage the dwell/close cycle.
         if (doorState == DoorState.OPEN) {
-            if (hasRequestForFloor(currentFloor)) {
-                completeRequestsForFloor(currentFloor);
+            if (hasRequestForFloor(currentFloor, currentDirection)) {
+                completeRequestsForFloor(currentFloor, currentDirection);
             }
             return Action.IDLE;
         }
 
         // If at a requested floor, stop first if moving, then open doors.
-        if (hasRequestForFloor(currentFloor)) {
+        if (hasRequestForFloor(currentFloor, currentDirection)) {
             if (currentStatus == LiftStatus.MOVING_UP || currentStatus == LiftStatus.MOVING_DOWN) {
-                assignRequestsForFloor(currentFloor);
-                serveRequestsForFloor(currentFloor);
+                assignRequestsForFloor(currentFloor, currentDirection);
+                serveRequestsForFloor(currentFloor, currentDirection);
                 return Action.IDLE;
             }
             if (currentStatus == LiftStatus.DOORS_OPENING) {
-                completeRequestsForFloor(currentFloor);
+                completeRequestsForFloor(currentFloor, currentDirection);
                 return Action.IDLE;
             }
-            assignRequestsForFloor(currentFloor);
-            serveRequestsForFloor(currentFloor);
+            assignRequestsForFloor(currentFloor, currentDirection);
+            serveRequestsForFloor(currentFloor, currentDirection);
             return Action.OPEN_DOOR;
         }
 
@@ -383,7 +400,7 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
         }
 
         int targetFloor = nextFloor.orElse(currentFloor);
-        assignRequestsForFloor(targetFloor);
+        assignRequestsForFloor(targetFloor, currentDirection);
 
         if (currentDirection == Direction.UP) {
             if (currentStatus == LiftStatus.MOVING_DOWN) {
