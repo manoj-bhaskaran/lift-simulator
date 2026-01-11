@@ -4,6 +4,7 @@ import com.liftsimulator.admin.dto.CreateLiftSystemRequest;
 import com.liftsimulator.admin.dto.LiftSystemResponse;
 import com.liftsimulator.admin.dto.UpdateLiftSystemRequest;
 import com.liftsimulator.admin.service.LiftSystemService;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,11 @@ public class LiftSystemController {
 
     private final LiftSystemService liftSystemService;
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "Spring-managed service injected via constructor. "
+                    + "Lifecycle and immutability managed by Spring container."
+    )
     public LiftSystemController(LiftSystemService liftSystemService) {
         this.liftSystemService = liftSystemService;
     }

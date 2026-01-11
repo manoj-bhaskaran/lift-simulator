@@ -42,6 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - REST API now provides full lifecycle management for lift systems
 - Service layer enforces business rules and validation
 
+### Fixed
+- **SpotBugs warnings**: Resolved static analysis warnings
+  - `ValidationErrorResponse` now uses defensive copying with `Map.copyOf()` to prevent external modification
+  - Added `@SuppressFBWarnings` to `LiftSystemController` constructor for Spring DI false positive
+  - All medium-severity EI_EXPOSE_REP warnings resolved
+
 ### Documentation
 - Updated README with Lift System CRUD API documentation
 - API endpoint examples with request/response payloads

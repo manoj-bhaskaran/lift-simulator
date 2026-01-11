@@ -92,6 +92,7 @@ public class GlobalExceptionHandler {
 
     /**
      * Validation error response with field-level errors.
+     * Uses defensive copying to prevent external modification of field errors.
      */
     public record ValidationErrorResponse(
         int status,
@@ -99,5 +100,11 @@ public class GlobalExceptionHandler {
         Map<String, String> fieldErrors,
         OffsetDateTime timestamp
     ) {
+        /**
+         * Compact constructor that creates defensive copies of the field errors map.
+         */
+        public ValidationErrorResponse {
+            fieldErrors = Map.copyOf(fieldErrors);
+        }
     }
 }
