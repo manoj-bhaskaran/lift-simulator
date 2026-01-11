@@ -9,20 +9,16 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
-    defer-datasource-initialization: true
     show-sql: true
     properties:
       hibernate:
         format_sql: true
         default_schema: lift_simulator
+        hbm2ddl:
+          create_namespaces: true
 
   flyway:
     enabled: false
-
-  sql:
-    init:
-      mode: always
-      schema-locations: classpath:schema.sql
 
 logging:
   level:
