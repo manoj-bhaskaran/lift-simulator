@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.26.0**
+Current version: **0.27.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -189,6 +189,133 @@ The backend will start on `http://localhost:8080`.
   - Returns a specific version by version number
   - Response (200 OK): Version details
   - Error (404 Not Found): If version doesn't exist
+
+- **Publish Version**: `POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`
+  - Publishes a version after validating its configuration
+  - Only versions with valid configurations can be published
+  - Response (200 OK): Published version details with `status: "PUBLISHED"` and `isPublished: true`
+  - Error (400 Bad Request with validation errors): If configuration is invalid
+  - Error (409 Conflict): If version is already published
+  - Note: Publishing is blocked if the configuration has validation errors
+
+#### Configuration Validation
+
+The backend includes a comprehensive validation framework for lift system configurations. All configurations are validated before being saved or published.
+
+- **Validate Configuration**: `POST /api/config/validate`
+  - Validates a configuration JSON without persisting it
+  - Request body:
+    ```json
+    {
+      "config": "{\"floors\": 10, \"lifts\": 2, \"travelTicksPerFloor\": 1, ...}"
+    }
+    ```
+  - Response (200 OK) - Valid configuration:
+    ```json
+    {
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        {
+          "field": "doorDwellTicks",
+          "message": "Door dwell ticks (1) is very low. Consider increasing to allow sufficient time for passengers.",
+          "severity": "WARNING"
+        }
+      ]
+    }
+    ```
+  - Response (200 OK) - Invalid configuration:
+    ```json
+    {
+      "valid": false,
+      "errors": [
+        {
+          "field": "floors",
+          "message": "Number of floors must be at least 2",
+          "severity": "ERROR"
+        },
+        {
+          "field": "doorReopenWindowTicks",
+          "message": "Door reopen window ticks (5) must not exceed door transition ticks (2)",
+          "severity": "ERROR"
+        }
+      ],
+      "warnings": []
+    }
+    ```
+
+**Configuration Structure:**
+
+All lift system configurations must conform to the following structure:
+
+```json
+{
+  "floors": 10,
+  "lifts": 2,
+  "travelTicksPerFloor": 1,
+  "doorTransitionTicks": 2,
+  "doorDwellTicks": 3,
+  "doorReopenWindowTicks": 2,
+  "homeFloor": 0,
+  "idleTimeoutTicks": 5,
+  "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+  "idleParkingMode": "PARK_TO_HOME_FLOOR"
+}
+```
+
+**Validation Rules:**
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| `floors` | Integer | ≥ 2 | Number of floors in the building |
+| `lifts` | Integer | ≥ 1 | Number of lift cars |
+| `travelTicksPerFloor` | Integer | ≥ 1 | Ticks required to travel one floor |
+| `doorTransitionTicks` | Integer | ≥ 1 | Ticks required for doors to open or close |
+| `doorDwellTicks` | Integer | ≥ 1 | Ticks doors stay open before closing |
+| `doorReopenWindowTicks` | Integer | ≥ 0, ≤ doorTransitionTicks | Window during door closing when doors can reopen |
+| `homeFloor` | Integer | ≥ 0, < floors | Idle parking floor (must be within floor range) |
+| `idleTimeoutTicks` | Integer | ≥ 0 | Ticks before idle parking behavior activates |
+| `controllerStrategy` | Enum | NEAREST_REQUEST_ROUTING, DIRECTIONAL_SCAN | Controller algorithm |
+| `idleParkingMode` | Enum | STAY_AT_CURRENT_FLOOR, PARK_TO_HOME_FLOOR | Idle parking behavior |
+
+**Validation Features:**
+
+- **Structural Validation**: Ensures JSON is well-formed and all required fields are present
+- **Type Validation**: Validates field types and enum values
+- **Domain Validation**: Enforces business rules and cross-field constraints
+  - doorReopenWindowTicks must not exceed doorTransitionTicks
+  - homeFloor must be within valid floor range (0 to floors-1)
+- **Warnings**: Non-blocking suggestions for suboptimal configurations
+  - Low doorDwellTicks values
+  - More lifts than floors
+  - Low idleTimeoutTicks with PARK_TO_HOME_FLOOR mode
+  - Zero doorReopenWindowTicks (disables door reopening)
+
+**Automatic Validation:**
+
+Validation is automatically performed when:
+- Creating a new version (`POST /api/lift-systems/{systemId}/versions`)
+- Updating a version's configuration (`PUT /api/lift-systems/{systemId}/versions/{versionNumber}`)
+- Publishing a version (`POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`)
+
+If validation fails with errors, the operation will be rejected with a 400 Bad Request response containing detailed error information.
+
+**Error Response Format:**
+
+When configuration validation fails:
+```json
+{
+  "valid": false,
+  "errors": [
+    {
+      "field": "homeFloor",
+      "message": "Home floor (15) must be within valid floor range (0 to 9)",
+      "severity": "ERROR"
+    }
+  ],
+  "warnings": []
+}
+```
 
 #### Health & Monitoring
 
@@ -389,40 +516,71 @@ mvn test
 
 ## Features
 
-The current version (v0.23.6) implements:
-- **Selectable controller strategy**: Choose between different controller algorithms (NEAREST_REQUEST_ROUTING, DIRECTIONAL_SCAN) via enum-based configuration
-- **Directional scan controller**: Implements a SCAN-style algorithm that continues in the current direction until all requests are serviced
-- **Hall-call direction filtering**: Opposite-direction hall calls are deferred until after the directional scan reverses, with reversal occurring at the furthest pending stop in the current travel direction
-- **Out-of-service functionality**: Take lifts out of service safely for maintenance or emergencies, automatically cancelling all pending requests
-- **Request lifecycle management**: Requests are first-class entities with explicit lifecycle states (CREATED → QUEUED → ASSIGNED → SERVING → COMPLETED/CANCELLED)
-- **Request cancellation**: Cancel hall and car calls by request ID at any point before completion
-- **Request state tracking**: Every request has a unique ID and progresses through validated state transitions
-- **Request completion helper**: Requests can complete by advancing through lifecycle states in a single call
-- **Indexed request tracking**: Active requests are indexed by ID for faster cancellation lookups
-- **Formal lift state machine** with 7 explicit states (IDLE, MOVING_UP, MOVING_DOWN, DOORS_OPENING, DOORS_OPEN, DOORS_CLOSING, OUT_OF_SERVICE)
-- **Single source of truth**: LiftStatus is the only stored state for the lift, all other properties are derived
-- **State transition validation** ensuring only valid state changes occur (for both lift and requests)
-- **Invalid action reporting** with explicit action results and warning logs that include tick and floor context
-- **Symmetric door behavior**: Both opening and closing are modeled as transitional states
-- **Door reopening window**: Configurable time window during which closing doors can be reopened for new requests at the current floor
-- **Configurable idle parking**: Choose between staying at current floor or parking to home floor when idle, with configurable timeout
-- **Defensive idle tracking**: Idle timeout calculations guard against unset idle tracking state
-- **Single lift simulation** operating between configurable floor ranges
-- **Tick-based simulation engine** that advances time in discrete steps
-- **Simulation clock** powering deterministic tick progression
-- **Configurable travel, door transition, and door dwell durations** to model time per floor and door cycles
-- **Timed door dwell** with an automatic DOORS_OPEN → DOORS_CLOSING cycle
-- **NaiveLiftController** - A simple controller that services the nearest pending request
-- **DirectionalScanLiftController** - A directional scan controller that batches stops in the current direction
-- **Console output** displaying tick-by-tick lift state (floor, direction, door state, status, request lifecycle)
-- **Request lifecycle visibility** in demo output with compact status display (Q:n, A:n, S:n)
-- **Request lifecycle summary table** in demo and scenario output showing created/completed or cancelled ticks per request
-- **Scenario runner** for scripted simulations with tick-based events, pending request logging, and lifecycle summaries
-- **Request types**: Car calls (from inside the lift) and hall calls (from a floor)
-- **Safety enforcement**: Lift cannot move with doors open, doors cannot open while moving
-- **Backward compatibility**: Existing CarCall/HallCall interfaces still work
+The current version (v0.27.0) includes comprehensive lift simulation and configuration management capabilities:
 
-Future iterations will add multi-lift systems, smarter algorithms, request priorities, and more realistic constraints.
+### Admin Backend & REST API
+
+- **Spring Boot Admin Backend**: RESTful API service for managing lift system configurations
+- **PostgreSQL Database**: Persistent storage with Flyway migrations for schema management
+- **JPA Entities**: Object-relational mapping with `LiftSystem` and `LiftSystemVersion` entities
+- **JSONB Support**: PostgreSQL JSONB field mapping for flexible configuration storage
+- **Lift System CRUD APIs**: Create, read, update, and delete lift systems
+- **Version Management APIs**: Create, update, list, and retrieve versioned configurations
+- **Configuration Validation Framework**: Comprehensive validation for configuration JSON
+  - Structural validation with Jakarta Bean Validation
+  - Domain validation for business rules and cross-field constraints
+  - Detailed error messages with field-level granularity
+  - Warning system for suboptimal configurations
+  - Validation blocking on create, update, and publish operations
+- **Version Publishing**: Publish mechanism with validation enforcement
+- **Global Exception Handling**: Consistent error responses with appropriate HTTP status codes
+- **Health Endpoints**: Custom health checks and Spring Boot Actuator integration
+
+### Lift Simulation Engine
+
+- **Selectable Controller Strategy**: Choose between NEAREST_REQUEST_ROUTING or DIRECTIONAL_SCAN algorithms
+- **NaiveLiftController**: Simple controller that services the nearest pending request
+- **DirectionalScanLiftController**: SCAN-style algorithm with direction commitment and batching
+- **Hall-Call Direction Filtering**: Direction-aware request servicing for efficient routing
+- **Request Lifecycle Management**: First-class request entities with explicit lifecycle states (CREATED → QUEUED → ASSIGNED → SERVING → COMPLETED/CANCELLED)
+- **Request Cancellation**: Cancel any request by ID before completion
+- **Out-of-Service Functionality**: Safe maintenance mode with automatic request cancellation
+- **Formal Lift State Machine**: 7 explicit states (IDLE, MOVING_UP, MOVING_DOWN, DOORS_OPENING, DOORS_OPEN, DOORS_CLOSING, OUT_OF_SERVICE)
+- **State Transition Validation**: Enforces valid state changes for both lift and requests
+- **Single Source of Truth**: LiftStatus is the only stored state; all other properties are derived
+- **Tick-Based Simulation**: Discrete time advancement with configurable durations
+- **Simulation Clock**: Deterministic tick progression for reproducible simulations
+- **Configurable Door Behavior**:
+  - Symmetric door opening/closing as transitional states
+  - Configurable door transition, dwell, and reopen window timing
+- **Configurable Idle Parking**: STAY_AT_CURRENT_FLOOR or PARK_TO_HOME_FLOOR modes
+- **Request Types**: Car calls (from inside) and hall calls (from floor with direction)
+- **Safety Enforcement**: Prevents moving with doors open or opening doors while moving
+
+### Testing & Quality
+
+- **Comprehensive Test Coverage**: 80%+ line coverage requirement with JaCoCo
+- **Unit Tests**: Extensive unit tests for controllers, services, and domain logic
+- **Integration Tests**: Full Spring context testing for REST APIs and repositories
+- **Scenario Tests**: Realistic multi-request routing scenarios for both controller strategies
+- **Code Quality Tools**: Checkstyle, SpotBugs, OWASP Dependency Check
+
+### Developer Tools
+
+- **Scenario Runner**: Scripted simulations with tick-based events and lifecycle summaries
+- **Console Output**: Tick-by-tick lift state visualization with request lifecycle tracking
+- **Request Lifecycle Visibility**: Compact status display (Q:n, A:n, S:n) and summary tables
+- **Command-Line Configuration**: Configurable controller strategy and simulation parameters
+- **EditorConfig**: Consistent code formatting across editors
+
+### Documentation
+
+- **Comprehensive README**: API documentation, setup guides, and usage examples
+- **Architecture Decision Records (ADRs)**: 9 ADRs documenting key design decisions
+- **Changelog**: Detailed version history following Keep a Changelog format
+- **Inline Documentation**: Extensive Javadoc comments throughout the codebase
+
+Future iterations will add multi-lift systems, coordination algorithms, request priorities, and more realistic constraints.
 
 ## Prerequisites
 
@@ -1084,6 +1242,7 @@ See [docs/decisions](docs/decisions) for Architecture Decision Records (ADRs):
 - [ADR-0006: Spring Boot Admin Backend](docs/decisions/0006-spring-boot-admin-backend.md)
 - [ADR-0007: PostgreSQL and Flyway Integration](docs/decisions/0007-postgresql-flyway-integration.md)
 - [ADR-0008: JPA Entities and JSONB Mapping](docs/decisions/0008-jpa-entities-and-jsonb-mapping.md)
+- [ADR-0009: Configuration Validation Framework](docs/decisions/0009-configuration-validation-framework.md)
 
 ## License
 

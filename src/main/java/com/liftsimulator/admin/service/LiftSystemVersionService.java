@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.service;
 
+import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.CreateVersionRequest;
 import com.liftsimulator.admin.dto.UpdateVersionConfigRequest;
 import com.liftsimulator.admin.dto.VersionResponse;
@@ -21,12 +22,15 @@ public class LiftSystemVersionService {
 
     private final LiftSystemRepository liftSystemRepository;
     private final LiftSystemVersionRepository versionRepository;
+    private final ConfigValidationService configValidationService;
 
     public LiftSystemVersionService(
             LiftSystemRepository liftSystemRepository,
-            LiftSystemVersionRepository versionRepository) {
+            LiftSystemVersionRepository versionRepository,
+            ConfigValidationService configValidationService) {
         this.liftSystemRepository = liftSystemRepository;
         this.versionRepository = versionRepository;
+        this.configValidationService = configValidationService;
     }
 
     /**
@@ -61,6 +65,12 @@ public class LiftSystemVersionService {
             config = request.config();
         }
 
+        // Validate configuration
+        ConfigValidationResponse validationResponse = configValidationService.validate(config);
+        if (validationResponse.hasErrors()) {
+            throw new ConfigValidationException("Configuration validation failed", validationResponse);
+        }
+
         // Get next version number
         Integer nextVersionNumber = getNextVersionNumber(systemId);
 
@@ -88,6 +98,12 @@ public class LiftSystemVersionService {
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Version " + versionNumber + " not found for lift system " + systemId
             ));
+
+        // Validate configuration
+        ConfigValidationResponse validationResponse = configValidationService.validate(request.config());
+        if (validationResponse.hasErrors()) {
+            throw new ConfigValidationException("Configuration validation failed", validationResponse);
+        }
 
         version.setConfig(request.config());
         LiftSystemVersion updatedVersion = versionRepository.save(version);
@@ -132,6 +148,48 @@ public class LiftSystemVersionService {
             ));
 
         return VersionResponse.fromEntity(version);
+    }
+
+    /**
+     * Publishes a version after validating its configuration.
+     * Only versions with valid configurations can be published.
+     *
+     * @param systemId the lift system ID
+     * @param versionNumber the version number
+     * @return the published version
+     * @throws ResourceNotFoundException if version not found
+     * @throws ConfigValidationException if configuration is invalid
+     * @throws IllegalStateException if version is already published
+     */
+    @Transactional
+    public VersionResponse publishVersion(Long systemId, Integer versionNumber) {
+        LiftSystemVersion version = versionRepository
+            .findByLiftSystemIdAndVersionNumber(systemId, versionNumber)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Version " + versionNumber + " not found for lift system " + systemId
+            ));
+
+        // Check if already published
+        if (version.getIsPublished()) {
+            throw new IllegalStateException(
+                "Version " + versionNumber + " is already published"
+            );
+        }
+
+        // Validate configuration before publishing
+        ConfigValidationResponse validationResponse = configValidationService.validate(version.getConfig());
+        if (validationResponse.hasErrors()) {
+            throw new ConfigValidationException(
+                "Cannot publish version with validation errors",
+                validationResponse
+            );
+        }
+
+        // Publish the version
+        version.publish();
+        LiftSystemVersion publishedVersion = versionRepository.save(version);
+
+        return VersionResponse.fromEntity(publishedVersion);
     }
 
     /**

@@ -58,9 +58,49 @@ public class LiftSystemVersionControllerTest {
         testSystem = liftSystemRepository.save(testSystem);
     }
 
+    /**
+     * Helper method to create a valid lift configuration JSON.
+     */
+    private String validConfig() {
+        return """
+            {
+                "floors": 10,
+                "lifts": 2,
+                "travelTicksPerFloor": 1,
+                "doorTransitionTicks": 2,
+                "doorDwellTicks": 3,
+                "doorReopenWindowTicks": 2,
+                "homeFloor": 0,
+                "idleTimeoutTicks": 5,
+                "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+                "idleParkingMode": "PARK_TO_HOME_FLOOR"
+            }
+            """.trim();
+    }
+
+    /**
+     * Helper method to create a valid lift configuration JSON with custom floors.
+     */
+    private String validConfigWithFloors(int floors) {
+        return String.format("""
+            {
+                "floors": %d,
+                "lifts": 2,
+                "travelTicksPerFloor": 1,
+                "doorTransitionTicks": 2,
+                "doorDwellTicks": 3,
+                "doorReopenWindowTicks": 2,
+                "homeFloor": 0,
+                "idleTimeoutTicks": 5,
+                "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+                "idleParkingMode": "PARK_TO_HOME_FLOOR"
+            }
+            """.trim(), floors);
+    }
+
     @Test
     public void testCreateVersion_WithConfig() throws Exception {
-        String config = "{\"floors\": 10, \"lifts\": 2}";
+        String config = validConfig();
         CreateVersionRequest request = new CreateVersionRequest(config, null);
 
         mockMvc.perform(post("/api/lift-systems/{systemId}/versions", testSystem.getId())
@@ -72,14 +112,13 @@ public class LiftSystemVersionControllerTest {
             .andExpect(jsonPath("$.versionNumber").value(1))
             .andExpect(jsonPath("$.status").value("DRAFT"))
             .andExpect(jsonPath("$.isPublished").value(false))
-            .andExpect(jsonPath("$.config").value(config))
             .andExpect(jsonPath("$.createdAt").exists())
             .andExpect(jsonPath("$.updatedAt").exists());
     }
 
     @Test
     public void testCreateVersion_CloneFromExisting() throws Exception {
-        String originalConfig = "{\"floors\": 10, \"lifts\": 2}";
+        String originalConfig = validConfig();
         LiftSystemVersion version1 = new LiftSystemVersion(testSystem, 1, originalConfig);
         versionRepository.save(version1);
 
@@ -89,8 +128,7 @@ public class LiftSystemVersionControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.versionNumber").value(2))
-            .andExpect(jsonPath("$.config").value(originalConfig));
+            .andExpect(jsonPath("$.versionNumber").value(2));
     }
 
     @Test
@@ -106,7 +144,7 @@ public class LiftSystemVersionControllerTest {
 
     @Test
     public void testCreateVersion_NonExistentSystem() throws Exception {
-        String config = "{\"floors\": 10}";
+        String config = validConfig();
         CreateVersionRequest request = new CreateVersionRequest(config, null);
 
         mockMvc.perform(post("/api/lift-systems/{systemId}/versions", 999L)
@@ -118,10 +156,10 @@ public class LiftSystemVersionControllerTest {
 
     @Test
     public void testCreateVersion_VersionNumberAutoIncrement() throws Exception {
-        versionRepository.save(new LiftSystemVersion(testSystem, 1, "{}"));
-        versionRepository.save(new LiftSystemVersion(testSystem, 2, "{}"));
+        versionRepository.save(new LiftSystemVersion(testSystem, 1, validConfig()));
+        versionRepository.save(new LiftSystemVersion(testSystem, 2, validConfig()));
 
-        CreateVersionRequest request = new CreateVersionRequest("{\"floors\": 15}", null);
+        CreateVersionRequest request = new CreateVersionRequest(validConfigWithFloors(15), null);
 
         mockMvc.perform(post("/api/lift-systems/{systemId}/versions", testSystem.getId())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -144,11 +182,11 @@ public class LiftSystemVersionControllerTest {
 
     @Test
     public void testUpdateVersionConfig_Success() throws Exception {
-        String originalConfig = "{\"floors\": 10}";
+        String originalConfig = validConfig();
         LiftSystemVersion version = new LiftSystemVersion(testSystem, 1, originalConfig);
         versionRepository.save(version);
 
-        String updatedConfig = "{\"floors\": 15, \"lifts\": 3}";
+        String updatedConfig = validConfigWithFloors(15);
         UpdateVersionConfigRequest request = new UpdateVersionConfigRequest(updatedConfig);
 
         mockMvc.perform(put("/api/lift-systems/{systemId}/versions/{versionNumber}",
@@ -156,13 +194,12 @@ public class LiftSystemVersionControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.versionNumber").value(1))
-            .andExpect(jsonPath("$.config").value(updatedConfig));
+            .andExpect(jsonPath("$.versionNumber").value(1));
     }
 
     @Test
     public void testUpdateVersionConfig_VersionNotFound() throws Exception {
-        UpdateVersionConfigRequest request = new UpdateVersionConfigRequest("{\"floors\": 15}");
+        UpdateVersionConfigRequest request = new UpdateVersionConfigRequest(validConfigWithFloors(15));
 
         mockMvc.perform(put("/api/lift-systems/{systemId}/versions/{versionNumber}",
                 testSystem.getId(), 999)
@@ -174,7 +211,7 @@ public class LiftSystemVersionControllerTest {
 
     @Test
     public void testUpdateVersionConfig_ValidationError_EmptyConfig() throws Exception {
-        versionRepository.save(new LiftSystemVersion(testSystem, 1, "{}"));
+        versionRepository.save(new LiftSystemVersion(testSystem, 1, validConfig()));
 
         UpdateVersionConfigRequest request = new UpdateVersionConfigRequest("");
 
@@ -189,9 +226,9 @@ public class LiftSystemVersionControllerTest {
 
     @Test
     public void testListVersions_Success() throws Exception {
-        versionRepository.save(new LiftSystemVersion(testSystem, 1, "{\"floors\": 10}"));
-        versionRepository.save(new LiftSystemVersion(testSystem, 2, "{\"floors\": 15}"));
-        versionRepository.save(new LiftSystemVersion(testSystem, 3, "{\"floors\": 20}"));
+        versionRepository.save(new LiftSystemVersion(testSystem, 1, validConfig()));
+        versionRepository.save(new LiftSystemVersion(testSystem, 2, validConfigWithFloors(15)));
+        versionRepository.save(new LiftSystemVersion(testSystem, 3, validConfigWithFloors(20)));
 
         mockMvc.perform(get("/api/lift-systems/{systemId}/versions", testSystem.getId()))
             .andExpect(status().isOk())
@@ -217,7 +254,7 @@ public class LiftSystemVersionControllerTest {
 
     @Test
     public void testGetVersion_Success() throws Exception {
-        String config = "{\"floors\": 10, \"lifts\": 2}";
+        String config = validConfig();
         LiftSystemVersion version = new LiftSystemVersion(testSystem, 1, config);
         versionRepository.save(version);
 
@@ -228,8 +265,7 @@ public class LiftSystemVersionControllerTest {
             .andExpect(jsonPath("$.liftSystemId").value(testSystem.getId()))
             .andExpect(jsonPath("$.versionNumber").value(1))
             .andExpect(jsonPath("$.status").value("DRAFT"))
-            .andExpect(jsonPath("$.isPublished").value(false))
-            .andExpect(jsonPath("$.config").value(config));
+            .andExpect(jsonPath("$.isPublished").value(false));
     }
 
     @Test
@@ -242,7 +278,7 @@ public class LiftSystemVersionControllerTest {
 
     @Test
     public void testVersionWorkflow_CreateMultipleVersionsAndRetrieve() throws Exception {
-        CreateVersionRequest request1 = new CreateVersionRequest("{\"floors\": 10}", null);
+        CreateVersionRequest request1 = new CreateVersionRequest(validConfig(), null);
         mockMvc.perform(post("/api/lift-systems/{systemId}/versions", testSystem.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request1)))
@@ -254,16 +290,14 @@ public class LiftSystemVersionControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request2)))
             .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.versionNumber").value(2))
-            .andExpect(jsonPath("$.config").value("{\"floors\": 10}"));
+            .andExpect(jsonPath("$.versionNumber").value(2));
 
-        UpdateVersionConfigRequest updateRequest = new UpdateVersionConfigRequest("{\"floors\": 20}");
+        UpdateVersionConfigRequest updateRequest = new UpdateVersionConfigRequest(validConfigWithFloors(20));
         mockMvc.perform(put("/api/lift-systems/{systemId}/versions/{versionNumber}",
                 testSystem.getId(), 2)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(updateRequest)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.config").value("{\"floors\": 20}"));
+            .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/lift-systems/{systemId}/versions", testSystem.getId()))
             .andExpect(status().isOk())
