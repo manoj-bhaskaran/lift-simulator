@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.24.0**
+Current version: **0.26.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -34,7 +34,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.25.0.jar
+java -jar target/lift-simulator-0.26.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -109,6 +109,86 @@ The backend will start on `http://localhost:8080`.
   - Deletes a lift system and all its versions (cascade delete)
   - Response (204 No Content): Success with no body
   - Error (404 Not Found): If lift system doesn't exist
+
+#### Version Management
+
+- **Create Version**: `POST /api/lift-systems/{systemId}/versions`
+  - Creates a new version for a lift system
+  - Optionally clones configuration from an existing version
+  - Request body (with new config):
+    ```json
+    {
+      "config": "{\"floors\": 10, \"lifts\": 2}",
+      "cloneFromVersionNumber": null
+    }
+    ```
+  - Request body (cloning from version):
+    ```json
+    {
+      "config": "{}",
+      "cloneFromVersionNumber": 1
+    }
+    ```
+  - Response (201 Created):
+    ```json
+    {
+      "id": 1,
+      "liftSystemId": 1,
+      "versionNumber": 1,
+      "status": "DRAFT",
+      "isPublished": false,
+      "publishedAt": null,
+      "config": "{\"floors\": 10, \"lifts\": 2}",
+      "createdAt": "2026-01-11T10:00:00Z",
+      "updatedAt": "2026-01-11T10:00:00Z"
+    }
+    ```
+  - Version numbers auto-increment per lift system
+
+- **Update Version Config**: `PUT /api/lift-systems/{systemId}/versions/{versionNumber}`
+  - Updates the configuration JSON for a specific version
+  - Request body:
+    ```json
+    {
+      "config": "{\"floors\": 15, \"lifts\": 3}"
+    }
+    ```
+  - Response (200 OK): Updated version details
+
+- **List Versions**: `GET /api/lift-systems/{systemId}/versions`
+  - Returns all versions for a lift system, ordered by version number descending
+  - Response (200 OK):
+    ```json
+    [
+      {
+        "id": 2,
+        "liftSystemId": 1,
+        "versionNumber": 2,
+        "status": "DRAFT",
+        "isPublished": false,
+        "publishedAt": null,
+        "config": "{\"floors\": 15}",
+        "createdAt": "2026-01-11T11:00:00Z",
+        "updatedAt": "2026-01-11T11:00:00Z"
+      },
+      {
+        "id": 1,
+        "liftSystemId": 1,
+        "versionNumber": 1,
+        "status": "DRAFT",
+        "isPublished": false,
+        "publishedAt": null,
+        "config": "{\"floors\": 10}",
+        "createdAt": "2026-01-11T10:00:00Z",
+        "updatedAt": "2026-01-11T10:00:00Z"
+      }
+    ]
+    ```
+
+- **Get Version**: `GET /api/lift-systems/{systemId}/versions/{versionNumber}`
+  - Returns a specific version by version number
+  - Response (200 OK): Version details
+  - Error (404 Not Found): If version doesn't exist
 
 #### Health & Monitoring
 
