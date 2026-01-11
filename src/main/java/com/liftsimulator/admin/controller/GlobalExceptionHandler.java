@@ -1,5 +1,7 @@
 package com.liftsimulator.admin.controller;
 
+import com.liftsimulator.admin.dto.ConfigValidationResponse;
+import com.liftsimulator.admin.service.ConfigValidationException;
 import com.liftsimulator.admin.service.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,6 +44,29 @@ public class GlobalExceptionHandler {
             OffsetDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
+     * Handles IllegalStateException with 409 status.
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.CONFLICT.value(),
+            ex.getMessage(),
+            OffsetDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    /**
+     * Handles configuration validation errors with 400 status.
+     */
+    @ExceptionHandler(ConfigValidationException.class)
+    public ResponseEntity<ConfigValidationResponse> handleConfigValidationError(
+        ConfigValidationException ex
+    ) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getValidationResponse());
     }
 
     /**

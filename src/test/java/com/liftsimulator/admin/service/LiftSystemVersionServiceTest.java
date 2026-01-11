@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.service;
 
+import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.CreateVersionRequest;
 import com.liftsimulator.admin.dto.UpdateVersionConfigRequest;
 import com.liftsimulator.admin.dto.VersionResponse;
@@ -16,13 +17,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,11 +42,15 @@ public class LiftSystemVersionServiceTest {
     @Mock
     private LiftSystemVersionRepository versionRepository;
 
+    @Mock
+    private ConfigValidationService configValidationService;
+
     @InjectMocks
     private LiftSystemVersionService versionService;
 
     private LiftSystem mockLiftSystem;
     private LiftSystemVersion mockVersion;
+    private ConfigValidationResponse validValidationResponse;
 
     @BeforeEach
     public void setUp() {
@@ -63,6 +71,12 @@ public class LiftSystemVersionServiceTest {
         mockVersion.setIsPublished(false);
         mockVersion.setCreatedAt(OffsetDateTime.now());
         mockVersion.setUpdatedAt(OffsetDateTime.now());
+
+        validValidationResponse = new ConfigValidationResponse(
+            true,
+            Collections.emptyList(),
+            Collections.emptyList()
+        );
     }
 
     @Test
@@ -71,6 +85,7 @@ public class LiftSystemVersionServiceTest {
         CreateVersionRequest request = new CreateVersionRequest(config, null);
 
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(configValidationService.validate(anyString())).thenReturn(validValidationResponse);
         when(versionRepository.findMaxVersionNumberByLiftSystemId(1L)).thenReturn(null);
         when(versionRepository.save(any(LiftSystemVersion.class))).thenReturn(mockVersion);
 
@@ -79,6 +94,7 @@ public class LiftSystemVersionServiceTest {
         assertNotNull(response);
         assertEquals(1, response.versionNumber());
         verify(liftSystemRepository).findById(1L);
+        verify(configValidationService).validate(config);
         verify(versionRepository).findMaxVersionNumberByLiftSystemId(1L);
         verify(versionRepository).save(any(LiftSystemVersion.class));
     }
@@ -94,6 +110,7 @@ public class LiftSystemVersionServiceTest {
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1))
             .thenReturn(Optional.of(sourceVersion));
+        when(configValidationService.validate(originalConfig)).thenReturn(validValidationResponse);
         when(versionRepository.findMaxVersionNumberByLiftSystemId(1L)).thenReturn(1);
         when(versionRepository.save(any(LiftSystemVersion.class))).thenReturn(mockVersion);
 
@@ -101,6 +118,7 @@ public class LiftSystemVersionServiceTest {
 
         assertNotNull(response);
         verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 1);
+        verify(configValidationService).validate(originalConfig);
         verify(versionRepository).save(any(LiftSystemVersion.class));
     }
 
@@ -141,6 +159,7 @@ public class LiftSystemVersionServiceTest {
         CreateVersionRequest request = new CreateVersionRequest("{\"floors\": 15}", null);
 
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(configValidationService.validate(anyString())).thenReturn(validValidationResponse);
         when(versionRepository.findMaxVersionNumberByLiftSystemId(1L)).thenReturn(5);
 
         LiftSystemVersion newVersion = new LiftSystemVersion();
@@ -169,12 +188,14 @@ public class LiftSystemVersionServiceTest {
 
         when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1))
             .thenReturn(Optional.of(mockVersion));
+        when(configValidationService.validate(updatedConfig)).thenReturn(validValidationResponse);
         when(versionRepository.save(any(LiftSystemVersion.class))).thenReturn(mockVersion);
 
         VersionResponse response = versionService.updateVersionConfig(1L, 1, request);
 
         assertNotNull(response);
         verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 1);
+        verify(configValidationService).validate(updatedConfig);
         verify(versionRepository).save(mockVersion);
     }
 
@@ -248,5 +269,122 @@ public class LiftSystemVersionServiceTest {
 
         assertEquals("Version 999 not found for lift system 1", exception.getMessage());
         verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 999);
+    }
+
+    @Test
+    public void testPublishVersion_Success() {
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1))
+            .thenReturn(Optional.of(mockVersion));
+        when(configValidationService.validate(anyString())).thenReturn(validValidationResponse);
+        when(versionRepository.save(any(LiftSystemVersion.class))).thenReturn(mockVersion);
+
+        VersionResponse response = versionService.publishVersion(1L, 1);
+
+        assertNotNull(response);
+        verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 1);
+        verify(configValidationService).validate(mockVersion.getConfig());
+        verify(versionRepository).save(mockVersion);
+    }
+
+    @Test
+    public void testPublishVersion_AlreadyPublished() {
+        mockVersion.setIsPublished(true);
+
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1))
+            .thenReturn(Optional.of(mockVersion));
+
+        IllegalStateException exception = assertThrows(
+            IllegalStateException.class,
+            () -> versionService.publishVersion(1L, 1)
+        );
+
+        assertEquals("Version 1 is already published", exception.getMessage());
+        verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 1);
+    }
+
+    @Test
+    public void testPublishVersion_ValidationFails() {
+        ConfigValidationResponse invalidResponse = new ConfigValidationResponse(
+            false,
+            List.of(new com.liftsimulator.admin.dto.ValidationIssue(
+                "floors",
+                "Number of floors must be at least 2",
+                com.liftsimulator.admin.dto.ValidationIssue.Severity.ERROR
+            )),
+            Collections.emptyList()
+        );
+
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1))
+            .thenReturn(Optional.of(mockVersion));
+        when(configValidationService.validate(anyString())).thenReturn(invalidResponse);
+
+        ConfigValidationException exception = assertThrows(
+            ConfigValidationException.class,
+            () -> versionService.publishVersion(1L, 1)
+        );
+
+        assertEquals("Cannot publish version with validation errors", exception.getMessage());
+        assertTrue(exception.getValidationResponse().hasErrors());
+        verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 1);
+        verify(configValidationService).validate(mockVersion.getConfig());
+    }
+
+    @Test
+    public void testCreateVersion_ValidationFails() {
+        String invalidConfig = "{\"floors\": 1}";
+        CreateVersionRequest request = new CreateVersionRequest(invalidConfig, null);
+
+        ConfigValidationResponse invalidResponse = new ConfigValidationResponse(
+            false,
+            List.of(new com.liftsimulator.admin.dto.ValidationIssue(
+                "floors",
+                "Number of floors must be at least 2",
+                com.liftsimulator.admin.dto.ValidationIssue.Severity.ERROR
+            )),
+            Collections.emptyList()
+        );
+
+        when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(configValidationService.validate(invalidConfig)).thenReturn(invalidResponse);
+
+        ConfigValidationException exception = assertThrows(
+            ConfigValidationException.class,
+            () -> versionService.createVersion(1L, request)
+        );
+
+        assertEquals("Configuration validation failed", exception.getMessage());
+        assertTrue(exception.getValidationResponse().hasErrors());
+        verify(liftSystemRepository).findById(1L);
+        verify(configValidationService).validate(invalidConfig);
+    }
+
+    @Test
+    public void testUpdateVersionConfig_ValidationFails() {
+        String invalidConfig = "{\"floors\": 1}";
+        UpdateVersionConfigRequest request = new UpdateVersionConfigRequest(invalidConfig);
+
+        ConfigValidationResponse invalidResponse = new ConfigValidationResponse(
+            false,
+            List.of(new com.liftsimulator.admin.dto.ValidationIssue(
+                "floors",
+                "Number of floors must be at least 2",
+                com.liftsimulator.admin.dto.ValidationIssue.Severity.ERROR
+            )),
+            Collections.emptyList()
+        );
+
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1))
+            .thenReturn(Optional.of(mockVersion));
+        when(configValidationService.validate(invalidConfig)).thenReturn(invalidResponse);
+
+        ConfigValidationException exception = assertThrows(
+            ConfigValidationException.class,
+            () -> versionService.updateVersionConfig(1L, 1, request)
+        );
+
+        assertEquals("Configuration validation failed", exception.getMessage());
+        assertTrue(exception.getValidationResponse().hasErrors());
+        verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 1);
+        verify(configValidationService).validate(invalidConfig);
     }
 }

@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.26.0**
+Current version: **0.27.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -189,6 +189,133 @@ The backend will start on `http://localhost:8080`.
   - Returns a specific version by version number
   - Response (200 OK): Version details
   - Error (404 Not Found): If version doesn't exist
+
+- **Publish Version**: `POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`
+  - Publishes a version after validating its configuration
+  - Only versions with valid configurations can be published
+  - Response (200 OK): Published version details with `status: "PUBLISHED"` and `isPublished: true`
+  - Error (400 Bad Request with validation errors): If configuration is invalid
+  - Error (409 Conflict): If version is already published
+  - Note: Publishing is blocked if the configuration has validation errors
+
+#### Configuration Validation
+
+The backend includes a comprehensive validation framework for lift system configurations. All configurations are validated before being saved or published.
+
+- **Validate Configuration**: `POST /api/config/validate`
+  - Validates a configuration JSON without persisting it
+  - Request body:
+    ```json
+    {
+      "config": "{\"floors\": 10, \"lifts\": 2, \"travelTicksPerFloor\": 1, ...}"
+    }
+    ```
+  - Response (200 OK) - Valid configuration:
+    ```json
+    {
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        {
+          "field": "doorDwellTicks",
+          "message": "Door dwell ticks (1) is very low. Consider increasing to allow sufficient time for passengers.",
+          "severity": "WARNING"
+        }
+      ]
+    }
+    ```
+  - Response (200 OK) - Invalid configuration:
+    ```json
+    {
+      "valid": false,
+      "errors": [
+        {
+          "field": "floors",
+          "message": "Number of floors must be at least 2",
+          "severity": "ERROR"
+        },
+        {
+          "field": "doorReopenWindowTicks",
+          "message": "Door reopen window ticks (5) must not exceed door transition ticks (2)",
+          "severity": "ERROR"
+        }
+      ],
+      "warnings": []
+    }
+    ```
+
+**Configuration Structure:**
+
+All lift system configurations must conform to the following structure:
+
+```json
+{
+  "floors": 10,
+  "lifts": 2,
+  "travelTicksPerFloor": 1,
+  "doorTransitionTicks": 2,
+  "doorDwellTicks": 3,
+  "doorReopenWindowTicks": 2,
+  "homeFloor": 0,
+  "idleTimeoutTicks": 5,
+  "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+  "idleParkingMode": "PARK_TO_HOME_FLOOR"
+}
+```
+
+**Validation Rules:**
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| `floors` | Integer | ≥ 2 | Number of floors in the building |
+| `lifts` | Integer | ≥ 1 | Number of lift cars |
+| `travelTicksPerFloor` | Integer | ≥ 1 | Ticks required to travel one floor |
+| `doorTransitionTicks` | Integer | ≥ 1 | Ticks required for doors to open or close |
+| `doorDwellTicks` | Integer | ≥ 1 | Ticks doors stay open before closing |
+| `doorReopenWindowTicks` | Integer | ≥ 0, ≤ doorTransitionTicks | Window during door closing when doors can reopen |
+| `homeFloor` | Integer | ≥ 0, < floors | Idle parking floor (must be within floor range) |
+| `idleTimeoutTicks` | Integer | ≥ 0 | Ticks before idle parking behavior activates |
+| `controllerStrategy` | Enum | NEAREST_REQUEST_ROUTING, DIRECTIONAL_SCAN | Controller algorithm |
+| `idleParkingMode` | Enum | STAY_AT_CURRENT_FLOOR, PARK_TO_HOME_FLOOR | Idle parking behavior |
+
+**Validation Features:**
+
+- **Structural Validation**: Ensures JSON is well-formed and all required fields are present
+- **Type Validation**: Validates field types and enum values
+- **Domain Validation**: Enforces business rules and cross-field constraints
+  - doorReopenWindowTicks must not exceed doorTransitionTicks
+  - homeFloor must be within valid floor range (0 to floors-1)
+- **Warnings**: Non-blocking suggestions for suboptimal configurations
+  - Low doorDwellTicks values
+  - More lifts than floors
+  - Low idleTimeoutTicks with PARK_TO_HOME_FLOOR mode
+  - Zero doorReopenWindowTicks (disables door reopening)
+
+**Automatic Validation:**
+
+Validation is automatically performed when:
+- Creating a new version (`POST /api/lift-systems/{systemId}/versions`)
+- Updating a version's configuration (`PUT /api/lift-systems/{systemId}/versions/{versionNumber}`)
+- Publishing a version (`POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`)
+
+If validation fails with errors, the operation will be rejected with a 400 Bad Request response containing detailed error information.
+
+**Error Response Format:**
+
+When configuration validation fails:
+```json
+{
+  "valid": false,
+  "errors": [
+    {
+      "field": "homeFloor",
+      "message": "Home floor (15) must be within valid floor range (0 to 9)",
+      "severity": "ERROR"
+    }
+  ],
+  "warnings": []
+}
+```
 
 #### Health & Monitoring
 

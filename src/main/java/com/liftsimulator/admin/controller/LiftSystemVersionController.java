@@ -86,4 +86,19 @@ public class LiftSystemVersionController {
             @PathVariable Integer versionNumber) {
         return versionService.getVersion(systemId, versionNumber);
     }
+
+    /**
+     * Publishes a version after validating its configuration.
+     * Only versions with valid configurations can be published.
+     *
+     * @param systemId the lift system ID
+     * @param versionNumber the version number
+     * @return the published version
+     */
+    @PostMapping("/{versionNumber}/publish")
+    public VersionResponse publishVersion(
+            @PathVariable Long systemId,
+            @PathVariable Integer versionNumber) {
+        return versionService.publishVersion(systemId, versionNumber);
+    }
 }

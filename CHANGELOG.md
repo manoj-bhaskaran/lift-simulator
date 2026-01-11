@@ -5,6 +5,92 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.0] - 2026-01-11
+
+### Added
+- **Configuration Validation Framework**: Comprehensive validation for lift system configuration JSON
+  - `LiftConfigDTO` record with Jakarta Bean Validation annotations for structural validation
+  - `ConfigValidationService` for domain-level validation logic
+  - Structural validation ensures all required fields are present and correctly typed
+  - Domain validation enforces business rules and cross-field constraints:
+    - Validates `doorReopenWindowTicks` does not exceed `doorTransitionTicks`
+    - Validates `homeFloor` is within valid floor range (0 to floors-1)
+    - Validates minimum values for all numeric fields
+    - Validates enum values for `controllerStrategy` and `idleParkingMode`
+  - Warning system for suboptimal configurations:
+    - Low `doorDwellTicks` values
+    - More lifts than floors
+    - Low `idleTimeoutTicks` with `PARK_TO_HOME_FLOOR` mode
+    - Zero `doorReopenWindowTicks` (disables door reopening)
+- **Validation REST API**: `POST /api/config/validate` endpoint
+  - Validates configuration JSON without persisting
+  - Returns structured errors and warnings
+  - Request: `ConfigValidationRequest` with config JSON string
+  - Response: `ConfigValidationResponse` with validation results
+- **Version Publishing API**: `POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`
+  - Publishes a version after validating its configuration
+  - Only versions with valid configurations can be published
+  - Returns 409 Conflict if version is already published
+  - Blocks publishing if configuration has validation errors
+- **Automatic Validation Integration**: Validation automatically enforced when:
+  - Creating new versions (`POST /api/lift-systems/{systemId}/versions`)
+  - Updating version configurations (`PUT /api/lift-systems/{systemId}/versions/{versionNumber}`)
+  - Publishing versions (`POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`)
+  - Returns 400 Bad Request with detailed validation errors if configuration is invalid
+- **Validation DTOs**: Type-safe validation response objects
+  - `ConfigValidationRequest` for validation endpoint requests
+  - `ConfigValidationResponse` with valid flag, errors list, and warnings list
+  - `ValidationIssue` record with field, message, and severity (ERROR or WARNING)
+- **Exception Handling**: Enhanced global exception handling
+  - `ConfigValidationException` for validation failures with detailed response
+  - `IllegalStateException` handler returning 409 Conflict for state errors (e.g., already published)
+  - `ConfigValidationException` handler returning validation response with 400 status
+- **Comprehensive Test Coverage**: Unit tests for validation framework
+  - `ConfigValidationServiceTest`: 15 unit tests covering all validation scenarios
+    - Valid configuration test
+    - Invalid JSON test
+    - Missing required fields test
+    - Negative/invalid value tests for each field
+    - Domain validation rule tests (doorReopenWindowTicks, homeFloor)
+    - Invalid enum value tests
+    - Warning generation tests (low values, inefficient configurations)
+    - Multiple errors test
+  - `LiftSystemVersionServiceTest`: Updated with 6 additional tests
+    - Publish version success test
+    - Publish already published version test (IllegalStateException)
+    - Publish with validation errors test (ConfigValidationException)
+    - Create version with validation errors test
+    - Update version with validation errors test
+    - All existing tests updated to mock ConfigValidationService
+
+### Changed
+- Version bumped from 0.26.0 to 0.27.0
+- `LiftSystemVersionService` now validates configurations before saving
+  - Injected `ConfigValidationService` dependency
+  - `createVersion()` validates before creating
+  - `updateVersionConfig()` validates before updating
+  - `publishVersion()` validates before publishing
+- Version creation and updates now fail with 400 Bad Request if configuration is invalid
+- Global exception handler expanded to handle validation and state exceptions
+
+### Documentation
+- Updated README with Configuration Validation section
+  - Documented validation endpoint and request/response format
+  - Added configuration structure table with all required fields
+  - Documented validation rules for each field
+  - Listed validation features (structural, type, domain, warnings)
+  - Documented automatic validation behavior
+  - Added error response format examples
+- Added publish endpoint documentation to Version Management section
+- Added ADR-0009 for Configuration Validation Framework design decisions
+
+### Technical Details
+- Uses Jakarta Bean Validation (JSR-380) for structural validation
+- Custom domain validation logic in `ConfigValidationService`
+- Validation errors block operations, warnings are informational only
+- JSON parsing using Jackson ObjectMapper
+- Defensive validation with detailed error messages for debugging
+
 ## [0.26.0] - 2026-01-11
 
 ### Added
