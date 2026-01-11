@@ -58,6 +58,14 @@
             <artifactId>flyway-core</artifactId>
         </dependency>
 
+        <!-- SpotBugs annotations for static analysis suppressions -->
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <version>4.8.3</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Spring Boot Test Starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
