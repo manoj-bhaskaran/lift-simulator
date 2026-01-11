@@ -34,18 +34,89 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.24.0.jar
+java -jar target/lift-simulator-0.25.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
 
 ### Available Endpoints
 
-- **Custom Health Check**: `GET http://localhost:8080/api/health`
+#### Lift System Management
+
+- **Create Lift System**: `POST /api/lift-systems`
+  - Creates a new lift system configuration
+  - Request body:
+    ```json
+    {
+      "systemKey": "building-a-lifts",
+      "displayName": "Building A Lift System",
+      "description": "Main lift system for Building A"
+    }
+    ```
+  - Response (201 Created):
+    ```json
+    {
+      "id": 1,
+      "systemKey": "building-a-lifts",
+      "displayName": "Building A Lift System",
+      "description": "Main lift system for Building A",
+      "createdAt": "2026-01-11T10:00:00Z",
+      "updatedAt": "2026-01-11T10:00:00Z"
+    }
+    ```
+
+- **List All Lift Systems**: `GET /api/lift-systems`
+  - Returns all lift systems
+  - Response (200 OK):
+    ```json
+    [
+      {
+        "id": 1,
+        "systemKey": "building-a-lifts",
+        "displayName": "Building A Lift System",
+        "description": "Main lift system for Building A",
+        "createdAt": "2026-01-11T10:00:00Z",
+        "updatedAt": "2026-01-11T10:00:00Z"
+      }
+    ]
+    ```
+
+- **Get Lift System by ID**: `GET /api/lift-systems/{id}`
+  - Returns a specific lift system by ID
+  - Response (200 OK): Same as create response
+  - Error (404 Not Found):
+    ```json
+    {
+      "status": 404,
+      "message": "Lift system not found with id: 999",
+      "timestamp": "2026-01-11T10:00:00Z"
+    }
+    ```
+
+- **Update Lift System**: `PUT /api/lift-systems/{id}`
+  - Updates lift system metadata (display name and description)
+  - Request body:
+    ```json
+    {
+      "displayName": "Updated Building A Lift System",
+      "description": "Updated description"
+    }
+    ```
+  - Response (200 OK): Updated lift system details
+  - Note: System key cannot be changed after creation
+
+- **Delete Lift System**: `DELETE /api/lift-systems/{id}`
+  - Deletes a lift system and all its versions (cascade delete)
+  - Response (204 No Content): Success with no body
+  - Error (404 Not Found): If lift system doesn't exist
+
+#### Health & Monitoring
+
+- **Custom Health Check**: `GET /api/health`
   - Returns custom health status with service name and timestamp
-- **Actuator Health**: `GET http://localhost:8080/actuator/health`
+- **Actuator Health**: `GET /actuator/health`
   - Returns detailed Spring Boot actuator health information
-- **Actuator Info**: `GET http://localhost:8080/actuator/info`
+- **Actuator Info**: `GET /actuator/info`
   - Returns application information
 
 ### Configuration
@@ -172,7 +243,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.24.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.25.0.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
