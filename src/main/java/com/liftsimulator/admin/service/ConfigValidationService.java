@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.LiftConfigDTO;
 import com.liftsimulator.admin.dto.ValidationIssue;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,11 @@ public class ConfigValidationService {
     private final ObjectMapper objectMapper;
     private final Validator validator;
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "Spring-managed beans (ObjectMapper, Validator) injected via constructor. "
+                    + "Lifecycle and immutability managed by Spring container."
+    )
     public ConfigValidationService(ObjectMapper objectMapper, Validator validator) {
         this.objectMapper = objectMapper;
         this.validator = validator;
