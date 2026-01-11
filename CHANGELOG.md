@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.0] - 2026-01-11
+
+### Added
+- **Lift System Versioning REST APIs**: Full REST API implementation for managing lift system versions
+  - `POST /api/lift-systems/{systemId}/versions` - Create new version with optional cloning from existing version
+  - `PUT /api/lift-systems/{systemId}/versions/{versionNumber}` - Update version configuration JSON
+  - `GET /api/lift-systems/{systemId}/versions` - List all versions for a lift system
+  - `GET /api/lift-systems/{systemId}/versions/{versionNumber}` - Get specific version by number
+- **Version Service Layer**: `LiftSystemVersionService` providing business logic for version operations
+  - Auto-incrementing version numbers per lift system
+  - Configuration cloning from existing versions
+  - Validation for lift system and version existence
+  - Transactional integrity for all write operations
+- **Version DTOs**: Type-safe API contracts for versioning
+  - `CreateVersionRequest` with validation (config required, optional cloneFromVersionNumber)
+  - `UpdateVersionConfigRequest` for config updates
+  - `VersionResponse` for consistent version API responses
+- **Comprehensive Test Coverage**: Unit and integration tests for versioning
+  - `LiftSystemVersionServiceTest`: 10 unit tests covering all service operations with mocks
+  - `LiftSystemVersionControllerTest`: 13 integration tests with full Spring context
+  - Tests for version creation, cloning, updating, listing, and retrieval
+  - Tests for version number auto-increment functionality
+  - Full coverage of success cases, error cases, and validation failures
+
+### Changed
+- Version bumped from 0.25.0 to 0.26.0
+- REST API now provides full version lifecycle management for lift system configurations
+- Version numbers automatically increment starting from 1 for each lift system
+
+### Documentation
+- Updated README with Version Management API documentation
+- Added API endpoint examples with request/response payloads for all versioning operations
+- Documented version cloning functionality and auto-increment behavior
+
 ## [0.25.0] - 2026-01-11
 
 ### Added
