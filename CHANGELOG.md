@@ -28,7 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Integration Tests**: Comprehensive test coverage for JPA operations
   - `LiftSystemRepositoryTest`: 7 tests covering CRUD, queries, and updates
   - `LiftSystemVersionRepositoryTest`: 12 tests covering versions, JSONB, relationships
+  - H2 in-memory database for testing with PostgreSQL compatibility mode
   - Test configuration with dedicated test profile (`application-test.yml`)
+  - No external database required for running tests
   - Tests verify basic save/find operations, JSONB mapping, and cascading deletes
 - **JPA Verification Runner**: Command-line tool to verify database operations
   - Enabled with `--spring.jpa.verify=true` flag

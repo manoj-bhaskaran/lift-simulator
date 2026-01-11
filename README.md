@@ -202,9 +202,20 @@ Integration tests for the repositories are available:
 - `LiftSystemRepositoryTest`: Tests CRUD operations, queries, and updates
 - `LiftSystemVersionRepositoryTest`: Tests version operations, JSONB mapping, and relationships
 
+**Test Database Configuration:**
+- Tests use **H2 in-memory database** with PostgreSQL compatibility mode
+- No external database required for running tests
+- Schema is automatically created via JPA's `ddl-auto: create-drop`
+- Flyway is disabled for tests (schema created from JPA entities)
+
 Run the tests:
 ```bash
 mvn test -Dtest=LiftSystemRepositoryTest,LiftSystemVersionRepositoryTest
+```
+
+Or run all tests:
+```bash
+mvn test
 ```
 
 #### Troubleshooting
