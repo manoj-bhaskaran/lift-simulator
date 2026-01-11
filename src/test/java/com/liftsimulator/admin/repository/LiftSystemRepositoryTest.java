@@ -3,6 +3,7 @@ package com.liftsimulator.admin.repository;
 import com.liftsimulator.admin.entity.LiftSystem;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
@@ -17,9 +18,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration tests for LiftSystemRepository.
- * Uses H2 in-memory database for testing.
+ * Uses H2 in-memory database configured in application-test.yml.
  */
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
 public class LiftSystemRepositoryTest {
 

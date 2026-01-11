@@ -6,6 +6,7 @@ import com.liftsimulator.admin.entity.LiftSystemVersion.VersionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
@@ -22,9 +23,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Integration tests for LiftSystemVersionRepository.
  * Tests JSONB field mapping and version operations.
- * Uses H2 in-memory database with PostgreSQL compatibility mode for testing.
+ * Uses H2 in-memory database configured in application-test.yml.
  */
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
 public class LiftSystemVersionRepositoryTest {
 
