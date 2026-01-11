@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.0] - 2026-01-11
+
+### Added
+- **Lift System CRUD REST APIs**: Full REST API implementation for managing lift systems
+  - `POST /api/lift-systems` - Create new lift system with name and description
+  - `GET /api/lift-systems` - List all lift systems
+  - `GET /api/lift-systems/{id}` - Get lift system details by ID
+  - `PUT /api/lift-systems/{id}` - Update lift system metadata (name/description)
+  - `DELETE /api/lift-systems/{id}` - Delete lift system and all versions (cascade)
+- **Service Layer**: `LiftSystemService` providing business logic for CRUD operations
+  - Validation for duplicate system keys on creation
+  - Automatic audit timestamp management (createdAt, updatedAt)
+  - Transactional integrity for all write operations
+  - Proper error handling with custom exceptions
+- **Request/Response DTOs**: Type-safe API contracts
+  - `CreateLiftSystemRequest` with validation (systemKey, displayName, description)
+  - `UpdateLiftSystemRequest` for metadata updates (displayName, description)
+  - `LiftSystemResponse` for consistent API responses
+  - Jakarta validation annotations for request validation
+- **Global Exception Handling**: Consistent error responses across all endpoints
+  - `GlobalExceptionHandler` with `@RestControllerAdvice`
+  - 404 responses for `ResourceNotFoundException`
+  - 400 responses for validation errors and illegal arguments
+  - Structured error responses with status, message, and timestamp
+  - Field-level validation error details in responses
+- **Comprehensive Test Coverage**: Unit and integration tests
+  - `LiftSystemServiceTest`: 9 unit tests covering all service operations with mocks
+  - `LiftSystemControllerTest`: 10 integration tests with full Spring context
+  - Tests for success cases, error cases, and validation failures
+  - Full coverage of create, read, update, delete operations
+  - Transaction rollback testing with `@Transactional`
+
+### Changed
+- Version bumped from 0.24.0 to 0.25.0
+- REST API now provides full lifecycle management for lift systems
+- Service layer enforces business rules and validation
+
+### Fixed
+- **SpotBugs warnings**: Resolved static analysis warnings
+  - `ValidationErrorResponse` now uses defensive copying with `Map.copyOf()` to prevent external modification
+  - Added `@SuppressFBWarnings` to `LiftSystemController` constructor for Spring DI false positive
+  - All medium-severity EI_EXPOSE_REP warnings resolved
+
+### Documentation
+- Updated README with Lift System CRUD API documentation
+- API endpoint examples with request/response payloads
+- Error response format documentation
+
 ## [0.24.0] - 2026-01-11
 
 ### Added
