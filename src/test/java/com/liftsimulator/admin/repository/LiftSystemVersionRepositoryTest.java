@@ -212,16 +212,17 @@ public class LiftSystemVersionRepositoryTest {
 
     @Test
     public void testComplexJsonbConfig() {
+        // Use compact JSON format (whitespace is normalized by database)
         String complexJson = "{"
-                + "\"minFloor\": 0,"
-                + "\"maxFloor\": 20,"
-                + "\"numLifts\": 5,"
-                + "\"strategy\": \"DIRECTIONAL_SCAN\","
-                + "\"liftConfigs\": ["
-                + "  {\"id\": 1, \"capacity\": 10, \"speed\": 2.5},"
-                + "  {\"id\": 2, \"capacity\": 8, \"speed\": 2.0}"
+                + "\"minFloor\":0,"
+                + "\"maxFloor\":20,"
+                + "\"numLifts\":5,"
+                + "\"strategy\":\"DIRECTIONAL_SCAN\","
+                + "\"liftConfigs\":["
+                + "{\"id\":1,\"capacity\":10,\"speed\":2.5},"
+                + "{\"id\":2,\"capacity\":8,\"speed\":2.0}"
                 + "],"
-                + "\"settings\": {\"doorOpenTime\": 3, \"doorCloseTime\": 2}"
+                + "\"settings\":{\"doorOpenTime\":3,\"doorCloseTime\":2}"
                 + "}";
 
         LiftSystemVersion version = new LiftSystemVersion(testSystem, 1, complexJson);
