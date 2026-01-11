@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.23.6**
+Current version: **0.24.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -34,7 +34,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.23.6.jar
+java -jar target/lift-simulator-0.24.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -127,6 +127,85 @@ The initial schema (V1) includes:
 - `lift_system_version` - Versioned lift configuration payloads (JSONB)
 
 Future migrations will extend lift configuration metadata, simulation runs, and other entities.
+
+### JPA Entities and Repositories
+
+The backend includes JPA entities and Spring Data repositories for database access:
+
+#### Entities
+
+- **LiftSystem** (`com.liftsimulator.admin.entity.LiftSystem`)
+  - Maps to `lift_system` table
+  - Root configuration records for lift systems
+  - Manages one-to-many relationship with versions
+  - Automatic timestamp management via `@PrePersist` and `@PreUpdate`
+
+- **LiftSystemVersion** (`com.liftsimulator.admin.entity.LiftSystemVersion`)
+  - Maps to `lift_system_version` table
+  - Versioned lift configuration payloads
+  - **JSONB field mapping**: Uses `@JdbcTypeCode(SqlTypes.JSON)` for PostgreSQL JSONB support
+  - Version status enum: DRAFT, PUBLISHED, ARCHIVED
+  - Helper methods: `publish()`, `archive()`
+
+#### Repositories
+
+- **LiftSystemRepository** (`com.liftsimulator.admin.repository.LiftSystemRepository`)
+  - Find by system key: `findBySystemKey(String systemKey)`
+  - Check existence: `existsBySystemKey(String systemKey)`
+  - Standard CRUD operations via `JpaRepository`
+
+- **LiftSystemVersionRepository** (`com.liftsimulator.admin.repository.LiftSystemVersionRepository`)
+  - Find versions by lift system: `findByLiftSystemIdOrderByVersionNumberDesc(Long liftSystemId)`
+  - Find specific version: `findByLiftSystemIdAndVersionNumber(Long liftSystemId, Integer versionNumber)`
+  - Find published versions: `findByLiftSystemIdAndIsPublishedTrue(Long liftSystemId)`
+  - Find by status: `findByStatus(VersionStatus status)`
+  - Get max version number: `findMaxVersionNumberByLiftSystemId(Long liftSystemId)`
+
+#### Verifying JPA Operations
+
+To verify the JPA entities and repositories are working correctly, run the Spring Boot application with the JPA verification runner:
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
+```
+
+Or with the JAR:
+
+```bash
+java -jar target/lift-simulator-0.24.0.jar --spring.jpa.verify=true
+```
+
+The verification runner will:
+1. Create and retrieve `LiftSystem` entities
+2. Create and retrieve `LiftSystemVersion` entities with JSONB configs
+3. Test complex JSON configurations
+4. Verify entity relationships and cascading
+5. Test all custom query methods
+
+Look for log output like:
+```
+=== Starting JPA Entity and Repository Verification ===
+--- Verifying LiftSystem CRUD Operations ---
+✓ Created LiftSystem: id=1, key=demo-system
+✓ Found LiftSystem by ID: demo-system
+--- Verifying JSONB Field Mapping ---
+✓ Saved complex JSONB config: id=2
+✓ Retrieved JSONB config matches original
+=== JPA Verification Completed Successfully ===
+```
+
+The verification runner is located at `com.liftsimulator.admin.runner.JpaVerificationRunner` and is only enabled when `spring.jpa.verify=true` is set.
+
+#### Integration Tests
+
+Integration tests for the repositories are available:
+- `LiftSystemRepositoryTest`: Tests CRUD operations, queries, and updates
+- `LiftSystemVersionRepositoryTest`: Tests version operations, JSONB mapping, and relationships
+
+Run the tests:
+```bash
+mvn test -Dtest=LiftSystemRepositoryTest,LiftSystemVersionRepositoryTest
+```
 
 #### Troubleshooting
 
@@ -227,7 +306,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.23.6.jar`.
+The packaged JAR will be in `target/lift-simulator-0.24.0.jar`.
 
 ## Running Tests
 
@@ -277,7 +356,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.23.6.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -286,16 +365,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.23.6.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.23.6.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.23.6.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.23.6.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -315,7 +394,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.23.6.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -324,13 +403,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.23.6.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.23.6.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.23.6.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**
@@ -841,6 +920,8 @@ See [docs/decisions](docs/decisions) for Architecture Decision Records (ADRs):
 - [ADR-0004: Configurable Idle Parking Mode](docs/decisions/0004-configurable-idle-parking-mode.md)
 - [ADR-0005: Selectable Controller Strategy](docs/decisions/0005-selectable-controller-strategy.md)
 - [ADR-0006: Spring Boot Admin Backend](docs/decisions/0006-spring-boot-admin-backend.md)
+- [ADR-0007: PostgreSQL and Flyway Integration](docs/decisions/0007-postgresql-flyway-integration.md)
+- [ADR-0008: JPA Entities and JSONB Mapping](docs/decisions/0008-jpa-entities-and-jsonb-mapping.md)
 
 ## License
 

@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0] - 2026-01-11
+
+### Added
+- **JPA Entities**: Created JPA entity mappings for database tables
+  - `LiftSystem` entity mapping `lift_system` table with automatic timestamp management
+  - `LiftSystemVersion` entity mapping `lift_system_version` table
+  - One-to-many relationship between LiftSystem and LiftSystemVersion with cascade operations
+  - Entity helper methods: `publish()`, `archive()` for version lifecycle management
+- **JSONB Field Mapping**: Implemented proper PostgreSQL JSONB support
+  - Uses `@JdbcTypeCode(SqlTypes.JSON)` annotation for Hibernate 6.x compatibility
+  - Stores lift configuration as JSON strings in the `config` column
+  - Full support for complex nested JSON structures
+- **Spring Data Repositories**: Created repository interfaces for database access
+  - `LiftSystemRepository` with custom query methods (`findBySystemKey`, `existsBySystemKey`)
+  - `LiftSystemVersionRepository` with comprehensive query methods:
+    - Find versions by lift system with ordering
+    - Find by version number
+    - Find published versions
+    - Find by status (DRAFT, PUBLISHED, ARCHIVED)
+    - Get maximum version number for a system
+- **Integration Tests**: Comprehensive test coverage for JPA operations
+  - `LiftSystemRepositoryTest`: 7 tests covering CRUD, queries, and updates
+  - `LiftSystemVersionRepositoryTest`: 12 tests covering versions, JSONB, relationships
+  - Test configuration with dedicated test profile (`application-test.yml`)
+  - Tests verify basic save/find operations, JSONB mapping, and cascading deletes
+- **JPA Verification Runner**: Command-line tool to verify database operations
+  - Enabled with `--spring.jpa.verify=true` flag
+  - Tests all entity CRUD operations
+  - Validates JSONB field persistence and retrieval
+  - Verifies entity relationships and cascading
+  - Tests all custom repository query methods
+  - Located at `com.liftsimulator.admin.runner.JpaVerificationRunner`
+
+### Changed
+- Bump project version to 0.24.0 to reflect new JPA persistence layer
+
+### Documentation
+- Updated README with comprehensive JPA entities and repositories documentation
+- Added JPA verification instructions and examples
+- Documented JSONB field mapping approach
+- Added integration test running instructions
+- Updated all version references from 0.23.6 to 0.24.0
+
 ## [0.23.6] - 2026-01-09
 
 ### Fixed
