@@ -72,12 +72,21 @@ public class ConfigValidationService {
 
     /**
      * Performs domain-specific validation rules that span multiple fields.
+     * Only performs checks if all required fields are non-null.
      *
      * @param config The parsed configuration DTO
      * @param errors List to add error issues to
      * @param warnings List to add warning issues to
      */
     private void performDomainValidation(LiftConfigDTO config, List<ValidationIssue> errors, List<ValidationIssue> warnings) {
+        // Skip domain validation if structural validation failed (null fields present)
+        if (config.doorReopenWindowTicks() == null || config.doorTransitionTicks() == null ||
+            config.floors() == null || config.homeFloor() == null ||
+            config.idleParkingMode() == null || config.idleTimeoutTicks() == null ||
+            config.doorDwellTicks() == null || config.lifts() == null) {
+            return; // Structural validation errors already reported
+        }
+
         // Validate doorReopenWindowTicks <= doorTransitionTicks
         if (config.doorReopenWindowTicks() > config.doorTransitionTicks()) {
             errors.add(new ValidationIssue(
