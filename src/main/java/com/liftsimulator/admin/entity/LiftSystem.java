@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.entity;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -125,10 +126,20 @@ public class LiftSystem {
         this.updatedAt = updatedAt;
     }
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP",
+            justification = "JPA entity getters must return mutable collections for change tracking. "
+                    + "Use addVersion/removeVersion methods for safe modification."
+    )
     public List<LiftSystemVersion> getVersions() {
         return versions;
     }
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "JPA entity setters require direct field assignment for Hibernate proxies "
+                    + "and lazy loading to work correctly."
+    )
     public void setVersions(List<LiftSystemVersion> versions) {
         this.versions = versions;
     }

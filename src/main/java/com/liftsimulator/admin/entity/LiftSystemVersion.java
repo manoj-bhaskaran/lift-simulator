@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.entity;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -66,6 +67,11 @@ public class LiftSystemVersion {
     public LiftSystemVersion() {
     }
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "JPA entity constructor must accept and store mutable parent entity "
+                    + "for bidirectional relationship management."
+    )
     public LiftSystemVersion(LiftSystem liftSystem, Integer versionNumber, String config) {
         this.liftSystem = liftSystem;
         this.versionNumber = versionNumber;
@@ -102,10 +108,20 @@ public class LiftSystemVersion {
         this.id = id;
     }
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP",
+            justification = "JPA entity getters must return mutable parent entity for "
+                    + "bidirectional relationship navigation and lazy loading."
+    )
     public LiftSystem getLiftSystem() {
         return liftSystem;
     }
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "JPA entity setters require direct field assignment for Hibernate "
+                    + "to manage bidirectional relationships and lazy loading correctly."
+    )
     public void setLiftSystem(LiftSystem liftSystem) {
         this.liftSystem = liftSystem;
     }
