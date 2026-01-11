@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.0] - 2026-01-11
+
+### Added
+- **Publish/Archive Workflow**: Automatic archiving of previously published versions when publishing a new version
+  - Ensures exactly one published configuration per lift system at any given time
+  - Enhanced `LiftSystemVersionService.publishVersion()` to automatically archive previously published versions
+  - Transactional workflow guarantees atomic state transitions
+  - No manual archiving required - reduces human error and improves workflow efficiency
+- **Runtime Configuration API**: New dedicated API for retrieving published configurations
+  - `RuntimeConfigService` providing read-only access to published configurations
+  - `GET /api/runtime/systems/{systemKey}/config` - Get currently published configuration by system key
+  - `GET /api/runtime/systems/{systemKey}/versions/{versionNumber}` - Get specific published version
+  - Returns 404 if no published version exists
+  - Clear separation between admin APIs (management) and runtime APIs (consumption)
+  - `RuntimeConfigDTO` with streamlined response format
+- **Comprehensive Test Coverage**: Tests for publish/archive workflow and runtime APIs
+  - `testPublishVersion_ArchivesPreviouslyPublishedVersion()` validates automatic archiving behavior
+  - `RuntimeConfigServiceTest` with 6 unit tests covering all runtime API scenarios
+  - Tests for system not found, no published version, and version not published error paths
+- **Documentation**: ADR-0010 for publish/archive workflow design decisions
+
+### Changed
+- Version bumped from 0.27.0 to 0.28.0
+- `publishVersion()` method now archives previously published versions before publishing new version
+- Publish workflow is transactional - if archiving or publishing fails, entire operation rolls back
+- Updated service layer tests to verify archiving behavior
+
+### Documentation
+- Updated README with Runtime API documentation and usage examples
+- Added ADR-0010 to Architecture Decisions section
+- Updated version references from 0.27.0 to 0.28.0
+
+### Technical Details
+- Publish operation uses `@Transactional` to ensure atomicity
+- Previously published versions are found via `findByLiftSystemIdAndIsPublishedTrue()`
+- Each published version's `archive()` method sets status to ARCHIVED
+- Runtime APIs filter for `isPublished = true` configurations only
+- Runtime package structure: `com.liftsimulator.runtime.{controller,service,dto}`
+
 ## [0.27.0] - 2026-01-11
 
 ### Added

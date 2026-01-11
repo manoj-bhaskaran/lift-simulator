@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.27.0**
+Current version: **0.28.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -34,7 +34,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.26.0.jar
+java -jar target/lift-simulator-0.28.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -192,11 +192,14 @@ The backend will start on `http://localhost:8080`.
 
 - **Publish Version**: `POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`
   - Publishes a version after validating its configuration
+  - Automatically archives any previously published version for the same lift system
+  - Ensures exactly one published version per lift system at any given time
   - Only versions with valid configurations can be published
   - Response (200 OK): Published version details with `status: "PUBLISHED"` and `isPublished: true`
   - Error (400 Bad Request with validation errors): If configuration is invalid
   - Error (409 Conflict): If version is already published
   - Note: Publishing is blocked if the configuration has validation errors
+  - Note: Previously published versions are automatically set to `status: "ARCHIVED"`
 
 #### Configuration Validation
 
@@ -316,6 +319,65 @@ When configuration validation fails:
   "warnings": []
 }
 ```
+
+
+#### Runtime Configuration API
+
+The backend provides dedicated runtime APIs for retrieving published configurations. These APIs are read-only and return only configurations with `PUBLISHED` status.
+
+- **Get Published Configuration**: `GET /api/runtime/systems/{systemKey}/config`
+  - Retrieves the currently published configuration for a lift system by system key
+  - Returns the latest published version
+  - Response (200 OK):
+    ```json
+    {
+      "systemKey": "building-a-lifts",
+      "displayName": "Building A Lift System",
+      "versionNumber": 3,
+      "config": "{\"floors\": 10, \"lifts\": 2, ...}",
+      "publishedAt": "2026-01-11T14:30:00Z"
+    }
+    ```
+  - Error (404 Not Found):
+    - If lift system with the given key doesn't exist
+    - If no published version exists for the system
+    ```json
+    {
+      "status": 404,
+      "message": "No published version found for lift system: building-a-lifts",
+      "timestamp": "2026-01-11T15:00:00Z"
+    }
+    ```
+
+- **Get Specific Published Version**: `GET /api/runtime/systems/{systemKey}/versions/{versionNumber}`
+  - Retrieves a specific version by system key and version number
+  - Only returns the version if it is currently published
+  - Response (200 OK): Same format as above
+  - Error (404 Not Found):
+    - If lift system doesn't exist
+    - If version doesn't exist
+    - If version exists but is not published (status is DRAFT or ARCHIVED)
+    ```json
+    {
+      "status": 404,
+      "message": "Version 2 is not published for lift system: building-a-lifts",
+      "timestamp": "2026-01-11T15:00:00Z"
+    }
+    ```
+
+**Design Notes:**
+- Runtime APIs use system key (not internal ID) for lookups
+- Runtime APIs are read-only - no create, update, or delete operations
+- Only published configurations are returned - draft and archived versions are hidden
+- Lightweight response format optimized for runtime consumption
+- Clear separation between admin APIs (management) and runtime APIs (consumption)
+
+**Use Cases:**
+- Lift simulator runtime fetching current configuration on startup
+- Configuration service providing settings to running lift systems
+- Monitoring systems checking which configuration version is active
+- API clients that should only see production-ready configurations
+
 
 #### Health & Monitoring
 
@@ -450,7 +512,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.25.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.28.0.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -516,7 +578,7 @@ mvn test
 
 ## Features
 
-The current version (v0.27.0) includes comprehensive lift simulation and configuration management capabilities:
+The current version (v0.28.0) includes comprehensive lift simulation and configuration management capabilities:
 
 ### Admin Backend & REST API
 
@@ -532,7 +594,16 @@ The current version (v0.27.0) includes comprehensive lift simulation and configu
   - Detailed error messages with field-level granularity
   - Warning system for suboptimal configurations
   - Validation blocking on create, update, and publish operations
-- **Version Publishing**: Publish mechanism with validation enforcement
+- **Publish/Archive Workflow**: Automatic state management for configuration versions
+  - Publish mechanism with validation enforcement
+  - Automatically archives previously published version when publishing a new one
+  - Guarantees exactly one published configuration per lift system
+  - Transactional workflow ensures atomic state transitions
+- **Runtime Configuration API**: Dedicated read-only API for published configurations
+  - Retrieves currently published configuration by system key
+  - Filters for published status only (hides drafts and archived versions)
+  - Streamlined response format optimized for runtime consumption
+  - Clear separation between admin and runtime concerns
 - **Global Exception Handling**: Consistent error responses with appropriate HTTP status codes
 - **Health Endpoints**: Custom health checks and Spring Boot Actuator integration
 
@@ -626,7 +697,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.24.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.28.0.jar`.
 
 ## Running Tests
 
@@ -676,7 +747,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -685,16 +756,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -714,7 +785,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -723,13 +794,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.24.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**
@@ -1243,6 +1314,7 @@ See [docs/decisions](docs/decisions) for Architecture Decision Records (ADRs):
 - [ADR-0007: PostgreSQL and Flyway Integration](docs/decisions/0007-postgresql-flyway-integration.md)
 - [ADR-0008: JPA Entities and JSONB Mapping](docs/decisions/0008-jpa-entities-and-jsonb-mapping.md)
 - [ADR-0009: Configuration Validation Framework](docs/decisions/0009-configuration-validation-framework.md)
+- [ADR-0010: Publish/Archive Workflow](docs/decisions/0010-publish-archive-workflow.md)
 
 ## License
 

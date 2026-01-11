@@ -153,6 +153,7 @@ public class LiftSystemVersionService {
     /**
      * Publishes a version after validating its configuration.
      * Only versions with valid configurations can be published.
+     * Automatically archives any previously published version for the same lift system.
      *
      * @param systemId the lift system ID
      * @param versionNumber the version number
@@ -183,6 +184,14 @@ public class LiftSystemVersionService {
                 "Cannot publish version with validation errors",
                 validationResponse
             );
+        }
+
+        // Archive any previously published versions for this lift system
+        List<LiftSystemVersion> publishedVersions = versionRepository
+            .findByLiftSystemIdAndIsPublishedTrue(systemId);
+        for (LiftSystemVersion publishedVersion : publishedVersions) {
+            publishedVersion.archive();
+            versionRepository.save(publishedVersion);
         }
 
         // Publish the version
