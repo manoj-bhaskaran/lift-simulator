@@ -1,0 +1,27 @@
+import apiClient from './client';
+
+export const liftSystemsApi = {
+  // Lift Systems
+  getAllSystems: () => apiClient.get('/lift-systems'),
+  getSystem: (id) => apiClient.get(`/lift-systems/${id}`),
+  createSystem: (data) => apiClient.post('/lift-systems', data),
+  updateSystem: (id, data) => apiClient.put(`/lift-systems/${id}`, data),
+  deleteSystem: (id) => apiClient.delete(`/lift-systems/${id}`),
+
+  // Versions
+  getVersions: (systemId) => apiClient.get(`/lift-systems/${systemId}/versions`),
+  getVersion: (systemId, versionNumber) =>
+    apiClient.get(`/lift-systems/${systemId}/versions/${versionNumber}`),
+  createVersion: (systemId, data) =>
+    apiClient.post(`/lift-systems/${systemId}/versions`, data),
+  updateVersion: (systemId, versionNumber, data) =>
+    apiClient.put(`/lift-systems/${systemId}/versions/${versionNumber}`, data),
+  publishVersion: (systemId, versionNumber) =>
+    apiClient.post(`/lift-systems/${systemId}/versions/${versionNumber}/publish`),
+
+  // Validation
+  validateConfig: (config) => apiClient.post('/config/validate', config),
+
+  // Health Check
+  healthCheck: () => apiClient.get('/health'),
+};

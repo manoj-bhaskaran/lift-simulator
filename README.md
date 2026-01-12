@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.28.0**
+Current version: **0.29.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -18,11 +18,37 @@ The Lift Simulator is an iterative project to model and test lift controller alg
 
 The simulation is text-based and designed for clarity over visual appeal.
 
-## Admin UI Backend
+## Admin Interface
 
-The project includes a Spring Boot backend service (`Lift Config Service`) that provides a RESTful API for managing lift simulator configurations. This backend will serve as the foundation for a future admin UI.
+The project includes both a backend API and a React-based frontend for managing lift simulator configurations.
 
-### Running the Backend
+### Frontend Admin UI
+
+A modern React web application provides a user-friendly interface for managing lift systems:
+
+#### Features
+- **Dashboard**: Overview of lift systems with quick statistics
+- **Lift Systems Management**: Create, view, and manage lift system configurations
+- **Configuration Validator**: Validate configuration JSON before publishing
+- **Health Check**: Monitor backend service status
+
+#### Running the Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will start on **http://localhost:3000** and automatically proxy API requests to the backend on port 8080.
+
+**See [frontend/README.md](frontend/README.md) for detailed setup instructions and documentation.**
+
+### Backend API
+
+The Spring Boot backend service (`Lift Config Service`) provides a RESTful API for managing lift simulator configurations.
+
+#### Running the Backend
 
 Start the Spring Boot application:
 
@@ -34,7 +60,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.28.0.jar
+java -jar target/lift-simulator-0.29.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -512,7 +538,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.28.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.29.0.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -578,7 +604,7 @@ mvn test
 
 ## Features
 
-The current version (v0.28.0) includes comprehensive lift simulation and configuration management capabilities:
+The current version (v0.29.0) includes comprehensive lift simulation and configuration management capabilities:
 
 ### Admin Backend & REST API
 
@@ -697,7 +723,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.28.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.29.0.jar`.
 
 ## Running Tests
 
@@ -747,7 +773,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.29.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -756,16 +782,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.29.0.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.29.0.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.29.0.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.29.0.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -785,7 +811,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.29.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -794,13 +820,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.29.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.29.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.28.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.29.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**
@@ -1315,6 +1341,7 @@ See [docs/decisions](docs/decisions) for Architecture Decision Records (ADRs):
 - [ADR-0008: JPA Entities and JSONB Mapping](docs/decisions/0008-jpa-entities-and-jsonb-mapping.md)
 - [ADR-0009: Configuration Validation Framework](docs/decisions/0009-configuration-validation-framework.md)
 - [ADR-0010: Publish/Archive Workflow](docs/decisions/0010-publish-archive-workflow.md)
+- [ADR-0011: React Admin UI Scaffold](docs/decisions/0011-react-admin-ui-scaffold.md)
 
 ## License
 
