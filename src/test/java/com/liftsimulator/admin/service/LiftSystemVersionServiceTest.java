@@ -276,6 +276,8 @@ public class LiftSystemVersionServiceTest {
         when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1))
             .thenReturn(Optional.of(mockVersion));
         when(configValidationService.validate(anyString())).thenReturn(validValidationResponse);
+        when(versionRepository.findByLiftSystemIdAndIsPublishedTrue(1L))
+            .thenReturn(Collections.emptyList());
         when(versionRepository.save(any(LiftSystemVersion.class))).thenReturn(mockVersion);
 
         VersionResponse response = versionService.publishVersion(1L, 1);
@@ -283,7 +285,47 @@ public class LiftSystemVersionServiceTest {
         assertNotNull(response);
         verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 1);
         verify(configValidationService).validate(mockVersion.getConfig());
+        verify(versionRepository).findByLiftSystemIdAndIsPublishedTrue(1L);
         verify(versionRepository).save(mockVersion);
+    }
+
+    @Test
+    public void testPublishVersion_ArchivesPreviouslyPublishedVersion() {
+        // Create previously published version
+        LiftSystemVersion previousVersion = new LiftSystemVersion();
+        previousVersion.setId(2L);
+        previousVersion.setLiftSystem(mockLiftSystem);
+        previousVersion.setVersionNumber(2);
+        previousVersion.setConfig("{\"floors\": 8}");
+        previousVersion.setStatus(VersionStatus.PUBLISHED);
+        previousVersion.setIsPublished(true);
+        previousVersion.setPublishedAt(OffsetDateTime.now().minusDays(1));
+
+        // Create new version to publish
+        LiftSystemVersion newVersion = new LiftSystemVersion();
+        newVersion.setId(3L);
+        newVersion.setLiftSystem(mockLiftSystem);
+        newVersion.setVersionNumber(3);
+        newVersion.setConfig("{\"floors\": 10}");
+        newVersion.setStatus(VersionStatus.DRAFT);
+        newVersion.setIsPublished(false);
+
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 3))
+            .thenReturn(Optional.of(newVersion));
+        when(configValidationService.validate(anyString())).thenReturn(validValidationResponse);
+        when(versionRepository.findByLiftSystemIdAndIsPublishedTrue(1L))
+            .thenReturn(List.of(previousVersion));
+        when(versionRepository.save(any(LiftSystemVersion.class))).thenReturn(newVersion);
+
+        VersionResponse response = versionService.publishVersion(1L, 3);
+
+        assertNotNull(response);
+        assertEquals(VersionStatus.ARCHIVED, previousVersion.getStatus());
+        verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 3);
+        verify(configValidationService).validate(newVersion.getConfig());
+        verify(versionRepository).findByLiftSystemIdAndIsPublishedTrue(1L);
+        verify(versionRepository).save(previousVersion);
+        verify(versionRepository).save(newVersion);
     }
 
     @Test
