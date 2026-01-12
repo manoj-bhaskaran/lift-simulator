@@ -633,6 +633,34 @@ The current version (v0.29.0) includes comprehensive lift simulation and configu
 - **Global Exception Handling**: Consistent error responses with appropriate HTTP status codes
 - **Health Endpoints**: Custom health checks and Spring Boot Actuator integration
 
+### React Admin UI
+
+- **Modern Web Interface**: React 19.2.0 single-page application for managing lift systems
+- **Vite Build Tool**: Fast development server with HMR and optimized production builds
+- **Client-Side Routing**: React Router 7.12.0 for seamless navigation without page reloads
+- **Dashboard**: Overview page with system statistics and quick actions
+- **Lift Systems Management**: Grid view of all lift systems with metadata display
+  - System key, display name, and description
+  - Version count and creation timestamps
+  - Placeholder UI for CRUD operations
+- **Configuration Validator**: Interactive JSON editor for validating configurations
+  - Live editing with syntax highlighting
+  - Real-time validation using backend API
+  - Sample configuration template provided
+  - Split-pane layout showing editor and validation results
+- **Health Check Monitor**: Real-time backend service health monitoring
+  - Status display with color-coded indicators
+  - Manual refresh capability
+  - Detailed health information and error handling
+- **API Integration**: Axios-based HTTP client with centralized service methods
+  - Connects to all backend endpoints
+  - Global error handling with interceptors
+  - Structured API layer for maintainability
+- **Development Proxy**: Vite proxy configuration for seamless local development
+  - Frontend on port 3000, backend on port 8080
+  - Automatic proxying of `/api/*` and `/actuator/*` requests
+  - Eliminates CORS issues during development
+
 ### Lift Simulation Engine
 
 - **Selectable Controller Strategy**: Choose between NEAREST_REQUEST_ROUTING or DIRECTIONAL_SCAN algorithms
