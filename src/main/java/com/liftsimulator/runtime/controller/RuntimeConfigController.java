@@ -1,5 +1,6 @@
 package com.liftsimulator.runtime.controller;
 
+import com.github.spotbugs.annotations.SuppressFBWarnings;
 import com.liftsimulator.runtime.dto.RuntimeConfigDTO;
 import com.liftsimulator.runtime.dto.SimulationLaunchResponse;
 import com.liftsimulator.runtime.service.RuntimeConfigService;
@@ -21,6 +22,10 @@ public class RuntimeConfigController {
     private final RuntimeConfigService runtimeConfigService;
     private final RuntimeSimulationService runtimeSimulationService;
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring-managed services are intentionally shared and immutable in this controller."
+    )
     public RuntimeConfigController(
             RuntimeConfigService runtimeConfigService,
             RuntimeSimulationService runtimeSimulationService) {
