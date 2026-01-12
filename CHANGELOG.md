@@ -5,6 +5,73 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0] - 2026-01-12
+
+### Added
+- **React Admin UI Scaffold**: Modern web-based admin interface for managing lift systems
+  - Built with React 19.2.0, Vite 7.2.4, React Router 7.12.0, and Axios 1.13.2
+  - Client-side routing with four main pages: Dashboard, Lift Systems, Config Validator, Health Check
+  - Responsive layout with header navigation and footer
+  - API client with Axios configured for backend integration
+  - Vite dev server proxy configuration for seamless local development (eliminates CORS issues)
+- **Dashboard Page**: Overview of lift systems with statistics and quick actions
+  - Displays total lift systems and version counts
+  - Quick action buttons for common tasks
+  - Real-time data fetching from backend API
+- **Lift Systems Page**: Management interface for lift system configurations
+  - Grid view of all lift systems with metadata
+  - Placeholder UI for create, view, and manage operations
+  - Display of system key, description, version count, and creation date
+- **Config Validator Page**: Interactive JSON configuration validation tool
+  - Live configuration editor with sample configuration
+  - Real-time validation feedback with error and success states
+  - Utilizes backend validation API endpoint
+  - Split-pane layout with editor and results
+- **Health Check Page**: Backend service monitoring interface
+  - Real-time health status display
+  - Manual refresh capability
+  - Detailed health information display
+  - Error handling for service unavailability
+- **Frontend Documentation**: Comprehensive README for frontend setup
+  - Installation and setup instructions
+  - Development workflow documentation
+  - API integration details
+  - Project structure overview
+  - Troubleshooting guide
+  - Production build instructions
+
+### Changed
+- Version bumped from 0.28.0 to 0.29.0
+- Updated main README with frontend setup instructions and overview
+- Added frontend section to Admin Interface documentation
+
+### Technical Details
+- **Tech Stack**:
+  - React 19.2.0 with functional components and hooks
+  - Vite 7.2.4 for fast development and optimized builds
+  - React Router 7.12.0 for client-side routing
+  - Axios 1.13.2 for HTTP requests
+- **Development Setup**:
+  - Frontend runs on port 3000
+  - Backend runs on port 8080
+  - Vite proxy configuration forwards `/api/*` and `/actuator/*` to backend
+- **Project Structure**:
+  - `frontend/src/api/` - API client and service methods
+  - `frontend/src/components/` - Reusable UI components
+  - `frontend/src/pages/` - Page components for routes
+  - `frontend/src/App.jsx` - Root component with routing configuration
+- **API Integration**: Frontend integrates with all backend endpoints
+  - Lift Systems CRUD APIs
+  - Version Management APIs
+  - Configuration Validation API
+  - Health Check API
+
+### Documentation
+- Added `frontend/README.md` with comprehensive setup guide
+- Updated main `README.md` with frontend overview and quick start
+- Documented local development workflow
+- Added troubleshooting section for common issues
+
 ## [0.28.0] - 2026-01-11
 
 ### Added

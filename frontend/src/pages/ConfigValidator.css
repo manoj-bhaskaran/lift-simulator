@@ -1,0 +1,96 @@
+.config-validator h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.config-validator .description {
+  color: #7f8c8d;
+  margin-bottom: 2rem;
+}
+
+.validator-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.editor-section,
+.result-section {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.editor-section h3,
+.result-section h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+}
+
+.config-editor {
+  width: 100%;
+  min-height: 400px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+  margin-bottom: 1rem;
+}
+
+.config-editor:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.result-success {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.result-success h4 {
+  margin-top: 0;
+  color: #155724;
+}
+
+.result-success pre {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+}
+
+.result-error {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.result-error h4 {
+  margin-top: 0;
+  color: #721c24;
+}
+
+.result-error p {
+  color: #721c24;
+  margin: 0;
+}
+
+.placeholder {
+  color: #7f8c8d;
+  text-align: center;
+  padding: 2rem;
+}
+
+@media (max-width: 768px) {
+  .validator-layout {
+    grid-template-columns: 1fr;
+  }
+}
