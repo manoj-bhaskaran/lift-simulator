@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.3] - 2026-02-01
+
+### Fixed
+- Excluded runtime controller constructor injection from SpotBugs EI_EXPOSE_REP2 reporting
+
+## [0.33.2] - 2026-02-01
+
+### Fixed
+- Replaced SpotBugs suppression annotation with a compiler-safe suppression to restore build success
+
+## [0.33.1] - 2026-02-01
+
+### Fixed
+- Suppressed SpotBugs false-positive for Spring controller dependency injection
+
+## [0.33.0] - 2026-02-01
+
+### Added
+- Runtime simulator launch endpoint to start local simulations from published configurations
+- Local simulator CLI entry point for running a configuration JSON file
+- Admin UI action to launch simulator for published versions
+
+### Changed
+- Version bumped from 0.32.1 to 0.33.0
+- Updated README and frontend docs for runtime launch workflow
+
 ## [0.32.1] - 2026-01-20
 
 ### Fixed

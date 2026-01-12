@@ -54,7 +54,7 @@ For a single-app setup (frontend served by Spring Boot on port 8080), build from
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.32.1.jar
+java -jar target/lift-simulator-0.33.3.jar
 ```
 
 This packages the React build output into the Spring Boot JAR and serves it from `/`.
@@ -118,7 +118,7 @@ frontend/
 - View all lift systems
 - Create new systems
 - View system details and versions
-- Placeholder UI for CRUD operations
+- Launch a local simulator for published configurations
 
 ### Configuration Validator
 - Validate lift system configuration JSON
@@ -144,6 +144,9 @@ The frontend integrates with these backend endpoints:
 - `POST /api/lift-systems/{systemId}/versions` - Create version
 - `PUT /api/lift-systems/{systemId}/versions/{versionNumber}` - Update version
 - `POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish` - Publish version
+
+### Runtime APIs
+- `POST /api/runtime/systems/{systemKey}/simulate` - Launch simulator using published configuration
 
 ### Validation API
 - `POST /api/config/validate` - Validate configuration

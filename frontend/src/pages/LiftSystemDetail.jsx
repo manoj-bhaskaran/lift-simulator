@@ -13,6 +13,8 @@ function LiftSystemDetail() {
   const [showCreateVersion, setShowCreateVersion] = useState(false);
   const [newVersionConfig, setNewVersionConfig] = useState('');
   const [creating, setCreating] = useState(false);
+  const [runningVersion, setRunningVersion] = useState(null);
+  const [simulationStatus, setSimulationStatus] = useState(null);
 
   useEffect(() => {
     loadSystemData();
@@ -62,6 +64,22 @@ function LiftSystemDetail() {
     } catch (err) {
       alert('Failed to publish version: ' + (err.response?.data?.message || err.message));
       console.error(err);
+    }
+  };
+
+  const handleRunSimulation = async (versionNumber) => {
+    setRunningVersion(versionNumber);
+    setSimulationStatus(null);
+    try {
+      const response = await liftSystemsApi.runSimulation(system.systemKey);
+      setSimulationStatus({ type: 'success', message: response.data.message });
+    } catch (err) {
+      setSimulationStatus({
+        type: 'error',
+        message: 'Failed to start simulator: ' + (err.response?.data?.message || err.message),
+      });
+    } finally {
+      setRunningVersion(null);
     }
   };
 
@@ -148,6 +166,12 @@ function LiftSystemDetail() {
           </button>
         </div>
 
+        {simulationStatus && (
+          <div className={`simulation-status ${simulationStatus.type}`}>
+            {simulationStatus.message}
+          </div>
+        )}
+
         {showCreateVersion && (
           <form onSubmit={handleCreateVersion} className="create-version-form">
             <label htmlFor="config">Configuration JSON</label>
@@ -207,12 +231,23 @@ function LiftSystemDetail() {
                       </>
                     )}
                     {version.status !== 'DRAFT' && (
-                      <Link
-                        to={`/systems/${id}/versions/${version.versionNumber}/edit`}
-                        className="btn-secondary btn-sm"
-                      >
-                        View Config
-                      </Link>
+                      <>
+                        <Link
+                          to={`/systems/${id}/versions/${version.versionNumber}/edit`}
+                          className="btn-secondary btn-sm"
+                        >
+                          View Config
+                        </Link>
+                        {version.status === 'PUBLISHED' && (
+                          <button
+                            onClick={() => handleRunSimulation(version.versionNumber)}
+                            className="btn-primary btn-sm"
+                            disabled={runningVersion === version.versionNumber}
+                          >
+                            {runningVersion === version.versionNumber ? 'Starting...' : 'Run Simulator'}
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

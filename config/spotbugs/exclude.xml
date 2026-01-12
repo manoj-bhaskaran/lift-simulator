@@ -8,4 +8,8 @@
         <Class name="com.liftsimulator.scenario.ScenarioRunner"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
+    <Match>
+        <Class name="com.liftsimulator.runtime.controller.RuntimeConfigController"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
 </FindBugsFilter>
