@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.0] - 2026-01-12
+
+### Added
+- **Lift System List and Detail Views**: Complete CRUD interface for managing lift systems
+  - Enhanced list view with working "View Details" and "Create New System" buttons
+  - Create System modal with form validation
+    - Validates system key pattern (alphanumeric, hyphens, underscores)
+    - Validates display name and description length constraints
+    - Real-time error feedback and help text
+  - Detail view page for individual lift systems
+    - Full system metadata display (display name, system key, description, timestamps)
+    - Delete system functionality with confirmation dialog
+    - Breadcrumb navigation back to list view
+  - Version management interface in detail view
+    - List all versions with status badges (DRAFT, PUBLISHED, ARCHIVED)
+    - Create new versions with JSON configuration input
+    - Publish draft versions with validation
+    - Expandable configuration view for each version
+    - Automatic archiving of previous published version when publishing
+  - Seamless navigation between list and detail views
+  - Responsive design with mobile support
+- **Create System Modal Component**: Reusable modal for creating new lift systems
+  - Client-side validation matching backend constraints
+  - Form state management with error handling
+  - Accessible modal overlay with click-outside-to-close
+- **Routing**: Added `/systems/:id` route for detail view
+- **UI Components**: Enhanced components with navigation handlers
+  - `CreateSystemModal.jsx` - Form-based system creation modal
+  - `LiftSystemDetail.jsx` - Comprehensive detail page with version management
+  - Updated `LiftSystems.jsx` with working navigation and create functionality
+  - Updated `App.jsx` with new routing configuration
+
+### Changed
+- Version bumped from 0.29.0 to 0.30.0
+- Updated README with new features documentation
+  - Enhanced Frontend Admin UI features section
+  - Added Version Management capabilities
+  - Updated feature descriptions to reflect full CRUD functionality
+- Lift Systems page now fully functional with navigation to detail views
+- Both "View Details" and "Manage Versions" buttons navigate to detail page
+
+### Technical Details
+- **Components**:
+  - Modal component uses React Portal pattern for proper overlay rendering
+  - Detail view uses `useParams` hook for route parameter extraction
+  - Parallel API calls with `Promise.all` for efficient data fetching
+- **Styling**:
+  - Modal with backdrop overlay and responsive design
+  - Status badges with color coding (green for PUBLISHED, yellow for DRAFT, gray for ARCHIVED)
+  - Expandable `<details>` elements for configuration display
+  - Consistent button styling and hover states
+- **User Experience**:
+  - Confirmation dialogs for destructive actions (delete, publish)
+  - Loading states during async operations
+  - Error messages with user-friendly feedback
+  - Empty states for new systems with no versions
+  - Automatic navigation to newly created system
+
 ## [0.29.0] - 2026-01-12
 
 ### Added

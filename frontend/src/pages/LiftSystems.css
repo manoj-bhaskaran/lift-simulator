@@ -102,3 +102,10 @@
   color: #7f8c8d;
   margin: 0;
 }
+
+.error {
+  color: #e74c3c;
+  padding: 1rem;
+  background-color: #fadbd8;
+  border-radius: 4px;
+}
