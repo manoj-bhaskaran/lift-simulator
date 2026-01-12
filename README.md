@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.31.0**
+Current version: **0.32.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -34,7 +34,7 @@ A modern React web application provides a user-friendly interface for managing l
 - **Configuration Validator**: Validate configuration JSON before publishing
 - **Health Check**: Monitor backend service status
 
-#### Running the Frontend
+#### Running the Frontend (Dev Mode)
 
 ```bash
 cd frontend
@@ -45,6 +45,17 @@ npm run dev
 The frontend will start on **http://localhost:3000** and automatically proxy API requests to the backend on port 8080.
 
 **See [frontend/README.md](frontend/README.md) for detailed setup instructions and documentation.**
+
+#### Production Build (Single App)
+
+To package the React UI with the Spring Boot backend and serve everything from **http://localhost:8080**:
+
+```bash
+mvn -Pfrontend clean package
+java -jar target/lift-simulator-0.32.0.jar
+```
+
+This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api`.
 
 ### Backend API
 
@@ -62,7 +73,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.31.0.jar
+java -jar target/lift-simulator-0.32.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -540,7 +551,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.31.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.32.0.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
