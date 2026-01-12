@@ -54,7 +54,7 @@ For a single-app setup (frontend served by Spring Boot on port 8080), build from
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.33.2.jar
+java -jar target/lift-simulator-0.33.3.jar
 ```
 
 This packages the React build output into the Spring Boot JAR and serves it from `/`.

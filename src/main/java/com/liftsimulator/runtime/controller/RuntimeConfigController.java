@@ -21,7 +21,6 @@ public class RuntimeConfigController {
     private final RuntimeConfigService runtimeConfigService;
     private final RuntimeSimulationService runtimeSimulationService;
 
-    @SuppressWarnings("EI_EXPOSE_REP2")
     public RuntimeConfigController(
             RuntimeConfigService runtimeConfigService,
             RuntimeSimulationService runtimeSimulationService) {
