@@ -18,6 +18,8 @@ export const liftSystemsApi = {
     apiClient.put(`/lift-systems/${systemId}/versions/${versionNumber}`, data),
   publishVersion: (systemId, versionNumber) =>
     apiClient.post(`/lift-systems/${systemId}/versions/${versionNumber}/publish`),
+  runSimulation: (systemKey) =>
+    apiClient.post(`/runtime/systems/${systemKey}/simulate`),
 
   // Validation
   validateConfig: (config) => apiClient.post('/config/validate', config),
