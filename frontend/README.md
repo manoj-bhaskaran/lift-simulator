@@ -48,6 +48,17 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 Or use your IDE to run the main application class.
 
+## Production Build with Spring Boot
+
+For a single-app setup (frontend served by Spring Boot on port 8080), build from the repository root:
+
+```bash
+mvn -Pfrontend clean package
+java -jar target/lift-simulator-0.32.1.jar
+```
+
+This packages the React build output into the Spring Boot JAR and serves it from `/`.
+
 ## Available Scripts
 
 - `npm run dev` - Start development server (port 3000)
