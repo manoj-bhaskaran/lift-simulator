@@ -176,6 +176,17 @@
   color: #2c3e50;
 }
 
+.version-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.version-actions .btn-secondary,
+.version-actions .btn-primary {
+  text-decoration: none;
+  display: inline-block;
+}
+
 .status-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;

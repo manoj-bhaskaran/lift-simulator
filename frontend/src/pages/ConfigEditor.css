@@ -1,0 +1,305 @@
+.config-editor {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.editor-header {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.editor-header h2 {
+  margin: 0.5rem 0;
+  color: #2c3e50;
+}
+
+.version-info-header {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.version-number {
+  font-weight: 600;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.unsaved-indicator {
+  color: #e67e22;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.breadcrumb {
+  color: #3498db;
+  text-decoration: none;
+  font-size: 0.9rem;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.breadcrumb:hover {
+  text-decoration: underline;
+}
+
+.error-banner {
+  background: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.info-banner {
+  background: #e3f2fd;
+  border: 1px solid #90caf9;
+  color: #1565c0;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-top: 1rem;
+}
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.editor-section,
+.validation-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.section-header h3 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.last-saved {
+  font-size: 0.85rem;
+  color: #27ae60;
+  font-weight: 500;
+}
+
+.config-textarea {
+  width: 100%;
+  min-height: 500px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9rem;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+  background: #f8f9fa;
+  line-height: 1.5;
+}
+
+.config-textarea:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+}
+
+.editor-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-success {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #3498db;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2980b9;
+}
+
+.btn-secondary {
+  background: #95a5a6;
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #7f8c8d;
+}
+
+.btn-success {
+  background: #27ae60;
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #229954;
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-success:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.validation-section h3 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+}
+
+.validation-placeholder {
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 4px;
+  text-align: center;
+  color: #7f8c8d;
+}
+
+.validation-placeholder p {
+  margin: 0.5rem 0;
+}
+
+.help-text {
+  font-size: 0.85rem;
+  color: #95a5a6;
+}
+
+.validation-success {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+  padding: 1.5rem;
+  border-radius: 4px;
+}
+
+.validation-error {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+  padding: 1.5rem;
+  border-radius: 4px;
+}
+
+.validation-success h4,
+.validation-error h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+}
+
+.validation-messages {
+  margin-top: 1rem;
+}
+
+.validation-messages h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.validation-messages ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.validation-messages li {
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+  border-radius: 4px;
+}
+
+.validation-error-item {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.validation-warning-item {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+}
+
+.validation-detail {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.9rem;
+}
+
+/* Status badges */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-published {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-draft {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-archived {
+  background: #e2e3e5;
+  color: #6c757d;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .validation-section {
+    order: 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .config-editor {
+    padding: 1rem;
+  }
+
+  .editor-header {
+    flex-direction: column;
+  }
+
+  .editor-actions {
+    flex-direction: column;
+  }
+
+  .config-textarea {
+    min-height: 400px;
+  }
+}
