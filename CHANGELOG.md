@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.0] - 2026-01-20
+
+### Added
+- Frontend production bundling profile to build the React UI and include it in the Spring Boot JAR
+- SPA route forwarding controller so client-side routes load correctly when served by Spring Boot
+
+### Changed
+- Version bumped from 0.31.0 to 0.32.0
+- Updated README and frontend docs with clear dev vs production run instructions
+
 ## [0.31.0] - 2026-01-12
 
 ### Added
