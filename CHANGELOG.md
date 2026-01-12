@@ -5,6 +5,78 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.0] - 2026-01-12
+
+### Added
+- **Configuration Editor UI**: Full-featured JSON editor for editing lift system version configurations
+  - Dedicated configuration editor page at `/systems/:systemId/versions/:versionNumber/edit`
+  - JSON textarea with monospace font for editing configuration
+  - **Save Draft** functionality to persist changes without publishing
+    - Updates version configuration via PUT endpoint
+    - Shows last saved timestamp
+    - Visual indicator for unsaved changes
+  - **Validate** button to check configuration for errors
+    - Real-time validation using backend API
+    - Displays detailed error messages with field names
+    - Shows warnings for suboptimal configurations
+    - Color-coded validation results (green for valid, red for errors)
+  - **Publish** action with validation enforcement
+    - Only enabled when configuration is valid and saved
+    - Requires validation to pass before publishing
+    - Confirmation dialog before publishing
+    - Automatic navigation back to system detail view after publish
+  - Status badge showing current version status (DRAFT, PUBLISHED, ARCHIVED)
+  - Read-only mode for published and archived versions (view only)
+  - Split-pane layout with editor on left and validation results on right
+  - Breadcrumb navigation back to system detail view
+  - "Edit Config" button added to version cards in system detail view
+    - Appears for DRAFT versions alongside Publish button
+    - "View Config" button for published/archived versions
+  - Responsive design with mobile support
+- **ConfigEditor Component**: New React component for configuration editing
+  - `ConfigEditor.jsx` - Main editor component with state management
+  - `ConfigEditor.css` - Comprehensive styling for editor UI
+- **Enhanced Version Actions**: Updated version card UI in system detail view
+  - Version action buttons grouped together
+  - Clear visual separation between draft and published version actions
+  - Consistent button styling with proper spacing
+
+### Changed
+- Version bumped from 0.30.0 to 0.31.0
+- Updated README with Configuration Editor feature documentation
+  - Added Configuration Editor to Features list
+  - Expanded React Admin UI features section with detailed editor capabilities
+- Enhanced routing configuration in `App.jsx`
+  - Added `/systems/:systemId/versions/:versionNumber/edit` route
+  - Imported ConfigEditor component
+- Updated `LiftSystemDetail.jsx` component
+  - Added "Edit Config" and "View Config" buttons to version cards
+  - Improved version action layout with grouped buttons
+
+### Technical Details
+- **Component Architecture**:
+  - Uses React hooks (useState, useEffect) for state management
+  - Parallel API calls with `Promise.all` for efficient data loading
+  - Real-time validation state tracking
+  - Unsaved changes detection via comparison with original config
+- **User Experience**:
+  - Disabled states for buttons when actions are not allowed
+  - Tooltips on disabled Publish button explaining why it's disabled
+  - Loading states for all async operations (saving, validating, publishing)
+  - Error banners for operation failures with clear messages
+  - Info banners for non-DRAFT versions indicating read-only mode
+- **Styling**:
+  - Color-coded validation messages (errors in red, warnings in yellow)
+  - Consistent button colors (blue for primary, gray for secondary, green for publish)
+  - Responsive grid layout that stacks on smaller screens
+  - Monospace textarea with syntax-friendly styling
+
+### Notes
+- Only DRAFT versions can be edited; published and archived versions are view-only
+- Configuration must be saved before validation results enable publishing
+- Publishing requires valid configuration (no errors, warnings are allowed)
+- Form-based configuration wizard remains a future enhancement opportunity
+
 ## [0.30.0] - 2026-01-12
 
 ### Added

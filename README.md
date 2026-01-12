@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.30.0**
+Current version: **0.31.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -30,6 +30,7 @@ A modern React web application provides a user-friendly interface for managing l
 - **Dashboard**: Overview of lift systems with quick statistics
 - **Lift Systems Management**: Full CRUD interface for lift systems with list and detail views
 - **Version Management**: Create, publish, and manage versioned configurations
+- **Configuration Editor**: Edit configuration JSON with validation, save draft, and publish workflows
 - **Configuration Validator**: Validate configuration JSON before publishing
 - **Health Check**: Monitor backend service status
 
@@ -61,7 +62,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.30.0.jar
+java -jar target/lift-simulator-0.31.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -539,7 +540,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.30.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.31.0.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -652,9 +653,18 @@ The current version (v0.30.0) includes comprehensive lift simulation and configu
   - List all versions for a lift system (ordered by version number)
   - Status badges (DRAFT, PUBLISHED, ARCHIVED) with color coding
   - Create new versions with JSON configuration input
+  - Edit existing version configurations with dedicated editor
   - Publish versions with validation and automatic archiving
   - View version configuration with expandable JSON display
   - Published/created timestamps for version tracking
+- **Configuration Editor**: Full-featured JSON editor for version configurations
+  - Edit configuration JSON with syntax highlighting in monospace textarea
+  - Save draft functionality to persist changes without publishing
+  - Real-time validation with detailed error and warning messages
+  - Publish action with validation enforcement (blocks invalid configs)
+  - Visual indicators for unsaved changes and last saved time
+  - Read-only view for published and archived versions
+  - Split-pane layout with editor and validation results side-by-side
 - **Configuration Validator**: Interactive JSON editor for validating configurations
   - Live editing with syntax highlighting
   - Real-time validation using backend API

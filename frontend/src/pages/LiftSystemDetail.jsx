@@ -189,14 +189,32 @@ function LiftSystemDetail() {
                       {version.status}
                     </span>
                   </div>
-                  {version.status === 'DRAFT' && (
-                    <button
-                      onClick={() => handlePublishVersion(version.versionNumber)}
-                      className="btn-primary btn-sm"
-                    >
-                      Publish
-                    </button>
-                  )}
+                  <div className="version-actions">
+                    {version.status === 'DRAFT' && (
+                      <>
+                        <Link
+                          to={`/systems/${id}/versions/${version.versionNumber}/edit`}
+                          className="btn-secondary btn-sm"
+                        >
+                          Edit Config
+                        </Link>
+                        <button
+                          onClick={() => handlePublishVersion(version.versionNumber)}
+                          className="btn-primary btn-sm"
+                        >
+                          Publish
+                        </button>
+                      </>
+                    )}
+                    {version.status !== 'DRAFT' && (
+                      <Link
+                        to={`/systems/${id}/versions/${version.versionNumber}/edit`}
+                        className="btn-secondary btn-sm"
+                      >
+                        View Config
+                      </Link>
+                    )}
+                  </div>
                 </div>
                 <div className="version-info">
                   <div className="info-row">
