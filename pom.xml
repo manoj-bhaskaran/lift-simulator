@@ -14,7 +14,7 @@
 
     <groupId>com.liftsimulator</groupId>
     <artifactId>lift-simulator</artifactId>
-    <version>0.29.0</version>
+    <version>0.30.0</version>
     <packaging>jar</packaging>
 
     <name>Lift Simulator</name>
