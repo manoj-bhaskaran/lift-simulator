@@ -48,8 +48,19 @@ We will use **pg_dump** and **pg_restore** for database backup and restore, with
 
 For immediate, on-demand backups, developers can execute:
 
+**Linux/macOS:**
 ```bash
 pg_dump -h localhost -U lift_admin -d lift_simulator -F p -f lift_simulator_backup_$(date +%Y%m%d_%H%M%S).sql
+```
+
+**Windows (Command Prompt):**
+```cmd
+pg_dump -h localhost -U lift_admin -d lift_simulator -F p -f lift_simulator_backup_%date:~-4,4%%date:~-10,2%%date:~-7,2%_%time:~0,2%%time:~3,2%%time:~6,2%.sql
+```
+
+**Windows (PowerShell):**
+```powershell
+pg_dump -h localhost -U lift_admin -d lift_simulator -F p -f "lift_simulator_backup_$(Get-Date -Format 'yyyyMMdd_HHmmss').sql"
 ```
 
 **Parameters**:
@@ -96,21 +107,49 @@ pwsh -File "C:\Users\manoj\Documents\Scripts\src\powershell\backup\Backup-LiftSi
 **Standard Restore** (to existing database):
 
 1. Stop the application to prevent writes during restore
+
 2. Drop and recreate the database:
+
+   **Linux/macOS:**
    ```bash
    sudo -u postgres psql -c "DROP DATABASE lift_simulator;"
    sudo -u postgres psql -c "CREATE DATABASE lift_simulator;"
    sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE lift_simulator TO lift_admin;"
    ```
+
+   **Windows:**
+   ```cmd
+   psql -U postgres -c "DROP DATABASE lift_simulator;"
+   psql -U postgres -c "CREATE DATABASE lift_simulator;"
+   psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE lift_simulator TO lift_admin;"
+   ```
+
 3. Restore from backup:
+
+   **Linux/macOS:**
    ```bash
    psql -h localhost -U lift_admin -d lift_simulator -f lift_simulator_backup_YYYYMMDD_HHMMSS.sql
    ```
+
+   **Windows:**
+   ```cmd
+   psql -h localhost -U lift_admin -d lift_simulator -f lift_simulator_backup_YYYYMMDD_HHMMSS.sql
+   ```
+
 4. Verify restore:
+
+   **Linux/macOS:**
    ```bash
    psql -h localhost -U lift_admin -d lift_simulator -c "\dt"
    psql -h localhost -U lift_admin -d lift_simulator -c "SELECT COUNT(*) FROM lift_system;"
    ```
+
+   **Windows:**
+   ```cmd
+   psql -h localhost -U lift_admin -d lift_simulator -c "\dt"
+   psql -h localhost -U lift_admin -d lift_simulator -c "SELECT COUNT(*) FROM lift_system;"
+   ```
+
 5. Restart the application
 
 **Clean Restore** (to new machine or fresh install):
@@ -136,13 +175,31 @@ pg_restore -t lift_system -d lift_simulator backup.sql
 To ensure backups are valid:
 
 1. **Immediate verification**: Check backup file size and format
+
+   **Linux/macOS:**
    ```bash
    ls -lh lift_simulator_backup_*.sql
    head -n 20 lift_simulator_backup_*.sql  # Should show valid SQL
    ```
 
+   **Windows (PowerShell):**
+   ```powershell
+   Get-ChildItem lift_simulator_backup_*.sql | Format-Table Name, Length, LastWriteTime
+   Get-Content lift_simulator_backup_*.sql -Head 20  # Should show valid SQL
+   ```
+
 2. **Periodic restore testing**: Restore to a test database quarterly
+
+   **Linux/macOS:**
    ```bash
+   createdb lift_simulator_test
+   psql -U lift_admin -d lift_simulator_test -f backup.sql
+   psql -U lift_admin -d lift_simulator_test -c "\dt"
+   dropdb lift_simulator_test
+   ```
+
+   **Windows:**
+   ```cmd
    createdb lift_simulator_test
    psql -U lift_admin -d lift_simulator_test -f backup.sql
    psql -U lift_admin -d lift_simulator_test -c "\dt"
