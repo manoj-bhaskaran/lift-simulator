@@ -5,6 +5,72 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.4] - 2026-01-13
+
+### Added
+- **Database Backup and Restore Documentation**: Comprehensive documentation for protecting configuration data
+  - Manual ad-hoc backup procedure using `pg_dump` with **cross-platform support**
+    - Linux/macOS bash commands with date formatting
+    - Windows Command Prompt commands with date/time variables
+    - Windows PowerShell commands with Get-Date cmdlet
+  - Automated scheduled backup integration via external PowerShell script (My-Scripts repository)
+  - Standard and clean restore procedures using `psql` for **all platforms**
+    - Linux/macOS restore commands with sudo
+    - Windows restore commands (no sudo required)
+  - Backup verification commands for **all platforms**
+    - Linux/macOS: ls, head commands
+    - Windows Command Prompt: dir, more, findstr commands
+    - Windows PowerShell: Get-ChildItem, Get-Content cmdlets
+  - Periodic restore testing procedures for **all platforms**
+  - Reference to external automation infrastructure (Windows Task Scheduler + My-Scripts repository)
+  - Database Backup and Restore section added to README with platform-specific commands
+  - Architecture Decision Record (ADR-0012) documenting backup/restore strategy
+    - Rationale for using native PostgreSQL tools (pg_dump/pg_restore)
+    - Comparison with alternatives (WAL archiving, application-level export, cloud services, third-party tools)
+    - Integration points with external automation repository
+    - Backup file naming conventions and storage locations
+    - Restore verification checklist
+    - Platform-specific commands for Linux/macOS and Windows
+    - Future considerations for enhanced backup features
+
+### Changed
+- Version bumped from 0.33.3 to 0.33.4
+- README Database Setup section now includes comprehensive backup and restore procedures for all platforms
+- ADR-0012 includes cross-platform commands (Linux/macOS, Windows Command Prompt, Windows PowerShell)
+- ADR list updated to include ADR-0012
+
+### Documentation
+- Added Database Backup and Restore subsection to README (lines 634-803)
+  - **Cross-platform manual backup commands** with timestamp-based filenames
+    - Linux/macOS: bash with $(date) syntax
+    - Windows CMD: %date% and %time% variables
+    - Windows PowerShell: Get-Date cmdlet
+  - When to use manual backups (before migrations, updates, risky operations)
+  - Automated backup schedule and script location details
+  - **Cross-platform restore procedures** for existing and new installations
+    - Linux/macOS: sudo -u postgres psql commands
+    - Windows: psql -U postgres commands (no sudo)
+  - **Cross-platform backup verification** commands and periodic restore testing
+    - Linux/macOS: ls, head, createdb, dropdb
+    - Windows CMD: dir, more, findstr, createdb, dropdb
+    - Windows PowerShell: Get-ChildItem, Get-Content, createdb, dropdb
+  - Important notes on online backups and recovery mechanisms
+- Added ADR-0012 to Architecture Decisions section in README
+- Comprehensive ADR-0012 documenting backup/restore architectural decisions
+  - Context: Need for data protection and disaster recovery
+  - Decision: Use pg_dump/pg_restore with external automation
+  - **Platform-specific implementation examples** for Linux/macOS and Windows
+  - Consequences: Positive (data protection, portability), Negative (setup complexity, external dependency)
+  - Alternatives considered: WAL archiving, app-level export, cloud services, third-party tools
+  - Implementation notes: Script structure, Task Scheduler config, restore verification
+  - References to My-Scripts repository for automation setup
+
+### Notes
+- This is a documentation-only release; no code changes or new features
+- Backup automation is handled externally via My-Scripts repository (PowerShell script for Windows)
+- All commands provided for **Linux/macOS and Windows platforms**
+- Paths and schedules shown are local examples; implementations may vary
+
 ## [0.33.3] - 2026-02-01
 
 ### Fixed
