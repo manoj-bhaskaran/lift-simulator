@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.4] - 2026-01-13
+
+### Added
+- **Database Backup and Restore Documentation**: Comprehensive documentation for protecting configuration data
+  - Manual ad-hoc backup procedure using `pg_dump`
+  - Automated scheduled backup integration via external PowerShell script (My-Scripts repository)
+  - Standard and clean restore procedures using `psql`
+  - Backup verification and periodic restore testing guidelines
+  - Reference to external automation infrastructure (Windows Task Scheduler + My-Scripts repository)
+  - Database Backup and Restore section added to README
+  - Architecture Decision Record (ADR-0012) documenting backup/restore strategy
+    - Rationale for using native PostgreSQL tools (pg_dump/pg_restore)
+    - Comparison with alternatives (WAL archiving, application-level export, cloud services, third-party tools)
+    - Integration points with external automation repository
+    - Backup file naming conventions and storage locations
+    - Restore verification checklist
+    - Future considerations for enhanced backup features
+
+### Changed
+- Version bumped from 0.33.3 to 0.33.4
+- README Database Setup section now includes comprehensive backup and restore procedures
+- ADR list updated to include ADR-0012
+
+### Documentation
+- Added Database Backup and Restore subsection to README (lines 634-736)
+  - Manual backup command with timestamp-based filenames
+  - When to use manual backups (before migrations, updates, risky operations)
+  - Automated backup schedule and script location details
+  - Step-by-step restore procedures for existing and new installations
+  - Backup verification commands and periodic restore testing procedure
+  - Important notes on online backups and recovery mechanisms
+- Added ADR-0012 to Architecture Decisions section in README
+- Comprehensive ADR-0012 documenting backup/restore architectural decisions
+  - Context: Need for data protection and disaster recovery
+  - Decision: Use pg_dump/pg_restore with external automation
+  - Consequences: Positive (data protection, portability), Negative (setup complexity, external dependency)
+  - Alternatives considered: WAL archiving, app-level export, cloud services, third-party tools
+  - Implementation notes: Script structure, Task Scheduler config, restore verification
+  - References to My-Scripts repository for automation setup
+
+### Notes
+- This is a documentation-only release; no code changes or new features
+- Backup automation is handled externally via My-Scripts repository
+- Paths and schedules shown are local examples; implementations may vary
+
 ## [0.33.3] - 2026-02-01
 
 ### Fixed

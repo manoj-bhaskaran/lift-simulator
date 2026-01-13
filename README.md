@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.33.3**
+Current version: **0.33.4**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -52,7 +52,7 @@ To package the React UI with the Spring Boot backend and serve everything from *
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.33.3.jar
+java -jar target/lift-simulator-0.33.4.jar
 ```
 
 This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api`.
@@ -73,7 +73,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.33.3.jar
+java -jar target/lift-simulator-0.33.4.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -567,7 +567,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.33.3.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.33.4.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -631,9 +631,113 @@ mvn test
 - If you upgraded from 0.23.0 and see "Found more than one migration with version 1", run `mvn clean` once to clear stale build artifacts; the build now removes old migration resources automatically.
 - If Flyway reports "No migrations found", rebuild with `mvn clean package` to refresh the packaged `db/migration` resources.
 
+### Database Backup and Restore
+
+The lift simulator's configuration database can be backed up and restored using PostgreSQL's native `pg_dump` and `pg_restore` utilities. Backups protect against data loss from hardware failure, operator error, or corruption.
+
+#### Manual Ad-Hoc Backup
+
+For immediate, on-demand backups, execute:
+
+```bash
+pg_dump -h localhost -U lift_admin -d lift_simulator -F p -f lift_simulator_backup_$(date +%Y%m%d_%H%M%S).sql
+```
+
+This creates a plain SQL backup file with a timestamp in the filename (e.g., `lift_simulator_backup_20260113_140530.sql`).
+
+**When to use manual backups:**
+- Before major schema migrations or application upgrades
+- Before bulk data updates or deletions
+- Before testing risky operations
+- Before deploying to a new environment
+
+#### Automated Scheduled Backup
+
+Automated backups are managed via an external PowerShell script in the **My-Scripts** repository.
+
+**Schedule**: Every Tuesday at 8:00 a.m. (Windows Task Scheduler)
+
+**Script Location**: `My-Scripts/src/powershell/backup/Backup-LiftSimulatorDatabase.ps1`
+
+**Command** (example local path, may vary):
+```powershell
+pwsh -File "C:\Users\manoj\Documents\Scripts\src\powershell\backup\Backup-LiftSimulatorDatabase.ps1"
+```
+
+**Backup Storage**:
+- Backups: `D:\pgbackup\lift_simulator`
+- Logs: `D:\pgbackup\lift_simulator\logs`
+
+**Note**: Paths shown are local examples; your implementation may vary. Refer to the My-Scripts repository at `src/powershell/backup/README-LiftSimulator.md` for setup instructions, prerequisites, and configuration details.
+
+#### Restore Procedure
+
+**Standard Restore** (to existing database):
+
+1. Stop the Spring Boot application to prevent writes during restore
+2. Drop and recreate the database:
+   ```bash
+   sudo -u postgres psql -c "DROP DATABASE lift_simulator;"
+   sudo -u postgres psql -c "CREATE DATABASE lift_simulator;"
+   sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE lift_simulator TO lift_admin;"
+   ```
+3. Restore from backup file:
+   ```bash
+   psql -h localhost -U lift_admin -d lift_simulator -f lift_simulator_backup_YYYYMMDD_HHMMSS.sql
+   ```
+4. Verify the restore:
+   ```bash
+   psql -h localhost -U lift_admin -d lift_simulator -c "\dt"
+   psql -h localhost -U lift_admin -d lift_simulator -c "SELECT COUNT(*) FROM lift_system;"
+   ```
+5. Restart the application
+
+**Clean Restore** (to new machine or fresh install):
+
+1. Install PostgreSQL 12 or later
+2. Create the database and user as documented in the Database Setup section above
+3. Restore from backup (step 3 from Standard Restore)
+4. Verify the restore (step 4 from Standard Restore)
+5. Start the application
+
+#### Backup Verification
+
+To verify a backup file is valid:
+
+```bash
+# Check file size and format
+ls -lh lift_simulator_backup_*.sql
+
+# View first 20 lines (should show valid SQL)
+head -n 20 lift_simulator_backup_*.sql
+```
+
+**Periodic restore testing** (recommended quarterly):
+
+```bash
+# Create test database
+createdb lift_simulator_test
+
+# Restore to test database
+psql -U lift_admin -d lift_simulator_test -f lift_simulator_backup_YYYYMMDD_HHMMSS.sql
+
+# Verify tables exist
+psql -U lift_admin -d lift_simulator_test -c "\dt"
+
+# Clean up
+dropdb lift_simulator_test
+```
+
+#### Important Notes
+
+- Backups can be taken while the database is online (no application downtime required)
+- Configuration data is **not** committed to version control; backups are the only recovery mechanism
+- For detailed backup/restore architecture and automation setup, see ADR-0012 and the My-Scripts repository documentation
+- Backup retention policy and log management are handled by the external backup script
+
 ## Features
 
-The current version (v0.33.3) includes comprehensive lift simulation and configuration management capabilities:
+The current version (v0.33.4) includes comprehensive lift simulation and configuration management capabilities:
 
 ### Admin Backend & REST API
 
@@ -800,7 +904,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.33.3.jar`.
+The packaged JAR will be in `target/lift-simulator-0.33.4.jar`.
 
 ## Running Tests
 
@@ -850,7 +954,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.33.3.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.33.4.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -859,16 +963,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.33.3.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.33.4.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.33.3.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.33.4.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.33.3.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.33.4.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.33.3.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.33.4.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -882,7 +986,7 @@ The demo runs a pre-configured scenario with several lift requests and displays 
 Use a published configuration JSON file to run a lightweight simulation:
 
 ```bash
-java -cp target/lift-simulator-0.33.3.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.33.4.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 
 Optional flags:
@@ -900,7 +1004,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.33.3.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.33.4.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -909,13 +1013,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.33.3.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.33.4.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.33.3.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.33.4.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.33.3.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.33.4.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**
@@ -1431,6 +1535,7 @@ See [docs/decisions](docs/decisions) for Architecture Decision Records (ADRs):
 - [ADR-0009: Configuration Validation Framework](docs/decisions/0009-configuration-validation-framework.md)
 - [ADR-0010: Publish/Archive Workflow](docs/decisions/0010-publish-archive-workflow.md)
 - [ADR-0011: React Admin UI Scaffold](docs/decisions/0011-react-admin-ui-scaffold.md)
+- [ADR-0012: Database Backup and Restore Strategy](docs/decisions/0012-database-backup-restore-strategy.md)
 
 ## License
 
