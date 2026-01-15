@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.5] - 2026-01-15
+
+### Fixed
+- **Validation Error Handling**: Hardened GlobalExceptionHandler to safely handle both field-level and object-level validation constraints
+  - Fixed ClassCastException when processing object-level constraint violations (e.g., @AssertTrue on class methods)
+  - Updated handleValidationErrors method to check error type before casting
+  - Field-level errors (FieldError) now use field name as key
+  - Object-level errors (ObjectError) now use object name as key
+  - Both error types are properly surfaced in ValidationErrorResponse
+
+### Added
+- **Comprehensive Validation Tests**: Added GlobalExceptionHandlerValidationTest with 10 test cases
+  - Test coverage for field-level validation errors (single and multiple fields)
+  - Test coverage for object-level validation errors (e.g., password matching, date range validation)
+  - Test coverage for mixed validation scenarios (both field and object errors)
+  - Test DTOs with @AssertTrue constraints for object-level validation testing
+
+### Changed
+- Version bumped from 0.33.4 to 0.33.5
+- GlobalExceptionHandler now imports ObjectError alongside FieldError
+- Enhanced JavaDoc comments in GlobalExceptionHandler for validation error handling
+
 ## [0.33.4] - 2026-01-13
 
 ### Added
