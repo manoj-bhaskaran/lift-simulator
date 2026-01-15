@@ -6,6 +6,7 @@ import com.liftsimulator.admin.service.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -71,6 +72,7 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles validation errors with 400 status.
+     * Supports both field-level (FieldError) and object-level (ObjectError) validation constraints.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponse> handleValidationErrors(
@@ -78,7 +80,14 @@ public class GlobalExceptionHandler {
     ) {
         Map<String, String> fieldErrors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
-            String fieldName = ((FieldError) error).getField();
+            String fieldName;
+            if (error instanceof FieldError fieldError) {
+                // Field-level constraint violation
+                fieldName = fieldError.getField();
+            } else {
+                // Object-level constraint violation (e.g., class-level validation)
+                fieldName = error.getObjectName();
+            }
             String errorMessage = error.getDefaultMessage();
             fieldErrors.put(fieldName, errorMessage);
         });
