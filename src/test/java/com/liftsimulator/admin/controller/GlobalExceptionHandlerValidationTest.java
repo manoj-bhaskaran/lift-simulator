@@ -10,8 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
@@ -36,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
 @Transactional
+@Import(GlobalExceptionHandlerValidationTest.TestControllerConfig.class)
 public class GlobalExceptionHandlerValidationTest {
 
     @Autowired
@@ -107,9 +109,9 @@ public class GlobalExceptionHandlerValidationTest {
     }
 
     /**
-     * Test controller to expose endpoints for validation testing.
+     * Test configuration to expose endpoints for validation testing.
      */
-    @Configuration
+    @TestConfiguration
     public static class TestControllerConfig {
 
         @Bean
