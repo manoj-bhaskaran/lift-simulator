@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.controller;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
@@ -84,7 +85,9 @@ public class GlobalExceptionHandlerValidationTest {
         /**
          * Cross-field validation: passwords must match.
          * Creates a FieldError with property name "passwordsMatch".
+         * Note: @JsonIgnore prevents Jackson from serializing this validation method.
          */
+        @JsonIgnore
         @AssertTrue(message = "Passwords must match")
         public boolean isPasswordsMatch() {
             if (password == null || confirmPassword == null) {
@@ -107,7 +110,9 @@ public class GlobalExceptionHandlerValidationTest {
         /**
          * Cross-field validation: end date must be after start date.
          * Creates a FieldError with property name "dateRangeValid".
+         * Note: @JsonIgnore prevents Jackson from serializing this validation method.
          */
+        @JsonIgnore
         @AssertTrue(message = "End date must be after start date")
         public boolean isDateRangeValid() {
             if (startDate == null || endDate == null || startDate.isBlank() || endDate.isBlank()) {
