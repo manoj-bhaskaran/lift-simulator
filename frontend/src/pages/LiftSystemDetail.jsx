@@ -22,7 +22,7 @@ function LiftSystemDetail() {
   }, [id]);
 
   useEffect(() => {
-    if (location.hash !== '#versions') {
+    if (location.hash !== '#versions' || loading) {
       return;
     }
 
@@ -30,7 +30,7 @@ function LiftSystemDetail() {
     if (target) {
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [location.hash, versions.length]);
+  }, [location.hash, loading, versions.length]);
 
   const loadSystemData = async () => {
     try {
