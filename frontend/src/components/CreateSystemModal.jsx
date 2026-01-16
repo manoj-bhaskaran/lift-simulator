@@ -48,7 +48,7 @@ function CreateSystemModal({ isOpen, onClose, onSubmit }) {
       await onSubmit(formData);
       setFormData({ systemKey: '', displayName: '', description: '' });
       setErrors({});
-    } catch (err) {
+    } catch {
       // Error is handled by parent component
     } finally {
       setSubmitting(false);

@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.36.2**
+Current version: **0.36.3**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -54,7 +54,7 @@ To package the React UI with the Spring Boot backend and serve everything from *
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.36.2.jar
+java -jar target/lift-simulator-0.36.3.jar
 ```
 
 This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api`.
@@ -75,7 +75,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.36.2.jar
+java -jar target/lift-simulator-0.36.3.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -575,7 +575,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.36.2.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.36.3.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:

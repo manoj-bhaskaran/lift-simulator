@@ -66,7 +66,37 @@ function ConfigEditor() {
       setError(null);
 
       // Parse JSON to ensure it's valid
-      JSON.parse(config);
+      const configObject = JSON.parse(config);
+
+      // Auto-validate if not already validated
+      if (!validationResult) {
+        setValidating(true);
+        try {
+          const response = await liftSystemsApi.validateConfig(configObject);
+          setValidationResult(response.data);
+
+          // If validation fails, prevent save and show errors
+          if (!response.data.valid) {
+            setError('Configuration has validation errors. Please fix them before saving.');
+            setSaving(false);
+            setValidating(false);
+            return;
+          }
+        } catch (validationErr) {
+          setError('Failed to validate configuration: ' + (validationErr.response?.data?.message || validationErr.message));
+          console.error(validationErr);
+          setSaving(false);
+          setValidating(false);
+          return;
+        } finally {
+          setValidating(false);
+        }
+      } else if (!validationResult.valid) {
+        // If already validated and invalid, prevent save
+        setError('Configuration has validation errors. Please fix them before saving.');
+        setSaving(false);
+        return;
+      }
 
       await liftSystemsApi.updateVersion(systemId, versionNumber, { config });
       setLastSaved(new Date());
