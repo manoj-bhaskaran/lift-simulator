@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.34.0**
+Current version: **0.34.1**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -52,7 +52,7 @@ To package the React UI with the Spring Boot backend and serve everything from *
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.34.0.jar
+java -jar target/lift-simulator-0.34.1.jar
 ```
 
 This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api`.
@@ -73,7 +73,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.34.0.jar
+java -jar target/lift-simulator-0.34.1.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -573,7 +573,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.34.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.34.1.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -817,7 +817,7 @@ dropdb lift_simulator_test
 
 ## Features
 
-The current version (v0.34.0) includes comprehensive lift simulation and configuration management capabilities:
+The current version (v0.34.1) includes comprehensive lift simulation and configuration management capabilities:
 
 ### Admin Backend & REST API
 
@@ -984,7 +984,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.34.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.34.1.jar`.
 
 ## Running Tests
 
@@ -1034,7 +1034,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.34.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.34.1.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -1043,16 +1043,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.34.0.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.34.1.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.34.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.34.1.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.34.0.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.34.1.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.34.0.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.34.1.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -1066,7 +1066,7 @@ The demo runs a pre-configured scenario with several lift requests and displays 
 Use a published configuration JSON file to run a lightweight simulation:
 
 ```bash
-java -cp target/lift-simulator-0.34.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.34.1.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 
 Optional flags:
@@ -1084,7 +1084,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.34.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.34.1.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -1093,13 +1093,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.34.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.34.1.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.34.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.34.1.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.34.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.34.1.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**

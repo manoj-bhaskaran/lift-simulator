@@ -108,17 +108,18 @@ public class RuntimeSimulationService {
 
     private void registerProcess(String systemKey, Process process, List<String> command, Path configPath) {
         long pid = process.pid();
-        activeProcesses.put(pid, new ManagedProcess(systemKey, process, configPath));
+        ManagedProcess managedProcess = new ManagedProcess(systemKey, process, configPath);
+        activeProcesses.put(pid, managedProcess);
         logger.info("Launched simulator process pid={} for system {} with config {} using command: {}",
             pid,
             systemKey,
             configPath.getFileName(),
             String.join(" ", command));
 
-        logReaderExecutor.submit(() -> streamProcessOutput(systemKey, pid, process));
+        logReaderExecutor.execute(() -> streamProcessOutput(systemKey, pid, process));
 
         process.onExit().thenAccept(exitedProcess -> {
-            activeProcesses.remove(pid);
+            activeProcesses.remove(pid, managedProcess);
             logger.info("Simulator process pid={} for system {} exited with code {}",
                 pid,
                 systemKey,
@@ -153,9 +154,13 @@ public class RuntimeSimulationService {
     }
 
     private boolean isPackagedJar(Path sourcePath) {
-        return sourcePath != null
-            && Files.isRegularFile(sourcePath)
-            && sourcePath.getFileName().toString().endsWith(".jar");
+        if (sourcePath == null) {
+            return false;
+        }
+        Path fileName = sourcePath.getFileName();
+        return Files.isRegularFile(sourcePath)
+            && fileName != null
+            && fileName.toString().endsWith(".jar");
     }
 
     @PreDestroy
