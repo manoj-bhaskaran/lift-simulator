@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import './Modal.css';
 import './CreateSystemModal.css';
 
 function CreateSystemModal({ isOpen, onClose, onSubmit }) {

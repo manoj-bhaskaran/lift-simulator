@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.36.1] - 2026-02-13
+## [0.36.2] - 2026-01-16
+
+### Added
+- Shared Modal component to centralize overlay, header, and focus/keyboard handling for modal variants
+- Shared Modal CSS for consistent base modal styling across the UI
+
+### Changed
+- AlertModal and ConfirmModal now render via the shared Modal component to reduce duplication
+- Version bumped from 0.36.1 to 0.36.2
+- Frontend package version updated to 0.36.2
+
+## [0.36.1] - 2026-01-16
 
 ### Added
 - Frontend API client now supports environment-configured base URL and request timeout via Vite env variables
