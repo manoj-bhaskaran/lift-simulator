@@ -32,9 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Technical Details
 - Uses Jackson `DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES` for schema enforcement
-- Primary ObjectMapper bean configured via `JacksonConfiguration` Spring configuration class
+- ObjectMapper configured via `Jackson2ObjectMapperBuilderCustomizer` (preserves Spring Boot Jackson modules)
 - Unknown property errors include field name and clear message: "Unknown property 'fieldName' is not allowed in configuration schema"
 - Validation occurs at JSON deserialization time before any business logic validation
+- Added `HttpMessageNotReadableException` handler in `GlobalExceptionHandler` for REST request validation
 - Consistent validation behavior across all entry points (REST API, validation endpoint, CLI)
 
 ### Benefits

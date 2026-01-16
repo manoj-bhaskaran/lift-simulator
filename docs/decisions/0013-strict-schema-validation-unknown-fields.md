@@ -27,25 +27,40 @@ We will **reject unknown properties** by configuring Jackson's `ObjectMapper` wi
 
 ### Implementation Details
 
-#### 1. Spring Configuration Bean
+#### 1. Spring Configuration Customizer
 
 **JacksonConfiguration** (`com.liftsimulator.admin.config.JacksonConfiguration`):
-- Defines a `@Primary` `ObjectMapper` bean for Spring-managed components
+- Uses `Jackson2ObjectMapperBuilderCustomizer` to customize Spring Boot's auto-configured ObjectMapper
 - Configures `FAIL_ON_UNKNOWN_PROPERTIES` to `true`
 - Applied automatically to all REST controllers and Spring-managed services
+- **Critical**: Preserves Spring Boot's default Jackson modules (java.time, Kotlin, etc.)
 
 ```java
 @Configuration
 public class JacksonConfiguration {
     @Bean
-    @Primary
-    public ObjectMapper objectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
-        return mapper;
+    public Jackson2ObjectMapperBuilderCustomizer jsonCustomizer() {
+        return builder -> builder.featuresToEnable(
+            DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
+        );
     }
 }
 ```
+
+**Why Customizer Instead of @Primary Bean:**
+
+Creating a new `ObjectMapper` with `@Primary` and `new ObjectMapper()` would **replace** Spring Boot's auto-configured mapper, losing critical features:
+- **jackson-datatype-jsr310** module for `OffsetDateTime`/`LocalDateTime` serialization
+- **jackson-module-kotlin** for Kotlin support
+- **jackson-module-parameter-names** for parameter name discovery
+- Other Spring Boot auto-configured Jackson modules
+
+Without these modules, serializing `OffsetDateTime` (used in `ErrorResponse`, `LiftSystemResponse`, etc.) would throw:
+```
+InvalidDefinitionException: No serializer found for class java.time.OffsetDateTime
+```
+
+The customizer approach preserves all Spring Boot defaults while adding our strict validation.
 
 #### 2. Enhanced Error Handling
 
@@ -68,7 +83,34 @@ try {
 }
 ```
 
-#### 3. CLI Tool Consistency
+#### 3. HTTP Request Exception Handling
+
+**GlobalExceptionHandler** enhancement:
+- Added `HttpMessageNotReadableException` handler for REST endpoint request validation
+- Detects `UnrecognizedPropertyException` cause and provides clear error messages
+- Returns 400 Bad Request with field-specific error for unknown properties
+
+```java
+@ExceptionHandler(HttpMessageNotReadableException.class)
+public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+    HttpMessageNotReadableException ex
+) {
+    String message = "Malformed JSON request";
+
+    Throwable cause = ex.getCause();
+    if (cause instanceof UnrecognizedPropertyException unrecognizedEx) {
+        String fieldName = unrecognizedEx.getPropertyName();
+        message = "Unknown property '" + fieldName + "' is not allowed";
+    }
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), message, OffsetDateTime.now()));
+}
+```
+
+This ensures unknown fields in HTTP requests (e.g., `POST /api/lift-systems`) get proper error responses at the REST API layer, complementing the service-layer validation.
+
+#### 4. CLI Tool Consistency
 
 **LocalSimulationMain** (`com.liftsimulator.runtime.LocalSimulationMain`):
 - Standalone CLI ObjectMapper configured with same strict validation
@@ -82,7 +124,9 @@ private static LiftConfigDTO readConfig(Path configPath) throws IOException {
 }
 ```
 
-#### 4. Test Coverage
+**Note**: CLI creates a standalone ObjectMapper, so module registration is not a concern here (no need to serialize `OffsetDateTime` in CLI output).
+
+#### 5. Test Coverage
 
 **ConfigValidationServiceTest**:
 - Five new test cases for unknown field rejection:
@@ -126,6 +170,65 @@ private static LiftConfigDTO readConfig(Path configPath) throws IOException {
   }]
 }
 ```
+
+### Implementation Considerations
+
+#### Why Jackson2ObjectMapperBuilderCustomizer is Critical
+
+The choice to use `Jackson2ObjectMapperBuilderCustomizer` instead of a `@Primary ObjectMapper` bean is **not optional** — it's a **requirement** to avoid runtime serialization failures.
+
+**Problem with @Primary Bean Approach:**
+
+If we had used:
+```java
+@Bean
+@Primary
+public ObjectMapper objectMapper() {
+    ObjectMapper mapper = new ObjectMapper();  // ❌ Missing modules!
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+    return mapper;
+}
+```
+
+This would **replace** Spring Boot's auto-configured ObjectMapper, which includes:
+- `jackson-datatype-jsr310` - Java 8 Date/Time API (OffsetDateTime, LocalDateTime, etc.)
+- `jackson-module-kotlin` - Kotlin data class support
+- `jackson-module-parameter-names` - Constructor parameter name discovery
+- Other Spring Boot-configured modules
+
+**Result**: Every REST endpoint returning DTOs with `OffsetDateTime` fields would fail with:
+```
+com.fasterxml.jackson.databind.exc.InvalidDefinitionException:
+  No serializer found for class java.time.OffsetDateTime
+```
+
+This includes:
+- `ErrorResponse` (all error handlers)
+- `ValidationErrorResponse` (validation errors)
+- `LiftSystemResponse` (createdAt, updatedAt)
+- `VersionResponse` (createdAt, updatedAt)
+
+**Solution**: The customizer approach **augments** Spring Boot's ObjectMapper instead of replacing it:
+
+```java
+@Bean
+public Jackson2ObjectMapperBuilderCustomizer jsonCustomizer() {
+    return builder -> builder.featuresToEnable(
+        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
+    );
+}
+```
+
+This preserves all registered modules while adding our strict validation feature.
+
+**Alternative (Not Used)**: If we needed to create a standalone ObjectMapper, we would need:
+```java
+ObjectMapper mapper = new ObjectMapper();
+mapper.findAndRegisterModules();  // Register all available Jackson modules
+mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+```
+
+But the customizer approach is cleaner and integrates better with Spring Boot's auto-configuration.
 
 ## Alternatives Considered
 
