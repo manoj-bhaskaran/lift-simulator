@@ -1,10 +1,12 @@
 package com.liftsimulator.admin.controller;
 
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.service.ConfigValidationException;
 import com.liftsimulator.admin.service.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -68,6 +70,31 @@ public class GlobalExceptionHandler {
         ConfigValidationException ex
     ) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getValidationResponse());
+    }
+
+    /**
+     * Handles HTTP message not readable exceptions with 400 status.
+     * Specifically handles unknown property errors from strict JSON deserialization.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+        HttpMessageNotReadableException ex
+    ) {
+        String message = "Malformed JSON request";
+
+        // Check if this is an unknown property error
+        Throwable cause = ex.getCause();
+        if (cause instanceof UnrecognizedPropertyException unrecognizedEx) {
+            String fieldName = unrecognizedEx.getPropertyName();
+            message = "Unknown property '" + fieldName + "' is not allowed";
+        }
+
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            message,
+            OffsetDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     /**
