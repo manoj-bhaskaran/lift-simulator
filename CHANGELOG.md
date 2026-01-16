@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.1] - 2026-02-13
+
+### Added
+- Frontend API client now supports environment-configured base URL and request timeout via Vite env variables
+
+### Changed
+- Default Axios request timeout set to 10 seconds to prevent hanging requests
+- Version bumped from 0.36.0 to 0.36.1
+- Frontend package version updated to 0.36.1
+
 ## [0.36.0] - 2026-01-16
 
 ### Added
