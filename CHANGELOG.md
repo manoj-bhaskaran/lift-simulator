@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Test suite updated to configure ObjectMapper with `FAIL_ON_UNKNOWN_PROPERTIES` matching production settings
 - `LocalSimulationMain` CLI tool now enforces same strict validation as REST API
 
+### Documentation
+- Added ADR-0013 documenting decision to reject unknown fields vs. ignore/log alternatives
+
 ### Technical Details
 - Uses Jackson `DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES` for schema enforcement
 - Primary ObjectMapper bean configured via `JacksonConfiguration` Spring configuration class
