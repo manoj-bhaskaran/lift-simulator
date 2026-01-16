@@ -47,6 +47,10 @@ function LiftSystems() {
     navigate(`/systems/${systemId}`);
   };
 
+  const handleManageVersions = (systemId) => {
+    navigate(`/systems/${systemId}#versions`);
+  };
+
   return (
     <div className="lift-systems">
       <div className="page-header">
@@ -84,7 +88,7 @@ function LiftSystems() {
                 </button>
                 <button
                   className="btn-secondary"
-                  onClick={() => handleViewDetails(system.id)}
+                  onClick={() => handleManageVersions(system.id)}
                 >
                   Manage Versions
                 </button>
