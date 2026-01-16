@@ -157,10 +157,8 @@ public class RuntimeSimulationService {
         if (sourcePath == null) {
             return false;
         }
-        Path fileName = sourcePath.getFileName();
         return Files.isRegularFile(sourcePath)
-            && fileName != null
-            && fileName.toString().endsWith(".jar");
+            && sourcePath.toString().endsWith(".jar");
     }
 
     @PreDestroy
