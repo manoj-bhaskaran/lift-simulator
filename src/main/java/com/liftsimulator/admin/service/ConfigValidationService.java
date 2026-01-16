@@ -2,6 +2,7 @@ package com.liftsimulator.admin.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.LiftConfigDTO;
 import com.liftsimulator.admin.dto.ValidationIssue;
@@ -48,6 +49,15 @@ public class ConfigValidationService {
         LiftConfigDTO config;
         try {
             config = objectMapper.readValue(configJson, LiftConfigDTO.class);
+        } catch (UnrecognizedPropertyException e) {
+            // Specific handling for unknown properties to provide clearer error messages
+            String fieldName = e.getPropertyName();
+            errors.add(new ValidationIssue(
+                fieldName,
+                "Unknown property '" + fieldName + "' is not allowed in configuration schema",
+                ValidationIssue.Severity.ERROR
+            ));
+            return new ConfigValidationResponse(false, errors, warnings);
         } catch (JsonProcessingException e) {
             errors.add(new ValidationIssue(
                 "config",
