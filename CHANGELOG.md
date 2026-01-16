@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.0] - 2026-01-16
+
+### Added
+- Lift Systems search bar with client-side filtering by display name and system key
+- Empty state message for search results with no matches
+
+### Changed
+- Lift Systems list now filters results case-insensitively based on the search query
+- Version bumped from 0.36.3 to 0.37.0
+- Frontend package version updated to 0.37.0
+
 ## [0.36.3] - 2026-01-16
 
 ### Added

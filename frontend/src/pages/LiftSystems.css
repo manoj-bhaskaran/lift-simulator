@@ -3,10 +3,44 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .lift-systems h2 {
   margin: 0;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.search-input input {
+  min-width: 240px;
+  padding: 0.65rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.search-input input::placeholder {
+  color: #9aa3ad;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
 }
 
 .btn-primary {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import CreateSystemModal from '../components/CreateSystemModal';
@@ -12,6 +12,7 @@ function LiftSystems() {
   const [error, setError] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadSystems();
@@ -53,13 +54,39 @@ function LiftSystems() {
     navigate(`/systems/${systemId}#versions`);
   };
 
+  const filteredSystems = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    if (!normalizedQuery) {
+      return systems;
+    }
+
+    return systems.filter((system) => {
+      const displayName = system.displayName?.toLowerCase() || '';
+      const systemKey = system.systemKey?.toLowerCase() || '';
+      return displayName.includes(normalizedQuery) || systemKey.includes(normalizedQuery);
+    });
+  }, [searchQuery, systems]);
+
   return (
     <div className="lift-systems">
       <div className="page-header">
-        <h2>Lift Systems</h2>
-        <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
-          Create New System
-        </button>
+        <div className="page-title">
+          <h2>Lift Systems</h2>
+        </div>
+        <div className="page-actions">
+          <div className="search-input">
+            <input
+              type="search"
+              placeholder="Search by name or key"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              aria-label="Search lift systems"
+            />
+          </div>
+          <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
+            Create New System
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -70,9 +97,13 @@ function LiftSystems() {
         <div className="empty-state">
           <p>No lift systems found. Create your first system to get started.</p>
         </div>
+      ) : filteredSystems.length === 0 ? (
+        <div className="empty-state">
+          <p>No lift systems match your search. Try a different name or key.</p>
+        </div>
       ) : (
         <div className="systems-grid">
-          {systems.map((system) => (
+          {filteredSystems.map((system) => (
             <div key={system.id} className="system-card">
               <h3>{system.displayName}</h3>
               <p className="system-key">System Key: {system.systemKey}</p>
