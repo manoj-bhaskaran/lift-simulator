@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.0] - 2026-01-16
+
+### Added
+- **In-App UI Feedback Modals**: Replaced blocking browser alert/confirm dialogs with accessible modal components
+  - Created `ConfirmModal` component for confirmation dialogs (publish, delete operations)
+  - Created `AlertModal` component for error/notification messages
+  - Both modals feature comprehensive accessibility:
+    - Automatic focus management (auto-focus on primary action button)
+    - Keyboard navigation support (ESC to close, Enter for confirm/dismiss, Tab trapping)
+    - Proper ARIA attributes (role, aria-modal, aria-labelledby, aria-label)
+    - Focus trap in ConfirmModal to keep keyboard navigation within modal
+  - Modal styling follows existing design system with consistent colors and spacing
+  - Visual feedback with color-coded icons for different alert types (error, warning, success, info)
+
+### Changed
+- **ConfigEditor**: Replaced `window.confirm()` with ConfirmModal for publish confirmation
+- **LiftSystems**: Replaced `window.alert()` with AlertModal for create system errors
+- **LiftSystemDetail**: Replaced all alert/confirm dialogs with modal components
+  - Publish version confirmation uses ConfirmModal
+  - Delete system confirmation uses ConfirmModal with danger styling
+  - All error messages (create version, publish version, delete system) use AlertModal
+- Version bumped from 0.35.2 to 0.36.0
+- Frontend package version updated to 0.36.0
+
+### Technical Details
+- **ConfirmModal**: Customizable title, message, button text, and styles; ESC/Tab/click-outside handling
+- **AlertModal**: Type-based styling (error/warning/success/info); ESC/Enter dismissal; auto-focus on OK button
+- Both components use React hooks (useEffect, useRef) for lifecycle management
+- Accessible role attributes ("dialog" for ConfirmModal, "alertdialog" for AlertModal)
+- Non-blocking UI integration with consistent visual design across browsers
+
 ## [0.35.2] - 2026-02-12
 
 ### Fixed

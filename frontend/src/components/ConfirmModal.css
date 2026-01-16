@@ -1,0 +1,13 @@
+.confirm-modal {
+  max-width: 500px;
+}
+
+.confirm-modal-body {
+  padding: 1.5rem;
+}
+
+.confirm-modal-body p {
+  margin: 0;
+  color: #2c3e50;
+  line-height: 1.6;
+}

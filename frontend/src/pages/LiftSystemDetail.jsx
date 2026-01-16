@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
+import ConfirmModal from '../components/ConfirmModal';
+import AlertModal from '../components/AlertModal';
 import './LiftSystemDetail.css';
 
 function LiftSystemDetail() {
@@ -16,6 +18,11 @@ function LiftSystemDetail() {
   const [creating, setCreating] = useState(false);
   const [runningVersion, setRunningVersion] = useState(null);
   const [simulationStatus, setSimulationStatus] = useState(null);
+
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  const [versionToPublish, setVersionToPublish] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(null);
 
   useEffect(() => {
     loadSystemData();
@@ -59,22 +66,24 @@ function LiftSystemDetail() {
       setShowCreateVersion(false);
       await loadSystemData();
     } catch (err) {
-      alert('Failed to create version: ' + (err.response?.data?.message || err.message));
+      setAlertMessage('Failed to create version: ' + (err.response?.data?.message || err.message));
       console.error(err);
     } finally {
       setCreating(false);
     }
   };
 
-  const handlePublishVersion = async (versionNumber) => {
-    if (!confirm(`Are you sure you want to publish version ${versionNumber}?`)) {
-      return;
-    }
+  const handlePublishVersion = (versionNumber) => {
+    setVersionToPublish(versionNumber);
+    setShowPublishConfirm(true);
+  };
+
+  const confirmPublish = async () => {
     try {
-      await liftSystemsApi.publishVersion(id, versionNumber);
+      await liftSystemsApi.publishVersion(id, versionToPublish);
       await loadSystemData();
     } catch (err) {
-      alert('Failed to publish version: ' + (err.response?.data?.message || err.message));
+      setAlertMessage('Failed to publish version: ' + (err.response?.data?.message || err.message));
       console.error(err);
     }
   };
@@ -95,15 +104,16 @@ function LiftSystemDetail() {
     }
   };
 
-  const handleDeleteSystem = async () => {
-    if (!confirm(`Are you sure you want to delete "${system?.displayName}"? This will delete all versions as well.`)) {
-      return;
-    }
+  const handleDeleteSystem = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
     try {
       await liftSystemsApi.deleteSystem(id);
       navigate('/systems');
     } catch (err) {
-      alert('Failed to delete system: ' + (err.response?.data?.message || err.message));
+      setAlertMessage('Failed to delete system: ' + (err.response?.data?.message || err.message));
       console.error(err);
     }
   };
@@ -284,6 +294,34 @@ function LiftSystemDetail() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={showPublishConfirm}
+        onClose={() => setShowPublishConfirm(false)}
+        onConfirm={confirmPublish}
+        title="Publish Version"
+        message={`Are you sure you want to publish version ${versionToPublish}?`}
+        confirmText="Publish"
+        confirmStyle="primary"
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        title="Delete System"
+        message={`Are you sure you want to delete "${system?.displayName}"? This will delete all versions as well.`}
+        confirmText="Delete"
+        confirmStyle="danger"
+      />
+
+      <AlertModal
+        isOpen={!!alertMessage}
+        onClose={() => setAlertMessage(null)}
+        title="Error"
+        message={alertMessage}
+        type="error"
+      />
     </div>
   );
 }
