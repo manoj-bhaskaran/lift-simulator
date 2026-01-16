@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.35.0] - 2026-01-16
+
+### Added
+- **Strict Configuration Schema Validation**: Enhanced config validation to reject unknown JSON fields
+  - Created `JacksonConfiguration` to configure ObjectMapper with `FAIL_ON_UNKNOWN_PROPERTIES`
+  - Unknown properties in configuration JSON now trigger validation errors instead of being silently ignored
+  - Helps catch typos and unexpected fields in configuration payloads (e.g., "floor" instead of "floors")
+  - Enhanced `ConfigValidationService` to provide specific error messages for unknown properties
+  - Applied strict validation to both Spring-managed ObjectMapper and CLI LocalSimulationMain
+- **Comprehensive Test Coverage**: Added 5 new tests for unknown field rejection scenarios
+  - `testValidate_UnknownFieldRejected()` - Validates rejection of unknown fields
+  - `testValidate_TypoInFieldNameRejected()` - Catches typos in field names
+  - `testValidate_MultipleUnknownFieldsRejected()` - Handles multiple unknown fields
+  - `testValidate_UnknownFieldWithValidData()` - Ensures unknown fields cause rejection even with valid data
+  - Tests verify clear error messages with field names for debugging
+
+### Changed
+- Version bumped from 0.34.2 to 0.35.0
+- `ConfigValidationService` now catches `UnrecognizedPropertyException` separately for clearer error messages
+- Test suite updated to configure ObjectMapper with `FAIL_ON_UNKNOWN_PROPERTIES` matching production settings
+- `LocalSimulationMain` CLI tool now enforces same strict validation as REST API
+
+### Documentation
+- Added ADR-0013 documenting decision to reject unknown fields vs. ignore/log alternatives
+
+### Technical Details
+- Uses Jackson `DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES` for schema enforcement
+- ObjectMapper configured via `Jackson2ObjectMapperBuilderCustomizer` (preserves Spring Boot Jackson modules)
+- Unknown property errors include field name and clear message: "Unknown property 'fieldName' is not allowed in configuration schema"
+- Validation occurs at JSON deserialization time before any business logic validation
+- Added `HttpMessageNotReadableException` handler in `GlobalExceptionHandler` for REST request validation
+- Consistent validation behavior across all entry points (REST API, validation endpoint, CLI)
+
+### Benefits
+- **Prevents Configuration Errors**: Catches typos like "floor" instead of "floors" at validation time
+- **API Safety**: Ensures clients only use documented configuration fields
+- **Clear Feedback**: Detailed error messages help developers identify and fix issues quickly
+- **Security**: Prevents injection of unexpected data through unknown fields
+
 ## [0.34.2] - 2026-02-10
 
 ### Fixed

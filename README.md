@@ -1616,6 +1616,7 @@ See [docs/decisions](docs/decisions) for Architecture Decision Records (ADRs):
 - [ADR-0010: Publish/Archive Workflow](docs/decisions/0010-publish-archive-workflow.md)
 - [ADR-0011: React Admin UI Scaffold](docs/decisions/0011-react-admin-ui-scaffold.md)
 - [ADR-0012: Database Backup and Restore Strategy](docs/decisions/0012-database-backup-restore-strategy.md)
+- [ADR-0013: Strict Schema Validation for Unknown Fields](docs/decisions/0013-strict-schema-validation-unknown-fields.md)
 
 ## License
 

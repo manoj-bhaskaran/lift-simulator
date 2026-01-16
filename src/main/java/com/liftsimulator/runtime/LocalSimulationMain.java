@@ -1,5 +1,6 @@
 package com.liftsimulator.runtime;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.LiftConfigDTO;
 import com.liftsimulator.engine.ControllerFactory;
@@ -57,6 +58,8 @@ public final class LocalSimulationMain {
 
     private static LiftConfigDTO readConfig(Path configPath) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
+        // Configure ObjectMapper to enforce strict schema validation - reject unknown properties
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
         String json = Files.readString(configPath);
         return mapper.readValue(json, LiftConfigDTO.class);
     }

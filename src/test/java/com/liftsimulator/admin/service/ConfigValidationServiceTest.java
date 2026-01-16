@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.service;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.ValidationIssue;
@@ -24,6 +25,8 @@ public class ConfigValidationServiceTest {
     @BeforeEach
     public void setUp() {
         objectMapper = new ObjectMapper();
+        // Configure ObjectMapper to match production settings - fail on unknown properties
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
         Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
         validationService = new ConfigValidationService(objectMapper, validator);
     }
@@ -363,5 +366,118 @@ public class ConfigValidationServiceTest {
         assertNotNull(response.errors());
         assertNotNull(response.warnings());
         assertTrue(response.valid());
+    }
+
+    @Test
+    public void testValidate_UnknownFieldRejected() {
+        String configWithUnknownField = """
+            {
+                "floors": 10,
+                "lifts": 2,
+                "travelTicksPerFloor": 1,
+                "doorTransitionTicks": 2,
+                "doorDwellTicks": 3,
+                "doorReopenWindowTicks": 2,
+                "homeFloor": 0,
+                "idleTimeoutTicks": 5,
+                "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+                "idleParkingMode": "PARK_TO_HOME_FLOOR",
+                "unknownField": "someValue"
+            }
+            """;
+
+        ConfigValidationResponse response = validationService.validate(configWithUnknownField);
+
+        assertFalse(response.valid());
+        assertTrue(response.hasErrors());
+        assertEquals(1, response.errors().size());
+        ValidationIssue error = response.errors().get(0);
+        assertEquals("unknownField", error.field());
+        assertTrue(error.message().contains("Unknown property"));
+        assertTrue(error.message().contains("unknownField"));
+    }
+
+    @Test
+    public void testValidate_TypoInFieldNameRejected() {
+        String configWithTypo = """
+            {
+                "floor": 10,
+                "lifts": 2,
+                "travelTicksPerFloor": 1,
+                "doorTransitionTicks": 2,
+                "doorDwellTicks": 3,
+                "doorReopenWindowTicks": 2,
+                "homeFloor": 0,
+                "idleTimeoutTicks": 5,
+                "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+                "idleParkingMode": "PARK_TO_HOME_FLOOR"
+            }
+            """;
+
+        ConfigValidationResponse response = validationService.validate(configWithTypo);
+
+        assertFalse(response.valid());
+        assertTrue(response.hasErrors());
+        // Should have error for unknown property "floor" (typo of "floors")
+        boolean hasUnknownPropertyError = response.errors().stream()
+            .anyMatch(issue -> issue.field().equals("floor") && issue.message().contains("Unknown property"));
+        assertTrue(hasUnknownPropertyError);
+    }
+
+    @Test
+    public void testValidate_MultipleUnknownFieldsRejected() {
+        String configWithMultipleUnknownFields = """
+            {
+                "floors": 10,
+                "lifts": 2,
+                "travelTicksPerFloor": 1,
+                "doorTransitionTicks": 2,
+                "doorDwellTicks": 3,
+                "doorReopenWindowTicks": 2,
+                "homeFloor": 0,
+                "idleTimeoutTicks": 5,
+                "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+                "idleParkingMode": "PARK_TO_HOME_FLOOR",
+                "extraField1": "value1",
+                "extraField2": "value2"
+            }
+            """;
+
+        ConfigValidationResponse response = validationService.validate(configWithMultipleUnknownFields);
+
+        assertFalse(response.valid());
+        assertTrue(response.hasErrors());
+        // Jackson will report the first unknown property it encounters
+        assertTrue(response.errors().size() >= 1);
+        ValidationIssue error = response.errors().get(0);
+        assertTrue(error.message().contains("Unknown property"));
+    }
+
+    @Test
+    public void testValidate_UnknownFieldWithValidData() {
+        // Ensure that even when all known fields are valid, unknown fields cause rejection
+        String config = """
+            {
+                "floors": 10,
+                "lifts": 2,
+                "travelTicksPerFloor": 5,
+                "doorTransitionTicks": 3,
+                "doorDwellTicks": 4,
+                "doorReopenWindowTicks": 2,
+                "homeFloor": 5,
+                "idleTimeoutTicks": 10,
+                "controllerStrategy": "DIRECTIONAL_SCAN",
+                "idleParkingMode": "STAY_AT_CURRENT_FLOOR",
+                "newFeature": true
+            }
+            """;
+
+        ConfigValidationResponse response = validationService.validate(config);
+
+        assertFalse(response.valid());
+        assertTrue(response.hasErrors());
+        boolean hasUnknownPropertyError = response.errors().stream()
+            .anyMatch(issue -> issue.field().equals("newFeature") && issue.message().contains("Unknown property"));
+        assertTrue(hasUnknownPropertyError);
     }
 }
