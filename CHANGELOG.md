@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.3] - 2026-01-16
+
+### Added
+- ConfigEditor now auto-validates configuration on save attempt to prevent saving invalid configurations
+- Validation errors are displayed immediately when attempting to save invalid configuration
+- Invalid configurations are now blocked from being saved until errors are fixed
+
+### Changed
+- ConfigEditor save workflow improved: auto-runs validation before save if not already validated
+- LiftSystems error handling improved: removed unnecessary error throw that could cause unexpected behavior
+- Version bumped from 0.36.2 to 0.36.3
+- Frontend package version updated to 0.36.3
+
+### Fixed
+- ConfigEditor no longer allows saving invalid configurations without validation
+- LiftSystems error handling no longer throws after displaying error in AlertModal, preventing duplicate error handling
+
 ## [0.36.2] - 2026-01-16
 
 ### Added

@@ -41,7 +41,7 @@ function LiftSystems() {
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message;
       setAlertMessage('Failed to create system: ' + errorMessage);
-      throw err;
+      // Error is already displayed by AlertModal, no need to throw
     }
   };
 
