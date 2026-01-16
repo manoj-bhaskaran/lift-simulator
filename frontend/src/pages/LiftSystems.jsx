@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import CreateSystemModal from '../components/CreateSystemModal';
+import AlertModal from '../components/AlertModal';
 import './LiftSystems.css';
 
 function LiftSystems() {
@@ -10,6 +11,7 @@ function LiftSystems() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(null);
 
   useEffect(() => {
     loadSystems();
@@ -38,7 +40,7 @@ function LiftSystems() {
       navigate(`/systems/${response.data.id}`);
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message;
-      alert('Failed to create system: ' + errorMessage);
+      setAlertMessage('Failed to create system: ' + errorMessage);
       throw err;
     }
   };
@@ -102,6 +104,14 @@ function LiftSystems() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSubmit={handleCreateSystem}
+      />
+
+      <AlertModal
+        isOpen={!!alertMessage}
+        onClose={() => setAlertMessage(null)}
+        title="Error"
+        message={alertMessage}
+        type="error"
       />
     </div>
   );

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
+import ConfirmModal from '../components/ConfirmModal';
 import './ConfigEditor.css';
 
 function ConfigEditor() {
@@ -20,6 +21,8 @@ function ConfigEditor() {
   const [validationResult, setValidationResult] = useState(null);
   const [lastSaved, setLastSaved] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -106,11 +109,11 @@ function ConfigEditor() {
     }
   };
 
-  const handlePublish = async () => {
-    if (!confirm(`Are you sure you want to publish version ${versionNumber}? This will archive any currently published version.`)) {
-      return;
-    }
+  const handlePublish = () => {
+    setShowPublishConfirm(true);
+  };
 
+  const confirmPublish = async () => {
     try {
       setPublishing(true);
       setError(null);
@@ -281,6 +284,16 @@ function ConfigEditor() {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={showPublishConfirm}
+        onClose={() => setShowPublishConfirm(false)}
+        onConfirm={confirmPublish}
+        title="Publish Version"
+        message={`Are you sure you want to publish version ${versionNumber}? This will archive any currently published version.`}
+        confirmText="Publish"
+        confirmStyle="success"
+      />
     </div>
   );
 }

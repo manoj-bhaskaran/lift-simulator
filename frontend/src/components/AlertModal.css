@@ -1,0 +1,49 @@
+.alert-modal {
+  max-width: 500px;
+}
+
+.alert-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.alert-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.alert-modal-body p {
+  margin: 0;
+  color: #2c3e50;
+  line-height: 1.6;
+  flex: 1;
+  padding-top: 0.25rem;
+}
+
+.alert-error .alert-icon {
+  background-color: #fee;
+  color: #e74c3c;
+}
+
+.alert-warning .alert-icon {
+  background-color: #ffeaa7;
+  color: #f39c12;
+}
+
+.alert-success .alert-icon {
+  background-color: #d5f4e6;
+  color: #27ae60;
+}
+
+.alert-info .alert-icon {
+  background-color: #dfe6e9;
+  color: #3498db;
+}
