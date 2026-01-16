@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.35.2] - 2026-02-12
+
+### Fixed
+- Ensure the Versions anchor scroll runs after loading completes, including systems with zero versions
+- Version bumped from 0.35.1 to 0.35.2
+
+## [0.35.1] - 2026-02-12
+
+### Changed
+- Lift systems list now routes the Manage Versions action to the versions section instead of duplicating the view details navigation
+- Admin UI version details page scrolls to the versions section when linked with a `#versions` anchor
+- Documentation refreshed for updated version numbers and UI navigation guidance
+- Frontend package version aligned with the application release
+- Version bumped from 0.35.0 to 0.35.1
+
 ## [0.35.0] - 2026-01-16
 
 ### Added

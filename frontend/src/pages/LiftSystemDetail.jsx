@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import './LiftSystemDetail.css';
 
 function LiftSystemDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [system, setSystem] = useState(null);
   const [versions, setVersions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +20,17 @@ function LiftSystemDetail() {
   useEffect(() => {
     loadSystemData();
   }, [id]);
+
+  useEffect(() => {
+    if (location.hash !== '#versions' || loading) {
+      return;
+    }
+
+    const target = document.getElementById('versions');
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [location.hash, loading, versions.length]);
 
   const loadSystemData = async () => {
     try {
@@ -155,7 +167,7 @@ function LiftSystemDetail() {
         </div>
       </div>
 
-      <div className="detail-section">
+      <div className="detail-section" id="versions">
         <div className="section-header">
           <h3>Versions ({versions.length})</h3>
           <button
