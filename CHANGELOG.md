@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.0] - 2026-02-10
+
+### Added
+- Runtime simulation launcher now supports packaged Spring Boot JARs via `PropertiesLauncher` with `--loader.main`
+- Process lifecycle management for runtime-launched simulators, including tracked PIDs, output logging, and graceful shutdown on service stop
+- Runtime documentation for local vs packaged simulation launch assumptions
+
+### Changed
+- Version bumped from 0.33.5 to 0.34.0
+
 ## [0.33.5] - 2026-01-15
 
 ### Fixed
