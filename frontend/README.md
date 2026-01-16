@@ -54,7 +54,7 @@ For a single-app setup (frontend served by Spring Boot on port 8080), build from
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.35.2.jar
+java -jar target/lift-simulator-0.36.1.jar
 ```
 
 This packages the React build output into the Spring Boot JAR and serves it from `/`.
@@ -67,6 +67,24 @@ This packages the React build output into the Spring Boot JAR and serves it from
 - `npm run lint` - Run ESLint
 
 ## API Configuration
+
+### Environment Variables
+
+The API client can be configured at build time via Vite environment variables:
+
+| Variable | Description | Default |
+| --- | --- | --- |
+| `VITE_API_BASE_URL` | Base URL for API requests (e.g., `https://api.example.com/api`) | `/api` |
+| `VITE_API_TIMEOUT_MS` | Axios request timeout in milliseconds | `10000` |
+
+Example `.env` file:
+
+```bash
+VITE_API_BASE_URL=http://localhost:8080/api
+VITE_API_TIMEOUT_MS=15000
+```
+
+If `VITE_API_BASE_URL` is left unset, the app will continue to use `/api`, which works with the Vite proxy in local development.
 
 ### Proxy Setup
 

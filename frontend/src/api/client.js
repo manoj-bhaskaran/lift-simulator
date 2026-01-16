@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').trim() || '/api';
+const timeoutFromEnv = Number(import.meta.env.VITE_API_TIMEOUT_MS);
+const requestTimeoutMs =
+  Number.isFinite(timeoutFromEnv) && timeoutFromEnv > 0 ? timeoutFromEnv : 10000;
+
 const apiClient = axios.create({
-  baseURL: '/api',
+  baseURL: apiBaseUrl,
+  timeout: requestTimeoutMs,
   headers: {
     'Content-Type': 'application/json',
   },
