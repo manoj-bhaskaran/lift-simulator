@@ -19,11 +19,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Security Best Practice**: Credentials never committed to version control
   - **Documentation**: Updated README with detailed setup instructions for configuration file
 
+### Added
+- **Local Configuration Overrides**: Implemented `application-local.properties` pattern for git-conflict-free customization
+  - **Created** `application-local.properties.template` with examples for common overrides
+  - **Added** `application-local.properties` to `.gitignore` (local-only, not tracked)
+  - **Use Cases**:
+    - Custom log file paths (avoid git pull conflicts with `application.properties`)
+    - Different server ports to avoid local conflicts
+    - Alternative database connection settings
+    - Any local-only configuration overrides
+  - **Activation**: `SPRING_PROFILES_ACTIVE=dev,local mvn spring-boot:run`
+  - **Spring Boot Support**: Leverages built-in profile-specific property files
+  - **Documentation**: Added comprehensive README sections on local overrides
+
 ### Changed
 - **Database Configuration**: `application-dev.yml` is now a local-only file (not tracked in git)
   - Template file `application-dev.yml.template` provides reference configuration
   - Follows Spring Boot best practices for credential management
   - Enables different credentials per developer without git conflicts
+- **Configuration Override Strategy**: Introduced multiple layers for configuration customization
+  - **Defaults**: `application.properties` (version controlled, safe defaults)
+  - **Profile-specific**: `application-dev.yml` (local-only, for database credentials)
+  - **Local overrides**: `application-local.properties` (local-only, for paths/ports/etc.)
+  - **Environment variables**: Highest priority, for CI/CD and Docker deployments
+  - **Priority order**: Environment vars > local profile > dev profile > application.properties
 
 ## [0.41.0] - 2026-01-17
 

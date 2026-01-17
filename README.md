@@ -717,6 +717,35 @@ Log files are automatically managed:
 
 **Note**: Log files (`*.log`) are excluded from version control via `.gitignore`. The `logs/` directory structure is preserved with a `.gitkeep` file.
 
+#### Customizing Log Locations
+
+If you need to customize log file locations (e.g., different directory, external drive, or to avoid git pull conflicts), use **local configuration overrides**:
+
+1. Create a local override file:
+   ```bash
+   cp src/main/resources/application-local.properties.template src/main/resources/application-local.properties
+   ```
+
+2. Edit `application-local.properties` and uncomment/set your custom paths:
+   ```properties
+   # Custom log location
+   logging.file.name=/custom/path/to/application.log
+   logging.file.path=/custom/path/to/logs
+   ```
+
+3. Run with the local profile:
+   ```bash
+   SPRING_PROFILES_ACTIVE=dev,local mvn spring-boot:run
+   ```
+
+**Alternative: Environment Variables**
+```bash
+export LOGGING_FILE_PATH=/custom/logs
+mvn spring-boot:run
+```
+
+This approach prevents git conflicts - your `application-local.properties` file is excluded from version control, so `git pull` won't overwrite your local settings.
+
 ### Database Setup
 
 The backend uses PostgreSQL with Flyway for schema migrations. Follow these steps to set up the database:
@@ -804,8 +833,25 @@ The application supports different profiles for different environments:
   - Database: `localhost:5432/lift_simulator`
   - Default user: `lift_admin` (customizable in your local config)
 
-To use a different profile, set the `SPRING_PROFILES_ACTIVE` environment variable:
+- **local** (optional): For local-only overrides without git conflicts
+  - **Template**: `src/main/resources/application-local.properties.template` (version controlled)
+  - **Local Config**: `src/main/resources/application-local.properties` (create from template, **not** version controlled)
+  - **Use case**: Override log paths, server ports, or other settings locally
+  - **Activation**: `SPRING_PROFILES_ACTIVE=dev,local` (combine with dev profile)
+  - **Benefits**:
+    - Your custom settings won't be overwritten by `git pull`
+    - No git merge conflicts for environment-specific config
+    - Each developer can have different local settings
+
+**Using Multiple Profiles:**
 ```bash
+# Activate both dev and local profiles
+SPRING_PROFILES_ACTIVE=dev,local mvn spring-boot:run
+```
+
+**Using a Different Profile:**
+```bash
+# Use production profile
 SPRING_PROFILES_ACTIVE=prod mvn spring-boot:run
 ```
 
