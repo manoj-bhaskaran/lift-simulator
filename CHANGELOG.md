@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.41.1] - 2026-01-17
+
+### Fixed
+- **SPA Forwarding Recursion**: Prevented recursive forwarding when requesting `/index.html`, avoiding StackOverflowError logs during HTML route handling
+
 ## [0.41.0] - 2026-01-17
 
 ### Added

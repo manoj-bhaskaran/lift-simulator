@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class SpaForwardingController {
     @RequestMapping(
             value = {
-                "/{path:^(?!api|actuator|error).*$}",
-                "/{path:^(?!api|actuator|error).*$}/**"
+                "/{path:^(?!api|actuator|error|index\\.html).*$}",
+                "/{path:^(?!api|actuator|error|index\\.html).*$}/**"
             },
             headers = "Accept=" + MediaType.TEXT_HTML_VALUE
     )
