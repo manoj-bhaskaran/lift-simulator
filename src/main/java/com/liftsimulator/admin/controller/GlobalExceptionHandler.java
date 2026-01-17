@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.service.ConfigValidationException;
 import com.liftsimulator.admin.service.ResourceNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -19,15 +21,20 @@ import java.util.Map;
 
 /**
  * Global exception handler for REST API errors.
+ * Provides centralized exception handling with comprehensive logging for monitoring and debugging.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
      * Handles ResourceNotFoundException with 404 status.
      */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
+        logger.info("Resource not found: {}", ex.getMessage());
+
         ErrorResponse error = new ErrorResponse(
             HttpStatus.NOT_FOUND.value(),
             ex.getMessage(),
@@ -41,6 +48,8 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        logger.info("Illegal argument: {}", ex.getMessage());
+
         ErrorResponse error = new ErrorResponse(
             HttpStatus.BAD_REQUEST.value(),
             ex.getMessage(),
@@ -54,6 +63,8 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
+        logger.info("Illegal state: {}", ex.getMessage());
+
         ErrorResponse error = new ErrorResponse(
             HttpStatus.CONFLICT.value(),
             ex.getMessage(),
@@ -69,6 +80,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ConfigValidationResponse> handleConfigValidationError(
         ConfigValidationException ex
     ) {
+        logger.info("Configuration validation error: {}", ex.getMessage());
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getValidationResponse());
     }
 
@@ -87,6 +100,9 @@ public class GlobalExceptionHandler {
         if (cause instanceof UnrecognizedPropertyException unrecognizedEx) {
             String fieldName = unrecognizedEx.getPropertyName();
             message = "Unknown property '" + fieldName + "' is not allowed";
+            logger.warn("Malformed JSON request - unknown property: {}", fieldName);
+        } else {
+            logger.warn("Malformed JSON request: {}", ex.getMessage());
         }
 
         ErrorResponse error = new ErrorResponse(
@@ -119,6 +135,8 @@ public class GlobalExceptionHandler {
             fieldErrors.put(fieldName, errorMessage);
         });
 
+        logger.debug("Validation failed for {} field(s): {}", fieldErrors.size(), fieldErrors.keySet());
+
         ValidationErrorResponse error = new ValidationErrorResponse(
             HttpStatus.BAD_REQUEST.value(),
             "Validation failed",
@@ -130,9 +148,12 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles unexpected exceptions with 500 status.
+     * Logs full stack trace for debugging production issues.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+        logger.error("Unexpected error occurred: {}", ex.getMessage(), ex);
+
         ErrorResponse error = new ErrorResponse(
             HttpStatus.INTERNAL_SERVER_ERROR.value(),
             "An unexpected error occurred",
