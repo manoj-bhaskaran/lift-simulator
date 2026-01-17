@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.40.0**
+Current version: **0.41.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -217,7 +217,7 @@ To package the React UI with the Spring Boot backend and serve everything from *
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.40.0.jar
+java -jar target/lift-simulator-0.41.0.jar
 ```
 
 This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api`.
@@ -238,7 +238,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.40.0.jar
+java -jar target/lift-simulator-0.41.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -623,6 +623,82 @@ The backend is configured via `src/main/resources/application.properties`:
 - Logging level: `INFO` (root), `DEBUG` (com.liftsimulator package)
 - Actuator endpoints: health, info
 
+### Logging
+
+The backend uses Logback for comprehensive logging with both console and file output.
+
+#### Log File Locations
+
+All backend logs are persisted to the `logs/` directory in the project root:
+
+- **Main application log**: `logs/application.log`
+  - Contains all log messages (INFO, DEBUG, ERROR, etc.)
+  - Automatically rotates when file reaches 10MB or daily at midnight
+  - Keeps 30 days of history (max 1GB total)
+  - Archived logs: `logs/application-YYYY-MM-DD.N.log`
+
+- **Error log**: `logs/application-error.log`
+  - Contains ERROR level messages only
+  - Automatically rotates when file reaches 10MB or daily at midnight
+  - Keeps 90 days of history (max 500MB total)
+  - Archived logs: `logs/application-error-YYYY-MM-DD.N.log`
+
+#### Log Configuration
+
+Logging is configured via `src/main/resources/logback-spring.xml`:
+- **Console Output**: Logs to stdout for development monitoring
+- **File Output**: Logs to rotating files for debugging and audit trails
+- **Full Stack Traces**: All exceptions include complete stack traces
+- **Profile-Specific Levels**:
+  - **Dev profile** (default): DEBUG level for application code, verbose SQL logging
+  - **Prod profile**: INFO level for application code, reduced noise
+
+#### Accessing Logs
+
+**View recent logs:**
+```bash
+# Main application log (all levels)
+tail -f logs/application.log
+
+# Error log only
+tail -f logs/application-error.log
+
+# Last 100 lines of main log
+tail -n 100 logs/application.log
+```
+
+**Search for specific errors:**
+```bash
+# Find all ERROR level messages
+grep "ERROR" logs/application.log
+
+# Find stack traces for a specific exception
+grep -A 20 "NullPointerException" logs/application.log
+
+# Search across all archived logs
+grep "ERROR" logs/application-*.log
+```
+
+**View logs by date:**
+```bash
+# View logs from a specific date
+cat logs/application-2026-01-17.0.log
+
+# List all archived logs
+ls -lht logs/
+```
+
+#### Log Retention
+
+Log files are automatically managed:
+- Files rotate when they reach 10MB in size
+- Files also rotate daily at midnight
+- Old files are automatically deleted after retention period
+- Main log: 30 days retention, 1GB max total size
+- Error log: 90 days retention, 500MB max total size
+
+**Note**: Log files (`*.log`) are excluded from version control via `.gitignore`. The `logs/` directory structure is preserved with a `.gitkeep` file.
+
 ### Database Setup
 
 The backend uses PostgreSQL with Flyway for schema migrations. Follow these steps to set up the database:
@@ -738,7 +814,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.40.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.41.0.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -982,7 +1058,7 @@ dropdb lift_simulator_test
 
 ## Features
 
-The current version (v0.40.0) includes comprehensive lift simulation and configuration management capabilities:
+The current version (v0.41.0) includes comprehensive lift simulation and configuration management capabilities:
 
 ### Admin Backend & REST API
 
@@ -1010,6 +1086,13 @@ The current version (v0.40.0) includes comprehensive lift simulation and configu
   - Clear separation between admin and runtime concerns
 - **Global Exception Handling**: Consistent error responses with appropriate HTTP status codes
 - **Health Endpoints**: Custom health checks and Spring Boot Actuator integration
+- **Persistent File-Based Logging**: Comprehensive logging system for debugging and audit trails
+  - Dual output: console (development) and rotating files (debugging/audit)
+  - Automatic log rotation (daily and size-based) to prevent disk exhaustion
+  - Separate error log for quick issue identification
+  - Full stack traces preserved for all exceptions
+  - Profile-specific log levels (verbose dev, production-ready prod)
+  - Configurable via Logback with retention policies (30/90 days)
 
 ### React Admin UI
 
@@ -1156,7 +1239,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.40.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.41.0.jar`.
 
 ## Running Tests
 
@@ -1206,7 +1289,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.40.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.41.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -1215,16 +1298,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.40.0.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.41.0.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.40.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.41.0.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.40.0.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.41.0.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.40.0.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.41.0.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -1238,7 +1321,7 @@ The demo runs a pre-configured scenario with several lift requests and displays 
 Use a published configuration JSON file to run a lightweight simulation:
 
 ```bash
-java -cp target/lift-simulator-0.40.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.41.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 
 Optional flags:
@@ -1256,7 +1339,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.40.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.41.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -1265,13 +1348,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.40.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.41.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.40.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.41.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.40.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.41.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**
