@@ -1,0 +1,35 @@
+{
+  "types": [
+    {"type": "feat", "section": "Added"},
+    {"type": "fix", "section": "Fixed"},
+    {"type": "chore", "section": "Changed", "hidden": false},
+    {"type": "docs", "section": "Documentation", "hidden": false},
+    {"type": "style", "hidden": true},
+    {"type": "refactor", "section": "Changed", "hidden": false},
+    {"type": "perf", "section": "Changed", "hidden": false},
+    {"type": "test", "hidden": true}
+  ],
+  "commitUrlFormat": "https://github.com/manoj-bhaskaran/lift-simulator/commit/{{hash}}",
+  "compareUrlFormat": "https://github.com/manoj-bhaskaran/lift-simulator/compare/{{previousTag}}...{{currentTag}}",
+  "issueUrlFormat": "https://github.com/manoj-bhaskaran/lift-simulator/issues/{{id}}",
+  "userUrlFormat": "https://github.com/{{user}}",
+  "releaseCommitMessageFormat": "chore(release): {{currentTag}}",
+  "header": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n",
+  "skip": {
+    "changelog": false,
+    "commit": false,
+    "tag": false
+  },
+  "infile": "CHANGELOG.md",
+  "preset": "conventionalcommits",
+  "bumpFiles": [
+    {
+      "filename": "package.json",
+      "type": "json"
+    },
+    {
+      "filename": "pom.xml",
+      "updater": "scripts/pom-updater.js"
+    }
+  ]
+}
