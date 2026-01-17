@@ -1,5 +1,19 @@
+// @ts-check
 import { Link } from 'react-router-dom';
 
+/**
+ * @typedef {Object} VersionActionsProps
+ * @property {string} systemId
+ * @property {number} versionNumber
+ * @property {import('../types/models').VersionStatus} status
+ * @property {(versionNumber: number) => void} onPublish
+ * @property {(versionNumber: number) => void} onRunSimulation
+ * @property {number | null} runningVersion
+ */
+
+/**
+ * @param {VersionActionsProps} props
+ */
 function VersionActions({
   systemId,
   versionNumber,

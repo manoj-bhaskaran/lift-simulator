@@ -1,3 +1,4 @@
+// @ts-check
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
@@ -12,17 +13,22 @@ function LiftSystemDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  /** @type {import('../types/models').LiftSystem | null} */
   const [system, setSystem] = useState(null);
+  /** @type {import('../types/models').Version[]} */
   const [versions, setVersions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreateVersion, setShowCreateVersion] = useState(false);
   const [newVersionConfig, setNewVersionConfig] = useState('');
   const [creating, setCreating] = useState(false);
+  /** @type {number | null} */
   const [runningVersion, setRunningVersion] = useState(null);
+  /** @type {{ type: 'success' | 'error'; message: string } | null} */
   const [simulationStatus, setSimulationStatus] = useState(null);
 
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  /** @type {number | null} */
   const [versionToPublish, setVersionToPublish] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
@@ -82,6 +88,9 @@ function LiftSystemDetail() {
     }
   };
 
+  /**
+   * @param {number} versionNumber
+   */
   const handlePublishVersion = (versionNumber) => {
     setVersionToPublish(versionNumber);
     setShowPublishConfirm(true);
@@ -96,6 +105,9 @@ function LiftSystemDetail() {
     }
   };
 
+  /**
+   * @param {number} versionNumber
+   */
   const handleRunSimulation = async (versionNumber) => {
     setRunningVersion(versionNumber);
     setSimulationStatus(null);

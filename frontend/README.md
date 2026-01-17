@@ -17,6 +17,29 @@ This is the frontend admin application for the Lift Simulator system. It provide
 - **React Router 7.12.0** - Client-side routing
 - **Axios 1.13.2** - HTTP client for API calls
 
+## Type Checking (JSDoc + Type Declarations)
+
+The frontend remains JavaScript-first, but it includes TypeScript declaration files for core data models to enable editor type checking and autocomplete:
+
+1. Ensure `frontend/jsconfig.json` is present (it enables `checkJs` and `allowJs`).
+2. Add `// @ts-check` to the top of any JS file where you want type checking.
+3. Use JSDoc imports to reference shared models from `src/types/models.d.ts`.
+
+Example:
+
+```js
+// @ts-check
+
+/**
+ * @param {import('../types/models').LiftSystem} system
+ */
+function renderSystem(system) {
+  return system.displayName;
+}
+```
+
+Shared interfaces include `LiftSystem`, `Version`, and `ValidationResult`.
+
 ## Prerequisites
 
 - Node.js 18+ and npm
@@ -54,7 +77,7 @@ For a single-app setup (frontend served by Spring Boot on port 8080), build from
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.38.1.jar
+java -jar target/lift-simulator-0.39.0.jar
 ```
 
 This packages the React build output into the Spring Boot JAR and serves it from `/`.
