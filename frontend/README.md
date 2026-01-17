@@ -1,5 +1,10 @@
 # Lift Simulator Admin UI
 
+![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![React](https://img.shields.io/badge/React-19.x-61DAFB?logo=react)
+![Vite](https://img.shields.io/badge/Vite-7.x-646CFF?logo=vite)
+
 React-based admin interface for managing lift system configurations.
 
 ## Overview
@@ -12,10 +17,14 @@ This is the frontend admin application for the Lift Simulator system. It provide
 
 ## Tech Stack
 
-- **React 19.2.0** - UI library
-- **Vite 7.2.4** - Build tool and dev server
-- **React Router 7.12.0** - Client-side routing
-- **Axios 1.13.2** - HTTP client for API calls
+This project uses the following core dependencies (version ranges as specified in `package.json`):
+
+- **React ^19.2.0** - UI library
+- **Vite ^7.2.4** - Build tool and dev server
+- **React Router ^7.12.0** - Client-side routing
+- **Axios ^1.13.2** - HTTP client for API calls
+
+> **Note:** The caret (^) prefix allows npm to install compatible minor and patch updates. For example, `^19.2.0` allows versions `>=19.2.0` and `<20.0.0`. Run `npm list` to see the exact installed versions.
 
 ## Type Checking (JSDoc + Type Declarations)
 
@@ -71,23 +80,81 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 Or use your IDE to run the main application class.
 
-## Production Build with Spring Boot
-
-For a single-app setup (frontend served by Spring Boot on port 8080), build from the repository root:
-
-```bash
-mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.39.0.jar
-```
-
-This packages the React build output into the Spring Boot JAR and serves it from `/`.
-
 ## Available Scripts
 
 - `npm run dev` - Start development server (port 3000)
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
+
+## Deployment
+
+This section covers production deployment options for the admin UI.
+
+### Primary Deployment: Spring Boot Integration (Recommended)
+
+**Use this approach for the monorepo setup where the frontend is served by the Spring Boot backend.**
+
+This is the recommended deployment model for most use cases. It provides:
+- Single JAR deployment with both frontend and backend
+- Simplified deployment and operations
+- No CORS configuration needed
+- Consistent versioning across frontend and backend
+
+**Build and deploy:**
+
+From the repository root:
+
+```bash
+mvn -Pfrontend clean package
+java -jar target/lift-simulator-0.39.0.jar
+```
+
+This command:
+1. Builds the React app using Vite
+2. Copies the build output to `src/main/resources/static`
+3. Packages everything into a single Spring Boot JAR
+4. Serves the frontend from `http://localhost:8080/`
+5. Serves the API from `http://localhost:8080/api`
+
+**Access the application:**
+- Frontend: http://localhost:8080
+- API: http://localhost:8080/api
+- Actuator: http://localhost:8080/actuator
+
+### Alternative Deployment: Standalone Static Hosting
+
+**Use this approach if you need to deploy the frontend separately (CDN, static hosting, etc.).**
+
+This deployment model is suitable when:
+- You want to serve the frontend from a CDN
+- You need separate scaling for frontend and backend
+- You're deploying to a static hosting service (Netlify, Vercel, etc.)
+
+**Build the frontend:**
+
+```bash
+cd frontend
+npm run build
+```
+
+The build output will be in the `dist/` directory.
+
+**Preview the production build locally:**
+
+```bash
+npm run preview
+```
+
+**Deploy the `dist/` directory to:**
+- Static web server (nginx, Apache)
+- CDN (CloudFront, Cloudflare)
+- Static hosting platforms (Netlify, Vercel, GitHub Pages)
+
+**Important:** When deploying separately, you must:
+1. Configure CORS on the backend to allow requests from your frontend domain
+2. Set `VITE_API_BASE_URL` environment variable to point to your backend API URL
+3. Ensure the backend is accessible from the frontend domain
 
 ## API Configuration
 
@@ -221,21 +288,58 @@ The proxy configuration should prevent CORS issues. If you encounter CORS errors
 2. Restart the dev server: `npm run dev`
 3. Clear browser cache and reload
 
-## Production Build
+## Maintenance
 
-To build for production:
+### Dependency Updates
 
-```bash
-npm run build
-```
+To keep dependencies up to date and secure, periodically check for and apply updates:
 
-The build output will be in the `dist/` directory. The production build can be served by:
+**Check for outdated dependencies:**
 
 ```bash
-npm run preview
+npm outdated
 ```
 
-Or deploy the `dist/` directory to your web server or CDN.
+**Update dependencies interactively:**
+
+```bash
+npx npm-check-updates --interactive
+```
+
+This allows you to:
+- Review available updates for each dependency
+- Choose which updates to apply (major, minor, patch)
+- See breaking change warnings
+
+**Apply selected updates:**
+
+```bash
+npx npm-check-updates -u
+npm install
+```
+
+**Best practices:**
+- Review changelogs before applying major version updates
+- Test thoroughly after updating dependencies
+- Update dependencies regularly (monthly recommended)
+- Keep the `package.json` ranges in sync with this README
+- Run `npm audit` to check for security vulnerabilities
+
+**After updating:**
+
+```bash
+npm test          # Run tests (if available)
+npm run build     # Verify build still works
+npm run dev       # Test in development mode
+```
+
+### Version Synchronization
+
+When updating dependency versions:
+1. Update `package.json` with new version ranges
+2. Update the "Tech Stack" section in this README to match
+3. Test the application thoroughly
+4. Document breaking changes in the project CHANGELOG
 
 ## Next Steps
 

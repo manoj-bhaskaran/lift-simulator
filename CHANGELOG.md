@@ -24,10 +24,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Improved developer onboarding experience
     - Inline documentation for component APIs
     - Enhanced code maintainability
+- **Professional README Badges**: Added visual badges to frontend README
+  - Node.js version requirement (>=18.0.0)
+  - MIT License badge
+  - React version (19.x) with logo
+  - Vite version (7.x) with logo
+- **Maintenance Documentation**: Added comprehensive dependency management section
+  - Interactive dependency update workflow using npm-check-updates
+  - Best practices for reviewing and applying updates
+  - Version synchronization guidelines
+  - Security audit recommendations
 
 ### Changed
+- **Frontend README Improvements**: Significantly improved documentation accuracy and organization
+  - **Version Documentation Fix**: Tech stack versions now show caret ranges (e.g., ^19.2.0) matching package.json
+    - Added explanatory note about semantic versioning ranges
+    - Prevents confusion about exact vs. compatible versions
+    - Documents how to check installed versions with `npm list`
+  - **Deployment Reorganization**: Restructured deployment documentation with clear hierarchy
+    - **Primary Deployment**: Spring Boot integration (recommended) with benefits listed
+    - **Alternative Deployment**: Standalone static hosting with use cases
+    - Moved deployment section earlier in README for better discoverability
+    - Added clear benefits and trade-offs for each approach
+    - Included CORS configuration notes for standalone deployment
+  - **Improved Structure**: Better information architecture throughout
+    - Added deployment decision guidance
+    - Enhanced troubleshooting section placement
+    - Consolidated production build documentation
 - Version bumped from 0.38.1 to 0.39.0
 - Frontend package version updated to 0.39.0
+
+### Fixed
+- **Version Documentation Mismatch**: Resolved inconsistency between README (exact versions) and package.json (caret ranges)
+- **Deployment Model Ambiguity**: Clarified which deployment approach is recommended for which use case
+- **Missing Maintenance Guidance**: Addressed gap in dependency update process documentation
 
 ## [0.38.1] - 2026-01-18
 
