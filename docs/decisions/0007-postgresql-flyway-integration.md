@@ -333,7 +333,7 @@ sudo service postgresql start
 # Create database and user
 sudo -u postgres psql <<EOF
 CREATE DATABASE lift_simulator;
-CREATE USER lift_admin WITH PASSWORD 'liftpassword';
+CREATE USER lift_admin WITH PASSWORD 'your_secure_password';
 GRANT ALL PRIVILEGES ON DATABASE lift_simulator TO lift_admin;
 \c lift_simulator
 GRANT ALL ON SCHEMA public TO lift_admin;
