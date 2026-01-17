@@ -24,6 +24,14 @@ function LiftSystemDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
 
+  // Pagination, sorting, and filtering states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [sortBy, setSortBy] = useState('versionNumber');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [versionSearch, setVersionSearch] = useState('');
+
   useEffect(() => {
     loadSystemData();
   }, [id]);
@@ -127,6 +135,83 @@ function LiftSystemDetail() {
     }
   };
 
+  // Filter, sort, and paginate versions
+  const getFilteredAndSortedVersions = () => {
+    let filtered = [...versions];
+
+    // Apply status filter
+    if (statusFilter !== 'ALL') {
+      filtered = filtered.filter((v) => v.status === statusFilter);
+    }
+
+    // Apply version number search
+    if (versionSearch.trim()) {
+      filtered = filtered.filter((v) =>
+        v.versionNumber.toString().includes(versionSearch.trim())
+      );
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let comparison = 0;
+
+      if (sortBy === 'versionNumber') {
+        comparison = a.versionNumber - b.versionNumber;
+      } else if (sortBy === 'createdAt') {
+        comparison = new Date(a.createdAt) - new Date(b.createdAt);
+      } else if (sortBy === 'status') {
+        const statusOrder = { PUBLISHED: 1, DRAFT: 2, ARCHIVED: 3 };
+        comparison = statusOrder[a.status] - statusOrder[b.status];
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  };
+
+  const filteredVersions = getFilteredAndSortedVersions();
+  const totalPages = Math.ceil(filteredVersions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedVersions = filteredVersions.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, versionSearch, sortBy, sortOrder, itemsPerPage]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const renderPageNumbers = () => {
+    const pages = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`page-number ${i === currentPage ? 'active' : ''}`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    return pages;
+  };
+
   if (loading) {
     return <div className="lift-system-detail"><p>Loading...</p></div>;
   }
@@ -179,7 +264,7 @@ function LiftSystemDetail() {
 
       <div className="detail-section" id="versions">
         <div className="section-header">
-          <h3>Versions ({versions.length})</h3>
+          <h3>Versions ({filteredVersions.length} of {versions.length})</h3>
           <button
             onClick={() => setShowCreateVersion(!showCreateVersion)}
             className="btn-primary"
@@ -225,8 +310,96 @@ function LiftSystemDetail() {
             <p>No versions yet. Create the first version to get started.</p>
           </div>
         ) : (
-          <div className="versions-list">
-            {versions.map((version) => (
+          <>
+            <div className="versions-controls">
+              <div className="controls-row">
+                <div className="control-group">
+                  <label htmlFor="versionSearch">Search Version:</label>
+                  <input
+                    id="versionSearch"
+                    type="text"
+                    placeholder="Search by version number..."
+                    value={versionSearch}
+                    onChange={(e) => setVersionSearch(e.target.value)}
+                    className="search-input"
+                  />
+                </div>
+
+                <div className="control-group">
+                  <label htmlFor="statusFilter">Filter by Status:</label>
+                  <select
+                    id="statusFilter"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="ALL">All Statuses</option>
+                    <option value="PUBLISHED">Published</option>
+                    <option value="DRAFT">Draft</option>
+                    <option value="ARCHIVED">Archived</option>
+                  </select>
+                </div>
+
+                <div className="control-group">
+                  <label htmlFor="sortBy">Sort by:</label>
+                  <select
+                    id="sortBy"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="sort-select"
+                  >
+                    <option value="versionNumber">Version Number</option>
+                    <option value="createdAt">Creation Date</option>
+                    <option value="status">Status</option>
+                  </select>
+                </div>
+
+                <div className="control-group">
+                  <label htmlFor="sortOrder">Order:</label>
+                  <select
+                    id="sortOrder"
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    className="sort-select"
+                  >
+                    <option value="desc">
+                      {sortBy === 'versionNumber' ? 'Descending' :
+                       sortBy === 'createdAt' ? 'Newest First' :
+                       'Published First'}
+                    </option>
+                    <option value="asc">
+                      {sortBy === 'versionNumber' ? 'Ascending' :
+                       sortBy === 'createdAt' ? 'Oldest First' :
+                       'Archived First'}
+                    </option>
+                  </select>
+                </div>
+
+                <div className="control-group">
+                  <label htmlFor="itemsPerPage">Items per page:</label>
+                  <select
+                    id="itemsPerPage"
+                    value={itemsPerPage}
+                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                    className="items-select"
+                  >
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {filteredVersions.length === 0 ? (
+              <div className="empty-state">
+                <p>No versions match your filters.</p>
+              </div>
+            ) : (
+              <>
+                <div className="versions-list">
+                  {paginatedVersions.map((version) => (
               <div key={version.id} className="version-card">
                 <div className="version-header">
                   <div>
@@ -292,6 +465,52 @@ function LiftSystemDetail() {
               </div>
             ))}
           </div>
+
+          {totalPages > 1 && (
+            <div className="pagination-controls">
+              <div className="pagination-info">
+                Showing {startIndex + 1}-{Math.min(endIndex, filteredVersions.length)} of {filteredVersions.length} versions
+              </div>
+              <div className="pagination-buttons">
+                <button
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
+                  className="page-btn"
+                  title="First page"
+                >
+                  &laquo;
+                </button>
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="page-btn"
+                  title="Previous page"
+                >
+                  &lsaquo;
+                </button>
+                {renderPageNumbers()}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="page-btn"
+                  title="Next page"
+                >
+                  &rsaquo;
+                </button>
+                <button
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="page-btn"
+                  title="Last page"
+                >
+                  &raquo;
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+            )}
+          </>
         )}
       </div>
 
