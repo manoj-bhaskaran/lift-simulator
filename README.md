@@ -41,7 +41,7 @@ sudo -u postgres psql
 
 # Execute these commands in the psql prompt:
 CREATE DATABASE lift_simulator;
-CREATE USER lift_admin WITH PASSWORD 'liftpassword';
+CREATE USER lift_admin WITH PASSWORD 'YOUR_SECURE_PASSWORD';
 GRANT ALL PRIVILEGES ON DATABASE lift_simulator TO lift_admin;
 \c lift_simulator
 CREATE SCHEMA IF NOT EXISTS lift_simulator AUTHORIZATION lift_admin;
@@ -54,7 +54,7 @@ GRANT ALL ON SCHEMA lift_simulator TO lift_admin;
 **Verification:**
 ```bash
 psql -h localhost -U lift_admin -d lift_simulator
-# Password: liftpassword
+# Enter the password you set above when prompted
 # You should see the PostgreSQL prompt
 \q
 ```
@@ -69,12 +69,12 @@ Create your local configuration file:
 cp src/main/resources/application-dev.yml.template src/main/resources/application-dev.yml
 ```
 
-Edit `src/main/resources/application-dev.yml` and replace `CHANGE_ME` with `liftpassword`:
+Edit `src/main/resources/application-dev.yml` and replace `CHANGE_ME` with your database password:
 
 ```yaml
 spring:
   datasource:
-    password: liftpassword  # Replace CHANGE_ME
+    password: YOUR_SECURE_PASSWORD  # Replace CHANGE_ME with the password you set in step 1
 ```
 
 **Note:** This file is excluded from version control and contains your local credentials.
@@ -772,7 +772,7 @@ The backend uses PostgreSQL with Flyway for schema migrations. Follow these step
 
    # Execute these commands in the psql prompt:
    CREATE DATABASE lift_simulator;
-   CREATE USER lift_admin WITH PASSWORD 'liftpassword';
+   CREATE USER lift_admin WITH PASSWORD 'YOUR_SECURE_PASSWORD';
    GRANT ALL PRIVILEGES ON DATABASE lift_simulator TO lift_admin;
    \c lift_simulator
    CREATE SCHEMA IF NOT EXISTS lift_simulator AUTHORIZATION lift_admin;
@@ -791,7 +791,7 @@ The backend uses PostgreSQL with Flyway for schema migrations. Follow these step
    ```yaml
    spring:
      datasource:
-       password: liftpassword  # Replace CHANGE_ME with your actual password
+       password: YOUR_SECURE_PASSWORD  # Replace CHANGE_ME with the password you set above
    ```
 
    **Important:**
@@ -804,7 +804,7 @@ The backend uses PostgreSQL with Flyway for schema migrations. Follow these step
    You can override database credentials using environment variables instead of editing the file:
    ```bash
    export DB_USERNAME=lift_admin
-   export DB_PASSWORD=liftpassword
+   export DB_PASSWORD=your_secure_password
    mvn spring-boot:run
    ```
 
@@ -813,7 +813,7 @@ The backend uses PostgreSQL with Flyway for schema migrations. Follow these step
 4. **Verify Database Connection**:
    ```bash
    psql -h localhost -U lift_admin -d lift_simulator
-   # Password: liftpassword
+   # Enter the password you set when prompted
    ```
 
 5. **Run the Application**:
