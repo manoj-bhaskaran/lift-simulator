@@ -2,6 +2,23 @@ import { useState } from 'react';
 import './Modal.css';
 import './CreateSystemModal.css';
 
+/**
+ * @typedef {Object} LiftSystemFormData
+ * @property {string} systemKey - Unique identifier for the lift system (alphanumeric, hyphens, underscores)
+ * @property {string} displayName - Human-readable name for the lift system
+ * @property {string} description - Optional description of the lift system
+ */
+
+/**
+ * Modal component for creating a new lift system with form validation.
+ * Includes validation for system key format, required fields, and character limits.
+ *
+ * @param {Object} props - Component props
+ * @param {boolean} props.isOpen - Whether the modal is open
+ * @param {Function} props.onClose - Callback function invoked when modal is closed
+ * @param {Function} props.onSubmit - Async callback function invoked with form data when form is submitted
+ * @returns {JSX.Element|null} The create system modal component or null if not open
+ */
 function CreateSystemModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
     systemKey: '',
@@ -11,6 +28,12 @@ function CreateSystemModal({ isOpen, onClose, onSubmit }) {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
+  /**
+   * Validates the form data according to business rules.
+   * Checks for required fields, format constraints, and length limits.
+   *
+   * @returns {boolean} True if form is valid, false otherwise
+   */
   const validateForm = () => {
     const newErrors = {};
 
@@ -36,6 +59,11 @@ function CreateSystemModal({ isOpen, onClose, onSubmit }) {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Handles form submission with validation and error handling.
+   *
+   * @param {React.FormEvent} e - Form submission event
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -55,6 +83,11 @@ function CreateSystemModal({ isOpen, onClose, onSubmit }) {
     }
   };
 
+  /**
+   * Handles input field changes and clears field-specific errors.
+   *
+   * @param {React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>} e - Input change event
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -64,6 +97,9 @@ function CreateSystemModal({ isOpen, onClose, onSubmit }) {
     }
   };
 
+  /**
+   * Handles modal close by resetting form state and calling onClose callback.
+   */
   const handleClose = () => {
     setFormData({ systemKey: '', displayName: '', description: '' });
     setErrors({});

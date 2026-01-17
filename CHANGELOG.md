@@ -5,17 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.39.0] - 2026-01-25
+## [0.39.0] - 2026-01-18
 
 ### Added
-- Frontend TypeScript declaration file for core lift system, version, and validation models
-- JSDoc-based typing for key admin UI components with @ts-check enabled
-- Frontend jsconfig configuration to enable JavaScript type checking in editors
+- **Comprehensive JSDoc Documentation**: Added JSDoc comments to all React components and utility functions
+  - **Component Documentation**: All components now have detailed JSDoc with:
+    - Component descriptions and feature lists
+    - Complete props documentation with types and descriptions
+    - Parameter and return type annotations
+    - Usage examples where appropriate
+  - **Documented Components**:
+    - Modal components: AlertModal, ConfirmModal, CreateSystemModal, Modal
+    - Layout components: Layout, VersionActions
+    - Page components: ConfigEditor, LiftSystemDetail, LiftSystems
+  - **Utility Functions**: errorHandlers.js and statusUtils.js now have full JSDoc
+  - **Benefits**:
+    - Better IDE autocomplete and type hints
+    - Improved developer onboarding experience
+    - Inline documentation for component APIs
+    - Enhanced code maintainability
 
 ### Changed
 - Version bumped from 0.38.1 to 0.39.0
 - Frontend package version updated to 0.39.0
-- Documentation updated to describe using shared model typings in JSDoc
 
 ## [0.38.1] - 2026-01-18
 

@@ -7,6 +7,25 @@ import { handleApiError } from '../utils/errorHandlers';
 import { getStatusBadgeClass } from '../utils/statusUtils';
 import './ConfigEditor.css';
 
+/**
+ * Lift system configuration editor page component.
+ * Provides a JSON editor for modifying lift system configurations with validation and publishing capabilities.
+ *
+ * Features:
+ * - JSON configuration editing with syntax highlighting
+ * - Real-time validation with error/warning display
+ * - Draft saving with unsaved changes tracking
+ * - Version publishing workflow
+ * - Read-only mode for non-DRAFT versions
+ *
+ * Workflow:
+ * 1. Edit configuration JSON
+ * 2. Validate configuration
+ * 3. Save draft (auto-validates if not validated)
+ * 4. Publish version (requires valid, saved configuration)
+ *
+ * @returns {JSX.Element} The configuration editor page component
+ */
 function ConfigEditor() {
   const { systemId, versionNumber } = useParams();
   const navigate = useNavigate();
@@ -42,6 +61,10 @@ function ConfigEditor() {
     }
   }, [config, version]);
 
+  /**
+   * Loads system and version data from the API.
+   * Fetches system metadata and version configuration in parallel.
+   */
   const loadData = async () => {
     try {
       setLoading(true);
@@ -60,11 +83,22 @@ function ConfigEditor() {
     }
   };
 
+  /**
+   * Handles configuration text changes in the editor.
+   * Clears validation results when config is modified.
+   *
+   * @param {React.ChangeEvent<HTMLTextAreaElement>} e - Textarea change event
+   */
   const handleConfigChange = (e) => {
     setConfig(e.target.value);
     setValidationResult(null); // Clear validation when config changes
   };
 
+  /**
+   * Saves the current configuration as a draft.
+   * Validates JSON syntax, runs configuration validation if needed, and persists to API.
+   * Only allows saving if configuration is valid.
+   */
   const handleSaveDraft = async () => {
     try {
       setSaving(true);
@@ -120,6 +154,11 @@ function ConfigEditor() {
     }
   };
 
+  /**
+   * Validates the current configuration against business rules.
+   * Parses JSON and sends to validation API endpoint.
+   * Displays errors and warnings in the validation panel.
+   */
   const handleValidate = async () => {
     try {
       setValidating(true);
@@ -141,10 +180,17 @@ function ConfigEditor() {
     }
   };
 
+  /**
+   * Initiates the publish workflow by showing confirmation modal.
+   */
   const handlePublish = () => {
     setShowPublishConfirm(true);
   };
 
+  /**
+   * Confirms and executes version publishing.
+   * Publishes the version and navigates back to system detail page.
+   */
   const confirmPublish = async () => {
     try {
       setPublishing(true);
@@ -160,6 +206,12 @@ function ConfigEditor() {
     }
   };
 
+  /**
+   * Determines whether the current version can be published.
+   * Requires DRAFT status, valid configuration, and no unsaved changes.
+   *
+   * @returns {boolean} True if version can be published, false otherwise
+   */
   const canPublish = () => {
     return version?.status === 'DRAFT' &&
            validationResult &&

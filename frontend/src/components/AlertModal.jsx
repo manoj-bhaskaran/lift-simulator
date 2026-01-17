@@ -2,11 +2,28 @@ import { useRef } from 'react';
 import Modal from './Modal';
 import './AlertModal.css';
 
+/**
+ * Modal component for displaying alert messages to users.
+ * Supports different alert types (error, warning, success, info) with appropriate icons.
+ *
+ * @param {Object} props - Component props
+ * @param {boolean} props.isOpen - Whether the modal is open
+ * @param {Function} props.onClose - Callback function invoked when modal is closed
+ * @param {string} [props.title='Error'] - Modal title displayed in the header
+ * @param {string} props.message - Alert message content to display
+ * @param {'error'|'warning'|'success'|'info'} [props.type='error'] - Alert type that determines styling and icon
+ * @returns {JSX.Element|null} The alert modal component or null if not open
+ */
 function AlertModal({ isOpen, onClose, title = 'Error', message, type = 'error' }) {
   const okButtonRef = useRef(null);
 
   if (!isOpen) return null;
 
+  /**
+   * Gets the appropriate icon character based on alert type.
+   *
+   * @returns {string} Unicode character representing the alert type icon
+   */
   const getIcon = () => {
     switch (type) {
       case 'error':

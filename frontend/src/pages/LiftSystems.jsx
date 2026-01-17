@@ -7,6 +7,18 @@ import AlertModal from '../components/AlertModal';
 import { handleApiError } from '../utils/errorHandlers';
 import './LiftSystems.css';
 
+/**
+ * Main lift systems listing page component.
+ * Displays a searchable grid of all lift systems with creation and navigation capabilities.
+ *
+ * Features:
+ * - Search systems by display name or system key
+ * - Create new lift systems via modal
+ * - Navigate to system details or version management
+ * - Display system metadata (version count, creation date)
+ *
+ * @returns {JSX.Element} The lift systems page component
+ */
 function LiftSystems() {
   const navigate = useNavigate();
   /** @type {import('../types/models').LiftSystem[]} */
@@ -21,6 +33,10 @@ function LiftSystems() {
     loadSystems();
   }, []);
 
+  /**
+   * Loads all lift systems from the API.
+   * Sets loading state and handles errors appropriately.
+   */
   const loadSystems = async () => {
     try {
       setLoading(true);
@@ -35,7 +51,10 @@ function LiftSystems() {
   };
 
   /**
-   * @param {{ systemKey: string; displayName: string; description?: string }} formData
+   * Handles lift system creation from the modal form.
+   * On success, closes modal, refreshes list, and navigates to new system detail page.
+   *
+   * @param {Object} formData - Form data containing systemKey, displayName, and description
    */
   const handleCreateSystem = async (formData) => {
     try {
@@ -49,14 +68,30 @@ function LiftSystems() {
     }
   };
 
+  /**
+   * Navigates to the detailed view of a specific lift system.
+   *
+   * @param {string|number} systemId - Unique identifier of the system
+   */
   const handleViewDetails = (systemId) => {
     navigate(`/systems/${systemId}`);
   };
 
+  /**
+   * Navigates to the version management section of a specific lift system.
+   *
+   * @param {string|number} systemId - Unique identifier of the system
+   */
   const handleManageVersions = (systemId) => {
     navigate(`/systems/${systemId}#versions`);
   };
 
+  /**
+   * Memoized filtered list of systems based on search query.
+   * Searches in both display name and system key fields (case-insensitive).
+   *
+   * @type {Array<Object>}
+   */
   const filteredSystems = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
     if (!normalizedQuery) {

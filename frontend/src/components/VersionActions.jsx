@@ -2,17 +2,22 @@
 import { Link } from 'react-router-dom';
 
 /**
- * @typedef {Object} VersionActionsProps
- * @property {string} systemId
- * @property {number} versionNumber
- * @property {import('../types/models').VersionStatus} status
- * @property {(versionNumber: number) => void} onPublish
- * @property {(versionNumber: number) => void} onRunSimulation
- * @property {number | null} runningVersion
- */
-
-/**
- * @param {VersionActionsProps} props
+ * Action buttons component for lift system version management.
+ * Provides context-aware actions based on version status (DRAFT, PUBLISHED, ARCHIVED).
+ *
+ * Actions available:
+ * - DRAFT versions: Edit Config, Publish buttons
+ * - PUBLISHED versions: View Config, Run Simulator buttons
+ * - ARCHIVED versions: View Config button only
+ *
+ * @param {Object} props - Component props
+ * @param {string|number} props.systemId - Unique identifier of the lift system
+ * @param {number} props.versionNumber - Version number being acted upon
+ * @param {'DRAFT'|'PUBLISHED'|'ARCHIVED'} props.status - Current status of the version
+ * @param {Function} props.onPublish - Callback function invoked when Publish button is clicked, receives versionNumber
+ * @param {Function} props.onRunSimulation - Callback function invoked when Run Simulator button is clicked, receives versionNumber
+ * @param {number|null} props.runningVersion - Version number currently running simulation, or null if none
+ * @returns {JSX.Element} The version actions component
  */
 function VersionActions({
   systemId,

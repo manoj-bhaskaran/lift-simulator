@@ -9,6 +9,24 @@ import { getApiErrorMessage, handleApiError } from '../utils/errorHandlers';
 import { getStatusBadgeClass } from '../utils/statusUtils';
 import './LiftSystemDetail.css';
 
+/**
+ * Detailed view page for a specific lift system.
+ * Displays system information, version management, and provides version filtering, sorting, and pagination.
+ *
+ * Features:
+ * - System metadata display (name, key, description, timestamps)
+ * - Version list with pagination, sorting, and filtering
+ * - Version creation, publishing, and deletion
+ * - Simulator execution for published versions
+ * - System deletion with confirmation
+ * - Auto-scroll to versions section when navigating from list view
+ *
+ * URL Parameters:
+ * - id: System identifier
+ * - #versions: Optional hash to scroll to versions section
+ *
+ * @returns {JSX.Element} The lift system detail page component
+ */
 function LiftSystemDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -56,6 +74,10 @@ function LiftSystemDetail() {
     }
   }, [location.hash, loading, versions.length]);
 
+  /**
+   * Loads system metadata and all versions from the API.
+   * Fetches data in parallel for improved performance.
+   */
   const loadSystemData = async () => {
     try {
       setLoading(true);
@@ -73,6 +95,12 @@ function LiftSystemDetail() {
     }
   };
 
+  /**
+   * Handles new version creation from the inline form.
+   * Creates version and refreshes the system data.
+   *
+   * @param {React.FormEvent} e - Form submission event
+   */
   const handleCreateVersion = async (e) => {
     e.preventDefault();
     try {
@@ -89,13 +117,19 @@ function LiftSystemDetail() {
   };
 
   /**
-   * @param {number} versionNumber
+   * Initiates version publishing workflow by showing confirmation modal.
+   *
+   * @param {number} versionNumber - Version number to publish
    */
   const handlePublishVersion = (versionNumber) => {
     setVersionToPublish(versionNumber);
     setShowPublishConfirm(true);
   };
 
+  /**
+   * Confirms and executes version publishing.
+   * Publishes the version and refreshes the system data.
+   */
   const confirmPublish = async () => {
     try {
       await liftSystemsApi.publishVersion(id, versionToPublish);
@@ -106,7 +140,10 @@ function LiftSystemDetail() {
   };
 
   /**
-   * @param {number} versionNumber
+   * Executes the lift simulator for a specific version.
+   * Uses the system key to run the simulation and displays status messages.
+   *
+   * @param {number} versionNumber - Version number to run simulation for
    */
   const handleRunSimulation = async (versionNumber) => {
     setRunningVersion(versionNumber);
@@ -124,10 +161,17 @@ function LiftSystemDetail() {
     }
   };
 
+  /**
+   * Initiates system deletion workflow by showing confirmation modal.
+   */
   const handleDeleteSystem = () => {
     setShowDeleteConfirm(true);
   };
 
+  /**
+   * Confirms and executes system deletion.
+   * Deletes the system and navigates back to systems list.
+   */
   const confirmDelete = async () => {
     try {
       await liftSystemsApi.deleteSystem(id);
@@ -137,7 +181,12 @@ function LiftSystemDetail() {
     }
   };
 
-  // Filter, sort, and paginate versions
+  /**
+   * Filters and sorts versions based on current filter/sort state.
+   * Applies status filter, version number search, and sorting criteria.
+   *
+   * @returns {Array<Object>} Filtered and sorted array of versions
+   */
   const getFilteredAndSortedVersions = () => {
     let filtered = [...versions];
 
@@ -183,12 +232,24 @@ function LiftSystemDetail() {
     setCurrentPage(1);
   }, [statusFilter, versionSearch, sortBy, sortOrder, itemsPerPage]);
 
+  /**
+   * Handles pagination page changes.
+   * Only updates if the new page is within valid range.
+   *
+   * @param {number} newPage - Target page number (1-indexed)
+   */
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
     }
   };
 
+  /**
+   * Renders pagination number buttons with smart windowing.
+   * Shows up to 5 page numbers centered around current page.
+   *
+   * @returns {Array<JSX.Element>} Array of page number button elements
+   */
   const renderPageNumbers = () => {
     const pages = [];
     const maxPagesToShow = 5;
