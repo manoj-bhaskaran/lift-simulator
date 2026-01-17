@@ -7,43 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Security
-- **Configuration Template Pattern**: Implemented template-based configuration for database credentials
-  - **Created** `application-dev.yml.template` with placeholders for sensitive values
-  - **Removed** `application-dev.yml` from version control (added to `.gitignore`)
-  - **Environment Variable Support**: Database credentials can be overridden via environment variables:
-    - `DB_URL`: Database connection URL
-    - `DB_USERNAME`: Database username
-    - `DB_PASSWORD`: Database password
-  - **Developer Workflow**: Developers copy template to `application-dev.yml` and customize locally
-  - **Security Best Practice**: Credentials never committed to version control
-  - **Documentation**: Updated README with detailed setup instructions for configuration file
-
-### Added
-- **Local Configuration Overrides**: Implemented `application-local.properties` pattern for git-conflict-free customization
-  - **Created** `application-local.properties.template` with examples for common overrides
-  - **Added** `application-local.properties` to `.gitignore` (local-only, not tracked)
-  - **Use Cases**:
-    - Custom log file paths (avoid git pull conflicts with `application.properties`)
-    - Different server ports to avoid local conflicts
-    - Alternative database connection settings
-    - Any local-only configuration overrides
-  - **Activation**: `SPRING_PROFILES_ACTIVE=dev,local mvn spring-boot:run`
-  - **Spring Boot Support**: Leverages built-in profile-specific property files
-  - **Documentation**: Added comprehensive README sections on local overrides
-
-### Changed
-- **Database Configuration**: `application-dev.yml` is now a local-only file (not tracked in git)
-  - Template file `application-dev.yml.template` provides reference configuration
-  - Follows Spring Boot best practices for credential management
-  - Enables different credentials per developer without git conflicts
-- **Configuration Override Strategy**: Introduced multiple layers for configuration customization
-  - **Defaults**: `application.properties` (version controlled, safe defaults)
-  - **Profile-specific**: `application-dev.yml` (local-only, for database credentials)
-  - **Local overrides**: `application-local.properties` (local-only, for paths/ports/etc.)
-  - **Environment variables**: Highest priority, for CI/CD and Docker deployments
-  - **Priority order**: Environment vars > local profile > dev profile > application.properties
-
 ## [0.41.0] - 2026-01-17
 
 ### Added
@@ -63,6 +26,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Log files are gitignored (already in .gitignore as `*.log`)
 - **Improved Debugging Capability**: Stack traces from API failures (e.g., `/api/health`) can now be retrieved from log files
 - **Audit Trail**: All backend runtime errors are now persistently recorded for post-mortem analysis
+- **Local Configuration Overrides**: Implemented `application-local.properties` pattern for git-conflict-free customization
+  - **Created** `application-local.properties.template` with examples for common overrides
+  - **Added** `application-local.properties` to `.gitignore` (local-only, not tracked)
+  - **Use Cases**:
+    - Custom log file paths (avoid git pull conflicts with `application.properties`)
+    - Different server ports to avoid local conflicts
+    - Alternative database connection settings
+    - Any local-only configuration overrides
+  - **Activation**: `SPRING_PROFILES_ACTIVE=dev,local mvn spring-boot:run`
+  - **Spring Boot Support**: Leverages built-in profile-specific property files
+  - **Documentation**: Added comprehensive README sections on local overrides
+
+### Security
+- **Configuration Template Pattern**: Implemented template-based configuration for database credentials
+  - **Created** `application-dev.yml.template` with placeholders for sensitive values
+  - **Removed** `application-dev.yml` from version control (added to `.gitignore`)
+  - **Environment Variable Support**: Database credentials can be overridden via environment variables:
+    - `DB_URL`: Database connection URL
+    - `DB_USERNAME`: Database username
+    - `DB_PASSWORD`: Database password
+  - **Developer Workflow**: Developers copy template to `application-dev.yml` and customize locally
+  - **Security Best Practice**: Credentials never committed to version control
+  - **Documentation**: Updated README with detailed setup instructions for configuration file
 
 ### Changed
 - Version bumped from 0.40.0 to 0.41.0
@@ -76,6 +62,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Replaces pattern-only configuration in application.properties
   - Provides better control over appenders, rotation, and formatting
   - Supports profile-specific logging behavior
+- **Database Configuration**: `application-dev.yml` is now a local-only file (not tracked in git)
+  - Template file `application-dev.yml.template` provides reference configuration
+  - Follows Spring Boot best practices for credential management
+  - Enables different credentials per developer without git conflicts
+- **Configuration Override Strategy**: Introduced multiple layers for configuration customization
+  - **Defaults**: `application.properties` (version controlled, safe defaults)
+  - **Profile-specific**: `application-dev.yml` (local-only, for database credentials)
+  - **Local overrides**: `application-local.properties` (local-only, for paths/ports/etc.)
+  - **Environment variables**: Highest priority, for CI/CD and Docker deployments
+  - **Priority order**: Environment vars > local profile > dev profile > application.properties
 
 ### Fixed
 - **Console Buffer Overflow**: Backend logs no longer overflow console buffer during `mvn spring-boot:run`
