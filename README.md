@@ -18,6 +18,148 @@ The Lift Simulator is an iterative project to model and test lift controller alg
 
 The simulation is text-based and designed for clarity over visual appeal.
 
+## Quick Start for UAT
+
+**New to the Lift Simulator? Follow these steps to get up and running quickly.**
+
+### Prerequisites
+
+- **Java 17+** - [Download from Oracle](https://www.oracle.com/java/technologies/downloads/) or use OpenJDK
+- **Node.js 18+** and npm - [Download from nodejs.org](https://nodejs.org/)
+- **PostgreSQL 12+** - [Download from postgresql.org](https://www.postgresql.org/download/)
+- **Maven 3.6+** - Usually bundled with Java IDEs, or [download separately](https://maven.apache.org/download.cgi)
+
+### First-Time Setup (15-20 minutes)
+
+#### 1. Set Up PostgreSQL Database
+
+Start PostgreSQL, then create the database and user:
+
+```bash
+# Connect to PostgreSQL as superuser
+sudo -u postgres psql
+
+# Execute these commands in the psql prompt:
+CREATE DATABASE lift_simulator;
+CREATE USER lift_admin WITH PASSWORD 'liftpassword';
+GRANT ALL PRIVILEGES ON DATABASE lift_simulator TO lift_admin;
+\c lift_simulator
+CREATE SCHEMA IF NOT EXISTS lift_simulator AUTHORIZATION lift_admin;
+GRANT ALL ON SCHEMA lift_simulator TO lift_admin;
+\q
+```
+
+**Windows users:** Replace `sudo -u postgres psql` with `psql -U postgres`
+
+**Verification:**
+```bash
+psql -h localhost -U lift_admin -d lift_simulator
+# Password: liftpassword
+# You should see the PostgreSQL prompt
+\q
+```
+
+See [Database Setup](#database-setup) section for detailed instructions.
+
+#### 2. Start the Backend
+
+From the project root directory:
+
+```bash
+mvn spring-boot:run
+```
+
+**Expected output:**
+```
+Started LiftConfigServiceApplication in X.XXX seconds
+```
+
+The backend will be available at **http://localhost:8080**
+
+**Note:** First run will download Maven dependencies (may take a few minutes) and automatically run Flyway database migrations.
+
+#### 3. Start the Frontend
+
+Open a new terminal window, then:
+
+```bash
+cd frontend
+npm install    # First time only - installs dependencies
+npm run dev
+```
+
+**Expected output:**
+```
+VITE v7.x.x  ready in XXX ms
+
+➜  Local:   http://localhost:3000/
+```
+
+The frontend will be available at **http://localhost:3000**
+
+#### 4. Access the Application
+
+Open your browser and navigate to **http://localhost:3000**
+
+You should see the Lift Simulator dashboard.
+
+### Daily Usage (After First-Time Setup)
+
+Once set up, starting the application is quick:
+
+1. **Start PostgreSQL** (if not already running as a service)
+2. **Start backend:** `mvn spring-boot:run` (from project root)
+3. **Start frontend:** `cd frontend && npm run dev` (in a separate terminal)
+4. **Access:** Open http://localhost:3000 in your browser
+
+### UAT Testing
+
+Follow the comprehensive test scenarios in **[docs/UAT-TEST-SCENARIOS.md](docs/UAT-TEST-SCENARIOS.md)**
+
+The UAT guide includes:
+- 13 detailed test scenarios covering all major workflows
+- Expected results for each test
+- Pass/fail criteria
+- Issue reporting template
+- UAT sign-off checklist
+
+**Estimated testing time:** 2-3 hours
+
+### Sample Configurations
+
+Sample lift configurations are available in `src/main/resources/scenarios/`:
+- **basic-office-building.json** - Simple 10-floor, 2-lift system
+- **high-rise-residential.json** - Complex 30-floor, 4-lift system
+- **invalid-example.json** - Configuration with validation errors (for testing)
+
+Use these as starting points or reference examples.
+
+### Quick Troubleshooting
+
+**Backend won't start:**
+- Verify PostgreSQL is running: `psql -h localhost -U lift_admin -d lift_simulator`
+- Check database credentials in `src/main/resources/application-dev.yml`
+- Check port 8080 isn't already in use: `lsof -i :8080` (macOS/Linux) or `netstat -ano | findstr :8080` (Windows)
+
+**Frontend won't start:**
+- Verify Node.js version: `node --version` (should be 18+)
+- Delete `node_modules` and reinstall: `rm -rf node_modules && npm install`
+- Check port 3000 isn't already in use
+
+**Can't connect to backend from frontend:**
+- Verify backend is running at http://localhost:8080/api/health
+- Check browser console for CORS errors
+- Vite dev proxy should handle this automatically
+
+**Database migrations fail:**
+- Drop and recreate database (see [Database Setup](#database-setup))
+- Verify PostgreSQL version is 12+
+- Check Flyway migration files in `src/main/resources/db/migration/`
+
+For detailed troubleshooting, see the relevant sections below.
+
+---
+
 ## Admin Interface
 
 The project includes both a backend API and a React-based frontend for managing lift simulator configurations.
