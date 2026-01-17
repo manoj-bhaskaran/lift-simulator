@@ -1,402 +1,545 @@
 # Version Management Guide
 
-This document describes the automated version management workflow for the lift-simulator project.
+This document describes the version management workflow for the lift-simulator project.
 
 ## Overview
 
-The project uses a combination of tools to automate version bumping:
+The project uses automated tools to simplify version bumping across multiple files:
 
 1. **Maven Versions Plugin** - Updates `pom.xml`
 2. **NPM Version Command** - Updates `frontend/package.json` and `package-lock.json`
-3. **standard-version** - Automates CHANGELOG generation and version bumping
-4. **Custom Scripts** - Coordinates all tools and updates README files
+3. **Custom Bump Script** - Coordinates all tools and updates README files
+4. **Manual CHANGELOG** - High-quality, detailed release documentation
+
+## Philosophy
+
+This project maintains **high-quality, detailed CHANGELOG entries** with:
+- Comprehensive feature descriptions
+- Technical implementation details
+- Benefits and rationale sections
+- Code references and examples
+
+While automated CHANGELOG generation tools exist, they produce generic entries that don't match the quality and detail of manual documentation. Therefore, **CHANGELOG updates are manual**.
 
 ## Quick Start
 
-### Option 1: Automated Release (Recommended)
-
-Uses Conventional Commits to automatically determine version and generate CHANGELOG:
+### Standard Release Workflow
 
 ```bash
-# Automatically bump version based on commits and update CHANGELOG
-npm run release
-
-# Or specify version type explicitly
-npm run release:patch  # 0.40.0 -> 0.40.1
-npm run release:minor  # 0.40.0 -> 0.41.0
-npm run release:major  # 0.40.0 -> 1.0.0
-```
-
-**What this does:**
-- Analyzes git commits since last release
-- Determines next version (based on feat/fix/BREAKING CHANGE)
-- Updates `CHANGELOG.md` automatically
-- Updates version in `package.json`, `package-lock.json`, and `pom.xml`
-- Creates a git commit and tag
-- Does NOT update README files (see hybrid workflow below)
-
-### Option 2: Manual Version Bump
-
-For complete control, use the custom script:
-
-```bash
-# Bump to specific version
-./scripts/bump-version.sh 0.41.0
-```
-
-**What this does:**
-- Updates `pom.xml` using Maven Versions Plugin
-- Updates `frontend/package.json` and `package-lock.json` using NPM
-- Updates all version references in README files
-- Does NOT update CHANGELOG (you must do this manually)
-- Does NOT create git commit (you must do this manually)
-
-## Conventional Commits
-
-To use automated CHANGELOG generation, follow the Conventional Commits format:
-
-```
-<type>(<scope>): <subject>
-
-<body>
-
-<footer>
-```
-
-### Commit Types
-
-| Type | Description | CHANGELOG Section | Version Bump |
-|------|-------------|-------------------|--------------|
-| `feat` | New feature | Added | Minor (0.x.0) |
-| `fix` | Bug fix | Fixed | Patch (0.0.x) |
-| `chore` | Maintenance | Changed | None |
-| `docs` | Documentation | Documentation | None |
-| `refactor` | Code refactoring | Changed | None |
-| `perf` | Performance improvement | Changed | None |
-| `test` | Test changes | (hidden) | None |
-| `BREAKING CHANGE` | Breaking change | (highlighted) | Major (x.0.0) |
-
-### Examples
-
-**Feature addition (minor bump):**
-```bash
-git commit -m "feat(logging): add comprehensive logging to GlobalExceptionHandler
-
-- Add SLF4J logger with appropriate log levels
-- ERROR level for unexpected errors with stack traces
-- WARN level for malformed JSON requests
-- INFO level for business exceptions"
-```
-
-**Bug fix (patch bump):**
-```bash
-git commit -m "fix(api): correct validation error handling
-
-Fixed issue where validation errors were not properly logged"
-```
-
-**Breaking change (major bump):**
-```bash
-git commit -m "feat(api): redesign configuration API
-
-BREAKING CHANGE: Configuration API now uses v2 endpoints.
-Clients must update to use /api/v2/config instead of /api/config"
-```
-
-**Chore (no version bump):**
-```bash
-git commit -m "chore(deps): update dependencies to latest versions"
-```
-
-**Documentation (no version bump):**
-```bash
-git commit -m "docs(readme): update installation instructions"
-```
-
-## Workflows
-
-### Workflow 1: Fully Automated Release
-
-Best for: Routine releases with good commit messages
-
-```bash
-# 1. Make your changes and commit with Conventional Commits format
-git add src/main/java/...
-git commit -m "feat(api): add new endpoint for system health"
-
-# 2. Run automated release
-npm run release
-
-# 3. Manually update README files if needed
-./scripts/bump-version.sh $(node -p "require('./package.json').version")
-
-# 4. Push changes and tags
-git push --follow-tags origin main
-```
-
-### Workflow 2: Hybrid (Recommended)
-
-Best for: Important releases that need detailed documentation
-
-```bash
-# 1. Make changes and commit with Conventional Commits
+# 1. Make your changes and commit
 git add .
-git commit -m "feat(logging): add comprehensive logging to GlobalExceptionHandler"
+git commit -m "Add comprehensive logging to GlobalExceptionHandler"
 
-# 2. Run automated release to generate basic CHANGELOG
-npm run release
+# 2. Update CHANGELOG.md manually with detailed entry
+# (See CHANGELOG format section below)
 
-# 3. Manually enhance CHANGELOG.md with detailed sections:
-#    - Add "Technical Details" section
-#    - Add "Benefits" section
-#    - Expand descriptions with more context
-
-# 4. Amend the commit
-git add CHANGELOG.md
-git commit --amend --no-edit
-
-# 5. Update README files
-./scripts/bump-version.sh $(node -p "require('./package.json').version")
-
-# 6. Push
-git push --follow-tags origin main
-```
-
-### Workflow 3: Manual Release
-
-Best for: Complex releases or when you want full control
-
-```bash
-# 1. Make your changes and commit normally
-git add .
-git commit -m "Add comprehensive logging"
-
-# 2. Manually update CHANGELOG.md with detailed entry
-
-# 3. Bump version
+# 3. Bump version across all files
 ./scripts/bump-version.sh 0.41.0
 
-# 4. Review and commit
+# 4. Review changes
+git diff
+
+# 5. Commit and tag
 git add -A
 git commit -m "chore(release): bump version to 0.41.0"
 git tag -a v0.41.0 -m "Release v0.41.0"
 
-# 5. Push
+# 6. Push
 git push && git push --tags
 ```
 
-## CHANGELOG Management
+## Version Bump Script
 
-### Automated CHANGELOG
+The `bump-version.sh` script is the primary tool for version updates.
 
-When you run `npm run release`, standard-version:
-- Reads commits since last tag
-- Groups by type (feat → Added, fix → Fixed, etc.)
-- Generates markdown with commit links
-- Prepends to `CHANGELOG.md`
+### Usage
 
-**Example auto-generated entry:**
-```markdown
-## [0.41.0] - 2026-01-17
-
-### Added
-- **logging**: add comprehensive logging to GlobalExceptionHandler ([abc123](link))
-
-### Fixed
-- **api**: correct validation error handling ([def456](link))
+```bash
+./scripts/bump-version.sh <new-version>
 ```
 
-### Manual CHANGELOG Enhancement
+**Example:**
+```bash
+./scripts/bump-version.sh 0.41.0
+```
 
-Your current CHANGELOG has excellent detail. To maintain this quality:
+### What It Does
 
-1. **Let standard-version generate the base entry**
-2. **Manually enhance it** with:
-   - Detailed bullet points under each item
-   - "Technical Details" subsection
-   - "Benefits" subsection
-   - "Changed" subsection with version bumps
-   - Cross-references to ADRs or issues
+1. **Validates version format** (semantic versioning: X.Y.Z)
+2. **Updates pom.xml** using Maven Versions Plugin
+3. **Updates frontend/package.json** using NPM version command
+4. **Updates frontend/package-lock.json** automatically via NPM
+5. **Updates README.md** - replaces all version references and JAR filenames
+6. **Updates frontend/README.md** - replaces JAR filename references
 
-**Example enhanced entry:**
+### What It Does NOT Do
+
+- ❌ Does NOT update CHANGELOG.md (you do this manually)
+- ❌ Does NOT create git commits (you commit manually)
+- ❌ Does NOT create git tags (you tag manually)
+
+This gives you full control over the commit message and allows you to review all changes before committing.
+
+### Output
+
+The script provides helpful next-step instructions:
+
+```
+==========================================
+Version bump complete!
+==========================================
+
+Updated files:
+  - pom.xml
+  - frontend/package.json
+  - frontend/package-lock.json
+  - README.md
+  - frontend/README.md
+
+Next steps:
+  1. Update CHANGELOG.md with release notes
+  2. Review changes: git diff
+  3. Commit: git add -A && git commit -m 'chore: bump version to 0.41.0'
+  4. Tag: git tag -a v0.41.0 -m 'Release v0.41.0'
+  5. Push: git push && git push --tags
+```
+
+## CHANGELOG Format
+
+Follow the existing format in `CHANGELOG.md`:
+
+### Structure
+
+```markdown
+## [X.Y.Z] - YYYY-MM-DD
+
+### Added
+- **Feature Name**: Brief description
+  - Detailed bullet point 1
+  - Detailed bullet point 2
+  - Sub-bullets with implementation details
+  - **Benefits**:
+    - Benefit 1
+    - Benefit 2
+
+### Changed
+- Version bumped from X.Y.Z to X.Y.Z
+- Other changes
+
+### Fixed
+- Bug fix descriptions
+
+### Technical Details
+- Implementation details
+- Dependencies
+- Configuration changes
+- Performance characteristics
+```
+
+### Example Entry
+
 ```markdown
 ## [0.40.0] - 2026-01-17
 
 ### Added
 - **Comprehensive Logging to GlobalExceptionHandler**: Added SLF4J-based logging for all exception handlers
   - **SLF4J Logger Integration**: Added `org.slf4j.Logger` and `org.slf4j.LoggerFactory` imports
-  - **ERROR-level Logging**: Generic exception handler logs unexpected errors with full stack traces
-  - **WARN-level Logging**: Malformed JSON request handler logs with specific details
+  - **ERROR-level Logging**: Generic exception handler (`handleGenericException`) logs unexpected errors with full stack traces
+    - Logs exception message and complete stack trace for debugging production issues
+    - Critical for troubleshooting unexpected 500 errors
+  - **WARN-level Logging**: Malformed JSON request handler (`handleHttpMessageNotReadable`)
+    - Logs malformed JSON requests with specific details for unknown properties
   - **INFO-level Logging**: Business exception handlers log expected operational errors
+    - `handleResourceNotFound`: Logs 404 resource not found errors
+    - `handleIllegalArgument`: Logs 400 bad request errors
   - **Benefits**:
-    - Enables debugging of production issues
+    - Enables debugging of production issues with full stack traces
     - Provides audit trail of all exceptions
-    - Maintains security best practice
+    - Improves system observability for operations teams
 
 ### Changed
 - Version bumped from 0.39.1 to 0.40.0
 - Frontend package version updated to 0.40.0
+- Enhanced JavaDoc for `GlobalExceptionHandler` class to document logging capabilities
 
 ### Technical Details
-- Uses SLF4J API with Logback implementation
+- Uses SLF4J API with Logback implementation (included in `spring-boot-starter-web`)
 - No additional dependencies required
-- Logging levels follow industry best practices
+- Logging levels follow industry best practices:
+  - ERROR: Unexpected errors requiring immediate investigation
+  - WARN: Malformed requests that may indicate client issues
+  - INFO: Expected business errors and operational events
+  - DEBUG: Verbose validation details for development/debugging
+- Stack traces included only for ERROR-level logs to balance detail with log volume
+- All log messages use parameterized logging (SLF4J `{}` placeholders) for performance
 ```
 
-## Tools Reference
+### Tips for Writing CHANGELOG Entries
+
+1. **Be detailed** - Include what, why, and how
+2. **Include code references** - File paths, line numbers, class names
+3. **Document benefits** - Why does this matter to users/developers?
+4. **Add technical details** - Implementation notes, dependencies, configuration
+5. **Use consistent formatting** - Follow the established pattern
+6. **Cross-reference** - Link to ADRs, issues, or PRs when relevant
+
+## Semantic Versioning
+
+Follow [Semantic Versioning 2.0.0](https://semver.org/):
+
+- **MAJOR** (X.0.0) - Breaking changes, incompatible API changes
+- **MINOR** (0.X.0) - New features, backward-compatible additions
+- **PATCH** (0.0.X) - Bug fixes, backward-compatible fixes
+
+### Examples
+
+| Change Type | Example | Version Bump |
+|------------|---------|--------------|
+| New feature | Add logging infrastructure | 0.39.1 → 0.40.0 (MINOR) |
+| Bug fix | Fix validation error | 0.40.0 → 0.40.1 (PATCH) |
+| Breaking change | Redesign API endpoints | 0.40.0 → 1.0.0 (MAJOR) |
+| Documentation | Update README | 0.40.0 → 0.40.1 (PATCH) |
+
+## Detailed Workflow
+
+### Step-by-Step Release Process
+
+#### 1. Make Changes
+
+```bash
+# Create feature branch (optional)
+git checkout -b feature/add-logging
+
+# Make your changes
+# ... edit files ...
+
+# Commit changes
+git add .
+git commit -m "Add comprehensive logging to GlobalExceptionHandler"
+```
+
+#### 2. Update CHANGELOG.md
+
+Open `CHANGELOG.md` and add a new entry at the top:
+
+```markdown
+## [0.41.0] - 2026-01-17
+
+### Added
+- **Feature Name**: Description
+  - Implementation details
+  - Benefits
+
+### Changed
+- Version bumped from 0.40.0 to 0.41.0
+
+### Technical Details
+- Technical implementation notes
+```
+
+Make sure to:
+- Set correct version number
+- Set correct date (today's date)
+- Use detailed descriptions
+- Follow existing format
+
+#### 3. Run Version Bump Script
+
+```bash
+./scripts/bump-version.sh 0.41.0
+```
+
+This updates all version references across the repository.
+
+#### 4. Review Changes
+
+```bash
+# See all modified files
+git status
+
+# Review specific changes
+git diff pom.xml
+git diff frontend/package.json
+git diff README.md
+git diff CHANGELOG.md
+```
+
+Verify:
+- ✅ pom.xml has correct version
+- ✅ package.json has correct version
+- ✅ README files have correct JAR filenames
+- ✅ CHANGELOG has detailed entry
+
+#### 5. Commit Release
+
+```bash
+# Stage all changes
+git add -A
+
+# Create release commit
+git commit -m "chore(release): bump version to 0.41.0"
+
+# Or more detailed message:
+git commit -m "chore(release): bump version to 0.41.0
+
+- Update version across all files
+- Add comprehensive CHANGELOG entry
+- Update README with new version references"
+```
+
+#### 6. Create Git Tag
+
+```bash
+# Create annotated tag
+git tag -a v0.41.0 -m "Release v0.41.0"
+
+# Or with more detail:
+git tag -a v0.41.0 -m "Release v0.41.0
+
+Add comprehensive logging to GlobalExceptionHandler
+- SLF4J-based logging with appropriate log levels
+- ERROR, WARN, INFO, DEBUG levels
+- Full stack traces for production debugging"
+```
+
+#### 7. Push to Remote
+
+```bash
+# Push commits
+git push
+
+# Push tags
+git push --tags
+
+# Or push both in one command
+git push && git push --tags
+```
+
+## Individual Tool Usage
 
 ### Maven Versions Plugin
 
 Update Maven version only:
-```bash
-mvn versions:set -DnewVersion=0.41.0
-mvn versions:commit
-```
 
-Revert if needed:
 ```bash
+# Set new version
+mvn versions:set -DnewVersion=0.41.0
+
+# Commit changes (removes backup files)
+mvn versions:commit
+
+# Or revert if needed
 mvn versions:revert
 ```
 
 ### NPM Version Command
 
 Update NPM version only:
+
 ```bash
 cd frontend
+
+# Set specific version
 npm version 0.41.0 --no-git-tag-version
+
+# Or use semver bump commands
+npm version patch --no-git-tag-version  # 0.40.0 → 0.40.1
+npm version minor --no-git-tag-version  # 0.40.0 → 0.41.0
+npm version major --no-git-tag-version  # 0.40.0 → 1.0.0
 ```
 
-Or with automatic semver bump:
-```bash
-npm version patch  # 0.40.0 -> 0.40.1
-npm version minor  # 0.40.0 -> 0.41.0
-npm version major  # 0.40.0 -> 1.0.0
+The `--no-git-tag-version` flag prevents NPM from creating automatic git commits/tags (we handle this manually).
+
+## Version References in Code
+
+### Current Locations
+
+Version numbers appear in these files:
+
+1. **pom.xml** (line 17)
+   ```xml
+   <version>0.40.0</version>
+   ```
+
+2. **frontend/package.json** (line 4)
+   ```json
+   "version": "0.40.0"
+   ```
+
+3. **frontend/package-lock.json** (auto-updated by NPM)
+
+4. **README.md** (multiple locations)
+   - Current version badge (line 7)
+   - JAR filenames in command examples (15+ occurrences)
+
+5. **frontend/README.md**
+   - JAR filename in deployment example
+
+6. **CHANGELOG.md**
+   - New entry header
+   - "Version bumped from X to Y" line
+
+### Future: Maven Resource Filtering
+
+**Optional improvement:** Use Maven placeholders in README instead of hardcoded versions.
+
+**In README.md:**
+```markdown
+Current version: **${project.version}**
+
+java -jar target/lift-simulator-${project.version}.jar
 ```
 
-### standard-version Commands
-
-```bash
-# Automatic bump based on commits
-npm run release
-
-# Explicit version bump
-npm run release:patch
-npm run release:minor
-npm run release:major
-
-# First release
-npm run release -- --first-release
-
-# Dry run (see what would happen)
-npm run release -- --dry-run
-
-# Custom version
-npm run release -- --release-as 1.0.0
-
-# Skip git operations (useful for testing)
-npm run release -- --skip.commit --skip.tag
+**In pom.xml:**
+```xml
+<build>
+    <resources>
+        <resource>
+            <directory>${project.basedir}</directory>
+            <includes>
+                <include>README.md</include>
+            </includes>
+            <filtering>true</filtering>
+            <targetPath>${project.build.directory}</targetPath>
+        </resource>
+    </resources>
+</build>
 ```
 
-### Custom Bump Script
-
-```bash
-# Basic usage
-./scripts/bump-version.sh 0.41.0
-
-# The script:
-# - Updates pom.xml via Maven Versions Plugin
-# - Updates frontend package.json and package-lock.json via NPM
-# - Updates README.md with new JAR filenames
-# - Updates frontend/README.md with new JAR filenames
-# - Does NOT commit (you commit manually)
-```
-
-## Configuration Files
-
-### `.versionrc.json`
-
-Configures standard-version behavior:
-- Maps commit types to CHANGELOG sections
-- Defines commit message format
-- Specifies files to update (package.json, pom.xml)
-- Sets GitHub URLs for links
-
-### `scripts/pom-updater.js`
-
-Custom updater that allows standard-version to update `pom.xml`:
-- Reads current version from `<version>` tag
-- Writes new version to `<version>` tag
-- Only updates the project version (first occurrence)
-
-### `scripts/bump-version.sh`
-
-Shell script that coordinates all version updates:
-- Validates version format
-- Updates Maven via versions plugin
-- Updates NPM versions
-- Updates README files with sed
-- Provides next-step instructions
-
-## Best Practices
-
-1. **Use Conventional Commits** - Makes automation possible
-2. **Write detailed commit bodies** - These become CHANGELOG content
-3. **Reference issues** - Use "Closes #123" in commit footer
-4. **Enhance auto-generated CHANGELOG** - Add technical details for important releases
-5. **Test with dry-run** - Use `--dry-run` flag to preview changes
-6. **Review before pushing** - Always review generated CHANGELOG and version bumps
-7. **Keep CHANGELOG readable** - Remove unnecessary noise, group related changes
+This is currently **not implemented** because:
+- It adds build complexity
+- The bump script handles it reliably
+- We prefer source files to be readable without build processing
 
 ## Troubleshooting
 
-### standard-version fails with "No commits since last tag"
+### Script fails with "Invalid version format"
 
-**Solution:** Either make new commits or use `--first-release`:
+**Problem:** Version doesn't match X.Y.Z pattern
+
+**Solution:** Use semantic versioning format:
 ```bash
-npm run release -- --first-release
+# Correct
+./scripts/bump-version.sh 0.41.0
+
+# Incorrect
+./scripts/bump-version.sh v0.41.0  # Remove 'v' prefix
+./scripts/bump-version.sh 0.41     # Must have patch version
 ```
 
-### pom.xml not updating with standard-version
+### Maven versions:set fails
 
-**Solution:** Ensure `scripts/pom-updater.js` exists and is referenced in `.versionrc.json`
+**Problem:** Maven Versions Plugin not working
 
-### README versions not updating
-
-**Solution:** Use the bump-version.sh script after running standard-version:
+**Solution:** Ensure you're in the project root:
 ```bash
-npm run release
-./scripts/bump-version.sh $(node -p "require('./package.json').version")
+cd /home/user/lift-simulator
+./scripts/bump-version.sh 0.41.0
 ```
 
-### Want to undo a release
+### NPM version fails
 
-**Solution:**
+**Problem:** NPM can't update package.json
+
+**Solution:** Check you have write permissions:
 ```bash
-# Delete local tag
+ls -la frontend/package.json
+chmod u+w frontend/package.json
+```
+
+### README not updating
+
+**Problem:** sed commands not working (macOS/Linux differences)
+
+**Solution:** The script handles both platforms, but if issues occur:
+```bash
+# Manually find and replace
+vim README.md
+# Search: /0\.40\.0
+# Replace: 0.41.0
+```
+
+### Forgot to update CHANGELOG
+
+**Problem:** Committed version bump without CHANGELOG
+
+**Solution:** Amend the commit:
+```bash
+# Edit CHANGELOG.md
+vim CHANGELOG.md
+
+# Amend previous commit
+git add CHANGELOG.md
+git commit --amend
+
+# Update tag
 git tag -d v0.41.0
+git tag -a v0.41.0 -m "Release v0.41.0"
 
-# Delete remote tag (if pushed)
-git push origin :refs/tags/v0.41.0
-
-# Reset commit
-git reset --hard HEAD~1
+# Force push (if already pushed)
+git push --force
+git push --tags --force
 ```
 
-## Migration from Manual to Automated
+## Best Practices
 
-Currently in progress:
-- ✅ Maven Versions Plugin configured
-- ✅ NPM version command available
-- ✅ standard-version installed and configured
-- ✅ Custom pom.xml updater created
-- ✅ Bump script created for README updates
-- ⏳ Transition to Conventional Commits (gradual)
-- ⏳ Team adoption of new workflow
+1. **Always update CHANGELOG first** - Before running bump script
+2. **Review all changes** - Use `git diff` before committing
+3. **Write detailed CHANGELOG entries** - Include why, not just what
+4. **Use semantic versioning correctly** - Major/Minor/Patch meanings
+5. **Test before releasing** - Run tests, build, verify functionality
+6. **Create annotated tags** - Use `git tag -a` with descriptions
+7. **Keep README current** - Version bump script handles this automatically
+8. **Document breaking changes** - Highlight in CHANGELOG
+9. **Reference issues/PRs** - Link to GitHub issues when relevant
+10. **Consistent commit messages** - Use "chore(release):" prefix
+
+## Release Checklist
+
+Before running `./scripts/bump-version.sh`:
+
+- [ ] All changes committed
+- [ ] Tests passing
+- [ ] Build successful
+- [ ] CHANGELOG.md updated with detailed entry
+- [ ] Date in CHANGELOG is correct
+- [ ] Version number determined (major/minor/patch)
+
+After running `./scripts/bump-version.sh`:
+
+- [ ] Review pom.xml version
+- [ ] Review package.json version
+- [ ] Review README.md version references
+- [ ] Review frontend/README.md version references
+- [ ] All changes look correct
+
+Before pushing:
+
+- [ ] Created git commit
+- [ ] Created annotated git tag
+- [ ] Tag message is descriptive
+- [ ] Final review of `git log` and `git diff`
+
+After pushing:
+
+- [ ] Verify on GitHub that tag appears
+- [ ] Verify on GitHub that version is correct
+- [ ] Consider creating GitHub Release with CHANGELOG content
+
+## Migration Notes
+
+This version management system was introduced in version 0.40.0 and includes:
+
+- ✅ Maven Versions Plugin - for pom.xml updates
+- ✅ NPM Version Command - for package.json updates
+- ✅ Automated bump script - for coordinated updates
+- ✅ Manual CHANGELOG - for high-quality documentation
+- ❌ No automated CHANGELOG generation - maintains documentation quality
 
 ## References
 
-- [Conventional Commits Specification](https://www.conventionalcommits.org/)
-- [standard-version Documentation](https://github.com/conventional-changelog/standard-version)
-- [Maven Versions Plugin](https://www.mojohaus.org/versions-maven-plugin/)
+- [Semantic Versioning 2.0.0](https://semver.org/)
 - [Keep a Changelog](https://keepachangelog.com/)
-- [Semantic Versioning](https://semver.org/)
+- [Maven Versions Plugin](https://www.mojohaus.org/versions-maven-plugin/)
+- Project CHANGELOG: `CHANGELOG.md`
+- Bump script: `scripts/bump-version.sh`
