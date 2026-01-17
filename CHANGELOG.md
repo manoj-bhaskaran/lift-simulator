@@ -5,6 +5,76 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.38.0] - 2026-01-17
+
+### Added
+- **Version List Pagination and Sorting**: Enhanced version list management with comprehensive filtering, sorting, and pagination
+  - **Pagination Controls**:
+    - Configurable items per page (10/20/50/100 selectable via dropdown)
+    - Page navigation buttons (first, previous, next, last)
+    - Page number buttons with active page highlighting
+    - Pagination info showing current range and total count (e.g., "Showing 1-10 of 25 versions")
+    - Smart page number display (shows up to 5 page numbers centered around current page)
+    - Pagination controls only displayed when needed (more than one page)
+  - **Sorting Options**:
+    - Sort by version number (ascending/descending)
+    - Sort by creation date (newest first/oldest first)
+    - Sort by status (Published → Draft → Archived, or reverse)
+    - Context-aware sort order labels (e.g., "Newest First" vs "Oldest First" for date sorting)
+  - **Filtering and Search**:
+    - Filter versions by status (All/Published/Draft/Archived)
+    - Search by version number with real-time filtering
+    - Combined filtering (status filter + search work together)
+    - Empty state message when no versions match filters
+  - **UI Enhancements**:
+    - Clean controls panel with organized filter/sort/search inputs
+    - Responsive grid layout for controls (stacks on mobile)
+    - Focus states and visual feedback on all controls
+    - Version count display shows filtered count and total (e.g., "Versions (5 of 25)")
+    - Automatic reset to page 1 when filters or sorting changes
+  - **Styling**:
+    - Professional control panel with light background and subtle borders
+    - Consistent input styling with focus indicators
+    - Pagination buttons with hover effects and disabled states
+    - Active page number highlighted with primary color
+    - Responsive design with mobile breakpoints
+    - Accessible form labels and ARIA-friendly markup
+
+### Changed
+- Version bumped from 0.37.0 to 0.38.0
+- Frontend package version updated to 0.38.0
+- LiftSystemDetail page now displays paginated version lists instead of showing all versions
+- Version list header now shows filtered count vs total count
+
+### Technical Details
+- **State Management**: React hooks manage pagination, sorting, and filtering state
+  - `currentPage`, `itemsPerPage`, `sortBy`, `sortOrder`, `statusFilter`, `versionSearch`
+  - Automatic page reset when filters change via `useEffect` dependency tracking
+- **Data Processing Pipeline**:
+  1. Filter by status (if not "ALL")
+  2. Filter by version number search
+  3. Sort by selected field and order
+  4. Paginate results based on current page and items per page
+- **Pagination Logic**:
+  - Total pages calculated from filtered results
+  - Start/end indices computed for array slicing
+  - Page navigation validates bounds before updating state
+  - Smart page number rendering shows context around current page
+- **CSS Architecture**:
+  - `.versions-controls` - Container for all filter/sort controls
+  - `.pagination-controls` - Container for pagination UI
+  - `.pagination-buttons` - Flexbox layout for page navigation
+  - `.page-number.active` - Active page indicator styling
+  - Mobile-responsive with column stacking below 768px
+- **Performance**: Client-side filtering/sorting/pagination for optimal UX with typical dataset sizes
+
+### User Experience Improvements
+- Better performance when lift systems have many versions
+- Easier to find specific versions using search and filters
+- More organized display with logical sorting options
+- Professional pagination interface matching modern web standards
+- Responsive design works seamlessly on mobile devices
+
 ## [0.37.0] - 2026-01-16
 
 ### Added
