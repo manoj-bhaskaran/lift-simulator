@@ -87,11 +87,11 @@ Before starting UAT, ensure:
 **Steps:**
 1. Navigate to Test Building A detail page
 2. Click "Create New Version" button
-3. Modal appears with version number (should be 1)
-4. Click "Create" to confirm
-5. Wait for version to be created
-6. Click "Edit" on the newly created version
-7. In the configuration editor, paste the following valid configuration:
+3. Modal appears with:
+   - Version number (should be 1)
+   - Configuration JSON textarea (required field)
+   - "Create" and "Cancel" buttons
+4. In the configuration textarea, paste the following valid configuration:
    ```json
    {
      "floors": 10,
@@ -106,37 +106,37 @@ Before starting UAT, ensure:
      "idleParkingMode": "PARK_TO_HOME_FLOOR"
    }
    ```
-8. Click "Validate" button
-9. Review validation results
-10. Click "Save Draft" button
+5. Click "Create" button
+6. Wait for version to be created
 
 **Expected Results:**
-- Version 1 is created with DRAFT status
-- Configuration editor loads
-- JSON is properly formatted in the editor
-- Validation passes with "Valid configuration" message
-- Configuration saves successfully
-- Status remains DRAFT
+- Modal shows required configuration field
+- Configuration is validated before creation
+- Version 1 is created successfully with DRAFT status
+- Modal closes after successful creation
+- New version appears in the versions list
 - Success message appears
+- Configuration is stored correctly
 
 **Pass Criteria:**
+- ✅ Cannot create version without providing configuration (field is required)
+- ✅ Valid configuration is accepted
 - ✅ Version created with version number 1
-- ✅ Validation shows no errors
-- ✅ Configuration saved without errors
 - ✅ Status badge shows "DRAFT"
+- ✅ Configuration is saved correctly
 
 ---
 
 ## Scenario 4: Test Configuration Validation (Invalid Config)
 
-**Objective:** Verify that configuration validation catches invalid configurations
+**Objective:** Verify that configuration validation rejects invalid configurations
 
 **Prerequisites:** Test Building A exists with Version 1
 
 **Steps:**
 1. Navigate to Test Building A detail page
-2. Click "Create New Version" button (creates Version 2)
-3. Click "Edit" on Version 2
+2. Click "Create New Version" button
+3. Modal appears with configuration textarea
 4. Paste the following INVALID configuration:
    ```json
    {
@@ -152,11 +152,12 @@ Before starting UAT, ensure:
      "idleParkingMode": "PARK_TO_HOME_FLOOR"
    }
    ```
-5. Click "Validate" button
-6. Review validation errors
+5. Click "Create" button
+6. Observe the validation error response
 
 **Expected Results:**
-- Validation fails with multiple errors:
+- Backend validation runs when "Create" is clicked
+- Creation fails with validation errors:
   - `floors`: Must be at least 2
   - `lifts`: Must be at least 1
   - `travelTicksPerFloor`: Must be at least 1
@@ -164,27 +165,31 @@ Before starting UAT, ensure:
   - `homeFloor`: Must be within floor range (20 >= 1)
   - `idleTimeoutTicks`: Must be non-negative
   - `controllerStrategy`: Invalid enum value
-- Error messages are clear and actionable
-- "Publish" button is disabled or publish attempt is blocked
-- Configuration can be saved as DRAFT (with errors)
+- Error messages are displayed to the user
+- Version is NOT created (validation is enforced)
+- Modal remains open or shows error feedback
+- No invalid version appears in the versions list
 
 **Pass Criteria:**
 - ✅ All validation errors are correctly identified
-- ✅ Error messages are descriptive
-- ✅ Invalid configuration cannot be published
-- ✅ Can save as draft despite errors
+- ✅ Error messages are descriptive and actionable
+- ✅ Invalid configuration is rejected (version not created)
+- ✅ User receives clear feedback about why creation failed
+- ✅ System enforces validation - no invalid configs can be saved
 
 ---
 
-## Scenario 5: Fix Invalid Configuration
+## Scenario 5: Create Valid Configuration After Fixing Errors
 
-**Objective:** Verify that users can fix validation errors and create valid configuration
+**Objective:** Verify that users can correct validation errors and successfully create a valid configuration
 
-**Prerequisites:** Version 2 exists with invalid configuration from Scenario 4
+**Prerequisites:** Test Building A exists (from previous scenarios)
 
 **Steps:**
-1. Edit Version 2 configuration
-2. Replace with the following CORRECTED configuration:
+1. Navigate to Test Building A detail page
+2. Click "Create New Version" button
+3. Modal appears with configuration textarea
+4. In the textarea, paste the following CORRECTED configuration (fixing the errors from Scenario 4):
    ```json
    {
      "floors": 15,
@@ -199,20 +204,22 @@ Before starting UAT, ensure:
      "idleParkingMode": "STAY_AT_CURRENT_FLOOR"
    }
    ```
-3. Click "Validate" button
-4. Review validation results
-5. Click "Save Draft" button
+5. Click "Create" button
+6. Wait for version to be created
 
 **Expected Results:**
-- Validation passes with no errors
-- May show warnings (e.g., about optimal settings) but no errors
-- Configuration saves successfully
-- Status remains DRAFT
+- Configuration passes validation (all errors from Scenario 4 are fixed)
+- Version 2 is created successfully with DRAFT status
+- Modal closes after successful creation
+- Version 2 appears in the versions list
+- Success message appears
+- Configuration is stored correctly
 
 **Pass Criteria:**
-- ✅ No validation errors
-- ✅ Configuration saved successfully
-- ✅ Ready for publishing
+- ✅ No validation errors (all Scenario 4 issues resolved)
+- ✅ Version created successfully
+- ✅ Status badge shows "DRAFT"
+- ✅ Demonstrates that users can learn from validation errors and create valid configs
 
 ---
 
