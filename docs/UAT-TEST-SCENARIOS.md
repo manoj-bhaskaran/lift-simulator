@@ -1,7 +1,7 @@
 # UAT Test Scenarios - Lift Simulator
 
 **Version:** 0.40.0
-**Last Updated:** 2026-01-17
+**Last Updated:** 2026-01-20
 **Purpose:** User Acceptance Testing guide for single-user local deployment
 
 ## Overview
@@ -223,14 +223,47 @@ Before starting UAT, ensure:
 
 ---
 
-## Scenario 6: Publish a Configuration Version
+## Scenario 6: Edit a Draft Configuration Version
+
+**Objective:** Verify that users can edit a draft configuration and save changes
+
+**Prerequisites:**
+- Test Building A exists
+- Version 2 is in DRAFT status (from Scenario 5)
+
+**Steps:**
+1. Navigate to Test Building A detail page
+2. Locate Version 2 with status "DRAFT"
+3. Click "Edit" (or "Edit Configuration") to open the configuration editor
+4. Confirm the editor is pre-populated with the existing configuration
+5. Replace the editor contents with the sample configuration from `src/main/resources/scenarios/high-rise-residential.json`
+6. Click "Validate" to verify the updated configuration
+7. Click "Save Draft"
+8. Return to the versions list
+
+**Expected Results:**
+- Configuration editor loads with the current draft configuration
+- Validation passes with no errors
+- Version remains in DRAFT status after saving
+- Updated configuration persists when reopening the editor
+- Last updated timestamp changes (if displayed)
+
+**Pass Criteria:**
+- ✅ Draft configuration can be edited and saved
+- ✅ Validation must succeed before saving
+- ✅ Draft status is preserved after saving
+- ✅ Updated configuration is persisted correctly
+
+---
+
+## Scenario 7: Publish a Configuration Version
 
 **Objective:** Verify the publish workflow and auto-archiving of previous published versions
 
 **Prerequisites:**
 - Test Building A exists
 - Version 1 has valid configuration (from Scenario 3)
-- Version 2 has valid configuration (from Scenario 5)
+- Version 2 has valid configuration and saved edits (from Scenarios 5-6)
 
 **Steps:**
 1. Navigate to Test Building A detail page
@@ -264,7 +297,7 @@ Before starting UAT, ensure:
 
 ---
 
-## Scenario 7: Create Multiple Versions and Test Pagination
+## Scenario 8: Create Multiple Versions and Test Pagination
 
 **Objective:** Verify version list pagination, sorting, and filtering
 
@@ -310,7 +343,7 @@ Before starting UAT, ensure:
 
 ---
 
-## Scenario 8: Test Configuration Validator Tool
+## Scenario 9: Test Configuration Validator Tool
 
 **Objective:** Verify standalone configuration validation tool
 
@@ -368,7 +401,7 @@ Before starting UAT, ensure:
 
 ---
 
-## Scenario 9: Test Health Check Endpoint
+## Scenario 10: Test Health Check Endpoint
 
 **Objective:** Verify system health monitoring
 
@@ -404,7 +437,7 @@ Before starting UAT, ensure:
 
 ---
 
-## Scenario 10: Test System Deletion and Cascade
+## Scenario 11: Test System Deletion and Cascade
 
 **Objective:** Verify that deleting a lift system cascades to versions
 
@@ -435,7 +468,7 @@ Before starting UAT, ensure:
 
 ---
 
-## Scenario 11: Test Both Controller Strategies
+## Scenario 12: Test Both Controller Strategies
 
 **Objective:** Verify both controller strategies are accepted
 
@@ -487,7 +520,7 @@ Before starting UAT, ensure:
 
 ---
 
-## Scenario 12: Test Edge Cases and Boundary Values
+## Scenario 13: Test Edge Cases and Boundary Values
 
 **Objective:** Verify validation at boundary values
 
@@ -557,7 +590,7 @@ Before starting UAT, ensure:
 
 ---
 
-## Scenario 13: Test UI Responsiveness and Error Handling
+## Scenario 14: Test UI Responsiveness and Error Handling
 
 **Objective:** Verify UI handles errors gracefully
 

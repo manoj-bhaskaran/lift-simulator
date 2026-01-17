@@ -117,7 +117,7 @@ Once set up, starting the application is quick:
 Follow the comprehensive test scenarios in **[docs/UAT-TEST-SCENARIOS.md](docs/UAT-TEST-SCENARIOS.md)**
 
 The UAT guide includes:
-- 13 detailed test scenarios covering all major workflows
+- 14 detailed test scenarios covering all major workflows
 - Expected results for each test
 - Pass/fail criteria
 - Issue reporting template
