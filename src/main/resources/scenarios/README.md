@@ -73,7 +73,7 @@ This directory contains example lift system configurations for testing and refer
 ### In the Admin UI
 
 1. Navigate to a lift system detail page
-2. Create a new version
+2. Create a new version (or open an existing draft)
 3. Click "Edit" on the version
 4. Copy the contents of one of these files
 5. Paste into the configuration editor
@@ -148,7 +148,7 @@ See the main [README.md](../../../../README.md) for complete validation rules an
 
 1. **Start Simple:** Begin with `basic-office-building.json` to verify basic functionality
 2. **Test Validation:** Use `invalid-example.json` to ensure error handling works
-3. **Scale Up:** Move to `high-rise-residential.json` for complex scenarios
+3. **Scale Up:** Move to `high-rise-residential.json` for complex scenarios (UAT Scenario 6)
 4. **Create Variants:** Modify these templates to test edge cases
 5. **Compare Strategies:** Create two versions with different controller strategies and compare behavior
 
