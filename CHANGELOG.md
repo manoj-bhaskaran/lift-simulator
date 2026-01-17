@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.40.0] - 2026-01-17
+
+### Added
+- **Comprehensive Logging to GlobalExceptionHandler**: Added SLF4J-based logging for all exception handlers
+  - **SLF4J Logger Integration**: Added `org.slf4j.Logger` and `org.slf4j.LoggerFactory` imports
+  - **ERROR-level Logging**: Generic exception handler (`handleGenericException`) logs unexpected errors with full stack traces
+    - Logs exception message and complete stack trace for debugging production issues
+    - Critical for troubleshooting unexpected 500 errors
+  - **WARN-level Logging**: Malformed JSON request handler (`handleHttpMessageNotReadable`)
+    - Logs malformed JSON requests with specific details for unknown properties
+    - Distinguishes between unknown property errors and other malformation issues
+  - **INFO-level Logging**: Business exception handlers log expected operational errors
+    - `handleResourceNotFound`: Logs 404 resource not found errors
+    - `handleIllegalArgument`: Logs 400 bad request errors
+    - `handleIllegalState`: Logs 409 conflict errors
+    - `handleConfigValidationError`: Logs configuration validation failures
+  - **DEBUG-level Logging**: Validation error handler (`handleValidationErrors`)
+    - Logs validation failures with field count and field names
+    - Suitable for verbose validation debugging without overwhelming logs
+  - **Benefits**:
+    - Enables debugging of production issues with full stack traces
+    - Provides audit trail of all exceptions
+    - Supports monitoring and alerting based on log levels
+    - Maintains security best practice (logs internally, hides from clients)
+    - Improves system observability for operations teams
+
+### Changed
+- Version bumped from 0.39.1 to 0.40.0
+- Frontend package version updated to 0.40.0
+- Enhanced JavaDoc for `GlobalExceptionHandler` class to document logging capabilities
+
+### Technical Details
+- Uses SLF4J API with Logback implementation (included in `spring-boot-starter-web`)
+- No additional dependencies required
+- Logging levels follow industry best practices:
+  - ERROR: Unexpected errors requiring immediate investigation
+  - WARN: Malformed requests that may indicate client issues
+  - INFO: Expected business errors and operational events
+  - DEBUG: Verbose validation details for development/debugging
+- Stack traces included only for ERROR-level logs to balance detail with log volume
+- All log messages use parameterized logging (SLF4J `{}` placeholders) for performance
+
 ## [0.39.1] - 2026-01-19
 
 ### Added
