@@ -7,9 +7,110 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **Configuration Template Pattern**: Implemented template-based configuration for database credentials
+  - **Created** `application-dev.yml.template` with placeholders for sensitive values
+  - **Removed** `application-dev.yml` from version control (added to `.gitignore`)
+  - **Environment Variable Support**: Database credentials can be overridden via environment variables:
+    - `DB_URL`: Database connection URL
+    - `DB_USERNAME`: Database username
+    - `DB_PASSWORD`: Database password
+  - **Developer Workflow**: Developers copy template to `application-dev.yml` and customize locally
+  - **Security Best Practice**: Credentials never committed to version control
+  - **Documentation**: Updated README with detailed setup instructions for configuration file
+
+### Added
+- **Local Configuration Overrides**: Implemented `application-local.properties` pattern for git-conflict-free customization
+  - **Created** `application-local.properties.template` with examples for common overrides
+  - **Added** `application-local.properties` to `.gitignore` (local-only, not tracked)
+  - **Use Cases**:
+    - Custom log file paths (avoid git pull conflicts with `application.properties`)
+    - Different server ports to avoid local conflicts
+    - Alternative database connection settings
+    - Any local-only configuration overrides
+  - **Activation**: `SPRING_PROFILES_ACTIVE=dev,local mvn spring-boot:run`
+  - **Spring Boot Support**: Leverages built-in profile-specific property files
+  - **Documentation**: Added comprehensive README sections on local overrides
+
 ### Changed
-- Expanded UAT documentation to cover draft configuration editing and updated scenario counts.
-- Refined sample scenario documentation to align with the draft-editing workflow.
+- **Database Configuration**: `application-dev.yml` is now a local-only file (not tracked in git)
+  - Template file `application-dev.yml.template` provides reference configuration
+  - Follows Spring Boot best practices for credential management
+  - Enables different credentials per developer without git conflicts
+- **Configuration Override Strategy**: Introduced multiple layers for configuration customization
+  - **Defaults**: `application.properties` (version controlled, safe defaults)
+  - **Profile-specific**: `application-dev.yml` (local-only, for database credentials)
+  - **Local overrides**: `application-local.properties` (local-only, for paths/ports/etc.)
+  - **Environment variables**: Highest priority, for CI/CD and Docker deployments
+  - **Priority order**: Environment vars > local profile > dev profile > application.properties
+
+## [0.41.0] - 2026-01-17
+
+### Added
+- **Persistent File-Based Logging**: Backend logs are now persisted to files in the `logs/` directory
+  - **Logback Configuration**: Created comprehensive `logback-spring.xml` for centralized logging management
+  - **Console and File Output**: Logs are written to both console (for development) and files (for debugging)
+  - **Rolling File Appenders**: Automatic log rotation to prevent unbounded disk usage
+    - Main application log: `logs/application.log` (rotated daily and at 10MB, max 30 days, 1GB total)
+    - Error-only log: `logs/application-error.log` (rotated daily and at 10MB, max 90 days, 500MB total)
+    - Archive format: `logs/application-YYYY-MM-DD.N.log`
+  - **Full Stack Traces**: All exceptions logged with complete stack traces using `%ex{full}` pattern
+  - **Profile-Specific Configuration**: Different logging levels for dev and prod profiles
+    - Dev profile: DEBUG level for application code, verbose SQL logging
+    - Prod profile: INFO level for application code, reduced database logging noise
+  - **Structured Log Patterns**: Timestamp, thread, level, logger, message, and full exception details
+  - **Logs Directory**: Created `logs/` directory with `.gitkeep` to ensure it exists in version control
+    - Log files are gitignored (already in .gitignore as `*.log`)
+- **Improved Debugging Capability**: Stack traces from API failures (e.g., `/api/health`) can now be retrieved from log files
+- **Audit Trail**: All backend runtime errors are now persistently recorded for post-mortem analysis
+
+### Changed
+- Version bumped from 0.40.0 to 0.41.0
+- Frontend package version updated to 0.41.0
+- **Logging Configuration**: Updated `application.properties` to specify log file location
+  - Removed pattern definitions (now managed by logback-spring.xml)
+  - Added `logging.file.name=logs/application.log`
+  - Added `logging.file.path=logs`
+  - Preserved log level settings (INFO for root, DEBUG for com.liftsimulator)
+- **Logback Configuration**: Application now uses Spring Boot's Logback integration via logback-spring.xml
+  - Replaces pattern-only configuration in application.properties
+  - Provides better control over appenders, rotation, and formatting
+  - Supports profile-specific logging behavior
+
+### Fixed
+- **Console Buffer Overflow**: Backend logs no longer overflow console buffer during `mvn spring-boot:run`
+- **Lost Stack Traces**: Exception stack traces are now fully preserved in log files
+- **Debugging Blocker**: Root cause analysis is now possible for backend failures via persistent logs
+
+### Technical Details
+- **Logback Components**:
+  - CONSOLE appender: Writes to stdout with thread and logger information
+  - FILE appender: Writes all logs to rotating files with full exception details
+  - ERROR_FILE appender: Dedicated error log for quick issue identification
+- **Rotation Strategy**:
+  - Size-based: Files rotate when reaching 10MB
+  - Time-based: Daily rollover at midnight
+  - Retention: 30 days for main log, 90 days for error log
+  - Total cap: 1GB for main log, 500MB for error log
+- **Log Patterns**:
+  - Console: `%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n`
+  - File: `%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n%ex{full}`
+- **Logger Levels** (inherited from existing configuration):
+  - Root: INFO
+  - com.liftsimulator: DEBUG
+  - org.hibernate.SQL: DEBUG (dev), WARN (prod)
+  - org.hibernate.type.descriptor.sql.BasicBinder: TRACE (dev), WARN (prod)
+  - org.flywaydb: INFO
+  - com.zaxxer.hikari: INFO
+  - Spring Framework: INFO
+
+### Benefits
+- **Effective Debugging**: Developers can retrieve stack traces after console overflow
+- **UAT Unblocked**: Active defects can now be diagnosed using persistent logs
+- **Production Readiness**: Audit trail of runtime errors exists for compliance and debugging
+- **Developer Productivity**: No longer blocked by lost console output
+- **Disk Space Management**: Automatic rotation prevents disk exhaustion
+- **Quick Error Access**: Separate error log allows rapid identification of failures
 
 ## [0.40.0] - 2026-01-17
 
