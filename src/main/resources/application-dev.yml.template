@@ -28,7 +28,7 @@ spring:
     # Database password
     # REQUIRED: Replace 'CHANGE_ME' with your actual database password
     # Override with: DB_PASSWORD environment variable
-    # For local dev setup, use the password from README (liftpassword)
+    # Use the password you set when creating the PostgreSQL user
     password: ${DB_PASSWORD:CHANGE_ME}
 
     driver-class-name: org.postgresql.Driver
