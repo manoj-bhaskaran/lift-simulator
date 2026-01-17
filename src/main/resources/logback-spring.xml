@@ -50,6 +50,20 @@
         </rollingPolicy>
     </appender>
 
+    <!-- Async wrapper for FILE appender (improves performance and Windows compatibility) -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <appender-ref ref="FILE"/>
+    </appender>
+
+    <!-- Async wrapper for ERROR_FILE appender (improves performance and Windows compatibility) -->
+    <appender name="ASYNC_ERROR_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>256</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <appender-ref ref="ERROR_FILE"/>
+    </appender>
+
     <!-- Spring Framework -->
     <logger name="org.springframework" level="INFO"/>
     <logger name="org.springframework.web" level="INFO"/>
@@ -71,8 +85,8 @@
     <!-- Root logger configuration -->
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
-        <appender-ref ref="ERROR_FILE"/>
+        <appender-ref ref="ASYNC_FILE"/>
+        <appender-ref ref="ASYNC_ERROR_FILE"/>
     </root>
 
     <!-- Profile-specific configuration -->
