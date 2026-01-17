@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import ConfirmModal from '../components/ConfirmModal';
+import { handleApiError } from '../utils/errorHandlers';
+import { getStatusBadgeClass } from '../utils/statusUtils';
 import './ConfigEditor.css';
 
 function ConfigEditor() {
@@ -48,8 +50,7 @@ function ConfigEditor() {
       setConfig(versionRes.data.config);
       setError(null);
     } catch (err) {
-      setError('Failed to load version data');
-      console.error(err);
+      handleApiError(err, setError, 'Failed to load version data');
     } finally {
       setLoading(false);
     }
@@ -83,8 +84,7 @@ function ConfigEditor() {
             return;
           }
         } catch (validationErr) {
-          setError('Failed to validate configuration: ' + (validationErr.response?.data?.message || validationErr.message));
-          console.error(validationErr);
+          handleApiError(validationErr, setError, 'Failed to validate configuration');
           setSaving(false);
           setValidating(false);
           return;
@@ -109,9 +109,8 @@ function ConfigEditor() {
       if (err.name === 'SyntaxError') {
         setError('Invalid JSON format. Please check your configuration.');
       } else {
-        setError('Failed to save draft: ' + (err.response?.data?.message || err.message));
+        handleApiError(err, setError, 'Failed to save draft');
       }
-      console.error(err);
     } finally {
       setSaving(false);
     }
@@ -131,9 +130,8 @@ function ConfigEditor() {
       if (err.name === 'SyntaxError') {
         setError('Invalid JSON format. Please fix syntax errors first.');
       } else {
-        setError('Validation failed: ' + (err.response?.data?.message || err.message));
+        handleApiError(err, setError, 'Validation failed');
       }
-      console.error(err);
     } finally {
       setValidating(false);
     }
@@ -152,19 +150,9 @@ function ConfigEditor() {
       navigate(`/systems/${systemId}`);
 
     } catch (err) {
-      setError('Failed to publish version: ' + (err.response?.data?.message || err.message));
-      console.error(err);
+      handleApiError(err, setError, 'Failed to publish version');
     } finally {
       setPublishing(false);
-    }
-  };
-
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case 'PUBLISHED': return 'status-badge status-published';
-      case 'DRAFT': return 'status-badge status-draft';
-      case 'ARCHIVED': return 'status-badge status-archived';
-      default: return 'status-badge';
     }
   };
 

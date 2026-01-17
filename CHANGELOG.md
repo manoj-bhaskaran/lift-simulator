@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.38.1] - 2026-01-18
+
+### Added
+- Shared frontend utilities for status badge styling and API error handling
+- Reusable VersionActions component for version action buttons
+
+### Changed
+- Refactored ConfigEditor, LiftSystemDetail, and LiftSystems to use shared status/error utilities
+- Version bumped from 0.38.0 to 0.38.1
+- Frontend package version updated to 0.38.1
+
 ## [0.38.0] - 2026-01-17
 
 ### Added

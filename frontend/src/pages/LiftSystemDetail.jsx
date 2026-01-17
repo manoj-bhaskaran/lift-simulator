@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
+import VersionActions from '../components/VersionActions';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
+import { getApiErrorMessage, handleApiError } from '../utils/errorHandlers';
+import { getStatusBadgeClass } from '../utils/statusUtils';
 import './LiftSystemDetail.css';
 
 function LiftSystemDetail() {
@@ -58,8 +61,7 @@ function LiftSystemDetail() {
       setVersions(versionsRes.data);
       setError(null);
     } catch (err) {
-      setError('Failed to load system details');
-      console.error(err);
+      handleApiError(err, setError, 'Failed to load system details');
     } finally {
       setLoading(false);
     }
@@ -74,8 +76,7 @@ function LiftSystemDetail() {
       setShowCreateVersion(false);
       await loadSystemData();
     } catch (err) {
-      setAlertMessage('Failed to create version: ' + (err.response?.data?.message || err.message));
-      console.error(err);
+      handleApiError(err, setAlertMessage, 'Failed to create version');
     } finally {
       setCreating(false);
     }
@@ -91,8 +92,7 @@ function LiftSystemDetail() {
       await liftSystemsApi.publishVersion(id, versionToPublish);
       await loadSystemData();
     } catch (err) {
-      setAlertMessage('Failed to publish version: ' + (err.response?.data?.message || err.message));
-      console.error(err);
+      handleApiError(err, setAlertMessage, 'Failed to publish version');
     }
   };
 
@@ -105,7 +105,7 @@ function LiftSystemDetail() {
     } catch (err) {
       setSimulationStatus({
         type: 'error',
-        message: 'Failed to start simulator: ' + (err.response?.data?.message || err.message),
+        message: getApiErrorMessage(err, 'Failed to start simulator'),
       });
     } finally {
       setRunningVersion(null);
@@ -121,17 +121,7 @@ function LiftSystemDetail() {
       await liftSystemsApi.deleteSystem(id);
       navigate('/systems');
     } catch (err) {
-      setAlertMessage('Failed to delete system: ' + (err.response?.data?.message || err.message));
-      console.error(err);
-    }
-  };
-
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case 'PUBLISHED': return 'status-badge status-published';
-      case 'DRAFT': return 'status-badge status-draft';
-      case 'ARCHIVED': return 'status-badge status-archived';
-      default: return 'status-badge';
+      handleApiError(err, setAlertMessage, 'Failed to delete system');
     }
   };
 
@@ -408,43 +398,14 @@ function LiftSystemDetail() {
                       {version.status}
                     </span>
                   </div>
-                  <div className="version-actions">
-                    {version.status === 'DRAFT' && (
-                      <>
-                        <Link
-                          to={`/systems/${id}/versions/${version.versionNumber}/edit`}
-                          className="btn-secondary btn-sm"
-                        >
-                          Edit Config
-                        </Link>
-                        <button
-                          onClick={() => handlePublishVersion(version.versionNumber)}
-                          className="btn-primary btn-sm"
-                        >
-                          Publish
-                        </button>
-                      </>
-                    )}
-                    {version.status !== 'DRAFT' && (
-                      <>
-                        <Link
-                          to={`/systems/${id}/versions/${version.versionNumber}/edit`}
-                          className="btn-secondary btn-sm"
-                        >
-                          View Config
-                        </Link>
-                        {version.status === 'PUBLISHED' && (
-                          <button
-                            onClick={() => handleRunSimulation(version.versionNumber)}
-                            className="btn-primary btn-sm"
-                            disabled={runningVersion === version.versionNumber}
-                          >
-                            {runningVersion === version.versionNumber ? 'Starting...' : 'Run Simulator'}
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
+                  <VersionActions
+                    systemId={id}
+                    versionNumber={version.versionNumber}
+                    status={version.status}
+                    onPublish={handlePublishVersion}
+                    onRunSimulation={handleRunSimulation}
+                    runningVersion={runningVersion}
+                  />
                 </div>
                 <div className="version-info">
                   <div className="info-row">
