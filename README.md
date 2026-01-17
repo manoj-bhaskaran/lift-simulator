@@ -52,6 +52,23 @@ The frontend API base URL and request timeout can be configured via Vite environ
 
 **See [frontend/README.md](frontend/README.md) for detailed setup instructions and documentation.**
 
+#### Frontend Type Definitions (JSDoc)
+
+The admin UI ships TypeScript declaration files for core data models to provide type-aware IntelliSense in JavaScript files without a full TypeScript migration. To opt in, add `// @ts-check` to the top of your file and reference the types in JSDoc:
+
+```js
+// @ts-check
+
+/**
+ * @param {import('../types/models').LiftSystem} system
+ */
+function renderSystem(system) {
+  // IDE now knows system shape
+}
+```
+
+The shared models live in `frontend/src/types/models.d.ts` and include LiftSystem, Version, and ValidationResult interfaces. See the frontend README for more details.
+
 #### Production Build (Single App)
 
 To package the React UI with the Spring Boot backend and serve everything from **http://localhost:8080**:

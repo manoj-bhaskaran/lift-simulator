@@ -1,3 +1,4 @@
+// @ts-check
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
@@ -20,6 +21,7 @@ import './LiftSystems.css';
  */
 function LiftSystems() {
   const navigate = useNavigate();
+  /** @type {import('../types/models').LiftSystem[]} */
   const [systems, setSystems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
