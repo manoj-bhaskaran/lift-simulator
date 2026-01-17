@@ -1,6 +1,18 @@
 import { Link, Outlet } from 'react-router-dom';
 import './Layout.css';
 
+/**
+ * Main application layout component providing consistent header, navigation, and footer.
+ * Uses React Router's Outlet to render child routes in the main content area.
+ *
+ * Navigation links:
+ * - Dashboard: Main overview page
+ * - Lift Systems: Manage lift system configurations
+ * - Config Validator: Validate lift configuration JSON
+ * - Health Check: System health status
+ *
+ * @returns {JSX.Element} The application layout component
+ */
 function Layout() {
   return (
     <div className="layout">

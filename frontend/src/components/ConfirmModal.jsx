@@ -2,6 +2,21 @@ import { useRef } from 'react';
 import Modal from './Modal';
 import './ConfirmModal.css';
 
+/**
+ * Modal component for displaying confirmation dialogs with customizable buttons.
+ * Used to confirm destructive or important actions before proceeding.
+ *
+ * @param {Object} props - Component props
+ * @param {boolean} props.isOpen - Whether the modal is open
+ * @param {Function} props.onClose - Callback function invoked when modal is closed or cancelled
+ * @param {Function} props.onConfirm - Callback function invoked when user confirms the action
+ * @param {string} props.title - Modal title displayed in the header
+ * @param {string} props.message - Confirmation message content to display
+ * @param {string} [props.confirmText='Confirm'] - Text for the confirm button
+ * @param {string} [props.cancelText='Cancel'] - Text for the cancel button
+ * @param {'primary'|'secondary'|'success'|'danger'} [props.confirmStyle='primary'] - Style variant for the confirm button
+ * @returns {JSX.Element|null} The confirmation modal component or null if not open
+ */
 function ConfirmModal({
   isOpen,
   onClose,
@@ -14,6 +29,9 @@ function ConfirmModal({
 }) {
   const confirmButtonRef = useRef(null);
 
+  /**
+   * Handles the confirm action by calling both onConfirm and onClose callbacks.
+   */
   const handleConfirm = () => {
     onConfirm();
     onClose();
