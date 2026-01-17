@@ -61,7 +61,25 @@ psql -h localhost -U lift_admin -d lift_simulator
 
 See [Database Setup](#database-setup) section for detailed instructions.
 
-#### 2. Start the Backend
+#### 2. Configure Application Settings
+
+Create your local configuration file:
+
+```bash
+cp src/main/resources/application-dev.yml.template src/main/resources/application-dev.yml
+```
+
+Edit `src/main/resources/application-dev.yml` and replace `CHANGE_ME` with `liftpassword`:
+
+```yaml
+spring:
+  datasource:
+    password: liftpassword  # Replace CHANGE_ME
+```
+
+**Note:** This file is excluded from version control and contains your local credentials.
+
+#### 3. Start the Backend
 
 From the project root directory:
 
@@ -78,7 +96,7 @@ The backend will be available at **http://localhost:8080**
 
 **Note:** First run will download Maven dependencies (may take a few minutes) and automatically run Flyway database migrations.
 
-#### 3. Start the Frontend
+#### 4. Start the Frontend
 
 Open a new terminal window, then:
 
@@ -97,7 +115,7 @@ VITE v7.x.x  ready in XXX ms
 
 The frontend will be available at **http://localhost:3000**
 
-#### 4. Access the Application
+#### 5. Access the Application
 
 Open your browser and navigate to **http://localhost:3000**
 
@@ -733,13 +751,43 @@ The backend uses PostgreSQL with Flyway for schema migrations. Follow these step
    \q
    ```
 
-3. **Verify Database Connection**:
+3. **Configure Application Settings**:
+
+   Create your local configuration file from the template:
+   ```bash
+   cp src/main/resources/application-dev.yml.template src/main/resources/application-dev.yml
+   ```
+
+   **Edit** `src/main/resources/application-dev.yml` and replace `CHANGE_ME` with your database password:
+   ```yaml
+   spring:
+     datasource:
+       password: liftpassword  # Replace CHANGE_ME with your actual password
+   ```
+
+   **Important:**
+   - The file `application-dev.yml` is excluded from version control (listed in `.gitignore`)
+   - Never commit this file - it contains your local credentials
+   - The template file (`application-dev.yml.template`) is version controlled for reference
+
+   **Alternative: Environment Variables**
+
+   You can override database credentials using environment variables instead of editing the file:
+   ```bash
+   export DB_USERNAME=lift_admin
+   export DB_PASSWORD=liftpassword
+   mvn spring-boot:run
+   ```
+
+   This is especially useful for CI/CD pipelines or Docker deployments.
+
+4. **Verify Database Connection**:
    ```bash
    psql -h localhost -U lift_admin -d lift_simulator
    # Password: liftpassword
    ```
 
-4. **Run the Application**:
+5. **Run the Application**:
 When you start the Spring Boot application, Flyway will automatically:
    - Create the `lift_simulator` schema (if it does not exist yet)
    - Create the `flyway_schema_history` table inside the `lift_simulator` schema
@@ -751,9 +799,10 @@ When you start the Spring Boot application, Flyway will automatically:
 The application supports different profiles for different environments:
 
 - **dev** (default): Uses local PostgreSQL with connection pooling
-  - Configuration: `src/main/resources/application-dev.yml`
+  - **Template**: `src/main/resources/application-dev.yml.template` (version controlled)
+  - **Local Config**: `src/main/resources/application-dev.yml` (create from template, **not** version controlled)
   - Database: `localhost:5432/lift_simulator`
-  - User: `lift_admin` / `liftpassword`
+  - Default user: `lift_admin` (customizable in your local config)
 
 To use a different profile, set the `SPRING_PROFILES_ACTIVE` environment variable:
 ```bash

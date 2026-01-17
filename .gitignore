@@ -4,6 +4,9 @@
 # Log file
 *.log
 
+# Configuration files with credentials (use .template files instead)
+src/main/resources/application-dev.yml
+
 # BlueJ files
 *.ctxt
 

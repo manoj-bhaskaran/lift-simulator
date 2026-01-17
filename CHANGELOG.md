@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **Configuration Template Pattern**: Implemented template-based configuration for database credentials
+  - **Created** `application-dev.yml.template` with placeholders for sensitive values
+  - **Removed** `application-dev.yml` from version control (added to `.gitignore`)
+  - **Environment Variable Support**: Database credentials can be overridden via environment variables:
+    - `DB_URL`: Database connection URL
+    - `DB_USERNAME`: Database username
+    - `DB_PASSWORD`: Database password
+  - **Developer Workflow**: Developers copy template to `application-dev.yml` and customize locally
+  - **Security Best Practice**: Credentials never committed to version control
+  - **Documentation**: Updated README with detailed setup instructions for configuration file
+
+### Changed
+- **Database Configuration**: `application-dev.yml` is now a local-only file (not tracked in git)
+  - Template file `application-dev.yml.template` provides reference configuration
+  - Follows Spring Boot best practices for credential management
+  - Enables different credentials per developer without git conflicts
+
 ## [0.41.0] - 2026-01-17
 
 ### Added
