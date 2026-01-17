@@ -1,3 +1,4 @@
+// @ts-check
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
@@ -10,7 +11,9 @@ function ConfigEditor() {
   const { systemId, versionNumber } = useParams();
   const navigate = useNavigate();
 
+  /** @type {import('../types/models').LiftSystem | null} */
   const [system, setSystem] = useState(null);
+  /** @type {import('../types/models').Version | null} */
   const [version, setVersion] = useState(null);
   const [config, setConfig] = useState('');
   const [loading, setLoading] = useState(true);
@@ -20,6 +23,7 @@ function ConfigEditor() {
   const [validating, setValidating] = useState(false);
   const [publishing, setPublishing] = useState(false);
 
+  /** @type {import('../types/models').ValidationResult | null} */
   const [validationResult, setValidationResult] = useState(null);
   const [lastSaved, setLastSaved] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);

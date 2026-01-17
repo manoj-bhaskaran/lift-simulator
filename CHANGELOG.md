@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.39.0] - 2026-01-25
+
+### Added
+- Frontend TypeScript declaration file for core lift system, version, and validation models
+- JSDoc-based typing for key admin UI components with @ts-check enabled
+- Frontend jsconfig configuration to enable JavaScript type checking in editors
+
+### Changed
+- Version bumped from 0.38.1 to 0.39.0
+- Frontend package version updated to 0.39.0
+- Documentation updated to describe using shared model typings in JSDoc
+
 ## [0.38.1] - 2026-01-18
 
 ### Added
