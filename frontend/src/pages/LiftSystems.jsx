@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import CreateSystemModal from '../components/CreateSystemModal';
 import AlertModal from '../components/AlertModal';
+import { handleApiError } from '../utils/errorHandlers';
 import './LiftSystems.css';
 
 function LiftSystems() {
@@ -25,8 +26,7 @@ function LiftSystems() {
       setSystems(response.data);
       setError(null);
     } catch (err) {
-      setError('Failed to load lift systems');
-      console.error(err);
+      handleApiError(err, setError, 'Failed to load lift systems');
     } finally {
       setLoading(false);
     }
@@ -40,9 +40,7 @@ function LiftSystems() {
       // Navigate to the newly created system
       navigate(`/systems/${response.data.id}`);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message;
-      setAlertMessage('Failed to create system: ' + errorMessage);
-      // Error is already displayed by AlertModal, no need to throw
+      handleApiError(err, setAlertMessage, 'Failed to create system');
     }
   };
 
