@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [0.41.5] - 2026-01-18
+
+### Fixed
+- **Configuration Validator**: Fixed validation failure on valid configurations in standalone Configuration Validator tool
+  - ConfigValidator page now correctly sends validation requests as `{ config: "..." }` instead of parsed JSON object
+  - Resolves "Unknown property 'floors' is not allowed" error when validating configurations
+  - Improved validation result display to show errors and warnings distinctly
+  - Validation errors now display field name and message in a clear, structured format
+  - Warnings are shown separately from errors when configuration is valid but has potential issues
+
 ## [0.41.4] - 2026-01-18
 
 ### Fixed
