@@ -1,5 +1,5 @@
 // @ts-check
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import ConfirmModal from '../components/ConfirmModal';
@@ -49,23 +49,11 @@ function ConfigEditor() {
 
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, [systemId, versionNumber]);
-
-  useEffect(() => {
-    if (version && config !== version.config) {
-      setHasUnsavedChanges(true);
-    } else {
-      setHasUnsavedChanges(false);
-    }
-  }, [config, version]);
-
   /**
    * Loads system and version data from the API.
    * Fetches system metadata and version configuration in parallel.
    */
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [systemRes, versionRes] = await Promise.all([
@@ -81,7 +69,19 @@ function ConfigEditor() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [systemId, versionNumber]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    if (version && config !== version.config) {
+      setHasUnsavedChanges(true);
+    } else {
+      setHasUnsavedChanges(false);
+    }
+  }, [config, version]);
 
   /**
    * Handles configuration text changes in the editor.
@@ -105,7 +105,7 @@ function ConfigEditor() {
       setError(null);
 
       // Parse JSON to ensure it's valid
-      const configObject = JSON.parse(config);
+      JSON.parse(config);
 
       // Auto-validate if not already validated
       if (!validationResult) {
@@ -165,7 +165,8 @@ function ConfigEditor() {
       setValidationResult(null);
       setError(null);
 
-      const configObject = JSON.parse(config);
+      // Parse JSON to ensure it's valid before sending to API
+      JSON.parse(config);
       const response = await liftSystemsApi.validateConfig({ config });
       setValidationResult(response.data);
 
