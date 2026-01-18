@@ -1212,6 +1212,7 @@ The current version (v0.41.5) includes comprehensive lift simulation and configu
   - Version count and creation timestamps
   - Create new system modal with form validation
   - Detail view for individual lift systems with full metadata
+  - Edit system metadata (display name and description)
   - Delete system functionality with confirmation
   - Navigation between list and detail views
 - **Version Management**: Comprehensive version control interface
