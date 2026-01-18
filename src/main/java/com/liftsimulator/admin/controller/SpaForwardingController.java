@@ -1,11 +1,21 @@
 package com.liftsimulator.admin.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 public class SpaForwardingController {
+    private final ResourceLoader resourceLoader;
+
+    public SpaForwardingController(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
+    }
+
     @RequestMapping(
             value = {
                 "/{path:^(?!api|actuator|error|index\\.html).*$}",
@@ -13,7 +23,12 @@ public class SpaForwardingController {
             },
             headers = "Accept=" + MediaType.TEXT_HTML_VALUE
     )
-    public String forwardToIndex() {
+    public Object forwardToIndex() {
+        Resource indexHtml = resourceLoader.getResource("classpath:/static/index.html");
+        if (!indexHtml.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("index.html not found. Build the frontend or use the dev server.");
+        }
         return "forward:/index.html";
     }
 }
