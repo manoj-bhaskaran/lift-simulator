@@ -114,7 +114,9 @@ function LiftSystemDetail() {
    * @param {React.FormEvent} e - Form submission event
    */
   const handleCreateVersion = async (e) => {
-    e.preventDefault();
+    if (e?.preventDefault) {
+      e.preventDefault();
+    }
     try {
       if (!createValidationResult?.valid) {
         setCreateValidationError('Validate the configuration before creating the version.');
@@ -398,7 +400,7 @@ function LiftSystemDetail() {
         )}
 
         {showCreateVersion && (
-          <form className="create-version-form" onSubmit={handleCreateVersion}>
+          <div className="create-version-form">
             <div className="version-number-display">
               <h4>Version {versions.length > 0 ? Math.max(...versions.map(v => v.versionNumber)) + 1 : 1}</h4>
             </div>
@@ -413,9 +415,10 @@ function LiftSystemDetail() {
             />
             <div className="form-actions">
               <button
-                type="submit"
+                type="button"
                 className="btn-primary"
                 disabled={creating || !createValidationResult?.valid}
+                onClick={handleCreateVersion}
                 title={
                   createValidationResult?.valid
                     ? 'Create a new version with this configuration'
@@ -480,7 +483,7 @@ function LiftSystemDetail() {
                 )}
               </div>
             )}
-          </form>
+          </div>
         )}
 
         {versions.length === 0 ? (
