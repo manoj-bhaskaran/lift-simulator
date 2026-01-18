@@ -1,0 +1,6 @@
+# Test scenario with invalid controller strategy
+name: Invalid controller strategy test
+ticks: 10
+controller_strategy: INVALID_STRATEGY
+
+0, car_call, req1, 3

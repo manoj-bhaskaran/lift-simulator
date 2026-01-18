@@ -7,11 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.41.4] - 2026-01-18
+
+### Fixed
+- **Draft Version Validation**: Fixed validation failure when editing DRAFT versions
+  - ConfigEditor now correctly sends validation requests as `{ config: "..." }` instead of parsed JSON object
+  - Resolves "Unknown property 'floors' is not allowed" error when validating DRAFT configurations
+  - Both handleValidate and handleSaveDraft validation calls updated to use correct request format
+  - Validation now works consistently with create and update operations
+- **Create Version Modal**: Version number is now displayed prominently at the top of the Create Version form
+  - Shows next version number (calculated as max existing version + 1, or 1 for first version)
+  - Added styled version number display with blue accent border
+  - Version number automatically updates based on existing versions
+- Show descriptive validation feedback in the Create Version modal when configuration JSON fails backend validation.
+- **React Hooks and Linting**: Fixed React hooks exhaustive-deps warnings and ESLint errors
+  - Fixed missing dependency warnings in `useEffect` hooks in ConfigEditor.jsx and LiftSystemDetail.jsx
+  - Wrapped `loadData` and `loadSystemData` functions in `useCallback` to properly memoize them
+  - Added `useCallback` to dependency arrays to satisfy exhaustive-deps rules
+  - Removed unused `configObject` variables in ConfigEditor.jsx that violated no-unused-vars rule
+  - Changed to direct `JSON.parse()` calls where parsed object wasn't needed
+  - All ESLint warnings and errors now resolved
+
 ## [0.41.3] - 2026-01-17
 
 ### Fixed
 - Return a helpful 404 response when the SPA index.html asset is missing, avoiding noisy stack traces when the frontend is not built.
 - Ensure SPA forwarding uses explicit return types so Spring MVC applies the correct view/response handling.
+
 ## [0.41.2] - 2026-01-17
 
 ### Fixed

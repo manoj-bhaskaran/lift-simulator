@@ -1,0 +1,12 @@
+{
+  "floors": 30,
+  "lifts": 4,
+  "travelTicksPerFloor": 2,
+  "doorTransitionTicks": 3,
+  "doorDwellTicks": 5,
+  "doorReopenWindowTicks": 2,
+  "homeFloor": 0,
+  "idleTimeoutTicks": 10,
+  "controllerStrategy": "DIRECTIONAL_SCAN",
+  "idleParkingMode": "PARK_TO_HOME_FLOOR"
+}

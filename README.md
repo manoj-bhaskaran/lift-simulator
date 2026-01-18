@@ -202,6 +202,7 @@ A modern React web application provides a user-friendly interface for managing l
   - Sort by version number, creation date, or status
   - Filter by status (All/Published/Draft/Archived)
   - Search by version number
+- **Validation Feedback**: Display detailed configuration validation errors when version creation fails
 - **Configuration Editor**: Edit configuration JSON with validation, save draft, and publish workflows
 - **Configuration Validator**: Validate configuration JSON before publishing
 - **Health Check**: Monitor backend service status

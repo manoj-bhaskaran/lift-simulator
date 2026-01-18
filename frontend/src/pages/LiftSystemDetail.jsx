@@ -1,5 +1,5 @@
 // @ts-check
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import VersionActions from '../components/VersionActions';
@@ -59,26 +59,11 @@ function LiftSystemDetail() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [versionSearch, setVersionSearch] = useState('');
 
-  useEffect(() => {
-    loadSystemData();
-  }, [id]);
-
-  useEffect(() => {
-    if (location.hash !== '#versions' || loading) {
-      return;
-    }
-
-    const target = document.getElementById('versions');
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [location.hash, loading, versions.length]);
-
   /**
    * Loads system metadata and all versions from the API.
    * Fetches data in parallel for improved performance.
    */
-  const loadSystemData = async () => {
+  const loadSystemData = useCallback(async () => {
     try {
       setLoading(true);
       const [systemRes, versionsRes] = await Promise.all([
@@ -93,7 +78,22 @@ function LiftSystemDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    loadSystemData();
+  }, [loadSystemData]);
+
+  useEffect(() => {
+    if (location.hash !== '#versions' || loading) {
+      return;
+    }
+
+    const target = document.getElementById('versions');
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [location.hash, loading, versions.length]);
 
   /**
    * Handles new version creation from the inline form.
@@ -344,6 +344,9 @@ function LiftSystemDetail() {
 
         {showCreateVersion && (
           <form onSubmit={handleCreateVersion} className="create-version-form">
+            <div className="version-number-display">
+              <h4>Version {versions.length > 0 ? Math.max(...versions.map(v => v.versionNumber)) + 1 : 1}</h4>
+            </div>
             <label htmlFor="config">Configuration JSON</label>
             <textarea
               id="config"

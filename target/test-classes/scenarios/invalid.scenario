@@ -1,0 +1,4 @@
+name: Invalid scenario
+ticks: 3
+
+0, fly, req1, 2

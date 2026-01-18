@@ -14,8 +14,43 @@
  * // Returns: "Something went wrong"
  * getApiErrorMessage({}, 'Something went wrong');
  */
+function formatValidationIssues(issues) {
+  if (!Array.isArray(issues) || issues.length === 0) {
+    return null;
+  }
+
+  const messages = issues
+    .map((issue) => {
+      if (!issue || !issue.message) {
+        return null;
+      }
+      const fieldPrefix = issue.field ? `${issue.field}: ` : '';
+      return `${fieldPrefix}${issue.message}`;
+    })
+    .filter(Boolean);
+
+  return messages.length > 0 ? messages.join('; ') : null;
+}
+
+function formatFieldErrors(fieldErrors) {
+  if (!fieldErrors || typeof fieldErrors !== 'object') {
+    return null;
+  }
+
+  const messages = Object.entries(fieldErrors)
+    .map(([field, message]) => (message ? `${field}: ${message}` : null))
+    .filter(Boolean);
+
+  return messages.length > 0 ? messages.join('; ') : null;
+}
+
 export function getApiErrorMessage(error, fallbackMessage = 'Something went wrong') {
-  const detail = error?.response?.data?.message || error?.message;
+  const responseData = error?.response?.data;
+  const validationDetail =
+    formatValidationIssues(responseData?.errors) ||
+    formatFieldErrors(responseData?.fieldErrors);
+  const detail = validationDetail || responseData?.message || error?.message;
+
   if (detail && fallbackMessage) {
     return `${fallbackMessage}: ${detail}`;
   }
