@@ -1233,6 +1233,8 @@ The current version (v0.41.4) includes comprehensive lift simulation and configu
   - Real-time validation using backend API
   - Sample configuration template provided
   - Split-pane layout showing editor and validation results
+  - Distinct display of errors and warnings with field-level detail
+  - Clear indication of validation success with optional warnings
 - **Health Check Monitor**: Real-time backend service health monitoring
   - Status display with color-coded indicators
   - Manual refresh capability
