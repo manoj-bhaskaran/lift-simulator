@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Shows next version number (calculated as max existing version + 1, or 1 for first version)
   - Added styled version number display with blue accent border
   - Version number automatically updates based on existing versions
+- Show descriptive validation feedback in the Create Version modal when configuration JSON fails backend validation.
 
 ## [0.41.3] - 2026-01-17
 
