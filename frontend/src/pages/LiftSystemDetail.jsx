@@ -239,18 +239,12 @@ function LiftSystemDetail() {
    */
   const handleRunSimulation = async (versionNumber) => {
     setRunningVersion(versionNumber);
-    setSimulationStatus(null);
-    try {
-      const response = await liftSystemsApi.runSimulation(system.systemKey);
-      setSimulationStatus({ type: 'success', message: response.data.message });
-    } catch (err) {
-      setSimulationStatus({
-        type: 'error',
-        message: getApiErrorMessage(err, 'Failed to start simulator'),
-      });
-    } finally {
-      setRunningVersion(null);
-    }
+    setSimulationStatus({
+      type: 'error',
+      message:
+        'This feature is currently unavailable and will be enabled in a future release.',
+    });
+    setRunningVersion(null);
   };
 
   /**
