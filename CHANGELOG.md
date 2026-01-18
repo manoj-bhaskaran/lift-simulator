@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved error prevention by requiring validation before version creation
 
 ### Fixed
+- **Run Simulator UI Feedback**: Clicking Run Simulator now shows a graceful message noting the feature is unavailable until a future release.
 - **Version Search Matching**: Searching by version number now returns only exact version matches instead of versions that merely contain the digits.
 - **Create Version Validation Workflow**: Added a Validate button to the Create New Version form and require a successful validation before enabling version creation.
 - **Dashboard Versions Metric**: Lift system responses now include `versionCount`, allowing the dashboard and lift system list to accurately total configuration versions.
