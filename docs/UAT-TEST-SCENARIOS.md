@@ -1,6 +1,6 @@
 # UAT Test Scenarios - Lift Simulator
 
-**Version:** 0.41.3
+**Version:** 0.41.4
 **Last Updated:** 2026-01-17
 **Purpose:** User Acceptance Testing guide for single-user local deployment
 
