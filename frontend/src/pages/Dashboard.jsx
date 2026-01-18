@@ -43,7 +43,11 @@ function Dashboard() {
               </div>
               <div className="stat-item">
                 <div className="stat-value">
-                  {systems.reduce((sum, sys) => sum + (sys.versions?.length || 0), 0)}
+                  {systems.reduce(
+                    (sum, sys) =>
+                      sum + (sys.versionCount ?? sys.versions?.length ?? 0),
+                    0
+                  )}
                 </div>
                 <div className="stat-label">Total Versions</div>
               </div>

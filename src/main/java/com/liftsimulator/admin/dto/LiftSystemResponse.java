@@ -12,7 +12,8 @@ public record LiftSystemResponse(
     String displayName,
     String description,
     OffsetDateTime createdAt,
-    OffsetDateTime updatedAt
+    OffsetDateTime updatedAt,
+    long versionCount
 ) {
     /**
      * Creates a response DTO from a LiftSystem entity.
@@ -27,7 +28,27 @@ public record LiftSystemResponse(
             liftSystem.getDisplayName(),
             liftSystem.getDescription(),
             liftSystem.getCreatedAt(),
-            liftSystem.getUpdatedAt()
+            liftSystem.getUpdatedAt(),
+            0
+        );
+    }
+
+    /**
+     * Creates a response DTO from a LiftSystem entity with a version count.
+     *
+     * @param liftSystem the entity to convert
+     * @param versionCount the number of versions for the system
+     * @return the response DTO
+     */
+    public static LiftSystemResponse fromEntity(LiftSystem liftSystem, long versionCount) {
+        return new LiftSystemResponse(
+            liftSystem.getId(),
+            liftSystem.getSystemKey(),
+            liftSystem.getDisplayName(),
+            liftSystem.getDescription(),
+            liftSystem.getCreatedAt(),
+            liftSystem.getUpdatedAt(),
+            versionCount
         );
     }
 }

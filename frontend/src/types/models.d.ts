@@ -7,6 +7,7 @@ export interface LiftSystem {
   description?: string;
   createdAt: string;
   updatedAt: string;
+  versionCount?: number;
   versions?: Version[];
 }
 
