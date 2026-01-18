@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Version number pulled from package.json and displayed as "Version X.Y.Z"
   - Visible on all application screens through the shared Layout component
   - Provides users with quick reference to the current application version
+- **Lift System Edit Functionality**: Added ability to edit lift system name and description after creation
+  - New "Edit System" button in the Lift System Detail page header
+  - EditSystemModal component for editing system metadata
+  - System Key field is displayed as read-only (cannot be changed after creation)
+  - Edit modal pre-populates with current system values
+  - Form validation matching backend constraints (displayName 1-200 chars, description max 5000 chars)
+  - Automatic refresh of system details after successful update
+  - Responsive design with mobile support
 
 ### Changed
 - **Create New Version UI Standardization**: Standardized action buttons between Edit Config and Create New Version for consistency
@@ -50,6 +58,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - When selecting "Published" order (desc), versions now correctly display: Published, Draft, Archived
   - When selecting "Archived" order (asc), versions now correctly display: Archived, Draft, Published
   - Previously the sort order was reversed, showing Archived first when "Published" was selected and vice versa
+- **Create New Version Form HTML Tag Mismatch**: Fixed mismatched HTML tags in LiftSystemDetail component
+  - Corrected closing `</form>` tag to `</div>` tag on line 543 to match opening `<div className="create-version-form">` tag
+  - Resolved build error: "Unexpected closing 'form' tag does not match opening 'div' tag"
+  - Build now completes successfully without transformation errors
 
 ## [0.41.4] - 2026-01-18
 

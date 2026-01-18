@@ -5,6 +5,7 @@ import { liftSystemsApi } from '../api/liftSystemsApi';
 import VersionActions from '../components/VersionActions';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
+import EditSystemModal from '../components/EditSystemModal';
 import { getApiErrorMessage, handleApiError } from '../utils/errorHandlers';
 import { getStatusBadgeClass } from '../utils/statusUtils';
 import './LiftSystemDetail.css';
@@ -53,6 +54,7 @@ function LiftSystemDetail() {
   /** @type {number | null} */
   const [versionToPublish, setVersionToPublish] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
 
   // Pagination, sorting, and filtering states
@@ -274,6 +276,23 @@ function LiftSystemDetail() {
   };
 
   /**
+   * Handles system edit submission.
+   * Updates the system and refreshes the system data.
+   *
+   * @param {Object} formData - Form data containing displayName and description
+   */
+  const handleEditSystem = async (formData) => {
+    try {
+      await liftSystemsApi.updateSystem(id, formData);
+      await loadSystemData();
+      setShowEditModal(false);
+    } catch (err) {
+      handleApiError(err, setAlertMessage, 'Failed to update system');
+      throw err; // Re-throw to let modal handle loading state
+    }
+  };
+
+  /**
    * Filters and sorts versions based on current filter/sort state.
    * Applies status filter, version number search, and sorting criteria.
    *
@@ -389,7 +408,10 @@ function LiftSystemDetail() {
           <h2>{system.displayName}</h2>
           <p className="system-key">{system.systemKey}</p>
         </div>
-        <button onClick={handleDeleteSystem} className="btn-danger">Delete System</button>
+        <div className="header-actions">
+          <button onClick={() => setShowEditModal(true)} className="btn-secondary">Edit System</button>
+          <button onClick={handleDeleteSystem} className="btn-danger">Delete System</button>
+        </div>
       </div>
 
       <div className="detail-section">
@@ -518,7 +540,7 @@ function LiftSystemDetail() {
                 )}
               </div>
             )}
-          </form>
+          </div>
         )}
 
         {versions.length === 0 ? (
@@ -727,6 +749,13 @@ function LiftSystemDetail() {
         title="Error"
         message={alertMessage}
         type="error"
+      />
+
+      <EditSystemModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSubmit={handleEditSystem}
+        system={system}
       />
     </div>
   );
