@@ -129,10 +129,11 @@ public class LiftSystemService {
     private Map<Long, Long> loadVersionCounts() {
         Map<Long, Long> counts = new HashMap<>();
         for (Object[] row : liftSystemVersionRepository.countVersionsByLiftSystemId()) {
-            Long systemId = (Long) row[0];
-            Long count = (Long) row[1];
+            Long systemId = ((Number) row[0]).longValue();
+            Long count = ((Number) row[1]).longValue();
             counts.put(systemId, count);
         }
         return counts;
     }
+
 }
