@@ -62,4 +62,20 @@ public interface LiftSystemVersionRepository extends JpaRepository<LiftSystemVer
     @Query("SELECT MAX(v.versionNumber) FROM LiftSystemVersion v "
             + "WHERE v.liftSystem.id = :liftSystemId")
     Integer findMaxVersionNumberByLiftSystemId(@Param("liftSystemId") Long liftSystemId);
+
+    /**
+     * Count versions for a specific lift system.
+     *
+     * @param liftSystemId the lift system id
+     * @return total number of versions
+     */
+    long countByLiftSystemId(Long liftSystemId);
+
+    /**
+     * Count versions grouped by lift system.
+     *
+     * @return list of system id and version count pairs
+     */
+    @Query("SELECT v.liftSystem.id, COUNT(v) FROM LiftSystemVersion v GROUP BY v.liftSystem.id")
+    List<Object[]> countVersionsByLiftSystemId();
 }

@@ -51,3 +51,9 @@
   font-size: 0.85rem;
   color: #7f8c8d;
 }
+
+.form-group input.disabled-field {
+  background-color: #f5f5f5;
+  color: #7f8c8d;
+  cursor: not-allowed;
+}

@@ -16,6 +16,7 @@ This is the frontend admin application for the Lift Simulator system. It provide
 - Validating configuration JSON
 - Displaying detailed validation errors when configuration JSON is invalid
 - Monitoring system health
+- Reviewing per-system version counts in the Lift Systems list
 
 ## Tech Stack
 
@@ -204,7 +205,7 @@ From the repository root:
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.41.4.jar
+java -jar target/lift-simulator-0.41.5.jar
 ```
 
 This command:

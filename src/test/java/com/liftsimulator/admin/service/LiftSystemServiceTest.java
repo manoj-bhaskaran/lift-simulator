@@ -5,6 +5,7 @@ import com.liftsimulator.admin.dto.LiftSystemResponse;
 import com.liftsimulator.admin.dto.UpdateLiftSystemRequest;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
+import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +32,9 @@ public class LiftSystemServiceTest {
 
     @Mock
     private LiftSystemRepository liftSystemRepository;
+
+    @Mock
+    private LiftSystemVersionRepository liftSystemVersionRepository;
 
     @InjectMocks
     private LiftSystemService liftSystemService;
@@ -93,6 +97,8 @@ public class LiftSystemServiceTest {
     public void testGetAllLiftSystems() {
         List<LiftSystem> systems = List.of(mockLiftSystem);
         when(liftSystemRepository.findAll()).thenReturn(systems);
+        when(liftSystemVersionRepository.countVersionsByLiftSystemId())
+            .thenReturn(List.<Object[]>of(new Object[] {1L, 1L}));
 
         List<LiftSystemResponse> responses = liftSystemService.getAllLiftSystems();
 
@@ -104,6 +110,7 @@ public class LiftSystemServiceTest {
     @Test
     public void testGetLiftSystemById_Success() {
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(liftSystemVersionRepository.countByLiftSystemId(1L)).thenReturn(1L);
 
         LiftSystemResponse response = liftSystemService.getLiftSystemById(1L);
 
@@ -135,6 +142,7 @@ public class LiftSystemServiceTest {
 
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(liftSystemRepository.save(any(LiftSystem.class))).thenReturn(mockLiftSystem);
+        when(liftSystemVersionRepository.countByLiftSystemId(1L)).thenReturn(1L);
 
         LiftSystemResponse response = liftSystemService.updateLiftSystem(1L, request);
 

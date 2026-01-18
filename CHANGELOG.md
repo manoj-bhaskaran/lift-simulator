@@ -7,6 +7,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.42.0] - 2026-01-19
+
+### Added
+- **Version Display in Footer**: Current version number is now displayed in the footer on all screens
+  - Version number pulled from package.json and displayed as "Version X.Y.Z"
+  - Visible on all application screens through the shared Layout component
+  - Provides users with quick reference to the current application version
+- **Lift System Edit Functionality**: Added ability to edit lift system name and description after creation
+  - New "Edit System" button in the Lift System Detail page header
+  - EditSystemModal component for editing system metadata
+  - System Key field is displayed as read-only (cannot be changed after creation)
+  - Edit modal pre-populates with current system values
+  - Form validation matching backend constraints (displayName 1-200 chars, description max 5000 chars)
+  - Automatic refresh of system details after successful update
+  - Responsive design with mobile support
+
+### Changed
+- **Create New Version UI Standardization**: Standardized action buttons between Edit Config and Create New Version for consistency
+  - Added "Validate" button to Create New Version form to match Edit Config workflow
+  - "Create Version" button now disabled after any configuration change until validation is completed
+  - Split-pane layout with configuration editor on left and validation results panel on right
+  - Real-time validation feedback with detailed error and warning messages
+  - Validation state tracking (validating, validationResult, hasConfigChanges)
+  - Configuration changes clear previous validation results
+  - Users must explicitly validate before creating a version, preventing invalid configurations
+  - Consistent user experience across all configuration editing workflows
+  - Improved error prevention by requiring validation before version creation
+- **Footer Copyright Notice**: Updated the footer copyright to reference Manoj Bhaskaran.
+
+### Fixed
+- **Lift System Service Tests**: Mocked version-count repository dependencies to prevent null pointer failures in LiftSystemService unit tests.
+- **Lift System Service Tests**: Corrected mocked version-count return typing to fix test compilation.
+- **Run Simulator UI Feedback**: Clicking Run Simulator now shows a graceful message noting the feature is unavailable until a future release.
+- **Version Search Matching**: Searching by version number now returns only exact version matches instead of versions that merely contain the digits.
+- **Create Version Validation Workflow**: Added a Validate button to the Create New Version form and require a successful validation before enabling version creation.
+- **Create Version Button Action**: Wired the Create Version button to trigger version creation even when the wrapper is a non-form container.
+- **Lift System Detail Lint Errors**: Removed unused handlers and wired the create-version form submit to fix ESLint no-unused-vars/no-undef violations.
+- **Dashboard Versions Metric**: Lift system responses now include `versionCount`, allowing the dashboard and lift system list to accurately total configuration versions.
+- **Config Validation Compilation**: Corrected the Jackson exception reference type to restore compilation in ConfigValidationService.
+- **Configuration Validation Error Messages**: Non-numeric values in configuration fields now display clear, user-friendly error messages
+  - When entering non-numeric values (e.g., "A", "abc", true) for numeric fields, the system now shows: "Field 'fieldName' must be a numeric value, got 'value'"
+  - Previously displayed generic JSON parsing errors: "Invalid JSON format: Unrecognized token..."
+  - Added specific handling for InvalidFormatException and MismatchedInputException in ConfigValidationService
+  - Error messages now include the field name and the actual invalid value provided
+  - Improves user experience when creating or editing lift system version configurations
+- **Dashboard Label Consistency**: Updated label from "Total Versions" to "Configuration Versions" in the Overview section for consistency with terminology used throughout the application
+- **Dashboard Versions Metric**: Lift system responses now include `versionCount`, allowing the dashboard and lift system list to accurately total configuration versions.
+- **Configuration Validator**: Fixed validation failure on valid configurations in standalone Configuration Validator tool
+  - ConfigValidator page now correctly sends validation requests as `{ config: "..." }` instead of parsed JSON object
+  - Resolves "Unknown property 'floors' is not allowed" error when validating configurations
+  - Improved validation result display to show errors and warnings distinctly
+  - Validation errors now display field name and message in a clear, structured format
+  - Warnings are shown separately from errors when configuration is valid but has potential issues
+- **Lift Systems Version Counts**: Lift system list responses now compute version totals per system to prevent zeroed counts on the Lift Systems page.
+- **Versions Status Sort Order**: Fixed incorrect sort order when sorting versions by status in Manage Versions screen
+  - When selecting "Published" order (desc), versions now correctly display: Published, Draft, Archived
+  - When selecting "Archived" order (asc), versions now correctly display: Archived, Draft, Published
+  - Previously the sort order was reversed, showing Archived first when "Published" was selected and vice versa
+- **Create New Version Form HTML Tag Mismatch**: Fixed mismatched HTML tags in LiftSystemDetail component
+  - Corrected closing `</form>` tag to `</div>` tag on line 543 to match opening `<div className="create-version-form">` tag
+  - Resolved build error: "Unexpected closing 'form' tag does not match opening 'div' tag"
+  - Build now completes successfully without transformation errors
 
 ## [0.41.4] - 2026-01-18
 

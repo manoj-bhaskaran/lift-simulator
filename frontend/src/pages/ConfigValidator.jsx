@@ -14,8 +14,10 @@ function ConfigValidator() {
       setResult(null);
       setError(null);
 
-      const configObject = JSON.parse(config);
-      const response = await liftSystemsApi.validateConfig(configObject);
+      // Validate JSON syntax first
+      JSON.parse(config);
+      // Send config as string in request object
+      const response = await liftSystemsApi.validateConfig({ config });
       setResult(response.data);
     } catch (err) {
       if (err.name === 'SyntaxError') {
@@ -55,15 +57,50 @@ function ConfigValidator() {
 
         <div className="result-section">
           <h3>Validation Result</h3>
-          {result && (
+          {result && result.valid && (
             <div className="result-success">
               <h4>Configuration is valid!</h4>
-              <pre>{JSON.stringify(result, null, 2)}</pre>
+              {result.warnings && result.warnings.length > 0 && (
+                <div className="warnings">
+                  <h5>Warnings:</h5>
+                  <ul>
+                    {result.warnings.map((warning, index) => (
+                      <li key={index}>
+                        <strong>{warning.field}:</strong> {warning.message}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+          {result && !result.valid && (
+            <div className="result-error">
+              <h4>Validation Errors</h4>
+              <ul>
+                {result.errors.map((error, index) => (
+                  <li key={index}>
+                    <strong>{error.field}:</strong> {error.message}
+                  </li>
+                ))}
+              </ul>
+              {result.warnings && result.warnings.length > 0 && (
+                <div className="warnings">
+                  <h5>Warnings:</h5>
+                  <ul>
+                    {result.warnings.map((warning, index) => (
+                      <li key={index}>
+                        <strong>{warning.field}:</strong> {warning.message}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
           {error && (
             <div className="result-error">
-              <h4>Validation Error</h4>
+              <h4>Error</h4>
               <p>{error}</p>
             </div>
           )}

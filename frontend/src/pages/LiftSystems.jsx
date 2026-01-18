@@ -147,7 +147,7 @@ function LiftSystems() {
               <p className="system-key">System Key: {system.systemKey}</p>
               {system.description && <p className="description">{system.description}</p>}
               <div className="system-meta">
-                <span>Versions: {system.versions?.length || 0}</span>
+                <span>Versions: {system.versionCount ?? system.versions?.length ?? 0}</span>
                 <span>Created: {new Date(system.createdAt).toLocaleDateString()}</span>
               </div>
               <div className="card-actions">

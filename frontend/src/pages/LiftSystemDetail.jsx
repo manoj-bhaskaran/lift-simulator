@@ -5,7 +5,8 @@ import { liftSystemsApi } from '../api/liftSystemsApi';
 import VersionActions from '../components/VersionActions';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
-import { getApiErrorMessage, handleApiError } from '../utils/errorHandlers';
+import EditSystemModal from '../components/EditSystemModal';
+import { handleApiError } from '../utils/errorHandlers';
 import { getStatusBadgeClass } from '../utils/statusUtils';
 import './LiftSystemDetail.css';
 
@@ -40,6 +41,10 @@ function LiftSystemDetail() {
   const [showCreateVersion, setShowCreateVersion] = useState(false);
   const [newVersionConfig, setNewVersionConfig] = useState('');
   const [creating, setCreating] = useState(false);
+  const [validatingCreate, setValidatingCreate] = useState(false);
+  /** @type {import('../types/models').ValidationResult | null} */
+  const [createValidationResult, setCreateValidationResult] = useState(null);
+  const [createValidationError, setCreateValidationError] = useState(null);
   /** @type {number | null} */
   const [runningVersion, setRunningVersion] = useState(null);
   /** @type {{ type: 'success' | 'error'; message: string } | null} */
@@ -49,6 +54,7 @@ function LiftSystemDetail() {
   /** @type {number | null} */
   const [versionToPublish, setVersionToPublish] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
 
   // Pagination, sorting, and filtering states
@@ -80,6 +86,12 @@ function LiftSystemDetail() {
     }
   }, [id]);
 
+  const handleNewVersionConfigChange = (e) => {
+    setNewVersionConfig(e.target.value);
+    setCreateValidationResult(null);
+    setCreateValidationError(null);
+  };
+
   useEffect(() => {
     loadSystemData();
   }, [loadSystemData]);
@@ -102,17 +114,47 @@ function LiftSystemDetail() {
    * @param {React.FormEvent} e - Form submission event
    */
   const handleCreateVersion = async (e) => {
-    e.preventDefault();
+    if (e?.preventDefault) {
+      e.preventDefault();
+    }
     try {
+      if (!createValidationResult?.valid) {
+        setCreateValidationError('Validate the configuration before creating the version.');
+        return;
+      }
       setCreating(true);
       await liftSystemsApi.createVersion(id, { config: newVersionConfig });
       setNewVersionConfig('');
+      setCreateValidationResult(null);
+      setCreateValidationError(null);
       setShowCreateVersion(false);
       await loadSystemData();
     } catch (err) {
       handleApiError(err, setAlertMessage, 'Failed to create version');
     } finally {
       setCreating(false);
+    }
+  };
+
+  /**
+   * Validates the new version configuration before creation.
+   */
+  const handleValidateCreateVersion = async () => {
+    try {
+      setValidatingCreate(true);
+      setCreateValidationError(null);
+      setCreateValidationResult(null);
+      JSON.parse(newVersionConfig);
+      const response = await liftSystemsApi.validateConfig({ config: newVersionConfig });
+      setCreateValidationResult(response.data);
+    } catch (err) {
+      if (err.name === 'SyntaxError') {
+        setCreateValidationError('Invalid JSON format. Please fix syntax errors first.');
+      } else {
+        handleApiError(err, setAlertMessage, 'Validation failed');
+      }
+    } finally {
+      setValidatingCreate(false);
     }
   };
 
@@ -147,18 +189,12 @@ function LiftSystemDetail() {
    */
   const handleRunSimulation = async (versionNumber) => {
     setRunningVersion(versionNumber);
-    setSimulationStatus(null);
-    try {
-      const response = await liftSystemsApi.runSimulation(system.systemKey);
-      setSimulationStatus({ type: 'success', message: response.data.message });
-    } catch (err) {
-      setSimulationStatus({
-        type: 'error',
-        message: getApiErrorMessage(err, 'Failed to start simulator'),
-      });
-    } finally {
-      setRunningVersion(null);
-    }
+    setSimulationStatus({
+      type: 'error',
+      message:
+        'This feature is currently unavailable and will be enabled in a future release.',
+    });
+    setRunningVersion(null);
   };
 
   /**
@@ -182,6 +218,23 @@ function LiftSystemDetail() {
   };
 
   /**
+   * Handles system edit submission.
+   * Updates the system and refreshes the system data.
+   *
+   * @param {Object} formData - Form data containing displayName and description
+   */
+  const handleEditSystem = async (formData) => {
+    try {
+      await liftSystemsApi.updateSystem(id, formData);
+      await loadSystemData();
+      setShowEditModal(false);
+    } catch (err) {
+      handleApiError(err, setAlertMessage, 'Failed to update system');
+      throw err; // Re-throw to let modal handle loading state
+    }
+  };
+
+  /**
    * Filters and sorts versions based on current filter/sort state.
    * Applies status filter, version number search, and sorting criteria.
    *
@@ -197,8 +250,9 @@ function LiftSystemDetail() {
 
     // Apply version number search
     if (versionSearch.trim()) {
+      const searchTerm = versionSearch.trim();
       filtered = filtered.filter((v) =>
-        v.versionNumber.toString().includes(versionSearch.trim())
+        v.versionNumber.toString() === searchTerm
       );
     }
 
@@ -211,7 +265,7 @@ function LiftSystemDetail() {
       } else if (sortBy === 'createdAt') {
         comparison = new Date(a.createdAt) - new Date(b.createdAt);
       } else if (sortBy === 'status') {
-        const statusOrder = { PUBLISHED: 1, DRAFT: 2, ARCHIVED: 3 };
+        const statusOrder = { ARCHIVED: 1, DRAFT: 2, PUBLISHED: 3 };
         comparison = statusOrder[a.status] - statusOrder[b.status];
       }
 
@@ -296,7 +350,10 @@ function LiftSystemDetail() {
           <h2>{system.displayName}</h2>
           <p className="system-key">{system.systemKey}</p>
         </div>
-        <button onClick={handleDeleteSystem} className="btn-danger">Delete System</button>
+        <div className="header-actions">
+          <button onClick={() => setShowEditModal(true)} className="btn-secondary">Edit System</button>
+          <button onClick={handleDeleteSystem} className="btn-danger">Delete System</button>
+        </div>
       </div>
 
       <div className="detail-section">
@@ -343,7 +400,7 @@ function LiftSystemDetail() {
         )}
 
         {showCreateVersion && (
-          <form onSubmit={handleCreateVersion} className="create-version-form">
+          <div className="create-version-form">
             <div className="version-number-display">
               <h4>Version {versions.length > 0 ? Math.max(...versions.map(v => v.versionNumber)) + 1 : 1}</h4>
             </div>
@@ -351,14 +408,32 @@ function LiftSystemDetail() {
             <textarea
               id="config"
               value={newVersionConfig}
-              onChange={(e) => setNewVersionConfig(e.target.value)}
+              onChange={handleNewVersionConfigChange}
               placeholder='{"floors": 10, "lifts": 2, "travelTicksPerFloor": 10, ...}'
               rows="10"
               required
             />
             <div className="form-actions">
-              <button type="submit" className="btn-primary" disabled={creating}>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={creating || !createValidationResult?.valid}
+                onClick={handleCreateVersion}
+                title={
+                  createValidationResult?.valid
+                    ? 'Create a new version with this configuration'
+                    : 'Validate the configuration before creating'
+                }
+              >
                 {creating ? 'Creating...' : 'Create Version'}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleValidateCreateVersion}
+                disabled={validatingCreate}
+              >
+                {validatingCreate ? 'Validating...' : 'Validate'}
               </button>
               <button
                 type="button"
@@ -368,7 +443,47 @@ function LiftSystemDetail() {
                 Cancel
               </button>
             </div>
-          </form>
+
+            {createValidationError && (
+              <div className="validation-error-banner">{createValidationError}</div>
+            )}
+
+            {createValidationResult && (
+              <div
+                className={
+                  createValidationResult.valid
+                    ? 'validation-success-banner'
+                    : 'validation-error-banner'
+                }
+              >
+                <strong>
+                  {createValidationResult.valid
+                    ? '✓ Configuration is valid'
+                    : '✗ Configuration has errors'}
+                </strong>
+
+                {createValidationResult.errors?.length > 0 && (
+                  <ul>
+                    {createValidationResult.errors.map((err, idx) => (
+                      <li key={idx}>
+                        <strong>{err.field}:</strong> {err.message}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {createValidationResult.warnings?.length > 0 && (
+                  <ul>
+                    {createValidationResult.warnings.map((warn, idx) => (
+                      <li key={idx}>
+                        <strong>{warn.field}:</strong> {warn.message}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
         )}
 
         {versions.length === 0 ? (
@@ -577,6 +692,13 @@ function LiftSystemDetail() {
         title="Error"
         message={alertMessage}
         type="error"
+      />
+
+      <EditSystemModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSubmit={handleEditSystem}
+        system={system}
       />
     </div>
   );

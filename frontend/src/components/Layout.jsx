@@ -1,5 +1,6 @@
 import { Link, Outlet } from 'react-router-dom';
 import './Layout.css';
+import packageJson from '../../package.json';
 
 /**
  * Main application layout component providing consistent header, navigation, and footer.
@@ -39,7 +40,7 @@ function Layout() {
         <Outlet />
       </main>
       <footer className="footer">
-        <p>Lift Simulator Admin &copy; 2026</p>
+        <p>Manoj Bhaskaran &copy; 2026 | Version {packageJson.version}</p>
       </footer>
     </div>
   );
