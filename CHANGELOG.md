@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Users must explicitly validate before creating a version, preventing invalid configurations
   - Consistent user experience across all configuration editing workflows
   - Improved error prevention by requiring validation before version creation
+- **Footer Copyright Notice**: Updated the footer copyright to reference Manoj Bhaskaran.
 
 ### Fixed
 - **Run Simulator UI Feedback**: Clicking Run Simulator now shows a graceful message noting the feature is unavailable until a future release.

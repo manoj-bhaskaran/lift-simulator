@@ -40,7 +40,7 @@ function Layout() {
         <Outlet />
       </main>
       <footer className="footer">
-        <p>Lift Simulator Admin &copy; 2026 | Version {packageJson.version}</p>
+        <p>Manoj Bhaskaran &copy; 2026 | Version {packageJson.version}</p>
       </footer>
     </div>
   );
