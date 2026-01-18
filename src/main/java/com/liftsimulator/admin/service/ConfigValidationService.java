@@ -1,6 +1,7 @@
 package com.liftsimulator.admin.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
@@ -133,12 +134,12 @@ public class ConfigValidationService {
      * @param path The path from the JsonMappingException
      * @return The field name, or "config" if path is empty
      */
-    private String getFieldNameFromPath(List<com.fasterxml.jackson.core.JsonProcessingException.Reference> path) {
+    private String getFieldNameFromPath(List<JsonMappingException.Reference> path) {
         if (path == null || path.isEmpty()) {
             return "config";
         }
         // Get the last reference in the path (most specific field)
-        com.fasterxml.jackson.core.JsonProcessingException.Reference lastRef = path.get(path.size() - 1);
+        JsonMappingException.Reference lastRef = path.get(path.size() - 1);
         String fieldName = lastRef.getFieldName();
         return fieldName != null ? fieldName : "config";
     }
