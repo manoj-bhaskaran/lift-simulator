@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.42.0] - 2026-01-19
 
+### Added
+- **Version Display in Footer**: Current version number is now displayed in the footer on all screens
+  - Version number pulled from package.json and displayed as "Version X.Y.Z"
+  - Visible on all application screens through the shared Layout component
+  - Provides users with quick reference to the current application version
+
 ### Changed
 - **Create New Version UI Standardization**: Standardized action buttons between Edit Config and Create New Version for consistency
   - Added "Validate" button to Create New Version form to match Edit Config workflow
