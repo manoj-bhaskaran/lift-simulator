@@ -2,6 +2,8 @@ package com.liftsimulator.admin.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.LiftConfigDTO;
@@ -58,6 +60,45 @@ public class ConfigValidationService {
                 ValidationIssue.Severity.ERROR
             ));
             return new ConfigValidationResponse(false, errors, warnings);
+        } catch (InvalidFormatException e) {
+            // Specific handling for type mismatch errors (e.g., string when number expected)
+            String fieldName = getFieldNameFromPath(e.getPath());
+            String targetType = e.getTargetType().getSimpleName();
+            String value = e.getValue() != null ? e.getValue().toString() : "null";
+
+            String errorMessage;
+            if (targetType.equals("Integer")) {
+                errorMessage = "Field '" + fieldName + "' must be a numeric value, got '" + value + "'";
+            } else if (targetType.equals("ControllerStrategy") || targetType.equals("IdleParkingMode")) {
+                errorMessage = "Field '" + fieldName + "' has invalid value '" + value + "'";
+            } else {
+                errorMessage = "Field '" + fieldName + "' has invalid format. Expected type: " + targetType;
+            }
+
+            errors.add(new ValidationIssue(
+                fieldName,
+                errorMessage,
+                ValidationIssue.Severity.ERROR
+            ));
+            return new ConfigValidationResponse(false, errors, warnings);
+        } catch (MismatchedInputException e) {
+            // Handles cases where the input type doesn't match expected type (e.g., boolean for Integer)
+            String fieldName = getFieldNameFromPath(e.getPath());
+            String targetType = e.getTargetType().getSimpleName();
+
+            String errorMessage;
+            if (targetType.equals("Integer")) {
+                errorMessage = "Field '" + fieldName + "' must be a numeric value";
+            } else {
+                errorMessage = "Field '" + fieldName + "' has incorrect type. Expected: " + targetType;
+            }
+
+            errors.add(new ValidationIssue(
+                fieldName,
+                errorMessage,
+                ValidationIssue.Severity.ERROR
+            ));
+            return new ConfigValidationResponse(false, errors, warnings);
         } catch (JsonProcessingException e) {
             errors.add(new ValidationIssue(
                 "config",
@@ -84,6 +125,22 @@ public class ConfigValidationService {
         boolean valid = errors.isEmpty();
 
         return new ConfigValidationResponse(valid, errors, warnings);
+    }
+
+    /**
+     * Extracts the field name from Jackson's JsonMappingException path.
+     *
+     * @param path The path from the JsonMappingException
+     * @return The field name, or "config" if path is empty
+     */
+    private String getFieldNameFromPath(List<com.fasterxml.jackson.core.JsonProcessingException.Reference> path) {
+        if (path == null || path.isEmpty()) {
+            return "config";
+        }
+        // Get the last reference in the path (most specific field)
+        com.fasterxml.jackson.core.JsonProcessingException.Reference lastRef = path.get(path.size() - 1);
+        String fieldName = lastRef.getFieldName();
+        return fieldName != null ? fieldName : "config";
     }
 
     /**
