@@ -30,12 +30,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Error messages now include the field name and the actual invalid value provided
   - Improves user experience when creating or editing lift system version configurations
 - **Dashboard Label Consistency**: Updated label from "Total Versions" to "Configuration Versions" in the Overview section for consistency with terminology used throughout the application
+- **Dashboard Versions Metric**: Lift system responses now include `versionCount`, allowing the dashboard and lift system list to accurately total configuration versions.
 - **Configuration Validator**: Fixed validation failure on valid configurations in standalone Configuration Validator tool
   - ConfigValidator page now correctly sends validation requests as `{ config: "..." }` instead of parsed JSON object
   - Resolves "Unknown property 'floors' is not allowed" error when validating configurations
   - Improved validation result display to show errors and warnings distinctly
   - Validation errors now display field name and message in a clear, structured format
   - Warnings are shown separately from errors when configuration is valid but has potential issues
+- **Lift Systems Version Counts**: Lift system list responses now compute version totals per system to prevent zeroed counts on the Lift Systems page.
 
 ## [0.41.4] - 2026-01-18
 
