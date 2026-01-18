@@ -204,7 +204,7 @@ From the repository root:
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.41.4.jar
+java -jar target/lift-simulator-0.41.5.jar
 ```
 
 This command:
