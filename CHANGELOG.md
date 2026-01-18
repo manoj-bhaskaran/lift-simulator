@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Run Simulator UI Feedback**: Clicking Run Simulator now shows a graceful message noting the feature is unavailable until a future release.
 - **Version Search Matching**: Searching by version number now returns only exact version matches instead of versions that merely contain the digits.
 - **Create Version Validation Workflow**: Added a Validate button to the Create New Version form and require a successful validation before enabling version creation.
+- **Create Version Button Action**: Wired the Create Version button to trigger version creation even when the wrapper is a non-form container.
 - **Lift System Detail Lint Errors**: Removed unused handlers and wired the create-version form submit to fix ESLint no-unused-vars/no-undef violations.
 - **Dashboard Versions Metric**: Lift system responses now include `versionCount`, allowing the dashboard and lift system list to accurately total configuration versions.
 - **Config Validation Compilation**: Corrected the Jackson exception reference type to restore compilation in ConfigValidationService.
