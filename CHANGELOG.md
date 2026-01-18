@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added styled version number display with blue accent border
   - Version number automatically updates based on existing versions
 - Show descriptive validation feedback in the Create Version modal when configuration JSON fails backend validation.
+- **React Hooks and Linting**: Fixed React hooks exhaustive-deps warnings and ESLint errors
+  - Fixed missing dependency warnings in `useEffect` hooks in ConfigEditor.jsx and LiftSystemDetail.jsx
+  - Wrapped `loadData` and `loadSystemData` functions in `useCallback` to properly memoize them
+  - Added `useCallback` to dependency arrays to satisfy exhaustive-deps rules
+  - Removed unused `configObject` variables in ConfigEditor.jsx that violated no-unused-vars rule
+  - Changed to direct `JSON.parse()` calls where parsed object wasn't needed
+  - All ESLint warnings and errors now resolved
 
 ## [0.41.3] - 2026-01-17
 
