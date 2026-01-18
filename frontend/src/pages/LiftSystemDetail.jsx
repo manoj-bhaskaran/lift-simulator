@@ -106,6 +106,58 @@ function LiftSystemDetail() {
   }, [location.hash, loading, versions.length]);
 
   /**
+   * Handles configuration text changes in the create version form.
+   * Clears validation results when config is modified.
+   *
+   * @param {React.ChangeEvent<HTMLTextAreaElement>} e - Textarea change event
+   */
+  const handleConfigChange = (e) => {
+    setNewVersionConfig(e.target.value);
+    setValidationResult(null); // Clear validation when config changes
+    setHasConfigChanges(true); // Mark that config has changed since validation
+  };
+
+  /**
+   * Validates the new version configuration against business rules.
+   * Parses JSON and sends to validation API endpoint.
+   * Displays errors and warnings in the validation panel.
+   */
+  const handleValidate = async () => {
+    try {
+      setValidating(true);
+      setValidationResult(null);
+      setAlertMessage(null);
+
+      // Parse JSON to ensure it's valid before sending to API
+      JSON.parse(newVersionConfig);
+      const response = await liftSystemsApi.validateConfig({ config: newVersionConfig });
+      setValidationResult(response.data);
+      setHasConfigChanges(false); // Mark that validation is up-to-date with current config
+
+    } catch (err) {
+      if (err.name === 'SyntaxError') {
+        setAlertMessage('Invalid JSON format. Please fix syntax errors first.');
+      } else {
+        handleApiError(err, setAlertMessage, 'Validation failed');
+      }
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  /**
+   * Determines whether a new version can be created.
+   * Requires valid configuration and no unsaved changes since validation.
+   *
+   * @returns {boolean} True if version can be created, false otherwise
+   */
+  const canCreateVersion = () => {
+    return validationResult &&
+           validationResult.valid &&
+           !hasConfigChanges;
+  };
+
+  /**
    * Handles new version creation from the inline form.
    * Creates version and refreshes the system data.
    *
@@ -124,6 +176,8 @@ function LiftSystemDetail() {
       setCreateValidationResult(null);
       setCreateValidationError(null);
       setShowCreateVersion(false);
+      setValidationResult(null);
+      setHasConfigChanges(false);
       await loadSystemData();
     } catch (err) {
       handleApiError(err, setAlertMessage, 'Failed to create version');
@@ -382,7 +436,7 @@ function LiftSystemDetail() {
         )}
 
         {showCreateVersion && (
-          <form onSubmit={handleCreateVersion} className="create-version-form">
+          <div className="create-version-form">
             <div className="version-number-display">
               <h4>Version {versions.length > 0 ? Math.max(...versions.map(v => v.versionNumber)) + 1 : 1}</h4>
             </div>
