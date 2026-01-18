@@ -344,6 +344,9 @@ function LiftSystemDetail() {
 
         {showCreateVersion && (
           <form onSubmit={handleCreateVersion} className="create-version-form">
+            <div className="version-number-display">
+              <h4>Version {versions.length > 0 ? Math.max(...versions.map(v => v.versionNumber)) + 1 : 1}</h4>
+            </div>
             <label htmlFor="config">Configuration JSON</label>
             <textarea
               id="config"
