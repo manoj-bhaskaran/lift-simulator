@@ -98,7 +98,7 @@ public class LiftSystemServiceTest {
         List<LiftSystem> systems = List.of(mockLiftSystem);
         when(liftSystemRepository.findAll()).thenReturn(systems);
         when(liftSystemVersionRepository.countVersionsByLiftSystemId())
-            .thenReturn(List.of(new Object[] {1L, 1L}));
+            .thenReturn(List.<Object[]>of(new Object[] {1L, 1L}));
 
         List<LiftSystemResponse> responses = liftSystemService.getAllLiftSystems();
 
