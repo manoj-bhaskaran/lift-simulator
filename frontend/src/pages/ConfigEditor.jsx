@@ -111,7 +111,7 @@ function ConfigEditor() {
       if (!validationResult) {
         setValidating(true);
         try {
-          const response = await liftSystemsApi.validateConfig(configObject);
+          const response = await liftSystemsApi.validateConfig({ config });
           setValidationResult(response.data);
 
           // If validation fails, prevent save and show errors
@@ -166,7 +166,7 @@ function ConfigEditor() {
       setError(null);
 
       const configObject = JSON.parse(config);
-      const response = await liftSystemsApi.validateConfig(configObject);
+      const response = await liftSystemsApi.validateConfig({ config });
       setValidationResult(response.data);
 
     } catch (err) {

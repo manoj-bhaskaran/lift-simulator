@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Version number automatically updates based on existing versions
 - Show descriptive validation feedback in the Create Version modal when configuration JSON fails backend validation.
 
+## [0.41.4] - 2026-01-18
+
+### Fixed
+- **Draft Version Validation**: Fixed validation failure when editing DRAFT versions
+  - ConfigEditor now correctly sends validation requests as `{ config: "..." }` instead of parsed JSON object
+  - Resolves "Unknown property 'floors' is not allowed" error when validating DRAFT configurations
+  - Both handleValidate and handleSaveDraft validation calls updated to use correct request format
+  - Validation now works consistently with create and update operations
+
 ## [0.41.3] - 2026-01-17
 
 ### Fixed
