@@ -1217,7 +1217,12 @@ The current version (v0.41.5) includes comprehensive lift simulation and configu
 - **Version Management**: Comprehensive version control interface
   - List all versions for a lift system (ordered by version number)
   - Status badges (DRAFT, PUBLISHED, ARCHIVED) with color coding
-  - Create new versions with JSON configuration input
+  - Create new versions with explicit validation workflow
+    - JSON configuration input with dedicated validation button
+    - Real-time validation with detailed error and warning messages
+    - Create Version button disabled until configuration is validated
+    - Split-pane layout with editor and validation results side-by-side
+    - Prevents creation of invalid configurations
   - Edit existing version configurations with dedicated editor
   - Publish versions with validation and automatic archiving
   - View version configuration with expandable JSON display

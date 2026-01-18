@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.41.5] - 2026-01-18
+## [0.42.0] - 2026-01-19
+
+### Changed
+- **Create New Version UI Standardization**: Standardized action buttons between Edit Config and Create New Version for consistency
+  - Added "Validate" button to Create New Version form to match Edit Config workflow
+  - "Create Version" button now disabled after any configuration change until validation is completed
+  - Split-pane layout with configuration editor on left and validation results panel on right
+  - Real-time validation feedback with detailed error and warning messages
+  - Validation state tracking (validating, validationResult, hasConfigChanges)
+  - Configuration changes clear previous validation results
+  - Users must explicitly validate before creating a version, preventing invalid configurations
+  - Consistent user experience across all configuration editing workflows
+  - Improved error prevention by requiring validation before version creation
 
 ### Fixed
 - **Dashboard Versions Metric**: Lift system responses now include `versionCount`, allowing the dashboard and lift system list to accurately total configuration versions.

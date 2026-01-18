@@ -40,6 +40,10 @@ function LiftSystemDetail() {
   const [showCreateVersion, setShowCreateVersion] = useState(false);
   const [newVersionConfig, setNewVersionConfig] = useState('');
   const [creating, setCreating] = useState(false);
+  const [validating, setValidating] = useState(false);
+  /** @type {import('../types/models').ValidationResult | null} */
+  const [validationResult, setValidationResult] = useState(null);
+  const [hasConfigChanges, setHasConfigChanges] = useState(false);
   /** @type {number | null} */
   const [runningVersion, setRunningVersion] = useState(null);
   /** @type {{ type: 'success' | 'error'; message: string } | null} */
@@ -96,6 +100,58 @@ function LiftSystemDetail() {
   }, [location.hash, loading, versions.length]);
 
   /**
+   * Handles configuration text changes in the create version form.
+   * Clears validation results when config is modified.
+   *
+   * @param {React.ChangeEvent<HTMLTextAreaElement>} e - Textarea change event
+   */
+  const handleConfigChange = (e) => {
+    setNewVersionConfig(e.target.value);
+    setValidationResult(null); // Clear validation when config changes
+    setHasConfigChanges(true); // Mark that config has changed since validation
+  };
+
+  /**
+   * Validates the new version configuration against business rules.
+   * Parses JSON and sends to validation API endpoint.
+   * Displays errors and warnings in the validation panel.
+   */
+  const handleValidate = async () => {
+    try {
+      setValidating(true);
+      setValidationResult(null);
+      setAlertMessage(null);
+
+      // Parse JSON to ensure it's valid before sending to API
+      JSON.parse(newVersionConfig);
+      const response = await liftSystemsApi.validateConfig({ config: newVersionConfig });
+      setValidationResult(response.data);
+      setHasConfigChanges(false); // Mark that validation is up-to-date with current config
+
+    } catch (err) {
+      if (err.name === 'SyntaxError') {
+        setAlertMessage('Invalid JSON format. Please fix syntax errors first.');
+      } else {
+        handleApiError(err, setAlertMessage, 'Validation failed');
+      }
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  /**
+   * Determines whether a new version can be created.
+   * Requires valid configuration and no unsaved changes since validation.
+   *
+   * @returns {boolean} True if version can be created, false otherwise
+   */
+  const canCreateVersion = () => {
+    return validationResult &&
+           validationResult.valid &&
+           !hasConfigChanges;
+  };
+
+  /**
    * Handles new version creation from the inline form.
    * Creates version and refreshes the system data.
    *
@@ -108,6 +164,8 @@ function LiftSystemDetail() {
       await liftSystemsApi.createVersion(id, { config: newVersionConfig });
       setNewVersionConfig('');
       setShowCreateVersion(false);
+      setValidationResult(null);
+      setHasConfigChanges(false);
       await loadSystemData();
     } catch (err) {
       handleApiError(err, setAlertMessage, 'Failed to create version');
@@ -343,32 +401,111 @@ function LiftSystemDetail() {
         )}
 
         {showCreateVersion && (
-          <form onSubmit={handleCreateVersion} className="create-version-form">
+          <div className="create-version-form">
             <div className="version-number-display">
               <h4>Version {versions.length > 0 ? Math.max(...versions.map(v => v.versionNumber)) + 1 : 1}</h4>
             </div>
-            <label htmlFor="config">Configuration JSON</label>
-            <textarea
-              id="config"
-              value={newVersionConfig}
-              onChange={(e) => setNewVersionConfig(e.target.value)}
-              placeholder='{"floors": 10, "lifts": 2, "travelTicksPerFloor": 10, ...}'
-              rows="10"
-              required
-            />
-            <div className="form-actions">
-              <button type="submit" className="btn-primary" disabled={creating}>
-                {creating ? 'Creating...' : 'Create Version'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowCreateVersion(false)}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
+            <div className="create-version-editor">
+              <div className="editor-section">
+                <label htmlFor="config">Configuration JSON</label>
+                <textarea
+                  id="config"
+                  value={newVersionConfig}
+                  onChange={handleConfigChange}
+                  placeholder='{"floors": 10, "lifts": 2, "travelTicksPerFloor": 10, ...}'
+                  rows="10"
+                  className="config-textarea"
+                  spellCheck="false"
+                />
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={handleValidate}
+                    disabled={validating}
+                  >
+                    {validating ? 'Validating...' : 'Validate'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateVersion}
+                    className="btn-primary"
+                    disabled={creating || !canCreateVersion()}
+                    title={
+                      !canCreateVersion()
+                        ? hasConfigChanges
+                          ? 'Validate configuration before creating version'
+                          : 'Validate configuration before creating version'
+                        : 'Create this version'
+                    }
+                  >
+                    {creating ? 'Creating...' : 'Create Version'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateVersion(false);
+                      setNewVersionConfig('');
+                      setValidationResult(null);
+                      setHasConfigChanges(false);
+                    }}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+
+              <div className="validation-section">
+                <h4>Validation Results</h4>
+
+                {validationResult ? (
+                  <div className={validationResult.valid ? 'validation-success' : 'validation-error'}>
+                    <h5>
+                      {validationResult.valid ? '✓ Configuration is valid' : '✗ Configuration has errors'}
+                    </h5>
+
+                    {validationResult.errors && validationResult.errors.length > 0 && (
+                      <div className="validation-messages">
+                        <h6>Errors</h6>
+                        <ul>
+                          {validationResult.errors.map((err, idx) => (
+                            <li key={idx} className="validation-error-item">
+                              <strong>{err.field}:</strong> {err.message}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {validationResult.warnings && validationResult.warnings.length > 0 && (
+                      <div className="validation-messages">
+                        <h6>Warnings</h6>
+                        <ul>
+                          {validationResult.warnings.map((warn, idx) => (
+                            <li key={idx} className="validation-warning-item">
+                              <strong>{warn.field}:</strong> {warn.message}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {validationResult.valid && (!validationResult.warnings || validationResult.warnings.length === 0) && (
+                      <p className="validation-detail">All validation checks passed successfully.</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="validation-placeholder">
+                    <p>Click "Validate" to check your configuration for errors.</p>
+                    <p className="help-text">
+                      Validation will check for required fields, valid ranges, and cross-field constraints.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-          </form>
+          </div>
         )}
 
         {versions.length === 0 ? (
