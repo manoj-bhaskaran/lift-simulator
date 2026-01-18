@@ -14,6 +14,7 @@ This is the frontend admin application for the Lift Simulator system. It provide
 - Managing lift systems and configurations
 - Creating and publishing configuration versions
 - Validating configuration JSON
+- Displaying detailed validation errors when configuration JSON is invalid
 - Monitoring system health
 
 ## Tech Stack
