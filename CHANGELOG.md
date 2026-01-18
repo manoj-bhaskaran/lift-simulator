@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.41.5] - 2026-01-18
 
 ### Fixed
+- **Dashboard Versions Metric**: Lift system responses now include `versionCount`, allowing the dashboard and lift system list to accurately total configuration versions.
+- **Configuration Validation Error Messages**: Non-numeric values in configuration fields now display clear, user-friendly error messages
+  - When entering non-numeric values (e.g., "A", "abc", true) for numeric fields, the system now shows: "Field 'fieldName' must be a numeric value, got 'value'"
+  - Previously displayed generic JSON parsing errors: "Invalid JSON format: Unrecognized token..."
+  - Added specific handling for InvalidFormatException and MismatchedInputException in ConfigValidationService
+  - Error messages now include the field name and the actual invalid value provided
+  - Improves user experience when creating or editing lift system version configurations
 - **Dashboard Label Consistency**: Updated label from "Total Versions" to "Configuration Versions" in the Overview section for consistency with terminology used throughout the application
 - **Dashboard Versions Metric**: Lift system responses now include `versionCount`, allowing the dashboard and lift system list to accurately total configuration versions.
 - **Configuration Validator**: Fixed validation failure on valid configurations in standalone Configuration Validator tool

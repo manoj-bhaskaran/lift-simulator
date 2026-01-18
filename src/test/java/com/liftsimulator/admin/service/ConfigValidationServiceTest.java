@@ -480,4 +480,112 @@ public class ConfigValidationServiceTest {
             .anyMatch(issue -> issue.field().equals("newFeature") && issue.message().contains("Unknown property"));
         assertTrue(hasUnknownPropertyError);
     }
+
+    @Test
+    public void testValidate_NonNumericValueForFloors() {
+        String config = """
+            {
+                "floors": "A",
+                "lifts": 2,
+                "travelTicksPerFloor": 1,
+                "doorTransitionTicks": 2,
+                "doorDwellTicks": 3,
+                "doorReopenWindowTicks": 2,
+                "homeFloor": 0,
+                "idleTimeoutTicks": 5,
+                "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+                "idleParkingMode": "PARK_TO_HOME_FLOOR"
+            }
+            """;
+
+        ConfigValidationResponse response = validationService.validate(config);
+
+        assertFalse(response.valid());
+        assertTrue(response.hasErrors());
+        assertEquals(1, response.errors().size());
+        ValidationIssue error = response.errors().get(0);
+        assertEquals("floors", error.field());
+        assertTrue(error.message().contains("numeric value") || error.message().contains("must be a number"));
+    }
+
+    @Test
+    public void testValidate_NonNumericValueForLifts() {
+        String config = """
+            {
+                "floors": 10,
+                "lifts": "abc",
+                "travelTicksPerFloor": 1,
+                "doorTransitionTicks": 2,
+                "doorDwellTicks": 3,
+                "doorReopenWindowTicks": 2,
+                "homeFloor": 0,
+                "idleTimeoutTicks": 5,
+                "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+                "idleParkingMode": "PARK_TO_HOME_FLOOR"
+            }
+            """;
+
+        ConfigValidationResponse response = validationService.validate(config);
+
+        assertFalse(response.valid());
+        assertTrue(response.hasErrors());
+        boolean hasTypeError = response.errors().stream()
+            .anyMatch(issue -> issue.field().equals("lifts")
+                && (issue.message().contains("numeric value") || issue.message().contains("must be a number")));
+        assertTrue(hasTypeError);
+    }
+
+    @Test
+    public void testValidate_MultipleNonNumericValues() {
+        String config = """
+            {
+                "floors": "X",
+                "lifts": "Y",
+                "travelTicksPerFloor": "Z",
+                "doorTransitionTicks": 2,
+                "doorDwellTicks": 3,
+                "doorReopenWindowTicks": 2,
+                "homeFloor": 0,
+                "idleTimeoutTicks": 5,
+                "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+                "idleParkingMode": "PARK_TO_HOME_FLOOR"
+            }
+            """;
+
+        ConfigValidationResponse response = validationService.validate(config);
+
+        assertFalse(response.valid());
+        assertTrue(response.hasErrors());
+        // Jackson will report the first type mismatch it encounters
+        assertTrue(response.errors().size() >= 1);
+        ValidationIssue error = response.errors().get(0);
+        assertTrue(error.message().contains("numeric value") || error.message().contains("must be a number"));
+    }
+
+    @Test
+    public void testValidate_BooleanValueForNumericField() {
+        String config = """
+            {
+                "floors": true,
+                "lifts": 2,
+                "travelTicksPerFloor": 1,
+                "doorTransitionTicks": 2,
+                "doorDwellTicks": 3,
+                "doorReopenWindowTicks": 2,
+                "homeFloor": 0,
+                "idleTimeoutTicks": 5,
+                "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+                "idleParkingMode": "PARK_TO_HOME_FLOOR"
+            }
+            """;
+
+        ConfigValidationResponse response = validationService.validate(config);
+
+        assertFalse(response.valid());
+        assertTrue(response.hasErrors());
+        boolean hasTypeError = response.errors().stream()
+            .anyMatch(issue -> issue.field().equals("floors")
+                && (issue.message().contains("numeric value") || issue.message().contains("must be a number")));
+        assertTrue(hasTypeError);
+    }
 }
