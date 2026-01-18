@@ -40,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Validation errors now display field name and message in a clear, structured format
   - Warnings are shown separately from errors when configuration is valid but has potential issues
 - **Lift Systems Version Counts**: Lift system list responses now compute version totals per system to prevent zeroed counts on the Lift Systems page.
+- **Versions Status Sort Order**: Fixed incorrect sort order when sorting versions by status in Manage Versions screen
+  - When selecting "Published" order (desc), versions now correctly display: Published, Draft, Archived
+  - When selecting "Archived" order (asc), versions now correctly display: Archived, Draft, Published
+  - Previously the sort order was reversed, showing Archived first when "Published" was selected and vice versa
 
 ## [0.41.4] - 2026-01-18
 

@@ -304,7 +304,7 @@ function LiftSystemDetail() {
       } else if (sortBy === 'createdAt') {
         comparison = new Date(a.createdAt) - new Date(b.createdAt);
       } else if (sortBy === 'status') {
-        const statusOrder = { PUBLISHED: 1, DRAFT: 2, ARCHIVED: 3 };
+        const statusOrder = { ARCHIVED: 1, DRAFT: 2, PUBLISHED: 3 };
         comparison = statusOrder[a.status] - statusOrder[b.status];
       }
 
