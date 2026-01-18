@@ -40,6 +40,10 @@ function LiftSystemDetail() {
   const [showCreateVersion, setShowCreateVersion] = useState(false);
   const [newVersionConfig, setNewVersionConfig] = useState('');
   const [creating, setCreating] = useState(false);
+  const [validatingCreate, setValidatingCreate] = useState(false);
+  /** @type {import('../types/models').ValidationResult | null} */
+  const [createValidationResult, setCreateValidationResult] = useState(null);
+  const [createValidationError, setCreateValidationError] = useState(null);
   /** @type {number | null} */
   const [runningVersion, setRunningVersion] = useState(null);
   /** @type {{ type: 'success' | 'error'; message: string } | null} */
@@ -80,6 +84,12 @@ function LiftSystemDetail() {
     }
   }, [id]);
 
+  const handleNewVersionConfigChange = (e) => {
+    setNewVersionConfig(e.target.value);
+    setCreateValidationResult(null);
+    setCreateValidationError(null);
+  };
+
   useEffect(() => {
     loadSystemData();
   }, [loadSystemData]);
@@ -104,15 +114,43 @@ function LiftSystemDetail() {
   const handleCreateVersion = async (e) => {
     e.preventDefault();
     try {
+      if (!createValidationResult?.valid) {
+        setCreateValidationError('Validate the configuration before creating the version.');
+        return;
+      }
       setCreating(true);
       await liftSystemsApi.createVersion(id, { config: newVersionConfig });
       setNewVersionConfig('');
+      setCreateValidationResult(null);
+      setCreateValidationError(null);
       setShowCreateVersion(false);
       await loadSystemData();
     } catch (err) {
       handleApiError(err, setAlertMessage, 'Failed to create version');
     } finally {
       setCreating(false);
+    }
+  };
+
+  /**
+   * Validates the new version configuration before creation.
+   */
+  const handleValidateCreateVersion = async () => {
+    try {
+      setValidatingCreate(true);
+      setCreateValidationError(null);
+      setCreateValidationResult(null);
+      JSON.parse(newVersionConfig);
+      const response = await liftSystemsApi.validateConfig({ config: newVersionConfig });
+      setCreateValidationResult(response.data);
+    } catch (err) {
+      if (err.name === 'SyntaxError') {
+        setCreateValidationError('Invalid JSON format. Please fix syntax errors first.');
+      } else {
+        handleApiError(err, setAlertMessage, 'Validation failed');
+      }
+    } finally {
+      setValidatingCreate(false);
     }
   };
 
@@ -197,8 +235,9 @@ function LiftSystemDetail() {
 
     // Apply version number search
     if (versionSearch.trim()) {
+      const searchTerm = versionSearch.trim();
       filtered = filtered.filter((v) =>
-        v.versionNumber.toString().includes(versionSearch.trim())
+        v.versionNumber.toString() === searchTerm
       );
     }
 
@@ -351,14 +390,31 @@ function LiftSystemDetail() {
             <textarea
               id="config"
               value={newVersionConfig}
-              onChange={(e) => setNewVersionConfig(e.target.value)}
+              onChange={handleNewVersionConfigChange}
               placeholder='{"floors": 10, "lifts": 2, "travelTicksPerFloor": 10, ...}'
               rows="10"
               required
             />
             <div className="form-actions">
-              <button type="submit" className="btn-primary" disabled={creating}>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={creating || !createValidationResult?.valid}
+                title={
+                  createValidationResult?.valid
+                    ? 'Create a new version with this configuration'
+                    : 'Validate the configuration before creating'
+                }
+              >
                 {creating ? 'Creating...' : 'Create Version'}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleValidateCreateVersion}
+                disabled={validatingCreate}
+              >
+                {validatingCreate ? 'Validating...' : 'Validate'}
               </button>
               <button
                 type="button"
@@ -368,6 +424,46 @@ function LiftSystemDetail() {
                 Cancel
               </button>
             </div>
+
+            {createValidationError && (
+              <div className="validation-error-banner">{createValidationError}</div>
+            )}
+
+            {createValidationResult && (
+              <div
+                className={
+                  createValidationResult.valid
+                    ? 'validation-success-banner'
+                    : 'validation-error-banner'
+                }
+              >
+                <strong>
+                  {createValidationResult.valid
+                    ? '✓ Configuration is valid'
+                    : '✗ Configuration has errors'}
+                </strong>
+
+                {createValidationResult.errors?.length > 0 && (
+                  <ul>
+                    {createValidationResult.errors.map((err, idx) => (
+                      <li key={idx}>
+                        <strong>{err.field}:</strong> {err.message}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {createValidationResult.warnings?.length > 0 && (
+                  <ul>
+                    {createValidationResult.warnings.map((warn, idx) => (
+                      <li key={idx}>
+                        <strong>{warn.field}:</strong> {warn.message}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </form>
         )}
 

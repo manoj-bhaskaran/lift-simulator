@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.41.5] - 2026-01-18
 
 ### Fixed
+- **Version Search Matching**: Searching by version number now returns only exact version matches instead of versions that merely contain the digits.
+- **Create Version Validation Workflow**: Added a Validate button to the Create New Version form and require a successful validation before enabling version creation.
 - **Dashboard Versions Metric**: Lift system responses now include `versionCount`, allowing the dashboard and lift system list to accurately total configuration versions.
 - **Configuration Validation Error Messages**: Non-numeric values in configuration fields now display clear, user-friendly error messages
   - When entering non-numeric values (e.g., "A", "abc", true) for numeric fields, the system now shows: "Field 'fieldName' must be a numeric value, got 'value'"

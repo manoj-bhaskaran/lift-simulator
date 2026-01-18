@@ -299,6 +299,32 @@
   color: #7f8c8d;
 }
 
+.validation-success-banner,
+.validation-error-banner {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.validation-success-banner {
+  background: #eafaf1;
+  border: 1px solid #b7e4c7;
+  color: #1e7e34;
+}
+
+.validation-error-banner {
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  color: #b02a37;
+}
+
+.validation-success-banner ul,
+.validation-error-banner ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
 /* Versions controls styles */
 .versions-controls {
   background: #f8f9fa;
