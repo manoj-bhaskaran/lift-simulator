@@ -14,6 +14,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
 import java.util.HashMap;
@@ -144,6 +145,22 @@ public class GlobalExceptionHandler {
             OffsetDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
+     * Handles ResponseStatusException with the original status code.
+     * This preserves the intended HTTP status (e.g., 404) instead of converting to 500.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(ResponseStatusException ex) {
+        logger.info("Response status exception: {} - {}", ex.getStatusCode(), ex.getReason());
+
+        ErrorResponse error = new ErrorResponse(
+            ex.getStatusCode().value(),
+            ex.getReason() != null ? ex.getReason() : ex.getStatusCode().toString(),
+            OffsetDateTime.now()
+        );
+        return ResponseEntity.status(ex.getStatusCode()).body(error);
     }
 
     /**
