@@ -398,6 +398,152 @@ TestQuality represents a powerful test management platform that could provide va
 
 ---
 
+## 11. Test Case Documentation Gap & Mitigation
+
+### Current State
+
+Under the Playwright-only approach, test case documentation is **scattered** across multiple locations:
+
+1. **Inline in Test Code** (`frontend/e2e/*.spec.ts`)
+   - JSDoc comments at file headers
+   - Test descriptions in `test()` function names
+   - Manual test case ID mappings (e.g., `TC_0017: Dashboard Aggregate Counts Validation`)
+
+2. **Frontend README** (`frontend/README.md`)
+   - High-level test coverage list
+   - Test structure documentation
+   - Basic examples
+
+3. **No Centralized Repository**
+   - ❌ No formal test case specifications with preconditions/steps/expected results
+   - ❌ No requirements traceability matrix
+   - ❌ No single source of truth for test case inventory
+   - ❌ Test documentation lives only in code comments
+
+### What TestQuality Would Provide
+
+If TestQuality were adopted, you would gain:
+- ✅ Dedicated test case repository with rich metadata
+- ✅ Formal test case structure (Title, Description, Preconditions, Steps, Expected Results)
+- ✅ Requirements traceability (link test cases to user stories/requirements)
+- ✅ Manual + automated test case coordination
+- ✅ Test case versioning and history
+- ✅ Search and filtering across test inventory
+- ✅ Test plan and cycle management
+
+### Lightweight Alternative: Test Case Catalog
+
+For the current project scale, a **simple markdown-based test catalog** provides a good middle ground:
+
+**Create:** `frontend/e2e/TEST-CATALOG.md`
+
+```markdown
+# E2E Test Case Catalog
+
+## Overview
+This catalog documents all E2E test cases for the Lift Simulator Admin UI.
+Test implementations are in `e2e/*.spec.ts`.
+
+---
+
+## TC_SMOKE_001: Application Load
+**File:** `smoke.spec.ts`
+**Priority:** Critical
+**Description:** Verify the application loads successfully and displays the dashboard
+
+**Preconditions:**
+- Backend service running on port 8080
+- Frontend dev server running on port 3000
+
+**Steps:**
+1. Navigate to `/`
+2. Wait for DOM to load
+
+**Expected Results:**
+- Page title contains "Lift Simulator"
+- Dashboard heading is visible
+- "Overview" and "Quick Actions" sections are present
+
+**Status:** ✅ Automated
+
+---
+
+## TC_DASH_017: Dashboard Aggregate Counts Validation
+**File:** `dashboard.spec.ts`
+**Priority:** High
+**Description:** Verify dashboard metrics accurately reflect system and version counts
+
+**Preconditions:**
+- Backend service available
+- Database accessible
+
+**Steps:**
+1. Navigate to Dashboard and note initial counts
+2. Create two test systems with 2 and 1 versions respectively
+3. Navigate to Lift Systems and count actual systems
+4. Count versions for each system
+5. Return to Dashboard and verify updated metrics
+
+**Expected Results:**
+- Number of Lift Systems = initial + 2
+- Number of Versions = initial + 3
+- Dashboard metrics match actual counts
+
+**Linked Requirements:** [Story #42: Dashboard Metrics]
+
+**Status:** ✅ Automated
+
+---
+
+## Template for New Test Cases
+
+### TC_[AREA]_[NUMBER]: [Title]
+**File:** `[filename].spec.ts`
+**Priority:** [Critical|High|Medium|Low]
+**Description:** Brief description
+
+**Preconditions:**
+- List prerequisites
+
+**Steps:**
+1. Step by step
+2. Actions to perform
+
+**Expected Results:**
+- What should happen
+
+**Linked Requirements:** [Optional: User story, ticket, requirement ID]
+
+**Status:** [✅ Automated | 📝 Manual | ⏳ Planned]
+```
+
+### Benefits of Test Catalog
+
+| Benefit | Test Catalog | TestQuality |
+|---------|-------------|-------------|
+| Formal test case specs | ✅ Yes | ✅ Yes |
+| Requirements traceability | ✅ Manual links | ✅ Automated links |
+| Single source of truth | ✅ Yes | ✅ Yes |
+| Searchable | ✅ Via grep/IDE | ✅ Rich UI search |
+| No external dependency | ✅ Yes | ❌ Platform required |
+| Version controlled | ✅ Git history | ✅ Platform versioning |
+| Cost | ✅ Free | 🟡 Subscription |
+| Manual test management | 🟡 Basic | ✅ Advanced |
+| Test execution tracking | ❌ No | ✅ Yes |
+
+### Recommendation
+
+**Implement the lightweight test catalog** for current needs:
+
+1. **Create** `frontend/e2e/TEST-CATALOG.md` to document formal test cases
+2. **Update** as new tests are added (part of PR process)
+3. **Reference** test case IDs in code comments for traceability
+4. **Migrate** to TestQuality later if test management needs grow
+
+This provides **80% of the documentation benefit** with **5% of the complexity** compared to TestQuality.
+
+---
+
 ## References
 
 ### TestQuality Documentation

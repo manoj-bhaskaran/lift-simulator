@@ -144,6 +144,7 @@ TestQuality becomes valuable when **2+ of these conditions** are met:
 3. **Single Framework**: Cannot aggregate results from multiple test frameworks in one dashboard
 4. **Manual Test Gap**: No centralized manual test case management
 5. **Artifact Download Required**: Team members must download artifacts to view reports (vs web-based TestQuality UI)
+6. **Test Case Documentation**: No dedicated test case repository with formal specifications (see mitigation in evaluation document Section 11)
 
 ### Neutral
 
@@ -208,9 +209,10 @@ Platforms evaluated but not deeply researched:
 
 1. ✅ Document evaluation findings (see `docs/testquality-evaluation.md`)
 2. ✅ Create ADR capturing decision rationale
-3. 🔲 Monitor test suite growth and team changes
-4. 🔲 Revisit decision when trigger conditions are met (see "When to Reconsider" section)
-5. 🔲 Consider lightweight GitHub Pages reporting if historical trends become important
+3. 🔲 Create `frontend/e2e/TEST-CATALOG.md` for formal test case documentation (recommended)
+4. 🔲 Monitor test suite growth and team changes
+5. 🔲 Revisit decision when trigger conditions are met (see "When to Reconsider" section)
+6. 🔲 Consider lightweight GitHub Pages reporting if historical trends become important
 
 ## References
 
