@@ -32,7 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated `.gitignore` to exclude Playwright artifacts (test-results/, playwright-report/, playwright/.cache/)
   - Documented setup and usage in frontend/README.md with complete instructions
   - Created ADR-0014 documenting the decision to adopt Playwright
-  - Integrated Playwright tests into CI pipeline with automatic browser installation
+  - Integrated Playwright tests into CI pipeline:
+    - Automatic Chromium browser installation with dependencies
+    - Playwright webServer auto-starts frontend on port 3000 during test execution
+    - HTML test report uploaded as GitHub Actions artifact (available for 30 days)
+    - Test artifacts (screenshots, videos, traces) uploaded on test failures
+    - Test failures properly fail the CI workflow to block PR merges
+    - Test reports accessible via GitHub Actions "Artifacts" section in workflow runs
 - **Automated UI Test Suite**: Converted 10 manual test cases to automated Playwright tests
   - **Test Helpers and Fixtures** (`e2e/helpers/test-helpers.ts`):
     - Comprehensive test data generators and helper functions

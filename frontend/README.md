@@ -167,6 +167,37 @@ Playwright is configured in `playwright.config.ts` with:
 
 The configuration automatically starts the dev server before running tests and shuts it down afterward. You don't need to start the server manually.
 
+#### CI Integration
+
+Playwright tests run automatically in GitHub Actions CI on:
+- Pull requests to main
+- Pushes to main
+
+**Test Reports in CI:**
+
+When tests run in CI, Playwright generates an HTML report that is uploaded as a GitHub Actions artifact. To view the report:
+
+1. Go to the [Actions tab](../../actions) in GitHub
+2. Click on the workflow run you want to inspect
+3. Scroll down to the "Artifacts" section at the bottom of the page
+4. Download the `playwright-report` artifact (available for 30 days)
+5. Extract the zip file and open `index.html` in your browser
+
+**Test Artifacts on Failure:**
+
+If tests fail, additional artifacts are uploaded:
+- Screenshots of failed tests
+- Videos of test execution
+- Playwright traces for debugging
+
+These are available in the `playwright-test-artifacts` artifact in the same location.
+
+**CI Behavior:**
+- Test failures will fail the CI workflow and block PR merges
+- Tests run with 2 retries on CI to handle transient issues
+- Only Chromium browser is tested in CI (for speed and reliability)
+- Web server automatically starts on port 3000 before tests begin
+
 #### Test Structure & Naming
 
 - All E2E tests go in `e2e/*.spec.ts`
