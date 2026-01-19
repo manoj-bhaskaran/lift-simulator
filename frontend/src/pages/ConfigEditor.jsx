@@ -267,7 +267,7 @@ function ConfigEditor() {
             value={config}
             onChange={handleConfigChange}
             spellCheck="false"
-            placeholder='{"floors": 10, "lifts": 2, ...}'
+            placeholder='{"minFloor": 0, "maxFloor": 9, "lifts": 2, ...}'
           />
 
           <div className="editor-actions">

@@ -10,7 +10,8 @@ import { Page, expect } from '@playwright/test';
  */
 export const VALID_CONFIGS = {
   basicOffice: {
-    floors: 10,
+    minFloor: 0,
+    maxFloor: 9,
     lifts: 2,
     travelTicksPerFloor: 1,
     doorTransitionTicks: 2,
@@ -22,7 +23,8 @@ export const VALID_CONFIGS = {
     idleParkingMode: 'PARK_TO_HOME_FLOOR'
   },
   highRiseResidential: {
-    floors: 30,
+    minFloor: 0,
+    maxFloor: 29,
     lifts: 4,
     travelTicksPerFloor: 2,
     doorTransitionTicks: 3,
@@ -34,7 +36,8 @@ export const VALID_CONFIGS = {
     idleParkingMode: 'PARK_TO_HOME_FLOOR'
   },
   minimal: {
-    floors: 2,
+    minFloor: 0,
+    maxFloor: 1,
     lifts: 1,
     travelTicksPerFloor: 1,
     doorTransitionTicks: 1,
@@ -46,7 +49,8 @@ export const VALID_CONFIGS = {
     idleParkingMode: 'PARK_TO_HOME_FLOOR'
   },
   large: {
-    floors: 100,
+    minFloor: 0,
+    maxFloor: 99,
     lifts: 8,
     travelTicksPerFloor: 3,
     doorTransitionTicks: 4,
@@ -64,7 +68,8 @@ export const VALID_CONFIGS = {
  */
 export const INVALID_CONFIGS = {
   invalidExample: {
-    floors: 1,
+    minFloor: 0,
+    maxFloor: 0,
     lifts: 0,
     travelTicksPerFloor: -1,
     doorTransitionTicks: 2,
@@ -76,7 +81,8 @@ export const INVALID_CONFIGS = {
     idleParkingMode: 'PARK_TO_HOME_FLOOR'
   },
   tooFewFloors: {
-    floors: 1,
+    minFloor: 0,
+    maxFloor: 0,
     lifts: 1,
     travelTicksPerFloor: 1,
     doorTransitionTicks: 1,
@@ -88,7 +94,8 @@ export const INVALID_CONFIGS = {
     idleParkingMode: 'PARK_TO_HOME_FLOOR'
   },
   homeFloorOutOfBounds: {
-    floors: 10,
+    minFloor: 0,
+    maxFloor: 9,
     lifts: 2,
     travelTicksPerFloor: 1,
     doorTransitionTicks: 2,

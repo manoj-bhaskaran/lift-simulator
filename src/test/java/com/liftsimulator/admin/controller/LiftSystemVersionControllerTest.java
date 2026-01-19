@@ -64,7 +64,8 @@ public class LiftSystemVersionControllerTest {
     private String validConfig() {
         return """
             {
-                "floors": 10,
+                "minFloor": 0,
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -79,12 +80,13 @@ public class LiftSystemVersionControllerTest {
     }
 
     /**
-     * Helper method to create a valid lift configuration JSON with custom floors.
+     * Helper method to create a valid lift configuration JSON with custom floor range.
      */
-    private String validConfigWithFloors(int floors) {
+    private String validConfigWithRange(int minFloor, int maxFloor) {
         return String.format("""
             {
-                "floors": %d,
+                "minFloor": %d,
+                "maxFloor": %d,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -95,7 +97,7 @@ public class LiftSystemVersionControllerTest {
                 "controllerStrategy": "NEAREST_REQUEST_ROUTING",
                 "idleParkingMode": "PARK_TO_HOME_FLOOR"
             }
-            """.trim(), floors);
+            """.trim(), minFloor, maxFloor);
     }
 
     @Test
@@ -159,7 +161,7 @@ public class LiftSystemVersionControllerTest {
         versionRepository.save(new LiftSystemVersion(testSystem, 1, validConfig()));
         versionRepository.save(new LiftSystemVersion(testSystem, 2, validConfig()));
 
-        CreateVersionRequest request = new CreateVersionRequest(validConfigWithFloors(15), null);
+        CreateVersionRequest request = new CreateVersionRequest(validConfigWithRange(0, 14), null);
 
         mockMvc.perform(post("/api/lift-systems/{systemId}/versions", testSystem.getId())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -186,7 +188,7 @@ public class LiftSystemVersionControllerTest {
         LiftSystemVersion version = new LiftSystemVersion(testSystem, 1, originalConfig);
         versionRepository.save(version);
 
-        String updatedConfig = validConfigWithFloors(15);
+        String updatedConfig = validConfigWithRange(0, 14);
         UpdateVersionConfigRequest request = new UpdateVersionConfigRequest(updatedConfig);
 
         mockMvc.perform(put("/api/lift-systems/{systemId}/versions/{versionNumber}",
@@ -199,7 +201,7 @@ public class LiftSystemVersionControllerTest {
 
     @Test
     public void testUpdateVersionConfig_VersionNotFound() throws Exception {
-        UpdateVersionConfigRequest request = new UpdateVersionConfigRequest(validConfigWithFloors(15));
+        UpdateVersionConfigRequest request = new UpdateVersionConfigRequest(validConfigWithRange(0, 14));
 
         mockMvc.perform(put("/api/lift-systems/{systemId}/versions/{versionNumber}",
                 testSystem.getId(), 999)
@@ -227,8 +229,8 @@ public class LiftSystemVersionControllerTest {
     @Test
     public void testListVersions_Success() throws Exception {
         versionRepository.save(new LiftSystemVersion(testSystem, 1, validConfig()));
-        versionRepository.save(new LiftSystemVersion(testSystem, 2, validConfigWithFloors(15)));
-        versionRepository.save(new LiftSystemVersion(testSystem, 3, validConfigWithFloors(20)));
+        versionRepository.save(new LiftSystemVersion(testSystem, 2, validConfigWithRange(0, 14)));
+        versionRepository.save(new LiftSystemVersion(testSystem, 3, validConfigWithRange(0, 19)));
 
         mockMvc.perform(get("/api/lift-systems/{systemId}/versions", testSystem.getId()))
             .andExpect(status().isOk())
@@ -292,7 +294,7 @@ public class LiftSystemVersionControllerTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.versionNumber").value(2));
 
-        UpdateVersionConfigRequest updateRequest = new UpdateVersionConfigRequest(validConfigWithFloors(20));
+        UpdateVersionConfigRequest updateRequest = new UpdateVersionConfigRequest(validConfigWithRange(0, 19));
         mockMvc.perform(put("/api/lift-systems/{systemId}/versions/{versionNumber}",
                 testSystem.getId(), 2)
                 .contentType(MediaType.APPLICATION_JSON)

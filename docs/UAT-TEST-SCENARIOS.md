@@ -1,6 +1,6 @@
 # UAT Test Scenarios - Lift Simulator
 
-**Version:** 0.43.0
+**Version:** 0.44.0
 **Last Updated:** 2026-01-17
 **Purpose:** User Acceptance Testing guide for single-user local deployment
 
@@ -94,7 +94,8 @@ Before starting UAT, ensure:
 4. In the configuration textarea, paste the following valid configuration:
    ```json
    {
-     "floors": 10,
+     "minFloor": 0,
+     "maxFloor": 9,
      "lifts": 2,
      "travelTicksPerFloor": 1,
      "doorTransitionTicks": 2,
@@ -140,7 +141,8 @@ Before starting UAT, ensure:
 4. Paste the following INVALID configuration:
    ```json
    {
-     "floors": 1,
+     "minFloor": 0,
+     "maxFloor": 0,
      "lifts": 0,
      "travelTicksPerFloor": -1,
      "doorTransitionTicks": 2,
@@ -158,11 +160,11 @@ Before starting UAT, ensure:
 **Expected Results:**
 - Backend validation runs when "Create" is clicked
 - Creation fails with validation errors:
-  - `floors`: Must be at least 2
+  - `maxFloor`: Must be greater than minFloor
   - `lifts`: Must be at least 1
   - `travelTicksPerFloor`: Must be at least 1
   - `doorReopenWindowTicks`: Must not exceed doorTransitionTicks (5 > 2)
-  - `homeFloor`: Must be within floor range (20 >= 1)
+  - `homeFloor`: Must be within floor range (0 to 0)
   - `idleTimeoutTicks`: Must be non-negative
   - `controllerStrategy`: Invalid enum value
 - Error messages are displayed to the user
@@ -192,7 +194,8 @@ Before starting UAT, ensure:
 4. In the textarea, paste the following CORRECTED configuration (fixing the errors from Scenario 4):
    ```json
    {
-     "floors": 15,
+     "minFloor": 0,
+     "maxFloor": 14,
      "lifts": 3,
      "travelTicksPerFloor": 2,
      "doorTransitionTicks": 3,
@@ -354,7 +357,8 @@ Before starting UAT, ensure:
 2. Paste the following configuration in the editor:
    ```json
    {
-     "floors": 20,
+     "minFloor": 0,
+     "maxFloor": 19,
      "lifts": 4,
      "travelTicksPerFloor": 1,
      "doorTransitionTicks": 2,
@@ -371,7 +375,8 @@ Before starting UAT, ensure:
 5. Now paste an invalid configuration:
    ```json
    {
-     "floors": 1,
+     "minFloor": 0,
+     "maxFloor": 0,
      "lifts": 1,
      "travelTicksPerFloor": 1,
      "doorTransitionTicks": 1,
@@ -388,7 +393,7 @@ Before starting UAT, ensure:
 
 **Expected Results:**
 - First validation passes (may show warnings)
-- Second validation fails with error: "floors must be at least 2"
+- Second validation fails with error: "maxFloor must be greater than minFloor"
 - Validation results are clearly displayed
 - Errors and warnings are distinguishable
 - Tool works independently of saved configurations
@@ -478,7 +483,8 @@ Before starting UAT, ensure:
 1. Create a new version with `NEAREST_REQUEST_ROUTING` strategy:
    ```json
    {
-     "floors": 10,
+     "minFloor": 0,
+     "maxFloor": 9,
      "lifts": 2,
      "travelTicksPerFloor": 1,
      "doorTransitionTicks": 2,
@@ -494,7 +500,8 @@ Before starting UAT, ensure:
 3. Create another version with `DIRECTIONAL_SCAN` strategy:
    ```json
    {
-     "floors": 10,
+     "minFloor": 0,
+     "maxFloor": 9,
      "lifts": 2,
      "travelTicksPerFloor": 1,
      "doorTransitionTicks": 2,
@@ -530,7 +537,8 @@ Before starting UAT, ensure:
 1. Test minimum valid configuration:
    ```json
    {
-     "floors": 2,
+     "minFloor": 0,
+     "maxFloor": 1,
      "lifts": 1,
      "travelTicksPerFloor": 1,
      "doorTransitionTicks": 1,
@@ -546,7 +554,8 @@ Before starting UAT, ensure:
 3. Test large valid configuration:
    ```json
    {
-     "floors": 100,
+     "minFloor": 0,
+     "maxFloor": 99,
      "lifts": 10,
      "travelTicksPerFloor": 5,
      "doorTransitionTicks": 5,
@@ -562,7 +571,8 @@ Before starting UAT, ensure:
 5. Test homeFloor at boundary:
    ```json
    {
-     "floors": 10,
+     "minFloor": 0,
+     "maxFloor": 9,
      "lifts": 2,
      "travelTicksPerFloor": 1,
      "doorTransitionTicks": 2,
@@ -574,13 +584,13 @@ Before starting UAT, ensure:
      "idleParkingMode": "PARK_TO_HOME_FLOOR"
    }
    ```
-6. Validate (should pass - homeFloor 9 is valid for 10 floors [0-9])
+6. Validate (should pass - homeFloor 9 is valid for minFloor 0/maxFloor 9)
 
 **Expected Results:**
 - Minimum valid configuration passes
 - Large valid configuration passes
 - Boundary values are accepted when valid
-- homeFloor validation correctly enforces 0 <= homeFloor < floors
+- homeFloor validation correctly enforces minFloor <= homeFloor <= maxFloor
 
 **Pass Criteria:**
 - ✅ Minimum values pass validation

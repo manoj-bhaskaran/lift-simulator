@@ -51,7 +51,7 @@ public class LiftSystemVersionRepositoryTest {
 
     @Test
     public void testSaveVersionWithJsonbConfig() {
-        String jsonConfig = "{\"floors\": 10, \"lifts\": 3, \"strategy\": \"DIRECTIONAL_SCAN\"}";
+        String jsonConfig = "{\"minFloor\": 0, \"maxFloor\": 9, \"lifts\": 3, \"strategy\": \"DIRECTIONAL_SCAN\"}";
 
         LiftSystemVersion version = new LiftSystemVersion(testSystem, 1, jsonConfig);
 

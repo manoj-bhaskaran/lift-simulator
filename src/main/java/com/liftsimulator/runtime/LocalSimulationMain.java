@@ -72,8 +72,7 @@ public final class LocalSimulationMain {
             config.idleParkingMode()
         );
 
-        int maxFloor = config.floors() - 1;
-        return SimulationEngine.builder(controller, 0, maxFloor)
+        return SimulationEngine.builder(controller, config.minFloor(), config.maxFloor())
             .initialFloor(config.homeFloor())
             .travelTicksPerFloor(config.travelTicksPerFloor())
             .doorTransitionTicks(config.doorTransitionTicks())

@@ -1,6 +1,6 @@
 # TestQuality vs Playwright-only CI Execution Evaluation
 
-**Version:** 0.43.0
+**Version:** 0.44.0
 **Date:** 2026-01-19
 **Status:** Under Review
 
@@ -278,7 +278,7 @@ reporter: [
 - **Team Size:** Small (appears to be solo/small team based on commit history)
 - **Test Suite Size:** Small (6 spec files, ~10 automated test cases)
 - **Test Complexity:** Medium (lift configuration, dashboard, health checks)
-- **Release Cadence:** Active development (v0.43.0)
+- **Release Cadence:** Active development (v0.44.0)
 - **Framework Diversity:** Single framework (Playwright for UI, likely JUnit for backend)
 
 ### Current Needs Assessment

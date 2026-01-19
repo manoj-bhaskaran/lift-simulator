@@ -65,7 +65,7 @@ test.describe('Configuration Version Management', () => {
 
     // Verify JSON is accepted
     const configValue = await page.locator('#config').inputValue();
-    expect(configValue).toContain('"floors"');
+    expect(configValue).toContain('"minFloor"');
 
     // Step 3: Click Create button
     await page.locator('.modal-content button:has-text("Create")').click();
@@ -183,7 +183,7 @@ test.describe('Configuration Version Management', () => {
     await expect(configTextarea).toBeVisible();
 
     const existingConfig = await configTextarea.inputValue();
-    expect(existingConfig).toContain('"floors"');
+    expect(existingConfig).toContain('"minFloor"');
 
     // Step 2: Replace content with high-rise-residential.json
     const newConfig = VALID_CONFIGS.highRiseResidential;
@@ -220,7 +220,7 @@ test.describe('Configuration Version Management', () => {
 
     // Verify the updated configuration is present
     const updatedConfig = await page.locator('.config-textarea').inputValue();
-    expect(updatedConfig).toContain('"floors": 30'); // From high-rise-residential.json
+    expect(updatedConfig).toContain('"maxFloor": 29'); // From high-rise-residential.json
   });
 
   test('TC_0009: Publish Version and Auto-Archive Previous', async ({ page }) => {

@@ -1,6 +1,6 @@
 # E2E Test Case Catalog
 
-**Version:** 0.43.0
+**Version:** 0.44.0
 **Last Updated:** 2026-01-19
 **Test Framework:** Playwright 1.57.0
 
@@ -209,7 +209,7 @@ This catalog documents all end-to-end (E2E) test cases for the Lift Simulator Ad
 **Linked Requirements:** User Story #42 (Dashboard Metrics), ADR-0011 (React Admin UI)
 **Status:** ✅ Automated
 **Last Updated:** 2026-01-19
-**Notes:** Originally manual test case, automated in v0.43.0
+**Notes:** Originally manual test case, automated in v0.44.0
 
 ---
 
