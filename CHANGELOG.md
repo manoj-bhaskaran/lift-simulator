@@ -32,6 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated `.gitignore` to exclude Playwright artifacts (test-results/, playwright-report/, playwright/.cache/)
   - Documented setup and usage in frontend/README.md with complete instructions
   - Created ADR-0014 documenting the decision to adopt Playwright
+  - Integrated Playwright tests into CI pipeline with automatic browser installation
+
+### Fixed
+- **Lift Systems Navigation Test**: Corrected smoke test to use `/systems` route instead of `/lift-systems` to match actual routing in App.jsx
 
 ## [0.42.0] - 2026-01-19
 
