@@ -33,6 +33,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Documented setup and usage in frontend/README.md with complete instructions
   - Created ADR-0014 documenting the decision to adopt Playwright
   - Integrated Playwright tests into CI pipeline with automatic browser installation
+- **Automated UI Test Suite**: Converted 10 manual test cases to automated Playwright tests
+  - **Test Helpers and Fixtures** (`e2e/helpers/test-helpers.ts`):
+    - Comprehensive test data generators and helper functions
+    - Configuration fixtures for valid and invalid scenarios
+    - Reusable functions for common operations (create system, create version, publish version)
+    - Backend availability checks and cleanup utilities
+    - Dashboard metrics aggregation helpers
+  - **Lift Systems CRUD Tests** (`e2e/lift-systems.spec.ts`) - 5 automated tests:
+    - TC_0003: Create New Lift System with validation
+    - TC_0004: View Lift System Details with metadata verification
+    - TC_0013: Delete Lift System and cascade delete versions
+    - Create system with invalid key validation
+    - Create system with duplicate key error handling
+  - **Configuration Version Lifecycle Tests** (`e2e/configuration-versions.spec.ts`) - 6 automated tests:
+    - TC_0005: Create Valid Configuration Version (Draft)
+    - TC_0006: Reject Invalid Configuration Version
+    - TC_0007: Create Valid Configuration After Fix
+    - TC_0008: Edit Draft Version and Save
+    - TC_0009: Publish Version and Auto-Archive Previous
+    - Cannot edit published version (read-only mode)
+  - **Configuration Validator Tests** (`e2e/config-validator.spec.ts`) - 6 automated tests:
+    - TC_0011: Validate Configuration Using Validator Tool
+    - Validator shows warnings distinctly from errors
+    - Validator handles malformed JSON gracefully
+    - Validator handles boundary values correctly
+    - Validator accepts different controller strategies
+  - **Health Check Tests** (`e2e/health-check.spec.ts`) - 4 automated tests:
+    - TC_0012: Health Check UI and API
+    - Health check page shows service information
+    - Health check handles backend failure gracefully
+    - Health check API returns structured JSON
+  - **Dashboard Tests** (`e2e/dashboard.spec.ts`) - 4 automated tests:
+    - TC_0017: Dashboard Aggregate Counts Validation
+    - Dashboard displays quick actions
+    - Dashboard metrics update after system deletion
+    - Dashboard is accessible from navigation
+  - **Total**: 25 automated test cases covering critical user flows
+  - **Test Coverage**: All tests follow best practices with:
+    - Clear test descriptions mapping to manual test case IDs
+    - Stable selectors using class names, IDs, and text content
+    - Proper assertions with meaningful error messages
+    - Backend availability checks with automatic test skipping
+    - Cleanup logic to prevent test data pollution
+    - Resilience to backend unavailability (smoke tests)
+  - **Test Organization**:
+    - Tests grouped by feature area (Lift Systems, Versions, Validator, Health, Dashboard)
+    - Reusable helpers reduce code duplication
+    - Configuration fixtures loaded from backend scenario files
+    - Clear mapping between manual test cases and automated tests
 
 ### Fixed
 - **Lift Systems Navigation Test**: Corrected smoke test to use `/systems` route instead of `/lift-systems` to match actual routing in App.jsx
