@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.43.0] - 2026-01-19
+
+### Added
+- **Playwright UI Automation Framework**: Introduced Playwright as the E2E testing framework for the frontend
+  - Installed @playwright/test with TypeScript support
+  - Created `playwright.config.ts` with optimal CI/local development settings
+  - Configured base URL (http://localhost:3000) and automatic web server startup
+  - Set up reasonable timeouts (10s actions, 30s navigation) and retries (2 on CI)
+  - Enabled test artifacts: screenshots on failure, videos on failure, traces on retry
+  - Created `e2e/` directory for test organization
+  - Added comprehensive smoke test suite (`e2e/smoke.spec.ts`) covering:
+    - Application loads and displays dashboard
+    - Navigation to Lift Systems page
+    - Health check page accessibility
+    - Configuration validator page accessibility
+    - Footer version information display
+  - Added Playwright scripts to package.json:
+    - `npm test` - Run tests in headless mode
+    - `npm run test:headed` - Run tests with browser UI visible
+    - `npm run test:ui` - Interactive UI mode for debugging
+    - `npm run test:debug` - Debug mode with step-by-step execution
+    - `npm run test:report` - View HTML test report
+  - Updated `.gitignore` to exclude Playwright artifacts (test-results/, playwright-report/, playwright/.cache/)
+  - Documented setup and usage in frontend/README.md with complete instructions
+  - Created ADR-0014 documenting the decision to adopt Playwright
+  - Integrated Playwright tests into CI pipeline with automatic browser installation
+
+### Fixed
+- **Lift Systems Navigation Test**: Corrected smoke test to use `/systems` route instead of `/lift-systems` to match actual routing in App.jsx
+
 ## [0.42.0] - 2026-01-19
 
 ### Added

@@ -90,59 +90,142 @@ Or use your IDE to run the main application class.
 - `npm run lint` - Run ESLint
 - `npm run lint:fix` - Fix lint issues automatically
 - `npm run preview` - Preview production build
-- `npm test` - Run frontend tests (currently a placeholder until tests are added)
+- `npm test` - Run Playwright tests (headless)
+- `npm run test:headed` - Run Playwright tests with browser UI visible
+- `npm run test:ui` - Run Playwright tests in interactive UI mode
+- `npm run test:debug` - Run Playwright tests in debug mode
+- `npm run test:report` - Show HTML test report
 
 ## Testing
 
-There are currently **no automated frontend tests in this repo**. The scripts and conventions below describe the intended testing strategy so the team can add coverage incrementally.
+The frontend uses **Playwright** for end-to-end (E2E) UI automation testing.
 
 ### Testing Strategy
 
-- **Unit tests**: Components, hooks, and utility functions.
-- **Integration tests**: Page-level flows with mocked API calls.
-- **End-to-end (E2E) tests**: Full user journeys against a running backend.
+- **E2E tests (Playwright)**: Full user journeys against the running application
+- **Unit tests**: Components, hooks, and utility functions (future addition)
+- **Integration tests**: Page-level flows with mocked API calls (future addition)
 
-### Recommended Tooling
+### E2E Testing with Playwright
 
-- **Unit/Integration**: Vitest + React Testing Library
-- **Mocking**: Mock Service Worker (MSW) for API calls
-- **E2E**: Playwright or Cypress
+Playwright is configured to test the application against a real browser. Tests are located in `e2e/*.spec.ts`.
 
-### Running Tests
+#### First-Time Setup
+
+Install Playwright browser binaries:
+
+```bash
+npx playwright install
+```
+
+This downloads Chromium, Firefox, and WebKit browsers. You only need to do this once per machine.
+
+> **Note:** If you only need Chromium, use `npx playwright install chromium` to save disk space.
+
+#### Running Tests
+
+Run all tests (headless mode):
 
 ```bash
 npm test
 ```
 
-> Once Vitest is configured, add coverage with `npm test -- --coverage` and aim to keep new/changed code at **>=80%** statement/branch coverage.
+Run tests with browser UI visible:
 
-### Test Structure & Naming
+```bash
+npm run test:headed
+```
 
-- Place tests alongside code or in `src/__tests__/`
-- Naming conventions:
-  - `*.test.jsx` for unit tests
-  - `*.spec.jsx` for integration tests
-  - `e2e/*.spec.ts` for Playwright/Cypress tests
+Run tests in interactive UI mode (recommended for debugging):
+
+```bash
+npm run test:ui
+```
+
+Run tests in debug mode with step-by-step execution:
+
+```bash
+npm run test:debug
+```
+
+View HTML test report:
+
+```bash
+npm run test:report
+```
+
+#### Configuration
+
+Playwright is configured in `playwright.config.ts` with:
+
+- **Base URL**: http://localhost:3000
+- **Web Server**: Automatically starts `npm run dev` before tests
+- **Test Directory**: `e2e/`
+- **Retries on CI**: 2 retries to handle flaky tests
+- **Artifacts**: Screenshots and videos on failure, traces on retry
+- **Browsers**: Chromium (default), with Firefox and WebKit commented out
+
+The configuration automatically starts the dev server before running tests and shuts it down afterward. You don't need to start the server manually.
+
+#### Test Structure & Naming
+
+- All E2E tests go in `e2e/*.spec.ts`
+- Unit tests (when added): `*.test.jsx` alongside component files
+- Integration tests (when added): `*.spec.jsx` in `src/__tests__/`
 
 Example structure:
 
 ```
-frontend/src/
-  components/
-    SystemCard.jsx
-    SystemCard.test.jsx
-  pages/
-    LiftSystems.jsx
-    LiftSystems.spec.jsx
-  __tests__/
-    statusUtils.test.js
+frontend/
+  e2e/
+    smoke.spec.ts           # E2E smoke tests
+    lift-systems.spec.ts    # E2E tests for lift systems
+  src/
+    components/
+      SystemCard.jsx
+      SystemCard.test.jsx   # Unit tests (future)
+    __tests__/
+      integration.spec.jsx  # Integration tests (future)
 ```
 
-### Example Scenarios to Cover
+#### Current Test Coverage
 
-- **Unit**: Render a status badge with the correct color based on status.
-- **Integration**: Load the Lift Systems list with mocked API responses and verify pagination.
-- **E2E**: Create a new lift system, publish a version, and verify it appears in the versions list.
+**Smoke Tests** (`e2e/smoke.spec.ts`):
+- Application loads and displays dashboard
+- Navigation to Lift Systems page works
+- Health check page is accessible
+- Configuration validator page is accessible
+- Footer displays version information
+
+#### Example Scenarios to Cover
+
+- **E2E**: Create a new lift system, publish a version, and verify it appears in the versions list
+- **E2E**: Validate configuration JSON and check for error messages
+- **Unit** (future): Render a status badge with the correct color based on status
+- **Integration** (future): Load the Lift Systems list with mocked API responses and verify pagination
+
+#### Writing New Tests
+
+Create a new test file in `e2e/`:
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.describe('Feature Name', () => {
+  test('should perform action', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('text=Expected Text')).toBeVisible();
+  });
+});
+```
+
+See [Playwright documentation](https://playwright.dev/docs/writing-tests) for more details.
+
+### Future Testing Additions
+
+- **Unit tests**: Vitest + React Testing Library for component testing
+- **Integration tests**: Mock Service Worker (MSW) for API mocking
+- **Coverage**: Target ≥80% statement/branch coverage for new code
 
 ## CI/CD
 
@@ -483,7 +566,7 @@ This is a basic scaffold. Future enhancements could include:
 - Real-time monitoring and metrics
 - Deployment automation
 - Unit/integration tests with Vitest + Testing Library
-- E2E testing with Playwright or Cypress
+- Expand E2E test coverage with Playwright
 
 ## Contributing
 
