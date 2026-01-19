@@ -26,11 +26,11 @@ test.describe('Application Smoke Tests', () => {
     await page.waitForLoadState('networkidle');
 
     // Click on the Lift Systems navigation link
-    const liftSystemsLink = page.locator('a[href="/lift-systems"], text=Lift Systems');
+    const liftSystemsLink = page.locator('a[href="/systems"], text=Lift Systems');
     await liftSystemsLink.first().click();
 
     // Wait for navigation
-    await page.waitForURL('**/lift-systems');
+    await page.waitForURL('**/systems');
 
     // Verify we're on the lift systems page
     await expect(page.locator('h1, h2').filter({ hasText: /Lift Systems/i })).toBeVisible();
