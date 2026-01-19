@@ -155,7 +155,7 @@ public class ConfigValidationService {
     private void performDomainValidation(LiftConfigDTO config, List<ValidationIssue> errors, List<ValidationIssue> warnings) {
         // Skip domain validation if structural validation failed (null fields present)
         if (config.doorReopenWindowTicks() == null || config.doorTransitionTicks() == null ||
-            config.floors() == null || config.homeFloor() == null ||
+            config.minFloor() == null || config.maxFloor() == null || config.homeFloor() == null ||
             config.idleParkingMode() == null || config.idleTimeoutTicks() == null ||
             config.doorDwellTicks() == null || config.lifts() == null) {
             return; // Structural validation errors already reported
@@ -171,13 +171,22 @@ public class ConfigValidationService {
             ));
         }
 
-        // Validate homeFloor is within valid floor range (0 to floors-1)
-        int maxFloor = config.floors() - 1;
-        if (config.homeFloor() > maxFloor) {
+        // Validate floor range is at least two floors (maxFloor > minFloor)
+        if (config.maxFloor() <= config.minFloor()) {
+            errors.add(new ValidationIssue(
+                "maxFloor",
+                "Maximum floor (" + config.maxFloor() +
+                ") must be greater than minimum floor (" + config.minFloor() + ")",
+                ValidationIssue.Severity.ERROR
+            ));
+        }
+
+        // Validate homeFloor is within valid floor range (minFloor to maxFloor)
+        if (config.homeFloor() < config.minFloor() || config.homeFloor() > config.maxFloor()) {
             errors.add(new ValidationIssue(
                 "homeFloor",
                 "Home floor (" + config.homeFloor() +
-                ") must be within valid floor range (0 to " + maxFloor + ")",
+                ") must be within valid floor range (" + config.minFloor() + " to " + config.maxFloor() + ")",
                 ValidationIssue.Severity.ERROR
             ));
         }
@@ -204,13 +213,16 @@ public class ConfigValidationService {
         }
 
         // Warning: If number of lifts is greater than number of floors
-        if (config.lifts() > config.floors()) {
-            warnings.add(new ValidationIssue(
-                "lifts",
-                "Number of lifts (" + config.lifts() +
-                ") exceeds number of floors (" + config.floors() + "). This may be inefficient.",
-                ValidationIssue.Severity.WARNING
-            ));
+        if (config.maxFloor() > config.minFloor()) {
+            int floorCount = config.maxFloor() - config.minFloor() + 1;
+            if (config.lifts() > floorCount) {
+                warnings.add(new ValidationIssue(
+                    "lifts",
+                    "Number of lifts (" + config.lifts() +
+                    ") exceeds number of floors (" + floorCount + "). This may be inefficient.",
+                    ValidationIssue.Severity.WARNING
+                ));
+            }
         }
 
         // Warning: If doorReopenWindowTicks is 0

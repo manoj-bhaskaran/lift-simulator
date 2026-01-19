@@ -409,7 +409,7 @@ function LiftSystemDetail() {
               id="config"
               value={newVersionConfig}
               onChange={handleNewVersionConfigChange}
-              placeholder='{"floors": 10, "lifts": 2, "travelTicksPerFloor": 10, ...}'
+              placeholder='{"minFloor": 0, "maxFloor": 9, "lifts": 2, "travelTicksPerFloor": 10, ...}'
               rows="10"
               required
             />

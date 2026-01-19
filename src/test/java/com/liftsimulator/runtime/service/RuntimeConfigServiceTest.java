@@ -57,7 +57,7 @@ public class RuntimeConfigServiceTest {
         mockPublishedVersion.setId(1L);
         mockPublishedVersion.setLiftSystem(mockLiftSystem);
         mockPublishedVersion.setVersionNumber(1);
-        mockPublishedVersion.setConfig("{\"floors\": 10, \"lifts\": 2}");
+        mockPublishedVersion.setConfig("{\"minFloor\": 0, \"maxFloor\": 9, \"lifts\": 2}");
         mockPublishedVersion.setStatus(VersionStatus.PUBLISHED);
         mockPublishedVersion.setIsPublished(true);
         mockPublishedVersion.setPublishedAt(OffsetDateTime.now());
@@ -78,7 +78,7 @@ public class RuntimeConfigServiceTest {
         assertEquals("test-system", result.systemKey());
         assertEquals("Test System", result.displayName());
         assertEquals(1, result.versionNumber());
-        assertEquals("{\"floors\": 10, \"lifts\": 2}", result.config());
+        assertEquals("{\"minFloor\": 0, \"maxFloor\": 9, \"lifts\": 2}", result.config());
         assertNotNull(result.publishedAt());
 
         verify(liftSystemRepository).findBySystemKey("test-system");
@@ -129,7 +129,7 @@ public class RuntimeConfigServiceTest {
         assertEquals("test-system", result.systemKey());
         assertEquals("Test System", result.displayName());
         assertEquals(1, result.versionNumber());
-        assertEquals("{\"floors\": 10, \"lifts\": 2}", result.config());
+        assertEquals("{\"minFloor\": 0, \"maxFloor\": 9, \"lifts\": 2}", result.config());
         assertNotNull(result.publishedAt());
 
         verify(liftSystemRepository).findBySystemKey("test-system");

@@ -38,13 +38,14 @@ We will implement a **multi-layer validation framework** using Jakarta Bean Vali
 
 ```java
 public record LiftConfigDTO(
-    @NotNull @Min(2) Integer floors,
+    @NotNull Integer minFloor,
+    @NotNull Integer maxFloor,
     @NotNull @Min(1) Integer lifts,
     @NotNull @Min(1) Integer travelTicksPerFloor,
     @NotNull @Min(1) Integer doorTransitionTicks,
     @NotNull @Min(1) Integer doorDwellTicks,
     @NotNull @Min(0) Integer doorReopenWindowTicks,
-    @NotNull @Min(0) Integer homeFloor,
+    @NotNull Integer homeFloor,
     @NotNull @Min(0) Integer idleTimeoutTicks,
     @NotNull ControllerStrategy controllerStrategy,
     @NotNull IdleParkingMode idleParkingMode
@@ -60,12 +61,13 @@ public record LiftConfigDTO(
 
 **Validation Rules**:
 - `doorReopenWindowTicks` must not exceed `doorTransitionTicks`
-- `homeFloor` must be within valid floor range (0 to floors-1)
+- `maxFloor` must be greater than `minFloor`
+- `homeFloor` must be within valid floor range (`minFloor` to `maxFloor`)
 - All numeric fields must meet minimum value constraints
 
 **Warning System**:
 - Low `doorDwellTicks` values (< 2)
-- More lifts than floors (inefficient)
+- More lifts than available floors in the configured range (inefficient)
 - Low `idleTimeoutTicks` with `PARK_TO_HOME_FLOOR` mode (< 3)
 - Zero `doorReopenWindowTicks` (disables door reopening)
 

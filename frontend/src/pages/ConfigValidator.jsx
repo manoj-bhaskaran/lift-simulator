@@ -3,7 +3,7 @@ import { liftSystemsApi } from '../api/liftSystemsApi';
 import './ConfigValidator.css';
 
 function ConfigValidator() {
-  const [config, setConfig] = useState('{\n  "floors": 10,\n  "lifts": 2,\n  "travelTicksPerFloor": 1,\n  "doorTransitionTicks": 2,\n  "doorDwellTicks": 3,\n  "doorReopenWindowTicks": 2,\n  "homeFloor": 0,\n  "idleTimeoutTicks": 5,\n  "controllerStrategy": "NEAREST_REQUEST_ROUTING",\n  "idleParkingMode": "PARK_TO_HOME_FLOOR"\n}');
+  const [config, setConfig] = useState('{\n  "minFloor": 0,\n  "maxFloor": 9,\n  "lifts": 2,\n  "travelTicksPerFloor": 1,\n  "doorTransitionTicks": 2,\n  "doorDwellTicks": 3,\n  "doorReopenWindowTicks": 2,\n  "homeFloor": 0,\n  "idleTimeoutTicks": 5,\n  "controllerStrategy": "NEAREST_REQUEST_ROUTING",\n  "idleParkingMode": "PARK_TO_HOME_FLOOR"\n}');
   const [validating, setValidating] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);

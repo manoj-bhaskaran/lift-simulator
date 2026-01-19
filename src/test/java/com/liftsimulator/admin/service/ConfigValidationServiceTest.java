@@ -35,7 +35,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_ValidConfig() {
         String validConfig = """
             {
-                "floors": 10,
+                "minFloor": 0,
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -71,7 +72,7 @@ public class ConfigValidationServiceTest {
     public void testValidate_MissingRequiredFields() {
         String configWithMissingFields = """
             {
-                "floors": 10
+                "minFloor": 0
             }
             """;
 
@@ -83,10 +84,11 @@ public class ConfigValidationServiceTest {
     }
 
     @Test
-    public void testValidate_NegativeFloors() {
+    public void testValidate_InvalidFloorRange() {
         String config = """
             {
-                "floors": 1,
+                "minFloor": 0,
+                "maxFloor": 0,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -103,16 +105,17 @@ public class ConfigValidationServiceTest {
 
         assertFalse(response.valid());
         assertTrue(response.hasErrors());
-        boolean hasFloorsError = response.errors().stream()
-            .anyMatch(issue -> issue.field().equals("floors") && issue.message().contains("at least 2"));
-        assertTrue(hasFloorsError);
+        boolean hasRangeError = response.errors().stream()
+            .anyMatch(issue -> issue.field().equals("maxFloor") && issue.message().contains("greater than minimum floor"));
+        assertTrue(hasRangeError);
     }
 
     @Test
     public void testValidate_NegativeLifts() {
         String config = """
             {
-                "floors": 10,
+                "minFloor": 0,
+                "maxFloor": 9,
                 "lifts": 0,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -138,7 +141,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_DoorReopenWindowExceedsTransition() {
         String config = """
             {
-                "floors": 10,
+                "minFloor": 0,
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -165,7 +169,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_HomeFloorOutOfRange() {
         String config = """
             {
-                "floors": 10,
+                "minFloor": 0,
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -192,7 +197,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_InvalidControllerStrategy() {
         String config = """
             {
-                "floors": 10,
+                "minFloor": 0,
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -215,7 +221,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_WarningForLowIdleTimeout() {
         String config = """
             {
-                "floors": 10,
+                "minFloor": 0,
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -242,7 +249,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_WarningForLowDoorDwellTicks() {
         String config = """
             {
-                "floors": 10,
+                "minFloor": 0,
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -269,7 +277,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_WarningForMoreLiftsThanFloors() {
         String config = """
             {
-                "floors": 5,
+                "minFloor": 0,
+                "maxFloor": 4,
                 "lifts": 10,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -296,7 +305,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_WarningForZeroDoorReopenWindow() {
         String config = """
             {
-                "floors": 10,
+                "minFloor": 0,
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -323,7 +333,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_MultipleErrors() {
         String config = """
             {
-                "floors": 1,
+                "minFloor": 0,
+                "maxFloor": 0,
                 "lifts": 0,
                 "travelTicksPerFloor": 0,
                 "doorTransitionTicks": 0,
@@ -347,7 +358,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_ConfigValidationResponseStructure() {
         String validConfig = """
             {
-                "floors": 10,
+                "minFloor": 0,
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -372,7 +384,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_UnknownFieldRejected() {
         String configWithUnknownField = """
             {
-                "floors": 10,
+                "minFloor": 0,
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -401,7 +414,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_TypoInFieldNameRejected() {
         String configWithTypo = """
             {
-                "floor": 10,
+                "minFlor": 0,
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -418,9 +432,9 @@ public class ConfigValidationServiceTest {
 
         assertFalse(response.valid());
         assertTrue(response.hasErrors());
-        // Should have error for unknown property "floor" (typo of "floors")
+        // Should have error for unknown property "minFlor" (typo of "minFloor")
         boolean hasUnknownPropertyError = response.errors().stream()
-            .anyMatch(issue -> issue.field().equals("floor") && issue.message().contains("Unknown property"));
+            .anyMatch(issue -> issue.field().equals("minFlor") && issue.message().contains("Unknown property"));
         assertTrue(hasUnknownPropertyError);
     }
 
@@ -428,7 +442,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_MultipleUnknownFieldsRejected() {
         String configWithMultipleUnknownFields = """
             {
-                "floors": 10,
+                "minFloor": 0,
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -458,7 +473,8 @@ public class ConfigValidationServiceTest {
         // Ensure that even when all known fields are valid, unknown fields cause rejection
         String config = """
             {
-                "floors": 10,
+                "minFloor": 0,
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 5,
                 "doorTransitionTicks": 3,
@@ -482,10 +498,11 @@ public class ConfigValidationServiceTest {
     }
 
     @Test
-    public void testValidate_NonNumericValueForFloors() {
+    public void testValidate_NonNumericValueForMinFloor() {
         String config = """
             {
-                "floors": "A",
+                "minFloor": "A",
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -504,7 +521,7 @@ public class ConfigValidationServiceTest {
         assertTrue(response.hasErrors());
         assertEquals(1, response.errors().size());
         ValidationIssue error = response.errors().get(0);
-        assertEquals("floors", error.field());
+        assertEquals("minFloor", error.field());
         assertTrue(error.message().contains("numeric value") || error.message().contains("must be a number"));
     }
 
@@ -512,7 +529,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_NonNumericValueForLifts() {
         String config = """
             {
-                "floors": 10,
+                "minFloor": 0,
+                "maxFloor": 9,
                 "lifts": "abc",
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -539,7 +557,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_MultipleNonNumericValues() {
         String config = """
             {
-                "floors": "X",
+                "minFloor": "X",
+                "maxFloor": 9,
                 "lifts": "Y",
                 "travelTicksPerFloor": "Z",
                 "doorTransitionTicks": 2,
@@ -566,7 +585,8 @@ public class ConfigValidationServiceTest {
     public void testValidate_BooleanValueForNumericField() {
         String config = """
             {
-                "floors": true,
+                "minFloor": true,
+                "maxFloor": 9,
                 "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
@@ -584,8 +604,32 @@ public class ConfigValidationServiceTest {
         assertFalse(response.valid());
         assertTrue(response.hasErrors());
         boolean hasTypeError = response.errors().stream()
-            .anyMatch(issue -> issue.field().equals("floors")
+            .anyMatch(issue -> issue.field().equals("minFloor")
                 && (issue.message().contains("numeric value") || issue.message().contains("must be a number")));
         assertTrue(hasTypeError);
+    }
+
+    @Test
+    public void testValidate_BasementFloorRange() {
+        String config = """
+            {
+                "minFloor": -2,
+                "maxFloor": 5,
+                "lifts": 2,
+                "travelTicksPerFloor": 1,
+                "doorTransitionTicks": 2,
+                "doorDwellTicks": 3,
+                "doorReopenWindowTicks": 2,
+                "homeFloor": -1,
+                "idleTimeoutTicks": 5,
+                "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+                "idleParkingMode": "PARK_TO_HOME_FLOOR"
+            }
+            """;
+
+        ConfigValidationResponse response = validationService.validate(config);
+
+        assertTrue(response.valid());
+        assertFalse(response.hasErrors());
     }
 }

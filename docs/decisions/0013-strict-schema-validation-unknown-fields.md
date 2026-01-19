@@ -13,7 +13,7 @@ The Lift Config Service accepts configuration JSON payloads at multiple entry po
 
 By default, Jackson's `ObjectMapper` silently **ignores unknown properties** during JSON deserialization. This behavior can lead to several problems:
 
-1. **Typos go undetected**: A user submitting `"floor": 10` instead of `"floors": 10` would receive no error, leading to a missing required field error instead of a clear "unknown property" error
+1. **Typos go undetected**: A user submitting `"minFlor": 0` instead of `"minFloor": 0` would receive no error, leading to a missing required field error instead of a clear "unknown property" error
 2. **API contract violations**: Clients can send arbitrary extra fields without feedback, making it harder to detect integration issues
 3. **Forward compatibility confusion**: Users might add fields expecting future support, unaware they're being ignored
 4. **Security concerns**: Unknown fields could be used for injection attacks or to probe the API for vulnerabilities
@@ -131,7 +131,7 @@ private static LiftConfigDTO readConfig(Path configPath) throws IOException {
 **ConfigValidationServiceTest**:
 - Five new test cases for unknown field rejection:
   - `testValidate_UnknownFieldRejected()` - Basic unknown field rejection
-  - `testValidate_TypoInFieldNameRejected()` - Catches typos like "floor" vs "floors"
+  - `testValidate_TypoInFieldNameRejected()` - Catches typos like "minFlor" vs "minFloor"
   - `testValidate_MultipleUnknownFieldsRejected()` - Handles multiple unknown fields
   - `testValidate_UnknownFieldWithValidData()` - Rejects unknown fields even with valid data
 - Test ObjectMapper configured to match production settings
@@ -141,7 +141,8 @@ private static LiftConfigDTO readConfig(Path configPath) throws IOException {
 **Before (v0.34.2 and earlier)**:
 ```json
 {
-  "floors": 10,
+  "minFloor": 0,
+  "maxFloor": 9,
   "lifts": 2,
   ...
   "unknownField": "value",
@@ -153,7 +154,8 @@ private static LiftConfigDTO readConfig(Path configPath) throws IOException {
 **After (v0.35.0 and later)**:
 ```json
 {
-  "floors": 10,
+  "minFloor": 0,
+  "maxFloor": 9,
   "lifts": 2,
   ...
   "unknownField": "value"
@@ -289,7 +291,7 @@ But the customizer approach is cleaner and integrates better with Spring Boot's 
 
 ### Positive
 
-1. **Typo Detection**: Catches common errors like `"floor"` instead of `"floors"` immediately
+1. **Typo Detection**: Catches common errors like `"minFlor"` instead of `"minFloor"` immediately
 2. **Clear Error Messages**: Field-specific error messages with exact unknown property name
 3. **API Contract Enforcement**: Ensures clients only use documented fields
 4. **Security Improvement**: Prevents injection of unexpected data through unknown fields

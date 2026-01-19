@@ -66,7 +66,7 @@ public class LiftSystemVersionServiceTest {
         mockVersion.setId(1L);
         mockVersion.setLiftSystem(mockLiftSystem);
         mockVersion.setVersionNumber(1);
-        mockVersion.setConfig("{\"floors\": 10}");
+        mockVersion.setConfig("{\"minFloor\": 0, \"maxFloor\": 9}");
         mockVersion.setStatus(VersionStatus.DRAFT);
         mockVersion.setIsPublished(false);
         mockVersion.setCreatedAt(OffsetDateTime.now());
@@ -81,7 +81,7 @@ public class LiftSystemVersionServiceTest {
 
     @Test
     public void testCreateVersion_WithConfig() {
-        String config = "{\"floors\": 10, \"lifts\": 2}";
+        String config = "{\"minFloor\": 0, \"maxFloor\": 9, \"lifts\": 2}";
         CreateVersionRequest request = new CreateVersionRequest(config, null);
 
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
@@ -101,7 +101,7 @@ public class LiftSystemVersionServiceTest {
 
     @Test
     public void testCreateVersion_WithCloning() {
-        String originalConfig = "{\"floors\": 10}";
+        String originalConfig = "{\"minFloor\": 0, \"maxFloor\": 9}";
         LiftSystemVersion sourceVersion = new LiftSystemVersion();
         sourceVersion.setConfig(originalConfig);
 
@@ -124,7 +124,7 @@ public class LiftSystemVersionServiceTest {
 
     @Test
     public void testCreateVersion_LiftSystemNotFound() {
-        CreateVersionRequest request = new CreateVersionRequest("{\"floors\": 10}", null);
+        CreateVersionRequest request = new CreateVersionRequest("{\"minFloor\": 0, \"maxFloor\": 9}", null);
 
         when(liftSystemRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -156,7 +156,7 @@ public class LiftSystemVersionServiceTest {
 
     @Test
     public void testCreateVersion_VersionNumberIncrement() {
-        CreateVersionRequest request = new CreateVersionRequest("{\"floors\": 15}", null);
+        CreateVersionRequest request = new CreateVersionRequest("{\"minFloor\": 0, \"maxFloor\": 14}", null);
 
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(configValidationService.validate(anyString())).thenReturn(validValidationResponse);
@@ -166,7 +166,7 @@ public class LiftSystemVersionServiceTest {
         newVersion.setId(6L);
         newVersion.setLiftSystem(mockLiftSystem);
         newVersion.setVersionNumber(6);
-        newVersion.setConfig("{\"floors\": 15}");
+        newVersion.setConfig("{\"minFloor\": 0, \"maxFloor\": 14}");
         newVersion.setStatus(VersionStatus.DRAFT);
         newVersion.setIsPublished(false);
         newVersion.setCreatedAt(OffsetDateTime.now());
@@ -183,7 +183,7 @@ public class LiftSystemVersionServiceTest {
 
     @Test
     public void testUpdateVersionConfig_Success() {
-        String updatedConfig = "{\"floors\": 20, \"lifts\": 3}";
+        String updatedConfig = "{\"minFloor\": 0, \"maxFloor\": 19, \"lifts\": 3}";
         UpdateVersionConfigRequest request = new UpdateVersionConfigRequest(updatedConfig);
 
         when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1))
@@ -201,7 +201,7 @@ public class LiftSystemVersionServiceTest {
 
     @Test
     public void testUpdateVersionConfig_VersionNotFound() {
-        UpdateVersionConfigRequest request = new UpdateVersionConfigRequest("{\"floors\": 20}");
+        UpdateVersionConfigRequest request = new UpdateVersionConfigRequest("{\"minFloor\": 0, \"maxFloor\": 19}");
 
         when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 999))
             .thenReturn(Optional.empty());
@@ -296,7 +296,7 @@ public class LiftSystemVersionServiceTest {
         previousVersion.setId(2L);
         previousVersion.setLiftSystem(mockLiftSystem);
         previousVersion.setVersionNumber(2);
-        previousVersion.setConfig("{\"floors\": 8}");
+        previousVersion.setConfig("{\"minFloor\": 0, \"maxFloor\": 7}");
         previousVersion.setStatus(VersionStatus.PUBLISHED);
         previousVersion.setIsPublished(true);
         previousVersion.setPublishedAt(OffsetDateTime.now().minusDays(1));
@@ -306,7 +306,7 @@ public class LiftSystemVersionServiceTest {
         newVersion.setId(3L);
         newVersion.setLiftSystem(mockLiftSystem);
         newVersion.setVersionNumber(3);
-        newVersion.setConfig("{\"floors\": 10}");
+        newVersion.setConfig("{\"minFloor\": 0, \"maxFloor\": 9}");
         newVersion.setStatus(VersionStatus.DRAFT);
         newVersion.setIsPublished(false);
 
@@ -349,8 +349,8 @@ public class LiftSystemVersionServiceTest {
         ConfigValidationResponse invalidResponse = new ConfigValidationResponse(
             false,
             List.of(new com.liftsimulator.admin.dto.ValidationIssue(
-                "floors",
-                "Number of floors must be at least 2",
+                "maxFloor",
+                "Maximum floor (0) must be greater than minimum floor (0)",
                 com.liftsimulator.admin.dto.ValidationIssue.Severity.ERROR
             )),
             Collections.emptyList()
@@ -373,14 +373,14 @@ public class LiftSystemVersionServiceTest {
 
     @Test
     public void testCreateVersion_ValidationFails() {
-        String invalidConfig = "{\"floors\": 1}";
+        String invalidConfig = "{\"minFloor\": 0, \"maxFloor\": 0}";
         CreateVersionRequest request = new CreateVersionRequest(invalidConfig, null);
 
         ConfigValidationResponse invalidResponse = new ConfigValidationResponse(
             false,
             List.of(new com.liftsimulator.admin.dto.ValidationIssue(
-                "floors",
-                "Number of floors must be at least 2",
+                "maxFloor",
+                "Maximum floor (0) must be greater than minimum floor (0)",
                 com.liftsimulator.admin.dto.ValidationIssue.Severity.ERROR
             )),
             Collections.emptyList()
@@ -402,14 +402,14 @@ public class LiftSystemVersionServiceTest {
 
     @Test
     public void testUpdateVersionConfig_ValidationFails() {
-        String invalidConfig = "{\"floors\": 1}";
+        String invalidConfig = "{\"minFloor\": 0, \"maxFloor\": 0}";
         UpdateVersionConfigRequest request = new UpdateVersionConfigRequest(invalidConfig);
 
         ConfigValidationResponse invalidResponse = new ConfigValidationResponse(
             false,
             List.of(new com.liftsimulator.admin.dto.ValidationIssue(
-                "floors",
-                "Number of floors must be at least 2",
+                "maxFloor",
+                "Maximum floor (0) must be greater than minimum floor (0)",
                 com.liftsimulator.admin.dto.ValidationIssue.Severity.ERROR
             )),
             Collections.emptyList()

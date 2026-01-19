@@ -60,7 +60,7 @@ test.describe('Configuration Validator', () => {
     const errorResult = page.locator('.result-error');
     await expect(errorResult).toBeVisible();
 
-    // Check for error messages (e.g., "floors must be at least 2")
+    // Check for error messages (e.g., "maximum floor must be greater than minimum floor")
     await expect(page.locator('text=/error|invalid|fail/i')).toBeVisible();
   });
 
@@ -132,10 +132,9 @@ test.describe('Configuration Validator', () => {
     // Should pass
     await expect(page.locator('.result-success')).toBeVisible();
 
-    // Test homeFloor boundary (homeFloor = floors - 1)
+    // Test homeFloor boundary (homeFloor = maxFloor)
     const boundaryConfig = {
       ...VALID_CONFIGS.basicOffice,
-      floors: 10,
       homeFloor: 9
     };
 

@@ -11,9 +11,11 @@ import jakarta.validation.constraints.NotNull;
  * All fields are validated using Jakarta Bean Validation annotations.
  */
 public record LiftConfigDTO(
-    @NotNull(message = "Number of floors is required")
-    @Min(value = 2, message = "Number of floors must be at least 2")
-    Integer floors,
+    @NotNull(message = "Minimum floor is required")
+    Integer minFloor,
+
+    @NotNull(message = "Maximum floor is required")
+    Integer maxFloor,
 
     @NotNull(message = "Number of lifts is required")
     @Min(value = 1, message = "Number of lifts must be at least 1")
@@ -36,7 +38,6 @@ public record LiftConfigDTO(
     Integer doorReopenWindowTicks,
 
     @NotNull(message = "Home floor is required")
-    @Min(value = 0, message = "Home floor must be at least 0")
     Integer homeFloor,
 
     @NotNull(message = "Idle timeout ticks is required")
