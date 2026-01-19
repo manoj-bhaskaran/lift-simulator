@@ -10,23 +10,26 @@ test.describe('Application Smoke Tests', () => {
     // Navigate to the home page
     await page.goto('/');
 
-    // Wait for the page to be fully loaded
-    await page.waitForLoadState('networkidle');
+    // Wait for the DOM to be loaded (don't wait for network idle as API may not be available)
+    await page.waitForLoadState('domcontentloaded');
 
     // Verify the page title contains "Lift Simulator"
     await expect(page).toHaveTitle(/Lift Simulator/);
 
-    // Verify the page has loaded by checking for common elements
-    // The dashboard should be visible
-    await expect(page.locator('text=Dashboard')).toBeVisible();
+    // Verify the dashboard heading is visible
+    await expect(page.locator('h2:has-text("Dashboard")')).toBeVisible();
+
+    // Verify key UI elements are present (should be visible even if API fails)
+    await expect(page.locator('text=Overview')).toBeVisible();
+    await expect(page.locator('text=Quick Actions')).toBeVisible();
   });
 
   test('navigation to Lift Systems page works', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Click on the Lift Systems navigation link
-    const liftSystemsLink = page.locator('a[href="/systems"], text=Lift Systems');
+    const liftSystemsLink = page.locator('a[href="/systems"]');
     await liftSystemsLink.first().click();
 
     // Wait for navigation
@@ -40,25 +43,25 @@ test.describe('Application Smoke Tests', () => {
     await page.goto('/health');
 
     // Wait for the page to load
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
-    // Verify health check page elements are visible
-    await expect(page.locator('text=/Health|Status/i')).toBeVisible();
+    // Verify health check page heading is visible
+    await expect(page.locator('h2:has-text("Health Check")')).toBeVisible();
   });
 
   test('configuration validator page is accessible', async ({ page }) => {
     await page.goto('/config-validator');
 
     // Wait for the page to load
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
-    // Verify configuration validator page elements are visible
-    await expect(page.locator('text=/Configuration|Validator/i')).toBeVisible();
+    // Verify configuration validator page heading is visible
+    await expect(page.locator('h2:has-text("Configuration Validator")')).toBeVisible();
   });
 
   test('footer displays version information', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Verify footer is present and displays version
     const footer = page.locator('footer');
