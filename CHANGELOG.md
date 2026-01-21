@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented service layer: `SimulationScenarioService` and `SimulationRunService` with status transition methods
   - Added comprehensive unit and integration tests for all new components
   - Database migration (V3) maintains backward compatibility with existing schema
+  - Documented architectural decision in ADR-0016
 
 ## [0.44.0] - 2026-01-20
 
