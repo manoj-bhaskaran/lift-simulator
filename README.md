@@ -2473,6 +2473,7 @@ Integration tests for the repositories are available:
 
 **Test Database Configuration:**
 - Tests use **H2 in-memory database** with PostgreSQL compatibility mode
+- The H2 test database initializes the `lift_simulator` schema automatically for integration tests
 - No external database required for running tests
 - Schema is automatically created via JPA's `ddl-auto: create-drop`
 - Flyway is disabled for tests (schema created from JPA entities)
