@@ -1,8 +1,8 @@
 spring:
   datasource:
-    # PostgreSQL test database
+    # PostgreSQL test database with schema specified in URL
     # Can be overridden with SPRING_DATASOURCE_URL environment variable
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lift_simulator_test}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lift_simulator_test?currentSchema=lift_simulator}
     username: ${SPRING_DATASOURCE_USERNAME:lift_admin}
     password: ${SPRING_DATASOURCE_PASSWORD:liftpassword}
     driver-class-name: org.postgresql.Driver

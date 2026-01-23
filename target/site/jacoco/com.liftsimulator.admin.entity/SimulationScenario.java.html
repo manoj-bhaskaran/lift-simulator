@@ -42,17 +42,17 @@ public class SimulationScenario {
 <span class="fc" id="L42">    public SimulationScenario() {</span>
 <span class="fc" id="L43">    }</span>
 
-<span class="nc" id="L45">    public SimulationScenario(String name, String scenarioJson) {</span>
-<span class="nc" id="L46">        this.name = name;</span>
-<span class="nc" id="L47">        this.scenarioJson = scenarioJson;</span>
-<span class="nc" id="L48">    }</span>
+<span class="fc" id="L45">    public SimulationScenario(String name, String scenarioJson) {</span>
+<span class="fc" id="L46">        this.name = name;</span>
+<span class="fc" id="L47">        this.scenarioJson = scenarioJson;</span>
+<span class="fc" id="L48">    }</span>
 
     @PrePersist
     protected void onCreate() {
-<span class="nc" id="L52">        OffsetDateTime now = OffsetDateTime.now();</span>
-<span class="nc" id="L53">        createdAt = now;</span>
-<span class="nc" id="L54">        updatedAt = now;</span>
-<span class="nc" id="L55">    }</span>
+<span class="fc" id="L52">        OffsetDateTime now = OffsetDateTime.now();</span>
+<span class="fc" id="L53">        createdAt = now;</span>
+<span class="fc" id="L54">        updatedAt = now;</span>
+<span class="fc" id="L55">    }</span>
 
     @PreUpdate
     protected void onUpdate() {
@@ -60,7 +60,7 @@ public class SimulationScenario {
 <span class="nc" id="L60">    }</span>
 
     public Long getId() {
-<span class="nc" id="L63">        return id;</span>
+<span class="fc" id="L63">        return id;</span>
     }
 
     public void setId(Long id) {
@@ -68,23 +68,23 @@ public class SimulationScenario {
 <span class="nc" id="L68">    }</span>
 
     public String getName() {
-<span class="nc" id="L71">        return name;</span>
+<span class="fc" id="L71">        return name;</span>
     }
 
     public void setName(String name) {
-<span class="nc" id="L75">        this.name = name;</span>
-<span class="nc" id="L76">    }</span>
+<span class="fc" id="L75">        this.name = name;</span>
+<span class="fc" id="L76">    }</span>
 
     public String getScenarioJson() {
-<span class="nc" id="L79">        return scenarioJson;</span>
+<span class="fc" id="L79">        return scenarioJson;</span>
     }
 
     public void setScenarioJson(String scenarioJson) {
-<span class="nc" id="L83">        this.scenarioJson = scenarioJson;</span>
-<span class="nc" id="L84">    }</span>
+<span class="fc" id="L83">        this.scenarioJson = scenarioJson;</span>
+<span class="fc" id="L84">    }</span>
 
     public OffsetDateTime getCreatedAt() {
-<span class="nc" id="L87">        return createdAt;</span>
+<span class="fc" id="L87">        return createdAt;</span>
     }
 
     public void setCreatedAt(OffsetDateTime createdAt) {
@@ -92,7 +92,7 @@ public class SimulationScenario {
 <span class="nc" id="L92">    }</span>
 
     public OffsetDateTime getUpdatedAt() {
-<span class="nc" id="L95">        return updatedAt;</span>
+<span class="fc" id="L95">        return updatedAt;</span>
     }
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {

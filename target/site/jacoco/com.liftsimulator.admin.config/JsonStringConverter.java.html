@@ -38,24 +38,24 @@ import jakarta.persistence.Converter;
 
     @Override
     public String convertToDatabaseColumn(String attribute) {
-<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (attribute == null) {</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        if (attribute == null) {</span>
 <span class="nc" id="L42">            return null;</span>
         }
 
         // Validate JSON format before persisting
         try {
-<span class="nc" id="L47">            OBJECT_MAPPER.readTree(attribute);</span>
+<span class="fc" id="L47">            OBJECT_MAPPER.readTree(attribute);</span>
 <span class="nc" id="L48">        } catch (JsonProcessingException e) {</span>
 <span class="nc" id="L49">            throw new IllegalArgumentException(&quot;Invalid JSON format: &quot; + e.getMessage(), e);</span>
-<span class="nc" id="L50">        }</span>
+<span class="fc" id="L50">        }</span>
 
-<span class="nc" id="L52">        return attribute;</span>
+<span class="fc" id="L52">        return attribute;</span>
     }
 
     @Override
     public String convertToEntityAttribute(String dbData) {
         // Pass-through on read: assume DB data is valid
-<span class="nc" id="L58">        return dbData;</span>
+<span class="fc" id="L58">        return dbData;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

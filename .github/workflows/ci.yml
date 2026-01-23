@@ -49,7 +49,7 @@ jobs:
     - name: Run tests with coverage
       run: mvn -q test jacoco:report
       env:
-        SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/lift_simulator_test
+        SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/lift_simulator_test?currentSchema=lift_simulator
         SPRING_DATASOURCE_USERNAME: lift_admin
         SPRING_DATASOURCE_PASSWORD: liftpassword
         PGPASSWORD: liftpassword

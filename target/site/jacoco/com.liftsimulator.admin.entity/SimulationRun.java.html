@@ -45,7 +45,7 @@ public class SimulationRun {
     @JoinColumn(name = &quot;scenario_id&quot;)
     private SimulationScenario scenario;
 
-<span class="pc" id="L48">    @Enumerated(EnumType.STRING)</span>
+<span class="fc" id="L48">    @Enumerated(EnumType.STRING)</span>
     @Column(name = &quot;status&quot;, nullable = false, length = 20)
     private RunStatus status = RunStatus.CREATED;
 
@@ -61,8 +61,8 @@ public class SimulationRun {
     @Column(name = &quot;total_ticks&quot;)
     private Long totalTicks;
 
-<span class="pc" id="L64">    @Column(name = &quot;current_tick&quot;)</span>
-<span class="pc" id="L65">    private Long currentTick = 0L;</span>
+<span class="fc" id="L64">    @Column(name = &quot;current_tick&quot;)</span>
+<span class="fc" id="L65">    private Long currentTick = 0L;</span>
 
     @Column(name = &quot;seed&quot;)
     private Long seed;
@@ -81,50 +81,50 @@ public class SimulationRun {
             justification = &quot;JPA entity constructor must accept and store mutable parent entities &quot;
                     + &quot;for relationship management.&quot;
     )
-<span class="nc" id="L84">    public SimulationRun(LiftSystem liftSystem, LiftSystemVersion version) {</span>
-<span class="nc" id="L85">        this.liftSystem = liftSystem;</span>
-<span class="nc" id="L86">        this.version = version;</span>
-<span class="nc" id="L87">    }</span>
+<span class="fc" id="L84">    public SimulationRun(LiftSystem liftSystem, LiftSystemVersion version) {</span>
+<span class="fc" id="L85">        this.liftSystem = liftSystem;</span>
+<span class="fc" id="L86">        this.version = version;</span>
+<span class="fc" id="L87">    }</span>
 
     @SuppressFBWarnings(
             value = &quot;EI_EXPOSE_REP2&quot;,
             justification = &quot;JPA entity constructor must accept and store mutable parent entities &quot;
                     + &quot;for relationship management.&quot;
     )
-<span class="nc" id="L94">    public SimulationRun(LiftSystem liftSystem, LiftSystemVersion version, SimulationScenario scenario) {</span>
-<span class="nc" id="L95">        this.liftSystem = liftSystem;</span>
-<span class="nc" id="L96">        this.version = version;</span>
-<span class="nc" id="L97">        this.scenario = scenario;</span>
-<span class="nc" id="L98">    }</span>
+<span class="fc" id="L94">    public SimulationRun(LiftSystem liftSystem, LiftSystemVersion version, SimulationScenario scenario) {</span>
+<span class="fc" id="L95">        this.liftSystem = liftSystem;</span>
+<span class="fc" id="L96">        this.version = version;</span>
+<span class="fc" id="L97">        this.scenario = scenario;</span>
+<span class="fc" id="L98">    }</span>
 
     @PrePersist
     protected void onCreate() {
-<span class="nc" id="L102">        createdAt = OffsetDateTime.now();</span>
-<span class="nc" id="L103">    }</span>
+<span class="fc" id="L102">        createdAt = OffsetDateTime.now();</span>
+<span class="fc" id="L103">    }</span>
 
     /**
      * Starts the simulation run.
      * Transitions from CREATED to RUNNING.
      */
     public void start() {
-<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (status != RunStatus.CREATED) {</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        if (status != RunStatus.CREATED) {</span>
 <span class="nc" id="L111">            throw new IllegalStateException(&quot;Can only start a run in CREATED state. Current state: &quot; + status);</span>
         }
-<span class="nc" id="L113">        this.status = RunStatus.RUNNING;</span>
-<span class="nc" id="L114">        this.startedAt = OffsetDateTime.now();</span>
-<span class="nc" id="L115">    }</span>
+<span class="fc" id="L113">        this.status = RunStatus.RUNNING;</span>
+<span class="fc" id="L114">        this.startedAt = OffsetDateTime.now();</span>
+<span class="fc" id="L115">    }</span>
 
     /**
      * Marks the simulation run as succeeded.
      * Transitions from RUNNING to SUCCEEDED.
      */
     public void succeed() {
-<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (status != RunStatus.RUNNING) {</span>
-<span class="nc" id="L123">            throw new IllegalStateException(&quot;Can only succeed a run in RUNNING state. Current state: &quot; + status);</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (status != RunStatus.RUNNING) {</span>
+<span class="fc" id="L123">            throw new IllegalStateException(&quot;Can only succeed a run in RUNNING state. Current state: &quot; + status);</span>
         }
-<span class="nc" id="L125">        this.status = RunStatus.SUCCEEDED;</span>
-<span class="nc" id="L126">        this.endedAt = OffsetDateTime.now();</span>
-<span class="nc" id="L127">    }</span>
+<span class="fc" id="L125">        this.status = RunStatus.SUCCEEDED;</span>
+<span class="fc" id="L126">        this.endedAt = OffsetDateTime.now();</span>
+<span class="fc" id="L127">    }</span>
 
     /**
      * Marks the simulation run as failed.
@@ -133,26 +133,26 @@ public class SimulationRun {
      * @param errorMessage The error message describing the failure
      */
     public void fail(String errorMessage) {
-<span class="nc bnc" id="L136" title="All 2 branches missed.">        if (status != RunStatus.RUNNING) {</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">        if (status != RunStatus.RUNNING) {</span>
 <span class="nc" id="L137">            throw new IllegalStateException(&quot;Can only fail a run in RUNNING state. Current state: &quot; + status);</span>
         }
-<span class="nc" id="L139">        this.status = RunStatus.FAILED;</span>
-<span class="nc" id="L140">        this.errorMessage = errorMessage;</span>
-<span class="nc" id="L141">        this.endedAt = OffsetDateTime.now();</span>
-<span class="nc" id="L142">    }</span>
+<span class="fc" id="L139">        this.status = RunStatus.FAILED;</span>
+<span class="fc" id="L140">        this.errorMessage = errorMessage;</span>
+<span class="fc" id="L141">        this.endedAt = OffsetDateTime.now();</span>
+<span class="fc" id="L142">    }</span>
 
     /**
      * Cancels the simulation run.
      * Can transition from CREATED or RUNNING to CANCELLED.
      */
     public void cancel() {
-<span class="nc bnc" id="L149" title="All 4 branches missed.">        if (status != RunStatus.CREATED &amp;&amp; status != RunStatus.RUNNING) {</span>
+<span class="pc bpc" id="L149" title="2 of 4 branches missed.">        if (status != RunStatus.CREATED &amp;&amp; status != RunStatus.RUNNING) {</span>
 <span class="nc" id="L150">            throw new IllegalStateException(</span>
                     &quot;Can only cancel a run in CREATED or RUNNING state. Current state: &quot; + status);
         }
-<span class="nc" id="L153">        this.status = RunStatus.CANCELLED;</span>
-<span class="nc" id="L154">        this.endedAt = OffsetDateTime.now();</span>
-<span class="nc" id="L155">    }</span>
+<span class="fc" id="L153">        this.status = RunStatus.CANCELLED;</span>
+<span class="fc" id="L154">        this.endedAt = OffsetDateTime.now();</span>
+<span class="fc" id="L155">    }</span>
 
     /**
      * Updates the current progress tick.
@@ -160,11 +160,11 @@ public class SimulationRun {
      * @param tick The current tick number
      */
     public void updateProgress(Long tick) {
-<span class="nc" id="L163">        this.currentTick = tick;</span>
-<span class="nc" id="L164">    }</span>
+<span class="fc" id="L163">        this.currentTick = tick;</span>
+<span class="fc" id="L164">    }</span>
 
     public Long getId() {
-<span class="nc" id="L167">        return id;</span>
+<span class="fc" id="L167">        return id;</span>
     }
 
     public void setId(Long id) {
@@ -177,7 +177,7 @@ public class SimulationRun {
                     + &quot;relationship navigation and lazy loading.&quot;
     )
     public LiftSystem getLiftSystem() {
-<span class="nc" id="L180">        return liftSystem;</span>
+<span class="fc" id="L180">        return liftSystem;</span>
     }
 
     @SuppressFBWarnings(
@@ -195,7 +195,7 @@ public class SimulationRun {
                     + &quot;relationship navigation and lazy loading.&quot;
     )
     public LiftSystemVersion getVersion() {
-<span class="nc" id="L198">        return version;</span>
+<span class="fc" id="L198">        return version;</span>
     }
 
     @SuppressFBWarnings(
@@ -213,7 +213,7 @@ public class SimulationRun {
                     + &quot;relationship navigation and lazy loading.&quot;
     )
     public SimulationScenario getScenario() {
-<span class="nc" id="L216">        return scenario;</span>
+<span class="fc" id="L216">        return scenario;</span>
     }
 
     @SuppressFBWarnings(
@@ -226,7 +226,7 @@ public class SimulationRun {
 <span class="nc" id="L226">    }</span>
 
     public RunStatus getStatus() {
-<span class="nc" id="L229">        return status;</span>
+<span class="fc" id="L229">        return status;</span>
     }
 
     public void setStatus(RunStatus status) {
@@ -234,7 +234,7 @@ public class SimulationRun {
 <span class="nc" id="L234">    }</span>
 
     public OffsetDateTime getCreatedAt() {
-<span class="nc" id="L237">        return createdAt;</span>
+<span class="fc" id="L237">        return createdAt;</span>
     }
 
     public void setCreatedAt(OffsetDateTime createdAt) {
@@ -242,7 +242,7 @@ public class SimulationRun {
 <span class="nc" id="L242">    }</span>
 
     public OffsetDateTime getStartedAt() {
-<span class="nc" id="L245">        return startedAt;</span>
+<span class="fc" id="L245">        return startedAt;</span>
     }
 
     public void setStartedAt(OffsetDateTime startedAt) {
@@ -250,7 +250,7 @@ public class SimulationRun {
 <span class="nc" id="L250">    }</span>
 
     public OffsetDateTime getEndedAt() {
-<span class="nc" id="L253">        return endedAt;</span>
+<span class="fc" id="L253">        return endedAt;</span>
     }
 
     public void setEndedAt(OffsetDateTime endedAt) {
@@ -262,11 +262,11 @@ public class SimulationRun {
     }
 
     public void setTotalTicks(Long totalTicks) {
-<span class="nc" id="L265">        this.totalTicks = totalTicks;</span>
-<span class="nc" id="L266">    }</span>
+<span class="fc" id="L265">        this.totalTicks = totalTicks;</span>
+<span class="fc" id="L266">    }</span>
 
     public Long getCurrentTick() {
-<span class="nc" id="L269">        return currentTick;</span>
+<span class="fc" id="L269">        return currentTick;</span>
     }
 
     public void setCurrentTick(Long currentTick) {
@@ -282,7 +282,7 @@ public class SimulationRun {
 <span class="nc" id="L282">    }</span>
 
     public String getErrorMessage() {
-<span class="nc" id="L285">        return errorMessage;</span>
+<span class="fc" id="L285">        return errorMessage;</span>
     }
 
     public void setErrorMessage(String errorMessage) {
