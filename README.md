@@ -480,6 +480,132 @@ The backend includes a comprehensive validation framework for lift system config
     }
     ```
 
+#### Scenario Management
+
+Scenario payloads define passenger flow for UI-driven simulation runs. The scenario schema is separate from the batch `.scenario` files used by the CLI.
+
+- **Create Scenario**: `POST /api/scenarios`
+  - Saves a scenario JSON payload after validation
+  - Request body:
+    ```json
+    {
+      "scenarioJson": {
+        "durationTicks": 60,
+        "passengerFlows": [
+          {
+            "startTick": 0,
+            "originFloor": 0,
+            "destinationFloor": 5,
+            "passengers": 3
+          }
+        ],
+        "seed": 42
+      }
+    }
+    ```
+  - Response (201 Created):
+    ```json
+    {
+      "id": 1,
+      "scenarioJson": {
+        "durationTicks": 60,
+        "passengerFlows": [
+          {
+            "startTick": 0,
+            "originFloor": 0,
+            "destinationFloor": 5,
+            "passengers": 3
+          }
+        ],
+        "seed": 42
+      },
+      "createdAt": "2026-01-11T10:00:00Z",
+      "updatedAt": "2026-01-11T10:00:00Z"
+    }
+    ```
+
+- **Update Scenario**: `PUT /api/scenarios/{id}`
+  - Updates an existing scenario payload after validation
+  - Request body: same as create
+  - Response (200 OK): Updated scenario details
+
+- **Get Scenario**: `GET /api/scenarios/{id}`
+  - Returns a stored scenario by ID
+  - Response (200 OK): Scenario details
+
+#### Scenario Validation
+
+- **Validate Scenario**: `POST /api/scenarios/validate`
+  - Validates a scenario JSON payload without saving it
+  - Request body:
+    ```json
+    {
+      "scenarioJson": {
+        "durationTicks": 60,
+        "passengerFlows": [
+          {
+            "startTick": 0,
+            "originFloor": 0,
+            "destinationFloor": 5,
+            "passengers": 3
+          }
+        ],
+        "seed": 42
+      }
+    }
+    ```
+  - Response (200 OK) - Valid scenario:
+    ```json
+    {
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    }
+    ```
+  - Response (200 OK) - Invalid scenario:
+    ```json
+    {
+      "valid": false,
+      "errors": [
+        {
+          "field": "passengerFlows[0].startTick",
+          "message": "startTick must be less than durationTicks (60)",
+          "severity": "ERROR"
+        }
+      ],
+      "warnings": []
+    }
+    ```
+
+**Scenario JSON Structure:**
+
+```json
+{
+  "durationTicks": 60,
+  "passengerFlows": [
+    {
+      "startTick": 0,
+      "originFloor": 0,
+      "destinationFloor": 5,
+      "passengers": 3
+    }
+  ],
+  "seed": 42
+}
+```
+
+**Scenario Validation Rules:**
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| `durationTicks` | Integer | Required, ≥ 1 | Total number of ticks to simulate |
+| `passengerFlows` | Array | Required, ≥ 1 entry | Passenger flow entries |
+| `passengerFlows[].startTick` | Integer | ≥ 0, < durationTicks | Tick when passengers arrive |
+| `passengerFlows[].originFloor` | Integer | Required | Origin floor for the flow |
+| `passengerFlows[].destinationFloor` | Integer | Required, ≠ origin | Destination floor for the flow |
+| `passengerFlows[].passengers` | Integer | Required, ≥ 1 | Number of passengers in the flow |
+| `seed` | Integer | Optional, ≥ 0 | Random seed for deterministic runs |
+
 **Configuration Structure:**
 
 All lift system configurations must conform to the following structure:
