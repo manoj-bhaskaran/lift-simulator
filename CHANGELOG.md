@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-01-20
+
+### Added
+- **Simulation Run Domain Model**: Introduced persistent run lifecycle for simulation execution tracking
+  - Created `simulation_scenario` table to store reusable test scenarios with JSON configuration
+  - Created `simulation_run` table to track individual simulation executions with lifecycle status
+  - Added `RunStatus` enum with states: CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED
+  - Established referential integrity with existing `lift_system` and `lift_system_version` tables
+  - Implemented JPA entities: `SimulationScenario` and `SimulationRun` with proper relationships
+  - Created repositories: `SimulationScenarioRepository` and `SimulationRunRepository` with custom queries
+  - Implemented service layer: `SimulationScenarioService` and `SimulationRunService` with status transition methods
+  - Added comprehensive unit and integration tests for all new components
+  - Database migration (V3) maintains backward compatibility with existing schema
+  - Documented architectural decision in ADR-0016
+
 ## [0.44.0] - 2026-01-20
 
 ### Changed

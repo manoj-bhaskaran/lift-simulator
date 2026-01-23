@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.44.0**
+Current version: **0.45.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -244,7 +244,7 @@ To package the React UI with the Spring Boot backend and serve everything from *
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.44.0.jar
+java -jar target/lift-simulator-0.45.0.jar
 ```
 
 This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api`.
@@ -265,7 +265,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.44.0.jar
+java -jar target/lift-simulator-0.45.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -500,7 +500,7 @@ All lift system configurations must conform to the following structure:
 }
 ```
 
-**Migration Guide (0.44.0 floor range update):**
+**Migration Guide (0.45.0 floor range update):**
 
 - Replace `floors` with explicit `minFloor` and `maxFloor`.
   - For existing configs, set `minFloor` to `0` and `maxFloor` to `floors - 1`.
@@ -878,13 +878,15 @@ SPRING_PROFILES_ACTIVE=prod mvn spring-boot:run
 
 #### Database Schema
 
-The initial schema (V1) includes:
+The schema includes the following tables:
 - `lift_simulator` - Application schema for lift configuration data (Flyway default)
 - `lift_simulator.flyway_schema_history` - Flyway migration tracking (auto-created)
 - `lift_system` - Lift system configuration roots
 - `lift_system_version` - Versioned lift configuration payloads (JSONB)
+- `simulation_scenario` - Reusable test scenarios with JSON configuration (V3)
+- `simulation_run` - Individual simulation run executions with lifecycle tracking (V3)
 
-Future migrations will extend lift configuration metadata, simulation runs, and other entities.
+The `simulation_run` table tracks run status (CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED) and maintains referential integrity with lift systems and versions for persistent run lifecycle management.
 
 ### JPA Entities and Repositories
 
@@ -905,6 +907,20 @@ The backend includes JPA entities and Spring Data repositories for database acce
   - Version status enum: DRAFT, PUBLISHED, ARCHIVED
   - Helper methods: `publish()`, `archive()`
 
+- **SimulationScenario** (`com.liftsimulator.admin.entity.SimulationScenario`)
+  - Maps to `simulation_scenario` table
+  - Reusable test scenarios for lift system testing
+  - **JSONB field mapping**: Stores scenario configuration as JSON
+  - Automatic timestamp management via `@PrePersist` and `@PreUpdate`
+
+- **SimulationRun** (`com.liftsimulator.admin.entity.SimulationRun`)
+  - Maps to `simulation_run` table
+  - Individual simulation run executions with lifecycle tracking
+  - Run status enum: CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED
+  - Relationships: Many-to-one with LiftSystem, LiftSystemVersion, and SimulationScenario
+  - Status transition methods: `start()`, `succeed()`, `fail()`, `cancel()`
+  - Progress tracking via `updateProgress(Long tick)`
+
 #### Repositories
 
 - **LiftSystemRepository** (`com.liftsimulator.admin.repository.LiftSystemRepository`)
@@ -919,6 +935,20 @@ The backend includes JPA entities and Spring Data repositories for database acce
   - Find by status: `findByStatus(VersionStatus status)`
   - Get max version number: `findMaxVersionNumberByLiftSystemId(Long liftSystemId)`
 
+- **SimulationScenarioRepository** (`com.liftsimulator.admin.repository.SimulationScenarioRepository`)
+  - Find by name: `findByName(String name)`
+  - Find by name pattern: `findByNameContainingIgnoreCase(String name)`
+  - Check existence: `existsByName(String name)`
+  - Standard CRUD operations via `JpaRepository`
+
+- **SimulationRunRepository** (`com.liftsimulator.admin.repository.SimulationRunRepository`)
+  - Find runs by lift system: `findByLiftSystemIdOrderByCreatedAtDesc(Long liftSystemId)`
+  - Find runs by version: `findByVersionIdOrderByCreatedAtDesc(Long versionId)`
+  - Find runs by scenario: `findByScenarioIdOrderByCreatedAtDesc(Long scenarioId)`
+  - Find runs by status: `findByStatusOrderByCreatedAtDesc(RunStatus status)`
+  - Find active runs: `findActiveRunsByLiftSystemId(Long liftSystemId)`
+  - Count operations: `countByLiftSystemId(Long liftSystemId)`, `countByStatus(RunStatus status)`
+
 #### Verifying JPA Operations
 
 To verify the JPA entities and repositories are working correctly, run the Spring Boot application with the JPA verification runner:
@@ -930,7 +960,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.44.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.45.0.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -1174,7 +1204,7 @@ dropdb lift_simulator_test
 
 ## Features
 
-The current version (v0.44.0) includes comprehensive lift simulation and configuration management capabilities:
+The current version (v0.45.0) includes comprehensive lift simulation and configuration management capabilities:
 
 ### Admin Backend & REST API
 
@@ -1363,7 +1393,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.44.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.45.0.jar`.
 
 ## Running Tests
 
@@ -1413,7 +1443,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -1422,16 +1452,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -1445,7 +1475,7 @@ The demo runs a pre-configured scenario with several lift requests and displays 
 Use a published configuration JSON file to run a lightweight simulation:
 
 ```bash
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 
 Optional flags:
@@ -1463,7 +1493,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -1472,13 +1502,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**
