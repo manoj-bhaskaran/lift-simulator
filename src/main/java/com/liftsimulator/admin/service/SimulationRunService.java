@@ -11,13 +11,16 @@ import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
 import com.liftsimulator.admin.repository.SimulationScenarioRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Service for managing simulation runs.
@@ -32,6 +35,7 @@ public class SimulationRunService {
     private final SimulationScenarioRepository scenarioRepository;
     private final BatchInputGenerator batchInputGenerator;
     private final ObjectMapper objectMapper;
+    private final String artefactsBasePath;
 
     public SimulationRunService(
             SimulationRunRepository runRepository,
@@ -39,13 +43,15 @@ public class SimulationRunService {
             LiftSystemVersionRepository versionRepository,
             SimulationScenarioRepository scenarioRepository,
             BatchInputGenerator batchInputGenerator,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            @Value("${simulation.artefacts.base-path:./simulation-runs}") String artefactsBasePath) {
         this.runRepository = runRepository;
         this.liftSystemRepository = liftSystemRepository;
         this.versionRepository = versionRepository;
         this.scenarioRepository = scenarioRepository;
         this.batchInputGenerator = batchInputGenerator;
         this.objectMapper = objectMapper;
+        this.artefactsBasePath = artefactsBasePath;
     }
 
     /**
@@ -107,6 +113,70 @@ public class SimulationRunService {
 
         SimulationRun run = new SimulationRun(liftSystem, version, scenario);
         return runRepository.save(run);
+    }
+
+    /**
+     * Create and immediately start a simulation run.
+     * This method creates the run, sets up the artefact directory, configures it, and starts execution.
+     *
+     * @param liftSystemId the lift system id
+     * @param versionId the version id
+     * @param scenarioId the scenario id (optional)
+     * @param seed the random seed (optional, will be generated if not provided)
+     * @return the started run
+     * @throws ResourceNotFoundException if any of the entities is not found
+     * @throws IllegalArgumentException if the version does not belong to the lift system
+     * @throws IOException if artefact directory creation fails
+     */
+    @Transactional
+    public SimulationRun createAndStartRun(Long liftSystemId, Long versionId, Long scenarioId, Long seed)
+            throws IOException {
+        // Create the run
+        SimulationRun run;
+        if (scenarioId != null) {
+            run = createRunWithScenario(liftSystemId, versionId, scenarioId);
+        } else {
+            run = createRun(liftSystemId, versionId);
+        }
+
+        // Generate seed if not provided
+        Long runSeed = seed != null ? seed : new Random().nextLong();
+
+        // Set up artefact directory
+        String artefactPath = setupArtefactDirectory(run.getId());
+
+        // Configure the run with default total ticks (this can be updated later)
+        run.setTotalTicks(10000L); // Default value, can be configured
+        run.setSeed(runSeed);
+        run.setArtefactBasePath(artefactPath);
+
+        // Save configuration
+        run = runRepository.save(run);
+
+        // Generate batch input file if scenario is present
+        if (run.getScenario() != null) {
+            generateBatchInputFile(run.getId());
+        }
+
+        // Start the run
+        run.start();
+        return runRepository.save(run);
+    }
+
+    /**
+     * Sets up the artefact directory for a simulation run.
+     *
+     * @param runId the run ID
+     * @return the absolute path to the artefact directory
+     * @throws IOException if directory creation fails
+     */
+    private String setupArtefactDirectory(Long runId) throws IOException {
+        Path baseDir = Paths.get(artefactsBasePath);
+        Path runDir = baseDir.resolve("run-" + runId);
+
+        Files.createDirectories(runDir);
+
+        return runDir.toAbsolutePath().toString();
     }
 
     /**

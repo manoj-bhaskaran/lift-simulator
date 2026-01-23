@@ -13,6 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Scenario management API**:
   -  Validation endpoints for UI-driven passenger-flow scenarios
   -  JSON schema validation and storage support.
+- **Simulation Run APIs**: Comprehensive API endpoints for simulation execution and monitoring
+  - **POST /api/simulation-runs**: Create and start simulation runs with liftSystemId, versionId, optional scenarioId and seed
+  - **GET /api/simulation-runs/{id}**: Retrieve run status, timestamps (created/started/ended), progress (currentTick/totalTicks), and error messages
+  - **GET /api/simulation-runs/{id}/results**: Access structured results JSON (200 for SUCCEEDED, 409 for RUNNING, 400 for CREATED/CANCELLED)
+  - **GET /api/simulation-runs/{id}/logs?tail=N**: Stream simulation logs with optional tail parameter (default: all lines, max: 10,000)
+  - **GET /api/simulation-runs/{id}/artefacts**: List downloadable artefacts with name, path, size, and MIME type
+  - Implemented `SimulationRunController` with comprehensive error handling and status-based responses
+  - Created `ArtefactService` with path traversal prevention and secure file access controls
+  - Enhanced `SimulationRunService` with `createAndStartRun()` method for atomic run creation and execution
+  - Added DTOs: `CreateSimulationRunRequest`, `SimulationRunResponse`, `SimulationResultResponse`, `ArtefactInfo`
+  - Configurable artefacts storage via `simulation.artefacts.base-path` property (default: ./simulation-runs)
+  - Automatic artefact directory creation with structure: `{base-path}/run-{id}/`
+  - Added comprehensive integration tests covering all endpoints and edge cases
+  - Security: Prevents path traversal attacks in artefact access with normalized path validation
 - **Simulation Run Domain Model**: Introduced persistent run lifecycle for simulation execution tracking
   - Created `simulation_scenario` table to store reusable test scenarios with JSON configuration
   - Created `simulation_run` table to track individual simulation executions with lifecycle status
