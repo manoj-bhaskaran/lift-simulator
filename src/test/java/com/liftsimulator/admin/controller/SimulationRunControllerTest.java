@@ -90,10 +90,8 @@ public class SimulationRunControllerTest {
         testSystem = new LiftSystem("test-system", "Test System", "Test Description");
         testSystem = liftSystemRepository.save(testSystem);
 
-        testVersion = new LiftSystemVersion(testSystem);
-        testVersion.setVersionNumber(1);
+        testVersion = new LiftSystemVersion(testSystem, 1, "{\"numLifts\": 2, \"numFloors\": 10}");
         testVersion.setStatus(VersionStatus.PUBLISHED);
-        testVersion.setConfig("{\"numLifts\": 2, \"numFloors\": 10}");
         testVersion = versionRepository.save(testVersion);
 
         testScenario = new SimulationScenario();

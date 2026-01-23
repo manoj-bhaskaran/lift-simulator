@@ -90,10 +90,8 @@ public class SimulationRunLifecycleIntegrationTest {
         testSystem = new LiftSystem("lifecycle-system", "Lifecycle System", "Test Description");
         testSystem = liftSystemRepository.save(testSystem);
 
-        testVersion = new LiftSystemVersion(testSystem);
-        testVersion.setVersionNumber(1);
+        testVersion = new LiftSystemVersion(testSystem, 1, "{\"minFloor\": 0, \"maxFloor\": 10, \"numLifts\": 2}");
         testVersion.setStatus(VersionStatus.PUBLISHED);
-        testVersion.setConfig("{\"minFloor\": 0, \"maxFloor\": 10, \"numLifts\": 2}");
         testVersion = versionRepository.save(testVersion);
 
         testScenario = new SimulationScenario();
