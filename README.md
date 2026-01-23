@@ -209,6 +209,7 @@ A modern React web application provides a user-friendly interface for managing l
   - Advanced JSON editor mode for direct scenario editing
   - Optional random seed for reproducible simulations
 - **Simulator Runs**: Launch published versions with scenarios, poll status, and review results
+  - **Simulator landing page**: Choose a lift system and published version before configuring scenarios
   - **Run Simulator button**: Quick access button next to each published version for immediate simulation launch
   - Run setup with lift system, published version, and passenger flow scenario selection
   - Live status updates with elapsed time and progress details

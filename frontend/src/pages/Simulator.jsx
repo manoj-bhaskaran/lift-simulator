@@ -335,8 +335,8 @@ function Simulator() {
           </p>
         </div>
         <div className="page-actions">
-          <Link to="/systems" className="btn-secondary">
-            Browse Systems
+          <Link to="/simulator" className="btn-secondary">
+            Choose System
           </Link>
         </div>
       </div>
