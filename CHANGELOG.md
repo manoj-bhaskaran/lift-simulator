@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added comprehensive unit and integration tests for all new components
   - Database migration (V3) maintains backward compatibility with existing schema
   - Documented architectural decision in ADR-0016
+- **Asynchronous Simulation Runner**:
+  - Added backend service and API to launch simulation runs asynchronously using stored configs and scenarios
+  - Persisted run artefacts (inputs, logs, results placeholder) under a configurable artefact root
 
 ## [0.44.0] - 2026-01-20
 
