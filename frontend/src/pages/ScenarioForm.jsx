@@ -95,7 +95,7 @@ function ScenarioForm() {
     if (isEditMode) {
       loadScenario();
     }
-  }, [id]);
+  }, [id, isEditMode, loadScenario]);
 
   /**
    * Loads scenario data for editing.
@@ -271,7 +271,7 @@ function ScenarioForm() {
           setSeed('');
           setUseSeed(false);
         }
-      } catch (err) {
+      } catch {
         setAlertMessage('Invalid JSON format. Please fix the JSON before switching back to form mode.');
         return;
       }
