@@ -359,6 +359,7 @@ public class SimulationRunExecutionService {
         private final int minFloor;
         private final int maxFloor;
         private long totalTicks;
+        private Integer lastRecordedFloor;
 
         private RunMetrics(int minFloor, int maxFloor) {
             this.minFloor = minFloor;
@@ -378,8 +379,11 @@ public class SimulationRunExecutionService {
 
         private void recordLiftState(com.liftsimulator.domain.LiftState state) {
             statusCounts.merge(state.getStatus(), 1L, Long::sum);
-            floorMetrics.computeIfAbsent(state.getFloor(), FloorMetrics::new)
-                .addVisit();
+            if (lastRecordedFloor == null || lastRecordedFloor != state.getFloor()) {
+                floorMetrics.computeIfAbsent(state.getFloor(), FloorMetrics::new)
+                    .addVisit();
+                lastRecordedFloor = state.getFloor();
+            }
             totalTicks++;
         }
 

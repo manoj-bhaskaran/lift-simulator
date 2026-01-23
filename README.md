@@ -688,7 +688,7 @@ Run artefacts are stored on disk using the configured `simulation.runs.artefacts
 - `runSummary` includes tick counts, duration, seed, and lift system/version references.
 - `kpis` includes available wait-time metrics and utilisation from the simulation run.
 - `perLift` contains single-lift state counts and configuration metadata (one entry for now).
-- `perFloor` aggregates passenger origins/destinations and lift visit counts per floor.
+- `perFloor` aggregates passenger origins/destinations and lift visit counts per floor (counted on floor changes).
 #### Batch Input Generator
 
 The batch input generator converts stored scenario definitions and lift configurations into the legacy `.scenario` file format used by the CLI simulator. This enables backwards compatibility between the modern UI-driven workflow and the existing batch simulation infrastructure.
