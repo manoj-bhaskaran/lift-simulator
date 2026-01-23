@@ -57,6 +57,8 @@ function SimulatorLanding() {
         if (versionsRequestId.current !== requestId) {
           return;
         }
+        setVersions([]);
+        setSelectedVersionId('');
         handleApiError(err, setVersionsError, 'Failed to load versions');
       } finally {
         if (versionsRequestId.current === requestId) {
