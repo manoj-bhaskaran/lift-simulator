@@ -55,7 +55,7 @@ public class LiftSystemVersion {
     private OffsetDateTime publishedAt;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "config", nullable = false, columnDefinition = "jsonb")
+    @Column(name = "config", nullable = false)
     private String config;
 
     @Column(name = "created_at", nullable = false, updatable = false)

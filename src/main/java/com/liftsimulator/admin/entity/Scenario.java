@@ -29,7 +29,7 @@ public class Scenario {
     private String name;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "scenario_json", nullable = false, columnDefinition = "jsonb")
+    @Column(name = "scenario_json", nullable = false)
     private String scenarioJson;
 
     @Column(name = "created_at", nullable = false, updatable = false)
