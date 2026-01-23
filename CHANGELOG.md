@@ -41,6 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Asynchronous Simulation Runner**:
   - Added backend service and API to launch simulation runs asynchronously using stored configs and scenarios
   - Persisted run artefacts (inputs, logs, results placeholder) under a configurable artefact root
+- **Structured simulation results output**:
+  - Generate `results.json` with run summary, KPI metrics, per-lift status counts, and per-floor aggregates
+  - Results are additive and do not change existing CLI outputs
 - **Batch Input Generator**: Backwards-compatible wrapper for scenario-to-CLI conversion
   - Implemented `BatchInputGenerator` service to generate `.scenario` files from stored configurations
   - Converts lift system version configuration and scenario JSON to legacy batch input format
