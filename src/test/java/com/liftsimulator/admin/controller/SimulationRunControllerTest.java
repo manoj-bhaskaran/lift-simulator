@@ -228,6 +228,51 @@ public class SimulationRunControllerTest {
     }
 
     @Test
+    public void testGetSimulationResults_Succeeded_WithResults() throws Exception {
+        SimulationRun run = new SimulationRun(testSystem, testVersion);
+        run.setArtefactBasePath("./simulation-runs/run-succeeded");
+        run.start();
+        run.succeed();
+        run = runRepository.save(run);
+
+        // Create artefact directory with results file
+        Path artefactDir = Paths.get(run.getArtefactBasePath());
+        Files.createDirectories(artefactDir);
+        Path resultsFile = artefactDir.resolve("results.json");
+        Files.writeString(resultsFile, "{\"totalPassengersServed\": 100, \"averageWaitTime\": 15.5}");
+
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.runId").value(run.getId()))
+            .andExpect(jsonPath("$.status").value("SUCCEEDED"))
+            .andExpect(jsonPath("$.results.totalPassengersServed").value(100))
+            .andExpect(jsonPath("$.results.averageWaitTime").value(15.5))
+            .andExpect(jsonPath("$.errorMessage").doesNotExist())
+            .andExpect(jsonPath("$.logsUrl").value("/api/simulation-runs/" + run.getId() + "/logs"));
+    }
+
+    @Test
+    public void testGetSimulationResults_Succeeded_WithoutResults() throws Exception {
+        SimulationRun run = new SimulationRun(testSystem, testVersion);
+        run.setArtefactBasePath("./simulation-runs/run-no-results");
+        run.start();
+        run.succeed();
+        run = runRepository.save(run);
+
+        // Create artefact directory but no results file
+        Path artefactDir = Paths.get(run.getArtefactBasePath());
+        Files.createDirectories(artefactDir);
+
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.runId").value(run.getId()))
+            .andExpect(jsonPath("$.status").value("SUCCEEDED"))
+            .andExpect(jsonPath("$.results").doesNotExist())
+            .andExpect(jsonPath("$.errorMessage").value("Results file not available: No results file found for simulation run " + run.getId()))
+            .andExpect(jsonPath("$.logsUrl").value("/api/simulation-runs/" + run.getId() + "/logs"));
+    }
+
+    @Test
     public void testGetSimulationLogs_NoArtefactPath() throws Exception {
         SimulationRun run = new SimulationRun(testSystem, testVersion);
         run = runRepository.save(run);

@@ -61,4 +61,22 @@ public record SimulationResultResponse(
             null
         );
     }
+
+    /**
+     * Creates a response for a succeeded run where results file is unavailable.
+     * Preserves SUCCEEDED status while indicating results cannot be accessed.
+     *
+     * @param runId the run ID
+     * @param errorMessage the error message explaining why results are unavailable
+     * @return the response DTO
+     */
+    public static SimulationResultResponse succeededWithoutResults(Long runId, String errorMessage) {
+        return new SimulationResultResponse(
+            runId,
+            "SUCCEEDED",
+            null,
+            errorMessage,
+            "/api/simulation-runs/" + runId + "/logs"
+        );
+    }
 }

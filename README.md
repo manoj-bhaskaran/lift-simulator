@@ -1007,6 +1007,19 @@ Retrieves the results of a simulation run. Response varies based on run status.
 }
 ```
 
+**Response for SUCCEEDED without results file (200 OK):**
+```json
+{
+  "runId": 1,
+  "status": "SUCCEEDED",
+  "results": null,
+  "errorMessage": "Results file not available: No results file found for simulation run 1",
+  "logsUrl": "/api/simulation-runs/1/logs"
+}
+```
+
+*Note: If a simulation completed successfully but the results file cannot be read (e.g., file not found, permission denied), the response preserves the SUCCEEDED status while indicating results are unavailable via errorMessage.*
+
 **Response for FAILED (200 OK):**
 ```json
 {
