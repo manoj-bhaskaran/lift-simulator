@@ -780,7 +780,7 @@ Path inputFile = runService.generateBatchInputFile(runId);
 - **Automatic direction calculation**: Determines UP/DOWN based on origin and destination floors
 - **Unique passenger aliases**: Each passenger gets a unique alias (p1, p2, p3...)
 - **Event ordering**: Events are sorted by tick, then by alias
-- **Validation**: Ensures floor values are within configured range and start ticks are valid
+- **Validation**: Ensures floor values are within configured range and start ticks are valid when generating content or files
 - **Artifact management**: Files are stored in run-specific directories under `artefactBasePath`
 
 **Scenario JSON Structure:**
