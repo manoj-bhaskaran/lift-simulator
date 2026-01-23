@@ -36,6 +36,7 @@ public class SimulationRunService {
     private final BatchInputGenerator batchInputGenerator;
     private final ObjectMapper objectMapper;
     private final String artefactsBasePath;
+    private SimulationRunExecutionService executionService;
 
     public SimulationRunService(
             SimulationRunRepository runRepository,
@@ -52,6 +53,17 @@ public class SimulationRunService {
         this.batchInputGenerator = batchInputGenerator;
         this.objectMapper = objectMapper;
         this.artefactsBasePath = artefactsBasePath;
+    }
+
+    /**
+     * Sets the execution service. This is called by Spring after construction
+     * to avoid circular dependency issues.
+     *
+     * @param executionService the execution service
+     */
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setExecutionService(SimulationRunExecutionService executionService) {
+        this.executionService = executionService;
     }
 
     /**
@@ -158,9 +170,10 @@ public class SimulationRunService {
             generateBatchInputFile(run.getId());
         }
 
-        // Start the run
-        run.start();
-        return runRepository.save(run);
+        // Submit the run for execution
+        // The execution service will transition the run to RUNNING and handle the actual simulation
+        executionService.submitRunForExecution(run.getId());
+        return run;
     }
 
     /**
