@@ -38,6 +38,15 @@ jobs:
 
     - name: Create test database schema
       run: |
+        # Wait for PostgreSQL to be ready
+        for i in {1..30}; do
+          pg_isready -h localhost -p 5432 -U lift_admin && break
+          echo "Waiting for postgres... ($i/30)"
+          sleep 1
+        done
+        
+        # Create schema with safe DDL
+        PGPASSWORD=liftpassword psql -h localhost -U lift_admin -d lift_simulator_test -c "DROP SCHEMA IF EXISTS lift_simulator CASCADE;"
         PGPASSWORD=liftpassword psql -h localhost -U lift_admin -d lift_simulator_test -c "CREATE SCHEMA IF NOT EXISTS lift_simulator;"
         PGPASSWORD=liftpassword psql -h localhost -U lift_admin -d lift_simulator_test -c "GRANT ALL PRIVILEGES ON SCHEMA lift_simulator TO lift_admin;"
       env:
@@ -53,6 +62,8 @@ jobs:
         SPRING_DATASOURCE_USERNAME: lift_admin
         SPRING_DATASOURCE_PASSWORD: liftpassword
         PGPASSWORD: liftpassword
+        SPRING_JPA_HIBERNATE_DDL_AUTO: update
+        SPRING_JPA_PROPERTIES_HIBERNATE_HBM2DDL_CREATE_NAMESPACES: 'false'
 
     - name: Check code style
       run: mvn -q checkstyle:check
