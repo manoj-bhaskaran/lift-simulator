@@ -20,16 +20,20 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 public abstract class LocalIntegrationTest extends BaseIntegrationTest {
 
+    private static final boolean USE_TESTCONTAINERS = System.getenv("SPRING_DATASOURCE_URL") == null;
+
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
-            .withDatabaseName("lift_simulator_test")
-            .withUsername("lift_admin")
-            .withPassword("liftpassword");
+    static PostgreSQLContainer<?> postgres = USE_TESTCONTAINERS
+            ? new PostgreSQLContainer<>("postgres:15-alpine")
+                    .withDatabaseName("lift_simulator_test")
+                    .withUsername("lift_admin")
+                    .withPassword("liftpassword")
+            : null;
 
     @DynamicPropertySource
     static void registerLocalPostgresProperties(DynamicPropertyRegistry registry) {
-        // Only register if CI/CD environment variables are not set
-        if (System.getenv("SPRING_DATASOURCE_URL") == null) {
+        // Only register and start Testcontainers when no external datasource is provided
+        if (USE_TESTCONTAINERS && postgres != null) {
             registry.add("spring.datasource.url", postgres::getJdbcUrl);
             registry.add("spring.datasource.username", postgres::getUsername);
             registry.add("spring.datasource.password", postgres::getPassword);
