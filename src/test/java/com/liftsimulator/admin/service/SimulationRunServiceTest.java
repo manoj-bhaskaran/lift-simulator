@@ -63,6 +63,7 @@ public class SimulationRunServiceTest {
         mockVersion = new LiftSystemVersion();
         mockVersion.setId(1L);
         mockVersion.setVersionNumber(1);
+        mockVersion.setLiftSystem(mockLiftSystem);
 
         mockScenario = new SimulationScenario();
         mockScenario.setId(1L);
@@ -119,6 +120,30 @@ public class SimulationRunServiceTest {
     }
 
     @Test
+    public void testCreateRun_VersionBelongsToDifferentSystem() {
+        LiftSystem otherSystem = new LiftSystem();
+        otherSystem.setId(2L);
+        otherSystem.setSystemKey("other-system");
+
+        LiftSystemVersion versionFromOtherSystem = new LiftSystemVersion();
+        versionFromOtherSystem.setId(5L);
+        versionFromOtherSystem.setVersionNumber(1);
+        versionFromOtherSystem.setLiftSystem(otherSystem);
+
+        when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(versionRepository.findById(5L)).thenReturn(Optional.of(versionFromOtherSystem));
+
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> runService.createRun(1L, 5L)
+        );
+
+        assertEquals("Version 5 does not belong to lift system 1", exception.getMessage());
+        verify(liftSystemRepository).findById(1L);
+        verify(versionRepository).findById(5L);
+    }
+
+    @Test
     public void testCreateRunWithScenario_Success() {
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(versionRepository.findById(1L)).thenReturn(Optional.of(mockVersion));
@@ -147,6 +172,30 @@ public class SimulationRunServiceTest {
 
         assertEquals("Simulation scenario not found with id: 999", exception.getMessage());
         verify(scenarioRepository).findById(999L);
+    }
+
+    @Test
+    public void testCreateRunWithScenario_VersionBelongsToDifferentSystem() {
+        LiftSystem otherSystem = new LiftSystem();
+        otherSystem.setId(2L);
+        otherSystem.setSystemKey("other-system");
+
+        LiftSystemVersion versionFromOtherSystem = new LiftSystemVersion();
+        versionFromOtherSystem.setId(5L);
+        versionFromOtherSystem.setVersionNumber(1);
+        versionFromOtherSystem.setLiftSystem(otherSystem);
+
+        when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(versionRepository.findById(5L)).thenReturn(Optional.of(versionFromOtherSystem));
+
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> runService.createRunWithScenario(1L, 5L, 1L)
+        );
+
+        assertEquals("Version 5 does not belong to lift system 1", exception.getMessage());
+        verify(liftSystemRepository).findById(1L);
+        verify(versionRepository).findById(5L);
     }
 
     @Test

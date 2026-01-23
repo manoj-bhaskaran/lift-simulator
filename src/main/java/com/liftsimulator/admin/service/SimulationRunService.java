@@ -44,6 +44,7 @@ public class SimulationRunService {
      * @param versionId the version id
      * @return the created run
      * @throws ResourceNotFoundException if the lift system or version is not found
+     * @throws IllegalArgumentException if the version does not belong to the lift system
      */
     @Transactional
     public SimulationRun createRun(Long liftSystemId, Long versionId) {
@@ -54,6 +55,11 @@ public class SimulationRunService {
         LiftSystemVersion version = versionRepository.findById(versionId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Lift system version not found with id: " + versionId));
+
+        if (!version.getLiftSystem().getId().equals(liftSystemId)) {
+            throw new IllegalArgumentException(
+                    "Version " + versionId + " does not belong to lift system " + liftSystemId);
+        }
 
         SimulationRun run = new SimulationRun(liftSystem, version);
         return runRepository.save(run);
@@ -67,6 +73,7 @@ public class SimulationRunService {
      * @param scenarioId the scenario id
      * @return the created run
      * @throws ResourceNotFoundException if any of the entities is not found
+     * @throws IllegalArgumentException if the version does not belong to the lift system
      */
     @Transactional
     public SimulationRun createRunWithScenario(Long liftSystemId, Long versionId, Long scenarioId) {
@@ -77,6 +84,11 @@ public class SimulationRunService {
         LiftSystemVersion version = versionRepository.findById(versionId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Lift system version not found with id: " + versionId));
+
+        if (!version.getLiftSystem().getId().equals(liftSystemId)) {
+            throw new IllegalArgumentException(
+                    "Version " + versionId + " does not belong to lift system " + liftSystemId);
+        }
 
         SimulationScenario scenario = scenarioRepository.findById(scenarioId)
                 .orElseThrow(() -> new ResourceNotFoundException(
