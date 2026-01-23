@@ -1,5 +1,6 @@
 {
-  "floors": 10,
+  "minFloor": 0,
+  "maxFloor": 9,
   "lifts": 2,
   "travelTicksPerFloor": 1,
   "doorTransitionTicks": 2,

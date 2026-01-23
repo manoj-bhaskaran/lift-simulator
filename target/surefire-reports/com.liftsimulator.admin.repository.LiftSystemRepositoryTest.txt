@@ -1,0 +1,17 @@
+-------------------------------------------------------------------------------
+Test set: com.liftsimulator.admin.repository.LiftSystemRepositoryTest
+-------------------------------------------------------------------------------
+Tests run: 8, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 11.72 s <<< FAILURE! -- in com.liftsimulator.admin.repository.LiftSystemRepositoryTest
+com.liftsimulator.admin.repository.LiftSystemRepositoryTest.testCascadeDeleteLiftSystemWithVersions -- Time elapsed: 0.307 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <false> but was: <true>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertFalse.failNotFalse(AssertFalse.java:63)
+	at org.junit.jupiter.api.AssertFalse.assertFalse(AssertFalse.java:36)
+	at org.junit.jupiter.api.AssertFalse.assertFalse(AssertFalse.java:31)
+	at org.junit.jupiter.api.Assertions.assertFalse(Assertions.java:231)
+	at com.liftsimulator.admin.repository.LiftSystemRepositoryTest.testCascadeDeleteLiftSystemWithVersions(LiftSystemRepositoryTest.java:206)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1597)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1597)
+
