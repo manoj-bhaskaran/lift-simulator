@@ -355,4 +355,25 @@ public class SimulationRunRepositoryTest {
 
         assertFalse(runRepository.existsById(runId));
     }
+
+    @Test
+    public void testCascadeDeleteFromLiftSystemVersion() {
+        SimulationRun run1 = new SimulationRun(liftSystem, version);
+        SimulationRun run2 = new SimulationRun(liftSystem, version);
+        entityManager.persist(run1);
+        entityManager.persist(run2);
+        entityManager.flush();
+
+        Long run1Id = run1.getId();
+        Long run2Id = run2.getId();
+        assertTrue(runRepository.existsById(run1Id));
+        assertTrue(runRepository.existsById(run2Id));
+
+        // Delete the version - runs should cascade delete
+        entityManager.remove(version);
+        entityManager.flush();
+
+        assertFalse(runRepository.existsById(run1Id));
+        assertFalse(runRepository.existsById(run2Id));
+    }
 }

@@ -89,6 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Simulator Run UI**: Only apply preselected system/version from query params once so user selections are not overridden.
 - **Simulator Landing**: Ignore stale version fetch responses when switching between systems quickly.
 - **Simulator Landing**: Clear version options when loading versions fails to prevent mismatched selections.
+- Add database-level ON DELETE CASCADE constraint to SimulationRun foreign keys (lift_system_id and version_id) via Hibernate's @OnDelete annotation. This ensures SimulationRun records are automatically deleted when their parent LiftSystem or LiftSystemVersion is deleted, matching the existing database schema and preventing constraint violations.
 
 ## [0.44.0] - 2026-01-20
 

@@ -13,6 +13,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.OffsetDateTime;
 import java.util.Objects;
@@ -31,10 +33,12 @@ public class SimulationRun {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "lift_system_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private LiftSystem liftSystem;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "version_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private LiftSystemVersion version;
 
     @ManyToOne(fetch = FetchType.LAZY)
