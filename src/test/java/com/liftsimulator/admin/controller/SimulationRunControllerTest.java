@@ -1,7 +1,7 @@
 package com.liftsimulator.admin.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.liftsimulator.BaseIntegrationTest;
+import com.liftsimulator.LocalIntegrationTest;
 import com.liftsimulator.admin.dto.CreateSimulationRunRequest;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
@@ -36,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @AutoConfigureMockMvc
 @Transactional
-public class SimulationRunControllerTest extends BaseIntegrationTest {
+public class SimulationRunControllerTest extends LocalIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

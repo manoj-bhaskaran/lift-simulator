@@ -2,7 +2,7 @@ package com.liftsimulator.admin.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.liftsimulator.BaseIntegrationTest;
+import com.liftsimulator.LocalIntegrationTest;
 import com.liftsimulator.admin.dto.CreateSimulationRunRequest;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
@@ -40,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Integration test for simulation run lifecycle (start -> poll -> results).
  */
 @AutoConfigureMockMvc
-public class SimulationRunLifecycleIntegrationTest extends BaseIntegrationTest {
+public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest {
 
     @TempDir
     static Path artefactsRoot;

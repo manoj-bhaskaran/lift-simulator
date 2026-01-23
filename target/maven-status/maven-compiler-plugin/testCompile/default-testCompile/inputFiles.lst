@@ -9,6 +9,7 @@ D:\Projects\lift-simulator\src\test\java\com\liftsimulator\engine\LiftRequestLif
 D:\Projects\lift-simulator\src\test\java\com\liftsimulator\engine\NaiveLiftControllerTest.java
 D:\Projects\lift-simulator\src\test\java\com\liftsimulator\admin\service\LiftSystemServiceTest.java
 D:\Projects\lift-simulator\src\test\java\com\liftsimulator\engine\DirectionalScanLiftControllerTest.java
+D:\Projects\lift-simulator\src\test\java\com\liftsimulator\LocalIntegrationTest.java
 D:\Projects\lift-simulator\src\test\java\com\liftsimulator\admin\controller\GlobalExceptionHandlerValidationTest.java
 D:\Projects\lift-simulator\src\test\java\com\liftsimulator\admin\repository\SimulationRunRepositoryTest.java
 D:\Projects\lift-simulator\src\test\java\com\liftsimulator\admin\controller\LiftSystemVersionControllerTest.java

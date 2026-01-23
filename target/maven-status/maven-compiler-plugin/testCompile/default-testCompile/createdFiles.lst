@@ -1,5 +1,6 @@
 com\liftsimulator\admin\repository\LiftSystemRepositoryTest.class
 com\liftsimulator\engine\SimulationEngineTest$1.class
+com\liftsimulator\LocalIntegrationTest.class
 com\liftsimulator\admin\controller\GlobalExceptionHandlerValidationTest$ValidationTestController.class
 com\liftsimulator\MainTest.class
 com\liftsimulator\engine\ControllerFactoryTest.class
