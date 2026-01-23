@@ -8,9 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -18,7 +16,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,11 +36,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * annotations (like @ScriptAssert or custom validators), but those scenarios are less common.
  * The GlobalExceptionHandler safely handles both FieldError and ObjectError types.
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@WebMvcTest(controllers = {GlobalExceptionHandler.class})
 @ActiveProfiles("test")
-@Transactional
 @Import(GlobalExceptionHandlerValidationTest.TestControllerConfig.class)
 public class GlobalExceptionHandlerValidationTest {
 
