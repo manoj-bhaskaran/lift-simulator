@@ -7,10 +7,6 @@ import java.time.OffsetDateTime;
 
 /**
  * Response DTO for simulation run details.
-import java.time.OffsetDateTime;
-
-/**
- * Response payload for simulation run metadata.
  */
 public record SimulationRunResponse(
     Long id,
@@ -24,7 +20,8 @@ public record SimulationRunResponse(
     Long totalTicks,
     Long currentTick,
     Long seed,
-    String errorMessage
+    String errorMessage,
+    String artefactBasePath
 ) {
     /**
      * Creates a response DTO from a SimulationRun entity.
@@ -32,14 +29,6 @@ public record SimulationRunResponse(
      * @param run the entity to convert
      * @return the response DTO
      */
-    public static SimulationRunResponse fromEntity(SimulationRun run) {
-        return new SimulationRunResponse(
-            run.getId(),
-            run.getLiftSystem().getId(),
-            run.getVersion().getId(),
-    String errorMessage,
-    String artefactBasePath
-) {
     public static SimulationRunResponse fromEntity(SimulationRun run) {
         return new SimulationRunResponse(
             run.getId(),
@@ -53,7 +42,8 @@ public record SimulationRunResponse(
             run.getTotalTicks(),
             run.getCurrentTick(),
             run.getSeed(),
-            run.getErrorMessage()
+            run.getErrorMessage(),
+            run.getArtefactBasePath()
         );
     }
 
@@ -67,9 +57,5 @@ public record SimulationRunResponse(
             return null;
         }
         return (currentTick.doubleValue() / totalTicks.doubleValue()) * 100.0;
-    }
-            run.getErrorMessage(),
-            run.getArtefactBasePath()
-        );
     }
 }
