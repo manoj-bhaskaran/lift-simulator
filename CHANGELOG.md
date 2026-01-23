@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Run setup supports optional seed entry for reproducibility
   - Polling-based run status with elapsed time, progress, and terminal state handling
   - Results rendering with KPI cards, per-lift and per-floor tables, artefact downloads, and CLI reproduction guidance
-  - Published version list links into simulator flow with preselected system and version
+  - **Run Simulator button**: Added discoverable "Run Simulator" button next to each published version that launches the run workflow with preselected system and version
 - **Backend Scenario Enhancements**:
   - Added `name` field to Scenario entity for better identification
   - Implemented `GET /api/scenarios` endpoint to list all scenarios

@@ -209,6 +209,7 @@ A modern React web application provides a user-friendly interface for managing l
   - Advanced JSON editor mode for direct scenario editing
   - Optional random seed for reproducible simulations
 - **Simulator Runs**: Launch published versions with scenarios, poll status, and review results
+  - **Run Simulator button**: Quick access button next to each published version for immediate simulation launch
   - Run setup with lift system, published version, and passenger flow scenario selection
   - Live status updates with elapsed time and progress details
   - Results view with KPI cards, per-lift/per-floor tables, artefact downloads, and CLI reproduction hints
@@ -1898,7 +1899,9 @@ The current version (v0.45.0) includes comprehensive lift simulation and configu
   - Read-only view for published and archived versions
   - Split-pane layout with editor and validation results side-by-side
 - **Simulator Runs**: End-to-end UI flow for executing and monitoring simulation runs
-  - Launch runs from published versions or the dedicated Simulator landing page
+  - **Run Simulator button**: Discoverable button next to each published version for quick access to simulation workflow
+  - Launch runs from published versions (via button) or the dedicated Simulator landing page
+  - Automatic preselection of lift system and version when launching from published version list
   - Poll run status with elapsed time, progress, and status indicators
   - Results rendering with KPI cards, per-lift/per-floor tables, artefact downloads, and CLI reproduction details
 - **Configuration Validator**: Interactive JSON editor for validating configurations
