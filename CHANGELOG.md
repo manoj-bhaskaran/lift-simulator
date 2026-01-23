@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added navigation link in main menu for easy access
   - Full CRUD operations (create, read, update, delete) with confirmation modals
 - **Simulator Run UI**: End-to-end UI flow for executing simulation runs
-  - Added Simulator landing page with lift system, published version, and scenario selection
+  - Added Simulator landing page for lift system + published version selection before run setup
   - Run setup supports optional seed entry for reproducibility
   - Polling-based run status with elapsed time, progress, and terminal state handling
   - Results rendering with KPI cards, per-lift and per-floor tables, artefact downloads, and CLI reproduction guidance
@@ -81,6 +81,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Simulator Run UI**: Only apply preselected system/version from query params once so user selections are not overridden.
+- **Simulator Landing**: Ignore stale version fetch responses when switching between systems quickly.
+- **Simulator Landing**: Clear version options when loading versions fails to prevent mismatched selections.
 
 ## [0.44.0] - 2026-01-20
 

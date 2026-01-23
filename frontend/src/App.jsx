@@ -9,6 +9,7 @@ import HealthCheck from './pages/HealthCheck';
 import Scenarios from './pages/Scenarios';
 import ScenarioForm from './pages/ScenarioForm';
 import Simulator from './pages/Simulator';
+import SimulatorLanding from './pages/SimulatorLanding';
 import './App.css';
 
 function App() {
@@ -23,7 +24,8 @@ function App() {
           <Route path="scenarios" element={<Scenarios />} />
           <Route path="scenarios/new" element={<ScenarioForm />} />
           <Route path="scenarios/:id/edit" element={<ScenarioForm />} />
-          <Route path="simulator" element={<Simulator />} />
+          <Route path="simulator" element={<SimulatorLanding />} />
+          <Route path="simulator/run" element={<Simulator />} />
           <Route path="config-validator" element={<ConfigValidator />} />
           <Route path="health" element={<HealthCheck />} />
         </Route>
