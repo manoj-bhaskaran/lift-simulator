@@ -182,6 +182,10 @@ Use these as starting points or reference examples.
 - Verify PostgreSQL version is 12+
 - Check Flyway migration files in `src/main/resources/db/migration/`
 
+**Scenario validation fails with "Unable to read scenario payload":**
+- Confirm the scenario JSON is valid and not empty
+- Retry the request after verifying the payload format
+
 For detailed troubleshooting, see the relevant sections below.
 
 ---

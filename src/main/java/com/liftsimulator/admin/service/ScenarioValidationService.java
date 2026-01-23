@@ -16,6 +16,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -88,6 +89,13 @@ public class ScenarioValidationService {
             errors.add(new ValidationIssue(
                 "scenario",
                 "Invalid JSON format: " + e.getOriginalMessage(),
+                ValidationIssue.Severity.ERROR
+            ));
+            return new ScenarioValidationResponse(false, errors, warnings);
+        } catch (IOException e) {
+            errors.add(new ValidationIssue(
+                "scenario",
+                "Unable to read scenario payload: " + e.getMessage(),
                 ValidationIssue.Severity.ERROR
             ));
             return new ScenarioValidationResponse(false, errors, warnings);
