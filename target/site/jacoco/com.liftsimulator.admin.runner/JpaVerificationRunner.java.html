@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JpaVerificationRunner.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.admin.runner</a> &gt; <span class="el_source">JpaVerificationRunner.java</span></div><h1>JpaVerificationRunner.java</h1><pre class="source lang-java linenums">package com.liftsimulator.admin.runner;
+
+import com.liftsimulator.admin.entity.LiftSystem;
+import com.liftsimulator.admin.entity.LiftSystemVersion;
+import com.liftsimulator.admin.entity.LiftSystemVersion.VersionStatus;
+import com.liftsimulator.admin.repository.LiftSystemRepository;
+import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Command-line runner to verify basic JPA entity and repository operations.
+ * Enable with: --verify-jpa=true or spring.jpa.verify=true
+ */
+@Component
+@ConditionalOnProperty(name = &quot;spring.jpa.verify&quot;, havingValue = &quot;true&quot;, matchIfMissing = false)
+public class JpaVerificationRunner implements CommandLineRunner {
+
+<span class="nc" id="L26">    private static final Logger logger = LoggerFactory.getLogger(JpaVerificationRunner.class);</span>
+
+    private final LiftSystemRepository liftSystemRepository;
+    private final LiftSystemVersionRepository versionRepository;
+
+    public JpaVerificationRunner(
+            LiftSystemRepository liftSystemRepository,
+<span class="nc" id="L33">            LiftSystemVersionRepository versionRepository) {</span>
+<span class="nc" id="L34">        this.liftSystemRepository = liftSystemRepository;</span>
+<span class="nc" id="L35">        this.versionRepository = versionRepository;</span>
+<span class="nc" id="L36">    }</span>
+
+    @Override
+    @Transactional
+    public void run(String... args) throws Exception {
+<span class="nc" id="L41">        logger.info(&quot;=== Starting JPA Entity and Repository Verification ===&quot;);</span>
+
+        try {
+<span class="nc" id="L44">            verifyLiftSystemOperations();</span>
+<span class="nc" id="L45">            verifyLiftSystemVersionOperations();</span>
+<span class="nc" id="L46">            verifyJsonbMapping();</span>
+<span class="nc" id="L47">            verifyRelationships();</span>
+<span class="nc" id="L48">            verifyQueryMethods();</span>
+
+<span class="nc" id="L50">            logger.info(&quot;=== JPA Verification Completed Successfully ===&quot;);</span>
+<span class="nc" id="L51">        } catch (Exception e) {</span>
+<span class="nc" id="L52">            logger.error(&quot;=== JPA Verification Failed ===&quot;, e);</span>
+<span class="nc" id="L53">            throw e;</span>
+<span class="nc" id="L54">        }</span>
+<span class="nc" id="L55">    }</span>
+
+    private void verifyLiftSystemOperations() {
+<span class="nc" id="L58">        logger.info(&quot;--- Verifying LiftSystem CRUD Operations ---&quot;);</span>
+
+<span class="nc" id="L60">        LiftSystem system = new LiftSystem(</span>
+                &quot;demo-system&quot;,
+                &quot;Demo Lift System&quot;,
+                &quot;A demonstration lift system for JPA verification&quot;
+        );
+
+<span class="nc" id="L66">        LiftSystem saved = liftSystemRepository.save(system);</span>
+<span class="nc" id="L67">        logger.info(&quot;✓ Created LiftSystem: id={}, key={}&quot;, saved.getId(), saved.getSystemKey());</span>
+
+<span class="nc" id="L69">        Optional&lt;LiftSystem&gt; found = liftSystemRepository.findById(saved.getId());</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        if (found.isPresent()) {</span>
+<span class="nc" id="L71">            logger.info(&quot;✓ Found LiftSystem by ID: {}&quot;, found.get().getSystemKey());</span>
+        } else {
+<span class="nc" id="L73">            throw new AssertionError(&quot;Failed to find LiftSystem by ID&quot;);</span>
+        }
+
+<span class="nc" id="L76">        Optional&lt;LiftSystem&gt; foundByKey = liftSystemRepository.findBySystemKey(&quot;demo-system&quot;);</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (foundByKey.isPresent()) {</span>
+<span class="nc" id="L78">            logger.info(&quot;✓ Found LiftSystem by systemKey: {}&quot;, foundByKey.get().getDisplayName());</span>
+        } else {
+<span class="nc" id="L80">            throw new AssertionError(&quot;Failed to find LiftSystem by systemKey&quot;);</span>
+        }
+
+<span class="nc" id="L83">        saved.setDisplayName(&quot;Updated Demo System&quot;);</span>
+<span class="nc" id="L84">        LiftSystem updated = liftSystemRepository.save(saved);</span>
+<span class="nc" id="L85">        logger.info(&quot;✓ Updated LiftSystem: displayName={}&quot;, updated.getDisplayName());</span>
+<span class="nc" id="L86">    }</span>
+
+    private void verifyLiftSystemVersionOperations() {
+<span class="nc" id="L89">        logger.info(&quot;--- Verifying LiftSystemVersion CRUD Operations ---&quot;);</span>
+
+<span class="nc" id="L91">        Optional&lt;LiftSystem&gt; system = liftSystemRepository.findBySystemKey(&quot;demo-system&quot;);</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (!system.isPresent()) {</span>
+<span class="nc" id="L93">            throw new AssertionError(&quot;LiftSystem not found for version operations&quot;);</span>
+        }
+
+<span class="nc" id="L96">        String configJson = &quot;{\&quot;minFloor\&quot;: 1, \&quot;maxFloor\&quot;: 10, \&quot;numLifts\&quot;: 2}&quot;;</span>
+<span class="nc" id="L97">        LiftSystemVersion version = new LiftSystemVersion(</span>
+<span class="nc" id="L98">                system.get(),</span>
+<span class="nc" id="L99">                1,</span>
+                configJson
+        );
+
+<span class="nc" id="L103">        LiftSystemVersion saved = versionRepository.save(version);</span>
+<span class="nc" id="L104">        logger.info(&quot;✓ Created LiftSystemVersion: id={}, version={}, status={}&quot;,</span>
+<span class="nc" id="L105">                saved.getId(), saved.getVersionNumber(), saved.getStatus());</span>
+
+<span class="nc" id="L107">        Optional&lt;LiftSystemVersion&gt; found = versionRepository.findById(saved.getId());</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        if (found.isPresent()) {</span>
+<span class="nc" id="L109">            logger.info(&quot;✓ Found LiftSystemVersion by ID: version={}&quot;,</span>
+<span class="nc" id="L110">                    found.get().getVersionNumber());</span>
+        } else {
+<span class="nc" id="L112">            throw new AssertionError(&quot;Failed to find LiftSystemVersion by ID&quot;);</span>
+        }
+<span class="nc" id="L114">    }</span>
+
+    private void verifyJsonbMapping() {
+<span class="nc" id="L117">        logger.info(&quot;--- Verifying JSONB Field Mapping ---&quot;);</span>
+
+<span class="nc" id="L119">        Optional&lt;LiftSystem&gt; system = liftSystemRepository.findBySystemKey(&quot;demo-system&quot;);</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (!system.isPresent()) {</span>
+<span class="nc" id="L121">            throw new AssertionError(&quot;LiftSystem not found for JSONB verification&quot;);</span>
+        }
+
+<span class="nc" id="L124">        String complexJson = &quot;{&quot;</span>
+                + &quot;\&quot;minFloor\&quot;: 0,&quot;
+                + &quot;\&quot;maxFloor\&quot;: 20,&quot;
+                + &quot;\&quot;numLifts\&quot;: 5,&quot;
+                + &quot;\&quot;strategy\&quot;: \&quot;DIRECTIONAL_SCAN\&quot;,&quot;
+                + &quot;\&quot;liftConfigs\&quot;: [&quot;
+                + &quot;  {\&quot;id\&quot;: 1, \&quot;capacity\&quot;: 10, \&quot;speed\&quot;: 2.5},&quot;
+                + &quot;  {\&quot;id\&quot;: 2, \&quot;capacity\&quot;: 8, \&quot;speed\&quot;: 2.0}&quot;
+                + &quot;],&quot;
+                + &quot;\&quot;settings\&quot;: {\&quot;doorOpenTime\&quot;: 3, \&quot;doorCloseTime\&quot;: 2}&quot;
+                + &quot;}&quot;;
+
+<span class="nc" id="L136">        LiftSystemVersion version = new LiftSystemVersion(system.get(), 2, complexJson);</span>
+<span class="nc" id="L137">        LiftSystemVersion saved = versionRepository.save(version);</span>
+
+<span class="nc" id="L139">        logger.info(&quot;✓ Saved complex JSONB config: id={}&quot;, saved.getId());</span>
+
+<span class="nc" id="L141">        Optional&lt;LiftSystemVersion&gt; retrieved = versionRepository.findById(saved.getId());</span>
+<span class="nc bnc" id="L142" title="All 4 branches missed.">        if (retrieved.isPresent() &amp;&amp; retrieved.get().getConfig().equals(complexJson)) {</span>
+<span class="nc" id="L143">            logger.info(&quot;✓ Retrieved JSONB config matches original&quot;);</span>
+        } else {
+<span class="nc" id="L145">            throw new AssertionError(&quot;JSONB config mismatch after retrieval&quot;);</span>
+        }
+<span class="nc" id="L147">    }</span>
+
+    private void verifyRelationships() {
+<span class="nc" id="L150">        logger.info(&quot;--- Verifying Entity Relationships ---&quot;);</span>
+
+<span class="nc" id="L152">        Optional&lt;LiftSystem&gt; system = liftSystemRepository.findBySystemKey(&quot;demo-system&quot;);</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        if (!system.isPresent()) {</span>
+<span class="nc" id="L154">            throw new AssertionError(&quot;LiftSystem not found for relationship verification&quot;);</span>
+        }
+
+<span class="nc" id="L157">        List&lt;LiftSystemVersion&gt; versions = versionRepository</span>
+<span class="nc" id="L158">                .findByLiftSystemIdOrderByVersionNumberDesc(system.get().getId());</span>
+
+<span class="nc bnc" id="L160" title="All 2 branches missed.">        if (versions.size() &gt;= 2) {</span>
+<span class="nc" id="L161">            logger.info(&quot;✓ Found {} versions for LiftSystem&quot;, versions.size());</span>
+<span class="nc" id="L162">            logger.info(&quot;✓ Latest version number: {}&quot;, versions.get(0).getVersionNumber());</span>
+        } else {
+<span class="nc" id="L164">            throw new AssertionError(&quot;Expected at least 2 versions&quot;);</span>
+        }
+<span class="nc" id="L166">    }</span>
+
+    private void verifyQueryMethods() {
+<span class="nc" id="L169">        logger.info(&quot;--- Verifying Custom Query Methods ---&quot;);</span>
+
+<span class="nc" id="L171">        Optional&lt;LiftSystem&gt; system = liftSystemRepository.findBySystemKey(&quot;demo-system&quot;);</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">        if (!system.isPresent()) {</span>
+<span class="nc" id="L173">            throw new AssertionError(&quot;LiftSystem not found for query verification&quot;);</span>
+        }
+
+<span class="nc" id="L176">        Integer maxVersion = versionRepository</span>
+<span class="nc" id="L177">                .findMaxVersionNumberByLiftSystemId(system.get().getId());</span>
+<span class="nc" id="L178">        logger.info(&quot;✓ Max version number: {}&quot;, maxVersion);</span>
+
+<span class="nc" id="L180">        Optional&lt;LiftSystemVersion&gt; version = versionRepository</span>
+<span class="nc" id="L181">                .findByLiftSystemIdAndVersionNumber(system.get().getId(), 1);</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        if (version.isPresent()) {</span>
+<span class="nc" id="L183">            version.get().publish();</span>
+<span class="nc" id="L184">            versionRepository.save(version.get());</span>
+<span class="nc" id="L185">            logger.info(&quot;✓ Published version 1&quot;);</span>
+        }
+
+<span class="nc" id="L188">        List&lt;LiftSystemVersion&gt; publishedVersions = versionRepository</span>
+<span class="nc" id="L189">                .findByLiftSystemIdAndIsPublishedTrue(system.get().getId());</span>
+<span class="nc" id="L190">        logger.info(&quot;✓ Found {} published versions&quot;, publishedVersions.size());</span>
+
+<span class="nc" id="L192">        List&lt;LiftSystemVersion&gt; drafts = versionRepository.findByStatus(VersionStatus.DRAFT);</span>
+<span class="nc" id="L193">        logger.info(&quot;✓ Found {} draft versions in database&quot;, drafts.size());</span>
+
+<span class="nc" id="L195">        boolean exists = liftSystemRepository.existsBySystemKey(&quot;demo-system&quot;);</span>
+<span class="nc" id="L196">        logger.info(&quot;✓ existsBySystemKey returned: {}&quot;, exists);</span>
+<span class="nc" id="L197">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

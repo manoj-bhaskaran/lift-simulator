@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LiftRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.domain</a> &gt; <span class="el_source">LiftRequest.java</span></div><h1>LiftRequest.java</h1><pre class="source lang-java linenums">package com.liftsimulator.domain;
+
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+ * Represents a lift request as a first-class entity with explicit lifecycle states.
+ * Tracks requests from creation through completion or cancellation.
+ */
+public class LiftRequest {
+<span class="nc" id="L12">    private static final AtomicLong ID_GENERATOR = new AtomicLong(0);</span>
+
+    private final long id;
+    private final RequestType type;
+    private final Integer originFloor;
+    private final Integer destinationFloor;
+    private final Direction direction;
+    private RequestState state;
+
+    /**
+     * Valid state transitions for a lift request.
+     * Each state can only transition to specific next states.
+     */
+<span class="nc" id="L25">    private static final Set&lt;RequestState&gt; TERMINAL_STATES = Set.of(</span>
+        RequestState.COMPLETED,
+        RequestState.CANCELLED
+    );
+
+<span class="nc" id="L30">    private LiftRequest(long id, RequestType type, Integer originFloor, Integer destinationFloor, Direction direction) {</span>
+<span class="nc" id="L31">        this.id = id;</span>
+<span class="nc" id="L32">        this.type = type;</span>
+<span class="nc" id="L33">        this.originFloor = originFloor;</span>
+<span class="nc" id="L34">        this.destinationFloor = destinationFloor;</span>
+<span class="nc" id="L35">        this.direction = direction;</span>
+<span class="nc" id="L36">        this.state = RequestState.CREATED;</span>
+<span class="nc" id="L37">    }</span>
+
+    /**
+     * Creates a hall call request.
+     *
+     * @param floor     The floor where the call was made
+     * @param direction The direction the passenger wants to travel
+     * @return A new LiftRequest for the hall call
+     */
+    public static LiftRequest hallCall(int floor, Direction direction) {
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        if (direction == Direction.IDLE) {</span>
+<span class="nc" id="L48">            throw new IllegalArgumentException(&quot;Hall call direction cannot be IDLE&quot;);</span>
+        }
+<span class="nc" id="L50">        return new LiftRequest(ID_GENERATOR.incrementAndGet(), RequestType.HALL_CALL, floor, null, direction);</span>
+    }
+
+    /**
+     * Resets the request ID generator for test isolation.
+     */
+    static void resetIdGenerator() {
+<span class="nc" id="L57">        ID_GENERATOR.set(0);</span>
+<span class="nc" id="L58">    }</span>
+
+    /**
+     * Creates a car call request.
+     *
+     * @param destinationFloor The destination floor selected by the passenger
+     * @return A new LiftRequest for the car call
+     */
+    public static LiftRequest carCall(int destinationFloor) {
+<span class="nc" id="L67">        return new LiftRequest(ID_GENERATOR.incrementAndGet(), RequestType.CAR_CALL, null, destinationFloor, null);</span>
+    }
+
+    /**
+     * Creates a car call request with origin floor information.
+     *
+     * @param originFloor      The floor where the passenger entered the lift
+     * @param destinationFloor The destination floor selected by the passenger
+     * @return A new LiftRequest for the car call
+     */
+    public static LiftRequest carCall(int originFloor, int destinationFloor) {
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        Direction direction = originFloor &lt; destinationFloor ? Direction.UP :</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">                            originFloor &gt; destinationFloor ? Direction.DOWN : Direction.IDLE;</span>
+<span class="nc" id="L80">        return new LiftRequest(ID_GENERATOR.incrementAndGet(), RequestType.CAR_CALL, originFloor, destinationFloor, direction);</span>
+    }
+
+    /**
+     * Advances the request to the next state.
+     *
+     * @param newState The state to transition to
+     * @throws IllegalStateException if the transition is invalid
+     */
+    public void transitionTo(RequestState newState) {
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (!isValidTransition(this.state, newState)) {</span>
+<span class="nc" id="L91">            throw new IllegalStateException(</span>
+<span class="nc" id="L92">                String.format(&quot;Invalid state transition for request %d: %s -&gt; %s&quot;, id, state, newState)</span>
+            );
+        }
+<span class="nc" id="L95">        this.state = newState;</span>
+<span class="nc" id="L96">    }</span>
+
+    /**
+     * Completes the request by advancing through any intermediate states.
+     */
+    public void completeRequest() {
+<span class="nc bnc" id="L102" title="All 4 branches missed.">        while (!isTerminal() &amp;&amp; state != RequestState.SERVING) {</span>
+<span class="nc" id="L103">            transitionTo(nextCompletionState(state));</span>
+        }
+
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (state == RequestState.SERVING) {</span>
+<span class="nc" id="L107">            transitionTo(RequestState.COMPLETED);</span>
+        }
+<span class="nc" id="L109">    }</span>
+
+    private RequestState nextCompletionState(RequestState currentState) {
+<span class="nc bnc" id="L112" title="All 4 branches missed.">        return switch (currentState) {</span>
+<span class="nc" id="L113">            case CREATED -&gt; RequestState.QUEUED;</span>
+<span class="nc" id="L114">            case QUEUED -&gt; RequestState.ASSIGNED;</span>
+<span class="nc" id="L115">            case ASSIGNED -&gt; RequestState.SERVING;</span>
+<span class="nc" id="L116">            default -&gt; throw new IllegalStateException(</span>
+<span class="nc" id="L117">                String.format(&quot;No completion transition available for request %d in state %s&quot;, id, currentState)</span>
+            );
+        };
+    }
+
+    /**
+     * Validates whether a state transition is allowed.
+     *
+     * @param from The current state
+     * @param to   The target state
+     * @return true if the transition is valid, false otherwise
+     */
+    private boolean isValidTransition(RequestState from, RequestState to) {
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (from == to) {</span>
+<span class="nc" id="L131">            return false; // No self-transitions.</span>
+        }
+
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (TERMINAL_STATES.contains(from)) {</span>
+<span class="nc" id="L135">            return false; // Cannot transition from terminal states.</span>
+        }
+
+<span class="nc bnc" id="L138" title="All 5 branches missed.">        return switch (from) {</span>
+<span class="nc bnc" id="L139" title="All 4 branches missed.">            case CREATED -&gt; to == RequestState.QUEUED || to == RequestState.CANCELLED;</span>
+<span class="nc bnc" id="L140" title="All 4 branches missed.">            case QUEUED -&gt; to == RequestState.ASSIGNED || to == RequestState.CANCELLED;</span>
+<span class="nc bnc" id="L141" title="All 6 branches missed.">            case ASSIGNED -&gt; to == RequestState.SERVING || to == RequestState.QUEUED || to == RequestState.CANCELLED;</span>
+<span class="nc bnc" id="L142" title="All 4 branches missed.">            case SERVING -&gt; to == RequestState.COMPLETED || to == RequestState.CANCELLED;</span>
+<span class="nc" id="L143">            default -&gt; false;</span>
+        };
+    }
+
+    /**
+     * Checks if this request is in a terminal state.
+     *
+     * @return true if the request is completed or cancelled
+     */
+    public boolean isTerminal() {
+<span class="nc" id="L153">        return TERMINAL_STATES.contains(state);</span>
+    }
+
+    /**
+     * Gets the target floor for this request.
+     * For hall calls, this is the origin floor.
+     * For car calls, this is the destination floor.
+     *
+     * @return The target floor
+     */
+    public int getTargetFloor() {
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        return type == RequestType.HALL_CALL ? originFloor : destinationFloor;</span>
+    }
+
+    public long getId() {
+<span class="nc" id="L168">        return id;</span>
+    }
+
+    public RequestType getType() {
+<span class="nc" id="L172">        return type;</span>
+    }
+
+    public Integer getOriginFloor() {
+<span class="nc" id="L176">        return originFloor;</span>
+    }
+
+    public Integer getDestinationFloor() {
+<span class="nc" id="L180">        return destinationFloor;</span>
+    }
+
+    public Direction getDirection() {
+<span class="nc" id="L184">        return direction;</span>
+    }
+
+    public RequestState getState() {
+<span class="nc" id="L188">        return state;</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L193" title="All 2 branches missed.">        if (this == o) return true;</span>
+<span class="nc bnc" id="L194" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="nc" id="L195">        LiftRequest that = (LiftRequest) o;</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">        return id == that.id;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L201">        return Objects.hash(id);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L206">        return &quot;LiftRequest{&quot; +</span>
+                &quot;id=&quot; + id +
+                &quot;, type=&quot; + type +
+                &quot;, originFloor=&quot; + originFloor +
+                &quot;, destinationFloor=&quot; + destinationFloor +
+                &quot;, direction=&quot; + direction +
+                &quot;, state=&quot; + state +
+                '}';
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

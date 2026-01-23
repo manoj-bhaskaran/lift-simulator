@@ -1,0 +1,569 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SimulationEngine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.engine</a> &gt; <span class="el_source">SimulationEngine.java</span></div><h1>SimulationEngine.java</h1><pre class="source lang-java linenums">package com.liftsimulator.engine;
+
+import com.liftsimulator.domain.Action;
+import com.liftsimulator.domain.LiftState;
+import com.liftsimulator.domain.LiftStatus;
+
+import java.util.Map;
+import java.util.logging.Logger;
+
+/**
+ * Core simulation engine that advances time in discrete ticks.
+ * The engine owns time and coordinates state updates.
+ */
+public final class SimulationEngine {
+<span class="nc" id="L15">    private static final Logger LOGGER = Logger.getLogger(SimulationEngine.class.getName());</span>
+    private static final int DEFAULT_TRAVEL_TICKS_PER_FLOOR = 1;
+    private static final int DEFAULT_DOOR_TRANSITION_TICKS = 2;
+    private static final int DEFAULT_DOOR_DWELL_TICKS = 3;
+    private static final int DEFAULT_DOOR_REOPEN_WINDOW_MAX_TICKS = 2;
+    private static final int SENTINEL_USE_DEFAULT = -1;
+    private final SimulationClock clock;
+    private LiftState currentState;
+    private final LiftController controller;
+    private final int minFloor;
+    private final int maxFloor;
+    private final int travelTicksPerFloor;
+    private final int doorTransitionTicks;
+    private final int doorDwellTicks;
+    private final int doorReopenWindowTicks;
+    private int movementTicksRemaining;
+    private int doorTicksRemaining;
+    private int doorDwellTicksRemaining;
+    private int doorClosingTicksElapsed;
+    private boolean outOfServicePending;
+    private boolean outOfServiceDoorsOpened;
+    private int outOfServiceTargetFloor;
+    private boolean returnToServicePending;
+
+    @FunctionalInterface
+    private interface TickBehavior {
+        void execute(SimulationEngine engine, Action action);
+    }
+
+<span class="nc" id="L44">    private static final Map&lt;LiftStatus, TickBehavior&gt; STATE_BEHAVIORS = Map.of(</span>
+        LiftStatus.MOVING_UP, SimulationEngine::handleMovementTick,
+        LiftStatus.MOVING_DOWN, SimulationEngine::handleMovementTick,
+        LiftStatus.DOORS_OPENING, SimulationEngine::handleDoorTransitionTick,
+        LiftStatus.DOORS_CLOSING, SimulationEngine::handleDoorTransitionTick,
+        LiftStatus.DOORS_OPEN, SimulationEngine::handleDoorDwellTick,
+        LiftStatus.IDLE, SimulationEngine::handleIdleTick,
+        LiftStatus.OUT_OF_SERVICE, SimulationEngine::handleIdleTick
+    );
+
+<span class="nc" id="L54">    private record ActionResult(LiftState state, boolean success) {}</span>
+
+    public static Builder builder(LiftController controller, int minFloor, int maxFloor) {
+<span class="nc" id="L57">        return new Builder(controller, minFloor, maxFloor);</span>
+    }
+
+    public static class Builder {
+        private final LiftController controller;
+        private final int minFloor;
+        private final int maxFloor;
+        private int initialFloor;
+<span class="nc" id="L65">        private int travelTicksPerFloor = DEFAULT_TRAVEL_TICKS_PER_FLOOR;</span>
+<span class="nc" id="L66">        private int doorTransitionTicks = DEFAULT_DOOR_TRANSITION_TICKS;</span>
+<span class="nc" id="L67">        private int doorDwellTicks = DEFAULT_DOOR_DWELL_TICKS;</span>
+<span class="nc" id="L68">        private int doorReopenWindowTicks = SENTINEL_USE_DEFAULT;</span>
+
+<span class="nc" id="L70">        public Builder(LiftController controller, int minFloor, int maxFloor) {</span>
+<span class="nc" id="L71">            this.controller = controller;</span>
+<span class="nc" id="L72">            this.minFloor = minFloor;</span>
+<span class="nc" id="L73">            this.maxFloor = maxFloor;</span>
+<span class="nc" id="L74">            this.initialFloor = minFloor;</span>
+<span class="nc" id="L75">        }</span>
+
+        public Builder initialFloor(int floor) {
+<span class="nc" id="L78">            this.initialFloor = floor;</span>
+<span class="nc" id="L79">            return this;</span>
+        }
+
+        public Builder travelTicksPerFloor(int ticks) {
+<span class="nc" id="L83">            this.travelTicksPerFloor = ticks;</span>
+<span class="nc" id="L84">            return this;</span>
+        }
+
+        public Builder doorTransitionTicks(int ticks) {
+<span class="nc" id="L88">            this.doorTransitionTicks = ticks;</span>
+<span class="nc" id="L89">            return this;</span>
+        }
+
+        public Builder doorDwellTicks(int ticks) {
+<span class="nc" id="L93">            this.doorDwellTicks = ticks;</span>
+<span class="nc" id="L94">            return this;</span>
+        }
+
+        public Builder doorReopenWindowTicks(int ticks) {
+<span class="nc" id="L98">            this.doorReopenWindowTicks = ticks;</span>
+<span class="nc" id="L99">            return this;</span>
+        }
+
+        public SimulationEngine build() {
+<span class="nc" id="L103">            return new SimulationEngine(this);</span>
+        }
+    }
+
+<span class="nc" id="L107">    private SimulationEngine(Builder builder) {</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        if (builder.travelTicksPerFloor &lt;= 0) {</span>
+<span class="nc" id="L109">            throw new IllegalArgumentException(&quot;travelTicksPerFloor must be &gt;= 1&quot;);</span>
+        }
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (builder.doorTransitionTicks &lt;= 0) {</span>
+<span class="nc" id="L112">            throw new IllegalArgumentException(&quot;doorTransitionTicks must be &gt;= 1&quot;);</span>
+        }
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (builder.doorDwellTicks &lt;= 0) {</span>
+<span class="nc" id="L115">            throw new IllegalArgumentException(&quot;doorDwellTicks must be &gt;= 1&quot;);</span>
+        }
+
+<span class="nc" id="L118">        int configuredDoorReopenWindowTicks = builder.doorReopenWindowTicks;</span>
+        // Use sentinel for &quot;use default&quot;: min(DEFAULT_DOOR_REOPEN_WINDOW_MAX_TICKS, doorTransitionTicks).
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (configuredDoorReopenWindowTicks == SENTINEL_USE_DEFAULT) {</span>
+<span class="nc" id="L121">            configuredDoorReopenWindowTicks = Math.min(DEFAULT_DOOR_REOPEN_WINDOW_MAX_TICKS, builder.doorTransitionTicks);</span>
+        }
+
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (configuredDoorReopenWindowTicks &lt; 0) {</span>
+<span class="nc" id="L125">            throw new IllegalArgumentException(&quot;doorReopenWindowTicks must be &gt;= 0&quot;);</span>
+        }
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        if (configuredDoorReopenWindowTicks &gt; builder.doorTransitionTicks) {</span>
+<span class="nc" id="L128">            throw new IllegalArgumentException(&quot;doorReopenWindowTicks cannot exceed doorTransitionTicks&quot;);</span>
+        }
+<span class="nc bnc" id="L130" title="All 4 branches missed.">        if (builder.initialFloor &lt; builder.minFloor || builder.initialFloor &gt; builder.maxFloor) {</span>
+<span class="nc" id="L131">            throw new IllegalArgumentException(&quot;initialFloor must be within minFloor and maxFloor&quot;);</span>
+        }
+<span class="nc" id="L133">        this.controller = builder.controller;</span>
+<span class="nc" id="L134">        this.minFloor = builder.minFloor;</span>
+<span class="nc" id="L135">        this.maxFloor = builder.maxFloor;</span>
+<span class="nc" id="L136">        this.travelTicksPerFloor = builder.travelTicksPerFloor;</span>
+<span class="nc" id="L137">        this.doorTransitionTicks = builder.doorTransitionTicks;</span>
+<span class="nc" id="L138">        this.doorDwellTicks = builder.doorDwellTicks;</span>
+<span class="nc" id="L139">        this.doorReopenWindowTicks = configuredDoorReopenWindowTicks;</span>
+<span class="nc" id="L140">        this.clock = new SimulationClock();</span>
+<span class="nc" id="L141">        this.movementTicksRemaining = 0;</span>
+<span class="nc" id="L142">        this.doorTicksRemaining = 0;</span>
+<span class="nc" id="L143">        this.doorDwellTicksRemaining = 0;</span>
+<span class="nc" id="L144">        this.doorClosingTicksElapsed = 0;</span>
+        // Initialize lift at the provided starting floor, idle status.
+<span class="nc" id="L146">        this.currentState = new LiftState(builder.initialFloor, LiftStatus.IDLE);</span>
+<span class="nc" id="L147">    }</span>
+
+    /**
+     * Advances the simulation by one tick.
+     * The controller decides the next action, which is then applied to update the state.
+     */
+    public void tick() {
+        // Handle pending out-of-service transition.
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        if (outOfServicePending) {</span>
+<span class="nc" id="L156">            handleOutOfServiceTransition();</span>
+<span class="nc" id="L157">            clock.tick();</span>
+<span class="nc" id="L158">            return;</span>
+        }
+
+        // Ask controller for next action.
+<span class="nc" id="L162">        Action action = controller.decideNextAction(currentState, clock.getCurrentTick());</span>
+
+<span class="nc" id="L164">        TickBehavior behavior = STATE_BEHAVIORS.get(currentState.getStatus());</span>
+<span class="nc" id="L165">        behavior.execute(this, action);</span>
+        // Increment tick counter.
+<span class="nc" id="L167">        clock.tick();</span>
+<span class="nc" id="L168">    }</span>
+
+    /**
+     * Applies an action to the current state and returns the new state.
+     * Enforces state machine transitions and ensures lift never moves with doors open.
+     */
+    private ActionResult startAction(LiftState state, Action action) {
+<span class="nc" id="L175">        int newFloor = state.getFloor();</span>
+<span class="nc" id="L176">        LiftStatus currentStatus = state.getStatus();</span>
+<span class="nc" id="L177">        LiftStatus newStatus = currentStatus;</span>
+
+        // Prevent movement if doors are not closed (enforced by state machine).
+<span class="nc bnc" id="L180" title="All 12 branches missed.">        if ((action == Action.MOVE_UP || action == Action.MOVE_DOWN) &amp;&amp;</span>
+            (currentStatus == LiftStatus.DOORS_OPENING ||
+             currentStatus == LiftStatus.DOORS_OPEN ||
+             currentStatus == LiftStatus.DOORS_CLOSING ||
+             currentStatus == LiftStatus.OUT_OF_SERVICE)) {
+            // Invalid state for movement - log warning and return unchanged state.
+<span class="nc" id="L186">            logInvalidAction(action, currentStatus, state);</span>
+<span class="nc" id="L187">            return new ActionResult(state, false);</span>
+        }
+
+<span class="nc bnc" id="L190" title="All 6 branches missed.">        switch (action) {</span>
+            case MOVE_UP:
+<span class="nc bnc" id="L192" title="All 2 branches missed.">                if (newFloor &lt; maxFloor) {</span>
+<span class="nc" id="L193">                    newStatus = LiftStatus.MOVING_UP;</span>
+<span class="nc" id="L194">                    movementTicksRemaining = travelTicksPerFloor;</span>
+<span class="nc" id="L195">                    doorTicksRemaining = 0;</span>
+<span class="nc" id="L196">                    doorDwellTicksRemaining = 0;</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">                } else if (newFloor == maxFloor) {</span>
+                    // At top floor, can't move up.
+<span class="nc" id="L199">                    newStatus = LiftStatus.IDLE;</span>
+                }
+                break;
+            case MOVE_DOWN:
+<span class="nc bnc" id="L203" title="All 2 branches missed.">                if (newFloor &gt; minFloor) {</span>
+<span class="nc" id="L204">                    newStatus = LiftStatus.MOVING_DOWN;</span>
+<span class="nc" id="L205">                    movementTicksRemaining = travelTicksPerFloor;</span>
+<span class="nc" id="L206">                    doorTicksRemaining = 0;</span>
+<span class="nc" id="L207">                    doorDwellTicksRemaining = 0;</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                } else if (newFloor == minFloor) {</span>
+                    // At bottom floor, can't move down.
+<span class="nc" id="L210">                    newStatus = LiftStatus.IDLE;</span>
+                }
+                break;
+            case OPEN_DOOR:
+<span class="nc bnc" id="L214" title="All 2 branches missed.">                if (currentStatus == LiftStatus.OUT_OF_SERVICE) {</span>
+                    // Can't open doors when out of service.
+<span class="nc" id="L216">                    logInvalidAction(action, currentStatus, state);</span>
+<span class="nc" id="L217">                    return new ActionResult(state, false);</span>
+<span class="nc bnc" id="L218" title="All 4 branches missed.">                } else if (currentStatus == LiftStatus.MOVING_UP || currentStatus == LiftStatus.MOVING_DOWN) {</span>
+                    // Must stop first before opening doors.
+<span class="nc" id="L220">                    newStatus = LiftStatus.IDLE;</span>
+<span class="nc bnc" id="L221" title="All 2 branches missed.">                } else if (currentStatus == LiftStatus.IDLE) {</span>
+                    // Can now start opening doors.
+<span class="nc" id="L223">                    newStatus = LiftStatus.DOORS_OPENING;</span>
+<span class="nc" id="L224">                    doorTicksRemaining = doorTransitionTicks;</span>
+<span class="nc" id="L225">                    movementTicksRemaining = 0;</span>
+<span class="nc" id="L226">                    doorDwellTicksRemaining = 0;</span>
+<span class="nc" id="L227">                    doorClosingTicksElapsed = 0;</span>
+                }
+                /*
+                 * Note: DOORS_CLOSING reopen handled in tick() to interrupt in-progress transition.
+                 * If already DOORS_OPENING or DOORS_OPEN, stay in current state.
+                 */
+                break;
+            case CLOSE_DOOR:
+<span class="nc bnc" id="L235" title="All 2 branches missed.">                if (doorDwellTicksRemaining &gt; 0) {</span>
+<span class="nc" id="L236">                    return new ActionResult(state, true);</span>
+                }
+<span class="nc bnc" id="L238" title="All 4 branches missed.">                if (currentStatus == LiftStatus.DOORS_OPEN || currentStatus == LiftStatus.DOORS_OPENING) {</span>
+<span class="nc" id="L239">                    newStatus = LiftStatus.DOORS_CLOSING;</span>
+<span class="nc" id="L240">                    doorTicksRemaining = doorTransitionTicks;</span>
+<span class="nc" id="L241">                    movementTicksRemaining = 0;</span>
+<span class="nc" id="L242">                    doorDwellTicksRemaining = 0;</span>
+<span class="nc" id="L243">                    doorClosingTicksElapsed = 0;  // Reset when doors start closing.</span>
+                }
+                break;
+            case IDLE:
+                // Complete transitional states or stop movement.
+<span class="nc bnc" id="L248" title="All 4 branches missed.">                if (currentStatus == LiftStatus.MOVING_UP ||</span>
+                           currentStatus == LiftStatus.MOVING_DOWN) {
+<span class="nc" id="L250">                    newStatus = LiftStatus.IDLE;</span>
+                }
+                // Otherwise stay in current status.
+                break;
+        }
+
+        // Validate the state transition.
+<span class="nc bnc" id="L257" title="All 2 branches missed.">        if (!StateTransitionValidator.isValidTransition(currentStatus, newStatus)) {</span>
+            // Invalid transition - return current state unchanged.
+<span class="nc" id="L259">            LOGGER.warning(String.format(</span>
+                &quot;Invalid state transition for action %s: %s -&gt; %s at floor %d (tick %d)&quot;,
+                action,
+                currentStatus,
+                newStatus,
+<span class="nc" id="L264">                state.getFloor(),</span>
+<span class="nc" id="L265">                clock.getCurrentTick()</span>
+            ));
+<span class="nc" id="L267">            return new ActionResult(state, false);</span>
+        }
+
+<span class="nc" id="L270">        return new ActionResult(new LiftState(newFloor, newStatus), true);</span>
+    }
+
+    public long getCurrentTick() {
+<span class="nc" id="L274">        return clock.getCurrentTick();</span>
+    }
+
+    public LiftState getCurrentState() {
+<span class="nc" id="L278">        return currentState;</span>
+    }
+
+    /**
+     * Takes the lift out of service.
+     * This initiates a graceful shutdown sequence:
+     * 1. If moving: completes movement to the next floor
+     * 2. Opens doors to allow passengers to exit
+     * 3. Closes doors
+     * 4. Transitions to OUT_OF_SERVICE state
+     *
+     * Best practice: Call controller.takeOutOfService() first to cancel all active requests
+     * before calling this method.
+     *
+     * @throws IllegalStateException if the lift is already out of service or pending
+     */
+    public void setOutOfService() {
+<span class="nc bnc" id="L295" title="All 2 branches missed.">        if (currentState.getStatus() == LiftStatus.OUT_OF_SERVICE) {</span>
+<span class="nc" id="L296">            throw new IllegalStateException(&quot;Lift is already out of service&quot;);</span>
+        }
+
+<span class="nc bnc" id="L299" title="All 2 branches missed.">        if (outOfServicePending) {</span>
+<span class="nc" id="L300">            throw new IllegalStateException(&quot;Lift is already pending out of service&quot;);</span>
+        }
+
+        // Validate that we can eventually transition to OUT_OF_SERVICE.
+<span class="nc bnc" id="L304" title="All 2 branches missed.">        if (!StateTransitionValidator.isValidTransition(currentState.getStatus(), LiftStatus.OUT_OF_SERVICE)) {</span>
+<span class="nc" id="L305">            throw new IllegalStateException(</span>
+<span class="nc" id="L306">                String.format(&quot;Cannot transition to OUT_OF_SERVICE from %s&quot;, currentState.getStatus())</span>
+            );
+        }
+
+        // Set pending flag to initiate graceful shutdown sequence.
+<span class="nc" id="L311">        outOfServicePending = true;</span>
+<span class="nc bnc" id="L312" title="All 2 branches missed.">        outOfServiceDoorsOpened = currentState.getStatus() == LiftStatus.DOORS_OPEN ||</span>
+<span class="nc bnc" id="L313" title="All 2 branches missed.">            currentState.getStatus() == LiftStatus.DOORS_OPENING;</span>
+
+        /*
+         * Determine target floor for graceful shutdown.
+         * If moving, complete movement to the next floor in direction of travel.
+         */
+<span class="nc bnc" id="L319" title="All 2 branches missed.">        if (currentState.getStatus() == LiftStatus.MOVING_UP) {</span>
+<span class="nc" id="L320">            outOfServiceTargetFloor = Math.min(maxFloor, currentState.getFloor() + 1);</span>
+<span class="nc bnc" id="L321" title="All 2 branches missed.">        } else if (currentState.getStatus() == LiftStatus.MOVING_DOWN) {</span>
+<span class="nc" id="L322">            outOfServiceTargetFloor = Math.max(minFloor, currentState.getFloor() - 1);</span>
+        } else {
+            // Not moving, stop at current floor.
+<span class="nc" id="L325">            outOfServiceTargetFloor = currentState.getFloor();</span>
+        }
+
+        // If doors are already open, skip remaining dwell time for emergency shutdown.
+<span class="nc bnc" id="L329" title="All 4 branches missed.">        if (currentState.getStatus() == LiftStatus.DOORS_OPEN &amp;&amp; doorDwellTicksRemaining &gt; 0) {</span>
+<span class="nc" id="L330">            doorDwellTicksRemaining = 0;</span>
+        }
+<span class="nc" id="L332">    }</span>
+
+    /**
+     * Returns the lift to service from OUT_OF_SERVICE state.
+     * This transitions the lift from OUT_OF_SERVICE to IDLE, allowing it to accept
+     * requests and operate normally again.
+     *
+     * @throws IllegalStateException if the lift is not currently out of service
+     */
+    public void returnToService() {
+<span class="nc bnc" id="L342" title="All 2 branches missed.">        if (outOfServicePending) {</span>
+<span class="nc" id="L343">            returnToServicePending = true;</span>
+<span class="nc" id="L344">            return;</span>
+        }
+
+<span class="nc bnc" id="L347" title="All 2 branches missed.">        if (currentState.getStatus() != LiftStatus.OUT_OF_SERVICE) {</span>
+<span class="nc" id="L348">            throw new IllegalStateException(</span>
+<span class="nc" id="L349">                String.format(&quot;Cannot return to service from %s state (must be OUT_OF_SERVICE)&quot;,</span>
+<span class="nc" id="L350">                    currentState.getStatus())</span>
+            );
+        }
+
+        // Validate transition.
+<span class="nc bnc" id="L355" title="All 2 branches missed.">        if (!StateTransitionValidator.isValidTransition(LiftStatus.OUT_OF_SERVICE, LiftStatus.IDLE)) {</span>
+<span class="nc" id="L356">            throw new IllegalStateException(&quot;Cannot transition from OUT_OF_SERVICE to IDLE&quot;);</span>
+        }
+
+        // Transition to IDLE.
+<span class="nc" id="L360">        currentState = new LiftState(currentState.getFloor(), LiftStatus.IDLE);</span>
+<span class="nc" id="L361">        returnToServicePending = false;</span>
+<span class="nc" id="L362">    }</span>
+
+    /**
+     * Handles the graceful out-of-service transition sequence.
+     * This method is called on each tick when outOfServicePending is true.
+     */
+    private void handleOutOfServiceTransition() {
+<span class="nc" id="L369">        LiftStatus status = currentState.getStatus();</span>
+
+        // Step 1: If moving, continue until we reach the target floor, then stop.
+<span class="nc bnc" id="L372" title="All 4 branches missed.">        if (status == LiftStatus.MOVING_UP || status == LiftStatus.MOVING_DOWN) {</span>
+<span class="nc bnc" id="L373" title="All 2 branches missed.">            if (currentState.getFloor() != outOfServiceTargetFloor) {</span>
+                // Haven't reached target floor yet, continue moving.
+<span class="nc bnc" id="L375" title="All 2 branches missed.">                if (movementTicksRemaining &gt; 0) {</span>
+<span class="nc" id="L376">                    advanceMovement();</span>
+<span class="nc" id="L377">                    return;</span>
+                }
+                // Need to start movement to next floor.
+<span class="nc" id="L380">                movementTicksRemaining = travelTicksPerFloor;</span>
+<span class="nc" id="L381">                advanceMovement();</span>
+<span class="nc" id="L382">                return;</span>
+            }
+            // Reached target floor, transition to IDLE.
+<span class="nc" id="L385">            currentState = new LiftState(currentState.getFloor(), LiftStatus.IDLE);</span>
+<span class="nc" id="L386">            status = LiftStatus.IDLE;  // Update local variable to allow fall-through.</span>
+            // Fall through to Step 4 to start opening doors on the same tick.
+        }
+
+        // Step 2: If doors are in transition, let them complete.
+<span class="nc bnc" id="L391" title="All 4 branches missed.">        if (status == LiftStatus.DOORS_OPENING || status == LiftStatus.DOORS_CLOSING) {</span>
+<span class="nc bnc" id="L392" title="All 2 branches missed.">            if (doorTicksRemaining &gt; 0) {</span>
+<span class="nc" id="L393">                advanceDoorTransition();</span>
+<span class="nc" id="L394">                status = currentState.getStatus();  // Update status after transition.</span>
+<span class="nc bnc" id="L395" title="All 2 branches missed.">                if (doorTicksRemaining &gt; 0) {</span>
+                    // Still in transition.
+<span class="nc" id="L397">                    return;</span>
+                }
+                // Transition completed on this tick, fall through to next step.
+            } else {
+                // Door transition already complete, update status and fall through.
+<span class="nc" id="L402">                status = currentState.getStatus();</span>
+            }
+        }
+
+        // Step 3: If doors are open, handle dwell time.
+<span class="nc bnc" id="L407" title="All 2 branches missed.">        if (status == LiftStatus.DOORS_OPEN) {</span>
+<span class="nc" id="L408">            advanceDoorDwell();</span>
+<span class="nc" id="L409">            return;</span>
+        }
+
+        // Step 4: At this point we're IDLE. If we haven't opened doors yet, open them.
+<span class="nc bnc" id="L413" title="All 4 branches missed.">        if (status == LiftStatus.IDLE &amp;&amp; !outOfServiceDoorsOpened) {</span>
+<span class="nc" id="L414">            currentState = new LiftState(currentState.getFloor(), LiftStatus.DOORS_OPENING);</span>
+<span class="nc" id="L415">            doorTicksRemaining = doorTransitionTicks;</span>
+<span class="nc" id="L416">            doorClosingTicksElapsed = 0;</span>
+<span class="nc" id="L417">            outOfServiceDoorsOpened = true;</span>
+<span class="nc" id="L418">            advanceDoorTransition();</span>
+<span class="nc" id="L419">            return;</span>
+        }
+
+        // Step 5: If we're IDLE and doors have been opened/closed, transition to OUT_OF_SERVICE.
+<span class="nc bnc" id="L423" title="All 4 branches missed.">        if (status == LiftStatus.IDLE &amp;&amp; outOfServiceDoorsOpened) {</span>
+<span class="nc" id="L424">            currentState = new LiftState(currentState.getFloor(), LiftStatus.OUT_OF_SERVICE);</span>
+<span class="nc" id="L425">            outOfServicePending = false;</span>
+<span class="nc" id="L426">            outOfServiceDoorsOpened = false;</span>
+            // Reset all timing counters.
+<span class="nc" id="L428">            movementTicksRemaining = 0;</span>
+<span class="nc" id="L429">            doorTicksRemaining = 0;</span>
+<span class="nc" id="L430">            doorDwellTicksRemaining = 0;</span>
+<span class="nc" id="L431">            doorClosingTicksElapsed = 0;</span>
+<span class="nc bnc" id="L432" title="All 2 branches missed.">            if (returnToServicePending) {</span>
+<span class="nc" id="L433">                returnToService();</span>
+            }
+        }
+<span class="nc" id="L436">    }</span>
+
+    private void handleMovementTick(Action action) {
+<span class="nc bnc" id="L439" title="All 2 branches missed.">        if (movementTicksRemaining &gt; 0) {</span>
+<span class="nc" id="L440">            advanceMovement();</span>
+<span class="nc" id="L441">            return;</span>
+        }
+
+<span class="nc" id="L444">        handleIdleTick(action);</span>
+<span class="nc" id="L445">    }</span>
+
+    private void handleDoorTransitionTick(Action action) {
+<span class="nc bnc" id="L448" title="All 2 branches missed.">        if (doorTicksRemaining &gt; 0) {</span>
+            // Special case: check for door reopening during closing.
+<span class="nc bnc" id="L450" title="All 6 branches missed.">            if (currentState.getStatus() == LiftStatus.DOORS_CLOSING &amp;&amp;</span>
+                action == Action.OPEN_DOOR &amp;&amp;
+                doorClosingTicksElapsed &lt; doorReopenWindowTicks) {
+                // Interrupt closing and start reopening.
+<span class="nc" id="L454">                currentState = new LiftState(currentState.getFloor(), LiftStatus.DOORS_OPENING);</span>
+<span class="nc" id="L455">                doorTicksRemaining = doorTransitionTicks;</span>
+<span class="nc" id="L456">                doorClosingTicksElapsed = 0;</span>
+            }
+<span class="nc" id="L458">            advanceDoorTransition();</span>
+<span class="nc" id="L459">            return;</span>
+        }
+
+<span class="nc" id="L462">        handleIdleTick(action);</span>
+<span class="nc" id="L463">    }</span>
+
+    private void handleDoorDwellTick(Action action) {
+<span class="nc bnc" id="L466" title="All 2 branches missed.">        if (doorDwellTicksRemaining &gt; 0) {</span>
+<span class="nc" id="L467">            advanceDoorDwell();</span>
+<span class="nc" id="L468">            return;</span>
+        }
+
+<span class="nc" id="L471">        handleIdleTick(action);</span>
+<span class="nc" id="L472">    }</span>
+
+    private void handleIdleTick(Action action) {
+        // Apply action to get new state.
+<span class="nc" id="L476">        ActionResult result = startAction(currentState, action);</span>
+<span class="nc" id="L477">        currentState = result.state();</span>
+<span class="nc bnc" id="L478" title="All 2 branches missed.">        if (!result.success()) {</span>
+<span class="nc" id="L479">            return;</span>
+        }
+
+<span class="nc bnc" id="L482" title="All 2 branches missed.">        if (movementTicksRemaining &gt; 0) {</span>
+<span class="nc" id="L483">            advanceMovement();</span>
+<span class="nc bnc" id="L484" title="All 2 branches missed.">        } else if (doorTicksRemaining &gt; 0) {</span>
+<span class="nc" id="L485">            advanceDoorTransition();</span>
+<span class="nc bnc" id="L486" title="All 2 branches missed.">        } else if (doorDwellTicksRemaining &gt; 0) {</span>
+<span class="nc" id="L487">            advanceDoorDwell();</span>
+        }
+<span class="nc" id="L489">    }</span>
+
+    private void logInvalidAction(Action action, LiftStatus currentStatus, LiftState state) {
+<span class="nc" id="L492">        LOGGER.warning(String.format(</span>
+            &quot;Invalid action %s attempted in state %s at floor %d (tick %d)&quot;,
+            action,
+            currentStatus,
+<span class="nc" id="L496">            state.getFloor(),</span>
+<span class="nc" id="L497">            clock.getCurrentTick()</span>
+        ));
+<span class="nc" id="L499">    }</span>
+
+    private void advanceMovement() {
+<span class="nc" id="L502">        movementTicksRemaining--;</span>
+<span class="nc bnc" id="L503" title="All 2 branches missed.">        if (movementTicksRemaining &gt; 0) {</span>
+<span class="nc" id="L504">            return;</span>
+        }
+
+<span class="nc" id="L507">        int newFloor = currentState.getFloor();</span>
+<span class="nc" id="L508">        LiftStatus newStatus = currentState.getStatus();</span>
+
+<span class="nc bnc" id="L510" title="All 2 branches missed.">        if (currentState.getStatus() == LiftStatus.MOVING_UP) {</span>
+<span class="nc" id="L511">            newFloor = Math.min(maxFloor, newFloor + 1);</span>
+<span class="nc bnc" id="L512" title="All 2 branches missed.">        } else if (currentState.getStatus() == LiftStatus.MOVING_DOWN) {</span>
+<span class="nc" id="L513">            newFloor = Math.max(minFloor, newFloor - 1);</span>
+        }
+
+<span class="nc bnc" id="L516" title="All 2 branches missed.">        if (StateTransitionValidator.isValidTransition(currentState.getStatus(), newStatus)) {</span>
+<span class="nc" id="L517">            currentState = new LiftState(newFloor, newStatus);</span>
+        }
+<span class="nc" id="L519">    }</span>
+
+    private void advanceDoorTransition() {
+<span class="nc" id="L522">        doorTicksRemaining--;</span>
+
+        // Track elapsed ticks during door closing.
+<span class="nc bnc" id="L525" title="All 2 branches missed.">        if (currentState.getStatus() == LiftStatus.DOORS_CLOSING) {</span>
+<span class="nc" id="L526">            doorClosingTicksElapsed++;</span>
+        }
+
+<span class="nc bnc" id="L529" title="All 2 branches missed.">        if (doorTicksRemaining &gt; 0) {</span>
+<span class="nc" id="L530">            return;</span>
+        }
+
+<span class="nc" id="L533">        LiftStatus newStatus = currentState.getStatus();</span>
+<span class="nc bnc" id="L534" title="All 2 branches missed.">        if (currentState.getStatus() == LiftStatus.DOORS_OPENING) {</span>
+<span class="nc" id="L535">            newStatus = LiftStatus.DOORS_OPEN;</span>
+<span class="nc bnc" id="L536" title="All 2 branches missed.">        } else if (currentState.getStatus() == LiftStatus.DOORS_CLOSING) {</span>
+<span class="nc" id="L537">            newStatus = LiftStatus.IDLE;</span>
+<span class="nc" id="L538">            doorClosingTicksElapsed = 0;  // Reset when door closing completes.</span>
+        }
+
+<span class="nc bnc" id="L541" title="All 2 branches missed.">        if (StateTransitionValidator.isValidTransition(currentState.getStatus(), newStatus)) {</span>
+<span class="nc" id="L542">            currentState = new LiftState(currentState.getFloor(), newStatus);</span>
+<span class="nc bnc" id="L543" title="All 2 branches missed.">            if (newStatus == LiftStatus.DOORS_OPEN) {</span>
+<span class="nc" id="L544">                doorDwellTicksRemaining = doorDwellTicks;</span>
+            }
+        }
+<span class="nc" id="L547">    }</span>
+
+    private void advanceDoorDwell() {
+<span class="nc bnc" id="L550" title="All 2 branches missed.">        if (currentState.getStatus() != LiftStatus.DOORS_OPEN) {</span>
+<span class="nc" id="L551">            doorDwellTicksRemaining = 0;</span>
+<span class="nc" id="L552">            return;</span>
+        }
+
+<span class="nc" id="L555">        doorDwellTicksRemaining--;</span>
+<span class="nc bnc" id="L556" title="All 2 branches missed.">        if (doorDwellTicksRemaining &gt; 0) {</span>
+<span class="nc" id="L557">            return;</span>
+        }
+
+<span class="nc" id="L560">        LiftStatus newStatus = LiftStatus.DOORS_CLOSING;</span>
+<span class="nc bnc" id="L561" title="All 2 branches missed.">        if (StateTransitionValidator.isValidTransition(currentState.getStatus(), newStatus)) {</span>
+<span class="nc" id="L562">            currentState = new LiftState(currentState.getFloor(), newStatus);</span>
+<span class="nc" id="L563">            doorTicksRemaining = doorTransitionTicks;</span>
+<span class="nc" id="L564">            doorClosingTicksElapsed = 0;  // Reset when automatic door closing starts.</span>
+<span class="nc" id="L565">            advanceDoorTransition();</span>
+        }
+<span class="nc" id="L567">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

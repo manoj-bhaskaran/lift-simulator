@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SimulationRunResponse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.admin.dto</a> &gt; <span class="el_source">SimulationRunResponse.java</span></div><h1>SimulationRunResponse.java</h1><pre class="source lang-java linenums">package com.liftsimulator.admin.dto;
+
+import com.liftsimulator.admin.entity.SimulationRun;
+import com.liftsimulator.admin.entity.SimulationRun.RunStatus;
+
+import java.time.OffsetDateTime;
+
+/**
+ * Response DTO for simulation run details.
+ */
+<span class="nc" id="L11">public record SimulationRunResponse(</span>
+    Long id,
+    Long liftSystemId,
+    Long versionId,
+    Long scenarioId,
+    RunStatus status,
+    OffsetDateTime createdAt,
+    OffsetDateTime startedAt,
+    OffsetDateTime endedAt,
+    Long totalTicks,
+    Long currentTick,
+    Long seed,
+    String errorMessage,
+    String artefactBasePath
+) {
+    /**
+     * Creates a response DTO from a SimulationRun entity.
+     *
+     * @param run the entity to convert
+     * @return the response DTO
+     */
+    public static SimulationRunResponse fromEntity(SimulationRun run) {
+<span class="nc" id="L33">        return new SimulationRunResponse(</span>
+<span class="nc" id="L34">            run.getId(),</span>
+<span class="nc bnc" id="L35" title="All 2 branches missed.">            run.getLiftSystem() != null ? run.getLiftSystem().getId() : null,</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">            run.getVersion() != null ? run.getVersion().getId() : null,</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">            run.getScenario() != null ? run.getScenario().getId() : null,</span>
+<span class="nc" id="L38">            run.getStatus(),</span>
+<span class="nc" id="L39">            run.getCreatedAt(),</span>
+<span class="nc" id="L40">            run.getStartedAt(),</span>
+<span class="nc" id="L41">            run.getEndedAt(),</span>
+<span class="nc" id="L42">            run.getTotalTicks(),</span>
+<span class="nc" id="L43">            run.getCurrentTick(),</span>
+<span class="nc" id="L44">            run.getSeed(),</span>
+<span class="nc" id="L45">            run.getErrorMessage(),</span>
+<span class="nc" id="L46">            run.getArtefactBasePath()</span>
+        );
+    }
+
+    /**
+     * Calculates progress percentage for the simulation run.
+     *
+     * @return progress percentage (0-100) or null if not applicable
+     */
+    public Double getProgressPercentage() {
+<span class="nc bnc" id="L56" title="All 6 branches missed.">        if (totalTicks == null || totalTicks == 0 || currentTick == null) {</span>
+<span class="nc" id="L57">            return null;</span>
+        }
+<span class="nc" id="L59">        return (currentTick.doubleValue() / totalTicks.doubleValue()) * 100.0;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

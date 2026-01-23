@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VersionResponse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.admin.dto</a> &gt; <span class="el_source">VersionResponse.java</span></div><h1>VersionResponse.java</h1><pre class="source lang-java linenums">package com.liftsimulator.admin.dto;
+
+import com.liftsimulator.admin.entity.LiftSystemVersion;
+import com.liftsimulator.admin.entity.LiftSystemVersion.VersionStatus;
+import java.time.OffsetDateTime;
+
+/**
+ * Response DTO for lift system version details.
+ */
+<span class="nc" id="L10">public record VersionResponse(</span>
+    Long id,
+    Long liftSystemId,
+    Integer versionNumber,
+    VersionStatus status,
+    Boolean isPublished,
+    OffsetDateTime publishedAt,
+    String config,
+    OffsetDateTime createdAt,
+    OffsetDateTime updatedAt
+) {
+    /**
+     * Creates a response DTO from a LiftSystemVersion entity.
+     *
+     * @param version the entity to convert
+     * @return the response DTO
+     */
+    public static VersionResponse fromEntity(LiftSystemVersion version) {
+<span class="nc" id="L28">        return new VersionResponse(</span>
+<span class="nc" id="L29">            version.getId(),</span>
+<span class="nc" id="L30">            version.getLiftSystem().getId(),</span>
+<span class="nc" id="L31">            version.getVersionNumber(),</span>
+<span class="nc" id="L32">            version.getStatus(),</span>
+<span class="nc" id="L33">            version.getIsPublished(),</span>
+<span class="nc" id="L34">            version.getPublishedAt(),</span>
+<span class="nc" id="L35">            version.getConfig(),</span>
+<span class="nc" id="L36">            version.getCreatedAt(),</span>
+<span class="nc" id="L37">            version.getUpdatedAt()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -10,6 +10,21 @@ jobs:
   backend:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: lift_simulator_test
+          POSTGRES_USER: lift_admin
+          POSTGRES_PASSWORD: liftpassword
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -21,11 +36,23 @@ jobs:
         distribution: 'temurin'
         cache: 'maven'
 
+    - name: Create test database schema
+      run: |
+        PGPASSWORD=liftpassword psql -h localhost -U lift_admin -d lift_simulator_test -c "CREATE SCHEMA IF NOT EXISTS lift_simulator;"
+        PGPASSWORD=liftpassword psql -h localhost -U lift_admin -d lift_simulator_test -c "GRANT ALL PRIVILEGES ON SCHEMA lift_simulator TO lift_admin;"
+      env:
+        PGPASSWORD: liftpassword
+
     - name: Build project
       run: mvn -q clean compile
 
     - name: Run tests with coverage
       run: mvn -q test jacoco:report
+      env:
+        SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/lift_simulator_test
+        SPRING_DATASOURCE_USERNAME: lift_admin
+        SPRING_DATASOURCE_PASSWORD: liftpassword
+        PGPASSWORD: liftpassword
 
     - name: Check code style
       run: mvn -q checkstyle:check

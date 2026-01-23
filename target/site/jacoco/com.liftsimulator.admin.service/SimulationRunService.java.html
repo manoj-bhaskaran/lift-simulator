@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SimulationRunService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.admin.service</a> &gt; <span class="el_source">SimulationRunService.java</span></div><h1>SimulationRunService.java</h1><pre class="source lang-java linenums">package com.liftsimulator.admin.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liftsimulator.admin.dto.ScenarioDefinitionDTO;
+import com.liftsimulator.admin.entity.LiftSystem;
+import com.liftsimulator.admin.entity.LiftSystemVersion;
+import com.liftsimulator.admin.entity.SimulationRun;
+import com.liftsimulator.admin.entity.SimulationRun.RunStatus;
+import com.liftsimulator.admin.entity.SimulationScenario;
+import com.liftsimulator.admin.repository.LiftSystemRepository;
+import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
+import com.liftsimulator.admin.repository.SimulationRunRepository;
+import com.liftsimulator.admin.repository.SimulationScenarioRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Random;
+
+/**
+ * Service for managing simulation runs.
+ */
+@Service
+@Transactional(readOnly = true)
+public class SimulationRunService {
+
+    private final SimulationRunRepository runRepository;
+    private final LiftSystemRepository liftSystemRepository;
+    private final LiftSystemVersionRepository versionRepository;
+    private final SimulationScenarioRepository scenarioRepository;
+    private final BatchInputGenerator batchInputGenerator;
+    private final ObjectMapper objectMapper;
+    private final String artefactsBasePath;
+    private SimulationRunExecutionService executionService;
+
+    public SimulationRunService(
+            SimulationRunRepository runRepository,
+            LiftSystemRepository liftSystemRepository,
+            LiftSystemVersionRepository versionRepository,
+            SimulationScenarioRepository scenarioRepository,
+            BatchInputGenerator batchInputGenerator,
+            ObjectMapper objectMapper,
+<span class="nc" id="L48">            @Value(&quot;${simulation.artefacts.base-path:./simulation-runs}&quot;) String artefactsBasePath) {</span>
+<span class="nc" id="L49">        this.runRepository = runRepository;</span>
+<span class="nc" id="L50">        this.liftSystemRepository = liftSystemRepository;</span>
+<span class="nc" id="L51">        this.versionRepository = versionRepository;</span>
+<span class="nc" id="L52">        this.scenarioRepository = scenarioRepository;</span>
+<span class="nc" id="L53">        this.batchInputGenerator = batchInputGenerator;</span>
+<span class="nc" id="L54">        this.objectMapper = objectMapper;</span>
+<span class="nc" id="L55">        this.artefactsBasePath = artefactsBasePath;</span>
+<span class="nc" id="L56">    }</span>
+
+    /**
+     * Sets the execution service. This is called by Spring after construction
+     * to avoid circular dependency issues.
+     *
+     * @param executionService the execution service
+     */
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setExecutionService(SimulationRunExecutionService executionService) {
+<span class="nc" id="L66">        this.executionService = executionService;</span>
+<span class="nc" id="L67">    }</span>
+
+    /**
+     * Create a new simulation run without a scenario (ad-hoc run).
+     *
+     * @param liftSystemId the lift system id
+     * @param versionId the version id
+     * @return the created run
+     * @throws ResourceNotFoundException if the lift system or version is not found
+     * @throws IllegalArgumentException if the version does not belong to the lift system
+     */
+    @Transactional
+    public SimulationRun createRun(Long liftSystemId, Long versionId) {
+<span class="nc" id="L80">        LiftSystem liftSystem = liftSystemRepository.findById(liftSystemId)</span>
+<span class="nc" id="L81">                .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                        &quot;Lift system not found with id: &quot; + liftSystemId));
+
+<span class="nc" id="L84">        LiftSystemVersion version = versionRepository.findById(versionId)</span>
+<span class="nc" id="L85">                .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                        &quot;Lift system version not found with id: &quot; + versionId));
+
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (!version.getLiftSystem().getId().equals(liftSystemId)) {</span>
+<span class="nc" id="L89">            throw new IllegalArgumentException(</span>
+                    &quot;Version &quot; + versionId + &quot; does not belong to lift system &quot; + liftSystemId);
+        }
+
+<span class="nc" id="L93">        SimulationRun run = new SimulationRun(liftSystem, version);</span>
+<span class="nc" id="L94">        return runRepository.save(run);</span>
+    }
+
+    /**
+     * Create a new simulation run with a scenario.
+     *
+     * @param liftSystemId the lift system id
+     * @param versionId the version id
+     * @param scenarioId the scenario id
+     * @return the created run
+     * @throws ResourceNotFoundException if any of the entities is not found
+     * @throws IllegalArgumentException if the version does not belong to the lift system
+     */
+    @Transactional
+    public SimulationRun createRunWithScenario(Long liftSystemId, Long versionId, Long scenarioId) {
+<span class="nc" id="L109">        LiftSystem liftSystem = liftSystemRepository.findById(liftSystemId)</span>
+<span class="nc" id="L110">                .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                        &quot;Lift system not found with id: &quot; + liftSystemId));
+
+<span class="nc" id="L113">        LiftSystemVersion version = versionRepository.findById(versionId)</span>
+<span class="nc" id="L114">                .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                        &quot;Lift system version not found with id: &quot; + versionId));
+
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (!version.getLiftSystem().getId().equals(liftSystemId)) {</span>
+<span class="nc" id="L118">            throw new IllegalArgumentException(</span>
+                    &quot;Version &quot; + versionId + &quot; does not belong to lift system &quot; + liftSystemId);
+        }
+
+<span class="nc" id="L122">        SimulationScenario scenario = scenarioRepository.findById(scenarioId)</span>
+<span class="nc" id="L123">                .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                        &quot;Simulation scenario not found with id: &quot; + scenarioId));
+
+<span class="nc" id="L126">        SimulationRun run = new SimulationRun(liftSystem, version, scenario);</span>
+<span class="nc" id="L127">        return runRepository.save(run);</span>
+    }
+
+    /**
+     * Create and immediately start a simulation run.
+     * This method creates the run, sets up the artefact directory, configures it, and starts execution.
+     *
+     * @param liftSystemId the lift system id
+     * @param versionId the version id
+     * @param scenarioId the scenario id (optional)
+     * @param seed the random seed (optional, will be generated if not provided)
+     * @return the started run
+     * @throws ResourceNotFoundException if any of the entities is not found
+     * @throws IllegalArgumentException if the version does not belong to the lift system
+     * @throws IOException if artefact directory creation fails
+     */
+    @Transactional
+    public SimulationRun createAndStartRun(Long liftSystemId, Long versionId, Long scenarioId, Long seed)
+            throws IOException {
+        // Create the run
+        SimulationRun run;
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        if (scenarioId != null) {</span>
+<span class="nc" id="L149">            run = createRunWithScenario(liftSystemId, versionId, scenarioId);</span>
+        } else {
+<span class="nc" id="L151">            run = createRun(liftSystemId, versionId);</span>
+        }
+
+        // Generate seed if not provided
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        Long runSeed = seed != null ? seed : new Random().nextLong();</span>
+
+        // Set up artefact directory
+<span class="nc" id="L158">        String artefactPath = setupArtefactDirectory(run.getId());</span>
+
+        // Configure the run with default total ticks (this can be updated later)
+<span class="nc" id="L161">        run.setTotalTicks(10000L); // Default value, can be configured</span>
+<span class="nc" id="L162">        run.setSeed(runSeed);</span>
+<span class="nc" id="L163">        run.setArtefactBasePath(artefactPath);</span>
+
+        // Save configuration
+<span class="nc" id="L166">        run = runRepository.save(run);</span>
+
+        // Generate batch input file if scenario is present
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        if (run.getScenario() != null) {</span>
+<span class="nc" id="L170">            generateBatchInputFile(run.getId());</span>
+        }
+
+        // Submit the run for execution
+        // The execution service will transition the run to RUNNING and handle the actual simulation
+<span class="nc" id="L175">        executionService.submitRunForExecution(run.getId());</span>
+<span class="nc" id="L176">        return run;</span>
+    }
+
+    /**
+     * Sets up the artefact directory for a simulation run.
+     *
+     * @param runId the run ID
+     * @return the absolute path to the artefact directory
+     * @throws IOException if directory creation fails
+     */
+    private String setupArtefactDirectory(Long runId) throws IOException {
+<span class="nc" id="L187">        Path baseDir = Paths.get(artefactsBasePath);</span>
+<span class="nc" id="L188">        Path runDir = baseDir.resolve(&quot;run-&quot; + runId);</span>
+
+<span class="nc" id="L190">        Files.createDirectories(runDir);</span>
+
+<span class="nc" id="L192">        return runDir.toAbsolutePath().toString();</span>
+    }
+
+    /**
+     * Get all simulation runs.
+     *
+     * @return list of all runs
+     */
+    public List&lt;SimulationRun&gt; getAllRuns() {
+<span class="nc" id="L201">        return runRepository.findAll();</span>
+    }
+
+    /**
+     * Get a run by its ID.
+     *
+     * @param id the run id
+     * @return the run
+     * @throws ResourceNotFoundException if the run is not found
+     */
+    public SimulationRun getRunById(Long id) {
+<span class="nc" id="L212">        return runRepository.findById(id)</span>
+<span class="nc" id="L213">                .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                        &quot;Simulation run not found with id: &quot; + id));
+    }
+
+    /**
+     * Get all runs for a specific lift system.
+     *
+     * @param liftSystemId the lift system id
+     * @return list of runs ordered by creation date descending
+     */
+    public List&lt;SimulationRun&gt; getRunsByLiftSystem(Long liftSystemId) {
+<span class="nc" id="L224">        return runRepository.findByLiftSystemIdOrderByCreatedAtDesc(liftSystemId);</span>
+    }
+
+    /**
+     * Get all runs with a specific status.
+     *
+     * @param status the run status
+     * @return list of runs ordered by creation date descending
+     */
+    public List&lt;SimulationRun&gt; getRunsByStatus(RunStatus status) {
+<span class="nc" id="L234">        return runRepository.findByStatusOrderByCreatedAtDesc(status);</span>
+    }
+
+    /**
+     * Get all active (CREATED or RUNNING) runs for a lift system.
+     *
+     * @param liftSystemId the lift system id
+     * @return list of active runs ordered by creation date descending
+     */
+    public List&lt;SimulationRun&gt; getActiveRunsByLiftSystem(Long liftSystemId) {
+<span class="nc" id="L244">        return runRepository.findActiveRunsByLiftSystemId(liftSystemId);</span>
+    }
+
+    /**
+     * Start a simulation run.
+     * Transitions from CREATED to RUNNING.
+     *
+     * @param id the run id
+     * @return the updated run
+     * @throws ResourceNotFoundException if the run is not found
+     * @throws IllegalStateException if the run is not in CREATED state
+     */
+    @Transactional
+    public SimulationRun startRun(Long id) {
+<span class="nc" id="L258">        SimulationRun run = getRunById(id);</span>
+<span class="nc" id="L259">        run.start();</span>
+<span class="nc" id="L260">        return runRepository.save(run);</span>
+    }
+
+    /**
+     * Mark a simulation run as succeeded.
+     * Transitions from RUNNING to SUCCEEDED.
+     *
+     * @param id the run id
+     * @return the updated run
+     * @throws ResourceNotFoundException if the run is not found
+     * @throws IllegalStateException if the run is not in RUNNING state
+     */
+    @Transactional
+    public SimulationRun succeedRun(Long id) {
+<span class="nc" id="L274">        SimulationRun run = getRunById(id);</span>
+<span class="nc" id="L275">        run.succeed();</span>
+<span class="nc" id="L276">        return runRepository.save(run);</span>
+    }
+
+    /**
+     * Mark a simulation run as failed.
+     * Transitions from RUNNING to FAILED.
+     *
+     * @param id the run id
+     * @param errorMessage the error message describing the failure
+     * @return the updated run
+     * @throws ResourceNotFoundException if the run is not found
+     * @throws IllegalStateException if the run is not in RUNNING state
+     */
+    @Transactional
+    public SimulationRun failRun(Long id, String errorMessage) {
+<span class="nc" id="L291">        SimulationRun run = getRunById(id);</span>
+<span class="nc" id="L292">        run.fail(errorMessage);</span>
+<span class="nc" id="L293">        return runRepository.save(run);</span>
+    }
+
+    /**
+     * Cancel a simulation run.
+     * Can transition from CREATED or RUNNING to CANCELLED.
+     *
+     * @param id the run id
+     * @return the updated run
+     * @throws ResourceNotFoundException if the run is not found
+     * @throws IllegalStateException if the run is not in CREATED or RUNNING state
+     */
+    @Transactional
+    public SimulationRun cancelRun(Long id) {
+<span class="nc" id="L307">        SimulationRun run = getRunById(id);</span>
+<span class="nc" id="L308">        run.cancel();</span>
+<span class="nc" id="L309">        return runRepository.save(run);</span>
+    }
+
+    /**
+     * Update the progress of a running simulation.
+     *
+     * @param id the run id
+     * @param currentTick the current tick number
+     * @return the updated run
+     * @throws ResourceNotFoundException if the run is not found
+     */
+    @Transactional
+    public SimulationRun updateProgress(Long id, Long currentTick) {
+<span class="nc" id="L322">        SimulationRun run = getRunById(id);</span>
+<span class="nc" id="L323">        run.updateProgress(currentTick);</span>
+<span class="nc" id="L324">        return runRepository.save(run);</span>
+    }
+
+    /**
+     * Set configuration for a run before starting.
+     *
+     * @param id the run id
+     * @param totalTicks total number of ticks for the simulation
+     * @param seed random seed for reproducibility
+     * @param artefactBasePath base path for output artefacts
+     * @return the updated run
+     * @throws ResourceNotFoundException if the run is not found
+     */
+    @Transactional
+    public SimulationRun configureRun(Long id, Long totalTicks, Long seed, String artefactBasePath) {
+<span class="nc" id="L339">        SimulationRun run = getRunById(id);</span>
+<span class="nc" id="L340">        run.setTotalTicks(totalTicks);</span>
+<span class="nc" id="L341">        run.setSeed(seed);</span>
+<span class="nc" id="L342">        run.setArtefactBasePath(artefactBasePath);</span>
+<span class="nc" id="L343">        return runRepository.save(run);</span>
+    }
+
+    /**
+     * Delete a simulation run.
+     *
+     * @param id the run id
+     * @throws ResourceNotFoundException if the run is not found
+     */
+    @Transactional
+    public void deleteRun(Long id) {
+<span class="nc bnc" id="L354" title="All 2 branches missed.">        if (!runRepository.existsById(id)) {</span>
+<span class="nc" id="L355">            throw new ResourceNotFoundException(&quot;Simulation run not found with id: &quot; + id);</span>
+        }
+<span class="nc" id="L357">        runRepository.deleteById(id);</span>
+<span class="nc" id="L358">    }</span>
+
+    /**
+     * Generates a batch input file for a simulation run with a scenario.
+     * The file is written to {artefactBasePath}/input.scenario
+     *
+     * @param id the run id
+     * @return the path to the generated batch input file
+     * @throws ResourceNotFoundException if the run is not found
+     * @throws IllegalStateException if the run does not have a scenario or artefact base path
+     * @throws IOException if file generation fails
+     */
+    @Transactional(readOnly = true)
+    public Path generateBatchInputFile(Long id) throws IOException {
+<span class="nc" id="L372">        SimulationRun run = getRunById(id);</span>
+
+<span class="nc bnc" id="L374" title="All 2 branches missed.">        if (run.getScenario() == null) {</span>
+<span class="nc" id="L375">            throw new IllegalStateException(</span>
+                    &quot;Cannot generate batch input file: run &quot; + id + &quot; does not have a scenario&quot;);
+        }
+
+<span class="nc bnc" id="L379" title="All 4 branches missed.">        if (run.getArtefactBasePath() == null || run.getArtefactBasePath().isBlank()) {</span>
+<span class="nc" id="L380">            throw new IllegalStateException(</span>
+                    &quot;Cannot generate batch input file: run &quot; + id + &quot; does not have an artefact base path&quot;);
+        }
+
+<span class="nc" id="L384">        String liftConfigJson = run.getVersion().getConfig();</span>
+<span class="nc" id="L385">        String scenarioJson = run.getScenario().getScenarioJson();</span>
+
+<span class="nc" id="L387">        ScenarioDefinitionDTO scenarioDefinition = objectMapper.readValue(</span>
+                scenarioJson,
+                ScenarioDefinitionDTO.class
+        );
+
+<span class="nc" id="L392">        String scenarioName = String.format(</span>
+                &quot;Simulation Run %d - %s&quot;,
+<span class="nc" id="L394">                run.getId(),</span>
+<span class="nc" id="L395">                run.getScenario().getName()</span>
+        );
+
+<span class="nc" id="L398">        Path outputPath = Paths.get(run.getArtefactBasePath(), &quot;input.scenario&quot;);</span>
+
+<span class="nc" id="L400">        batchInputGenerator.generateBatchInputFile(</span>
+                liftConfigJson,
+                scenarioDefinition,
+                scenarioName,
+                outputPath
+        );
+
+<span class="nc" id="L407">        return outputPath;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

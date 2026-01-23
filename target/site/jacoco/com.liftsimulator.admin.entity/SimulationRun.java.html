@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SimulationRun.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.admin.entity</a> &gt; <span class="el_source">SimulationRun.java</span></div><h1>SimulationRun.java</h1><pre class="source lang-java linenums">package com.liftsimulator.admin.entity;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
+import java.time.OffsetDateTime;
+import java.util.Objects;
+
+/**
+ * JPA entity representing the simulation_run table.
+ * Individual simulation run executions with lifecycle tracking.
+ */
+@Entity
+@Table(name = &quot;simulation_run&quot;, schema = &quot;lift_simulator&quot;)
+public class SimulationRun {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = &quot;lift_system_id&quot;, nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private LiftSystem liftSystem;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = &quot;version_id&quot;, nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private LiftSystemVersion version;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = &quot;scenario_id&quot;)
+    private SimulationScenario scenario;
+
+<span class="pc" id="L48">    @Enumerated(EnumType.STRING)</span>
+    @Column(name = &quot;status&quot;, nullable = false, length = 20)
+    private RunStatus status = RunStatus.CREATED;
+
+    @Column(name = &quot;created_at&quot;, nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @Column(name = &quot;started_at&quot;)
+    private OffsetDateTime startedAt;
+
+    @Column(name = &quot;ended_at&quot;)
+    private OffsetDateTime endedAt;
+
+    @Column(name = &quot;total_ticks&quot;)
+    private Long totalTicks;
+
+<span class="pc" id="L64">    @Column(name = &quot;current_tick&quot;)</span>
+<span class="pc" id="L65">    private Long currentTick = 0L;</span>
+
+    @Column(name = &quot;seed&quot;)
+    private Long seed;
+
+    @Column(name = &quot;error_message&quot;, columnDefinition = &quot;TEXT&quot;)
+    private String errorMessage;
+
+    @Column(name = &quot;artefact_base_path&quot;, length = 500)
+    private String artefactBasePath;
+
+<span class="fc" id="L76">    public SimulationRun() {</span>
+<span class="fc" id="L77">    }</span>
+
+    @SuppressFBWarnings(
+            value = &quot;EI_EXPOSE_REP2&quot;,
+            justification = &quot;JPA entity constructor must accept and store mutable parent entities &quot;
+                    + &quot;for relationship management.&quot;
+    )
+<span class="nc" id="L84">    public SimulationRun(LiftSystem liftSystem, LiftSystemVersion version) {</span>
+<span class="nc" id="L85">        this.liftSystem = liftSystem;</span>
+<span class="nc" id="L86">        this.version = version;</span>
+<span class="nc" id="L87">    }</span>
+
+    @SuppressFBWarnings(
+            value = &quot;EI_EXPOSE_REP2&quot;,
+            justification = &quot;JPA entity constructor must accept and store mutable parent entities &quot;
+                    + &quot;for relationship management.&quot;
+    )
+<span class="nc" id="L94">    public SimulationRun(LiftSystem liftSystem, LiftSystemVersion version, SimulationScenario scenario) {</span>
+<span class="nc" id="L95">        this.liftSystem = liftSystem;</span>
+<span class="nc" id="L96">        this.version = version;</span>
+<span class="nc" id="L97">        this.scenario = scenario;</span>
+<span class="nc" id="L98">    }</span>
+
+    @PrePersist
+    protected void onCreate() {
+<span class="nc" id="L102">        createdAt = OffsetDateTime.now();</span>
+<span class="nc" id="L103">    }</span>
+
+    /**
+     * Starts the simulation run.
+     * Transitions from CREATED to RUNNING.
+     */
+    public void start() {
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (status != RunStatus.CREATED) {</span>
+<span class="nc" id="L111">            throw new IllegalStateException(&quot;Can only start a run in CREATED state. Current state: &quot; + status);</span>
+        }
+<span class="nc" id="L113">        this.status = RunStatus.RUNNING;</span>
+<span class="nc" id="L114">        this.startedAt = OffsetDateTime.now();</span>
+<span class="nc" id="L115">    }</span>
+
+    /**
+     * Marks the simulation run as succeeded.
+     * Transitions from RUNNING to SUCCEEDED.
+     */
+    public void succeed() {
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (status != RunStatus.RUNNING) {</span>
+<span class="nc" id="L123">            throw new IllegalStateException(&quot;Can only succeed a run in RUNNING state. Current state: &quot; + status);</span>
+        }
+<span class="nc" id="L125">        this.status = RunStatus.SUCCEEDED;</span>
+<span class="nc" id="L126">        this.endedAt = OffsetDateTime.now();</span>
+<span class="nc" id="L127">    }</span>
+
+    /**
+     * Marks the simulation run as failed.
+     * Transitions from RUNNING to FAILED.
+     *
+     * @param errorMessage The error message describing the failure
+     */
+    public void fail(String errorMessage) {
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        if (status != RunStatus.RUNNING) {</span>
+<span class="nc" id="L137">            throw new IllegalStateException(&quot;Can only fail a run in RUNNING state. Current state: &quot; + status);</span>
+        }
+<span class="nc" id="L139">        this.status = RunStatus.FAILED;</span>
+<span class="nc" id="L140">        this.errorMessage = errorMessage;</span>
+<span class="nc" id="L141">        this.endedAt = OffsetDateTime.now();</span>
+<span class="nc" id="L142">    }</span>
+
+    /**
+     * Cancels the simulation run.
+     * Can transition from CREATED or RUNNING to CANCELLED.
+     */
+    public void cancel() {
+<span class="nc bnc" id="L149" title="All 4 branches missed.">        if (status != RunStatus.CREATED &amp;&amp; status != RunStatus.RUNNING) {</span>
+<span class="nc" id="L150">            throw new IllegalStateException(</span>
+                    &quot;Can only cancel a run in CREATED or RUNNING state. Current state: &quot; + status);
+        }
+<span class="nc" id="L153">        this.status = RunStatus.CANCELLED;</span>
+<span class="nc" id="L154">        this.endedAt = OffsetDateTime.now();</span>
+<span class="nc" id="L155">    }</span>
+
+    /**
+     * Updates the current progress tick.
+     *
+     * @param tick The current tick number
+     */
+    public void updateProgress(Long tick) {
+<span class="nc" id="L163">        this.currentTick = tick;</span>
+<span class="nc" id="L164">    }</span>
+
+    public Long getId() {
+<span class="nc" id="L167">        return id;</span>
+    }
+
+    public void setId(Long id) {
+<span class="nc" id="L171">        this.id = id;</span>
+<span class="nc" id="L172">    }</span>
+
+    @SuppressFBWarnings(
+            value = &quot;EI_EXPOSE_REP&quot;,
+            justification = &quot;JPA entity getters must return mutable parent entity for &quot;
+                    + &quot;relationship navigation and lazy loading.&quot;
+    )
+    public LiftSystem getLiftSystem() {
+<span class="nc" id="L180">        return liftSystem;</span>
+    }
+
+    @SuppressFBWarnings(
+            value = &quot;EI_EXPOSE_REP2&quot;,
+            justification = &quot;JPA entity setters require direct field assignment for Hibernate &quot;
+                    + &quot;to manage relationships and lazy loading correctly.&quot;
+    )
+    public void setLiftSystem(LiftSystem liftSystem) {
+<span class="nc" id="L189">        this.liftSystem = liftSystem;</span>
+<span class="nc" id="L190">    }</span>
+
+    @SuppressFBWarnings(
+            value = &quot;EI_EXPOSE_REP&quot;,
+            justification = &quot;JPA entity getters must return mutable parent entity for &quot;
+                    + &quot;relationship navigation and lazy loading.&quot;
+    )
+    public LiftSystemVersion getVersion() {
+<span class="nc" id="L198">        return version;</span>
+    }
+
+    @SuppressFBWarnings(
+            value = &quot;EI_EXPOSE_REP2&quot;,
+            justification = &quot;JPA entity setters require direct field assignment for Hibernate &quot;
+                    + &quot;to manage relationships and lazy loading correctly.&quot;
+    )
+    public void setVersion(LiftSystemVersion version) {
+<span class="nc" id="L207">        this.version = version;</span>
+<span class="nc" id="L208">    }</span>
+
+    @SuppressFBWarnings(
+            value = &quot;EI_EXPOSE_REP&quot;,
+            justification = &quot;JPA entity getters must return mutable parent entity for &quot;
+                    + &quot;relationship navigation and lazy loading.&quot;
+    )
+    public SimulationScenario getScenario() {
+<span class="nc" id="L216">        return scenario;</span>
+    }
+
+    @SuppressFBWarnings(
+            value = &quot;EI_EXPOSE_REP2&quot;,
+            justification = &quot;JPA entity setters require direct field assignment for Hibernate &quot;
+                    + &quot;to manage relationships and lazy loading correctly.&quot;
+    )
+    public void setScenario(SimulationScenario scenario) {
+<span class="nc" id="L225">        this.scenario = scenario;</span>
+<span class="nc" id="L226">    }</span>
+
+    public RunStatus getStatus() {
+<span class="nc" id="L229">        return status;</span>
+    }
+
+    public void setStatus(RunStatus status) {
+<span class="nc" id="L233">        this.status = status;</span>
+<span class="nc" id="L234">    }</span>
+
+    public OffsetDateTime getCreatedAt() {
+<span class="nc" id="L237">        return createdAt;</span>
+    }
+
+    public void setCreatedAt(OffsetDateTime createdAt) {
+<span class="nc" id="L241">        this.createdAt = createdAt;</span>
+<span class="nc" id="L242">    }</span>
+
+    public OffsetDateTime getStartedAt() {
+<span class="nc" id="L245">        return startedAt;</span>
+    }
+
+    public void setStartedAt(OffsetDateTime startedAt) {
+<span class="nc" id="L249">        this.startedAt = startedAt;</span>
+<span class="nc" id="L250">    }</span>
+
+    public OffsetDateTime getEndedAt() {
+<span class="nc" id="L253">        return endedAt;</span>
+    }
+
+    public void setEndedAt(OffsetDateTime endedAt) {
+<span class="nc" id="L257">        this.endedAt = endedAt;</span>
+<span class="nc" id="L258">    }</span>
+
+    public Long getTotalTicks() {
+<span class="nc" id="L261">        return totalTicks;</span>
+    }
+
+    public void setTotalTicks(Long totalTicks) {
+<span class="nc" id="L265">        this.totalTicks = totalTicks;</span>
+<span class="nc" id="L266">    }</span>
+
+    public Long getCurrentTick() {
+<span class="nc" id="L269">        return currentTick;</span>
+    }
+
+    public void setCurrentTick(Long currentTick) {
+<span class="nc" id="L273">        this.currentTick = currentTick;</span>
+<span class="nc" id="L274">    }</span>
+
+    public Long getSeed() {
+<span class="nc" id="L277">        return seed;</span>
+    }
+
+    public void setSeed(Long seed) {
+<span class="nc" id="L281">        this.seed = seed;</span>
+<span class="nc" id="L282">    }</span>
+
+    public String getErrorMessage() {
+<span class="nc" id="L285">        return errorMessage;</span>
+    }
+
+    public void setErrorMessage(String errorMessage) {
+<span class="nc" id="L289">        this.errorMessage = errorMessage;</span>
+<span class="nc" id="L290">    }</span>
+
+    public String getArtefactBasePath() {
+<span class="nc" id="L293">        return artefactBasePath;</span>
+    }
+
+    public void setArtefactBasePath(String artefactBasePath) {
+<span class="nc" id="L297">        this.artefactBasePath = artefactBasePath;</span>
+<span class="nc" id="L298">    }</span>
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L302" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L303">            return true;</span>
+        }
+<span class="nc bnc" id="L305" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L306">            return false;</span>
+        }
+<span class="nc" id="L308">        SimulationRun that = (SimulationRun) o;</span>
+<span class="nc" id="L309">        return Objects.equals(id, that.id);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L314">        return Objects.hash(id);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L319">        return &quot;SimulationRun{&quot;</span>
+                + &quot;id=&quot; + id
+                + &quot;, status=&quot; + status
+                + &quot;, createdAt=&quot; + createdAt
+                + &quot;, startedAt=&quot; + startedAt
+                + &quot;, endedAt=&quot; + endedAt
+                + &quot;, totalTicks=&quot; + totalTicks
+                + &quot;, currentTick=&quot; + currentTick
+                + &quot;, seed=&quot; + seed
+                + &quot;, artefactBasePath='&quot; + artefactBasePath + '\''
+                + '}';
+    }
+
+    /**
+     * Enumeration of possible run statuses.
+     */
+<span class="fc" id="L335">    public enum RunStatus {</span>
+<span class="fc" id="L336">        CREATED,</span>
+<span class="fc" id="L337">        RUNNING,</span>
+<span class="fc" id="L338">        SUCCEEDED,</span>
+<span class="fc" id="L339">        FAILED,</span>
+<span class="fc" id="L340">        CANCELLED</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

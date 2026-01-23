@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LiftSystemVersionService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.admin.service</a> &gt; <span class="el_source">LiftSystemVersionService.java</span></div><h1>LiftSystemVersionService.java</h1><pre class="source lang-java linenums">package com.liftsimulator.admin.service;
+
+import com.liftsimulator.admin.dto.ConfigValidationResponse;
+import com.liftsimulator.admin.dto.CreateVersionRequest;
+import com.liftsimulator.admin.dto.UpdateVersionConfigRequest;
+import com.liftsimulator.admin.dto.VersionResponse;
+import com.liftsimulator.admin.entity.LiftSystem;
+import com.liftsimulator.admin.entity.LiftSystemVersion;
+import com.liftsimulator.admin.repository.LiftSystemRepository;
+import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+/**
+ * Service for managing lift system versions.
+ */
+@Service
+@Transactional(readOnly = true)
+public class LiftSystemVersionService {
+
+    private final LiftSystemRepository liftSystemRepository;
+    private final LiftSystemVersionRepository versionRepository;
+    private final ConfigValidationService configValidationService;
+
+    public LiftSystemVersionService(
+            LiftSystemRepository liftSystemRepository,
+            LiftSystemVersionRepository versionRepository,
+<span class="nc" id="L30">            ConfigValidationService configValidationService) {</span>
+<span class="nc" id="L31">        this.liftSystemRepository = liftSystemRepository;</span>
+<span class="nc" id="L32">        this.versionRepository = versionRepository;</span>
+<span class="nc" id="L33">        this.configValidationService = configValidationService;</span>
+<span class="nc" id="L34">    }</span>
+
+    /**
+     * Creates a new version for a lift system.
+     * Optionally clones configuration from an existing version.
+     *
+     * @param systemId the lift system ID
+     * @param request the creation request
+     * @return the created version
+     * @throws ResourceNotFoundException if lift system or clone source not found
+     */
+    @Transactional
+    public VersionResponse createVersion(Long systemId, CreateVersionRequest request) {
+<span class="nc" id="L47">        LiftSystem liftSystem = liftSystemRepository.findById(systemId)</span>
+<span class="nc" id="L48">            .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                &quot;Lift system not found with id: &quot; + systemId
+            ));
+
+        // Determine the config to use
+        String config;
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (request.cloneFromVersionNumber() != null) {</span>
+            // Clone from existing version
+<span class="nc" id="L56">            LiftSystemVersion sourceVersion = versionRepository</span>
+<span class="nc" id="L57">                .findByLiftSystemIdAndVersionNumber(systemId, request.cloneFromVersionNumber())</span>
+<span class="nc" id="L58">                .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+<span class="nc" id="L59">                    &quot;Version &quot; + request.cloneFromVersionNumber()</span>
+                    + &quot; not found for lift system &quot; + systemId
+                ));
+<span class="nc" id="L62">            config = sourceVersion.getConfig();</span>
+<span class="nc" id="L63">        } else {</span>
+            // Use provided config
+<span class="nc" id="L65">            config = request.config();</span>
+        }
+
+        // Validate configuration
+<span class="nc" id="L69">        ConfigValidationResponse validationResponse = configValidationService.validate(config);</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        if (validationResponse.hasErrors()) {</span>
+<span class="nc" id="L71">            throw new ConfigValidationException(&quot;Configuration validation failed&quot;, validationResponse);</span>
+        }
+
+        // Get next version number
+<span class="nc" id="L75">        Integer nextVersionNumber = getNextVersionNumber(systemId);</span>
+
+        // Create new version
+<span class="nc" id="L78">        LiftSystemVersion version = new LiftSystemVersion(liftSystem, nextVersionNumber, config);</span>
+<span class="nc" id="L79">        LiftSystemVersion savedVersion = versionRepository.save(version);</span>
+
+<span class="nc" id="L81">        return VersionResponse.fromEntity(savedVersion);</span>
+    }
+
+    /**
+     * Updates the configuration of an existing version.
+     *
+     * @param systemId the lift system ID
+     * @param versionNumber the version number
+     * @param request the update request
+     * @return the updated version
+     * @throws ResourceNotFoundException if version not found
+     */
+    @Transactional
+    public VersionResponse updateVersionConfig(
+            Long systemId, Integer versionNumber, UpdateVersionConfigRequest request) {
+<span class="nc" id="L96">        LiftSystemVersion version = versionRepository</span>
+<span class="nc" id="L97">            .findByLiftSystemIdAndVersionNumber(systemId, versionNumber)</span>
+<span class="nc" id="L98">            .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                &quot;Version &quot; + versionNumber + &quot; not found for lift system &quot; + systemId
+            ));
+
+        // Validate configuration
+<span class="nc" id="L103">        ConfigValidationResponse validationResponse = configValidationService.validate(request.config());</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        if (validationResponse.hasErrors()) {</span>
+<span class="nc" id="L105">            throw new ConfigValidationException(&quot;Configuration validation failed&quot;, validationResponse);</span>
+        }
+
+<span class="nc" id="L108">        version.setConfig(request.config());</span>
+<span class="nc" id="L109">        LiftSystemVersion updatedVersion = versionRepository.save(version);</span>
+
+<span class="nc" id="L111">        return VersionResponse.fromEntity(updatedVersion);</span>
+    }
+
+    /**
+     * Lists all versions for a lift system.
+     *
+     * @param systemId the lift system ID
+     * @return list of versions ordered by version number descending
+     * @throws ResourceNotFoundException if lift system not found
+     */
+    public List&lt;VersionResponse&gt; listVersions(Long systemId) {
+        // Verify lift system exists
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (!liftSystemRepository.existsById(systemId)) {</span>
+<span class="nc" id="L124">            throw new ResourceNotFoundException(</span>
+                &quot;Lift system not found with id: &quot; + systemId
+            );
+        }
+
+<span class="nc" id="L129">        return versionRepository.findByLiftSystemIdOrderByVersionNumberDesc(systemId)</span>
+<span class="nc" id="L130">            .stream()</span>
+<span class="nc" id="L131">            .map(VersionResponse::fromEntity)</span>
+<span class="nc" id="L132">            .toList();</span>
+    }
+
+    /**
+     * Retrieves a specific version.
+     *
+     * @param systemId the lift system ID
+     * @param versionNumber the version number
+     * @return the version details
+     * @throws ResourceNotFoundException if version not found
+     */
+    public VersionResponse getVersion(Long systemId, Integer versionNumber) {
+<span class="nc" id="L144">        LiftSystemVersion version = versionRepository</span>
+<span class="nc" id="L145">            .findByLiftSystemIdAndVersionNumber(systemId, versionNumber)</span>
+<span class="nc" id="L146">            .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                &quot;Version &quot; + versionNumber + &quot; not found for lift system &quot; + systemId
+            ));
+
+<span class="nc" id="L150">        return VersionResponse.fromEntity(version);</span>
+    }
+
+    /**
+     * Publishes a version after validating its configuration.
+     * Only versions with valid configurations can be published.
+     * Automatically archives any previously published version for the same lift system.
+     *
+     * @param systemId the lift system ID
+     * @param versionNumber the version number
+     * @return the published version
+     * @throws ResourceNotFoundException if version not found
+     * @throws ConfigValidationException if configuration is invalid
+     * @throws IllegalStateException if version is already published
+     */
+    @Transactional
+    public VersionResponse publishVersion(Long systemId, Integer versionNumber) {
+<span class="nc" id="L167">        LiftSystemVersion version = versionRepository</span>
+<span class="nc" id="L168">            .findByLiftSystemIdAndVersionNumber(systemId, versionNumber)</span>
+<span class="nc" id="L169">            .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                &quot;Version &quot; + versionNumber + &quot; not found for lift system &quot; + systemId
+            ));
+
+        // Check if already published
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        if (version.getIsPublished()) {</span>
+<span class="nc" id="L175">            throw new IllegalStateException(</span>
+                &quot;Version &quot; + versionNumber + &quot; is already published&quot;
+            );
+        }
+
+        // Validate configuration before publishing
+<span class="nc" id="L181">        ConfigValidationResponse validationResponse = configValidationService.validate(version.getConfig());</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        if (validationResponse.hasErrors()) {</span>
+<span class="nc" id="L183">            throw new ConfigValidationException(</span>
+                &quot;Cannot publish version with validation errors&quot;,
+                validationResponse
+            );
+        }
+
+        // Archive any previously published versions for this lift system
+<span class="nc" id="L190">        List&lt;LiftSystemVersion&gt; publishedVersions = versionRepository</span>
+<span class="nc" id="L191">            .findByLiftSystemIdAndIsPublishedTrue(systemId);</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        for (LiftSystemVersion publishedVersion : publishedVersions) {</span>
+<span class="nc" id="L193">            publishedVersion.archive();</span>
+<span class="nc" id="L194">            versionRepository.save(publishedVersion);</span>
+<span class="nc" id="L195">        }</span>
+
+        // Publish the version
+<span class="nc" id="L198">        version.publish();</span>
+<span class="nc" id="L199">        LiftSystemVersion publishedVersion = versionRepository.save(version);</span>
+
+<span class="nc" id="L201">        return VersionResponse.fromEntity(publishedVersion);</span>
+    }
+
+    /**
+     * Gets the next version number for a lift system.
+     *
+     * @param systemId the lift system ID
+     * @return the next version number (1 if no versions exist)
+     */
+    private Integer getNextVersionNumber(Long systemId) {
+<span class="nc" id="L211">        Integer maxVersion = versionRepository.findMaxVersionNumberByLiftSystemId(systemId);</span>
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        return (maxVersion == null) ? 1 : maxVersion + 1;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RuntimeConfigController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.runtime.controller</a> &gt; <span class="el_source">RuntimeConfigController.java</span></div><h1>RuntimeConfigController.java</h1><pre class="source lang-java linenums">package com.liftsimulator.runtime.controller;
+
+import com.liftsimulator.runtime.dto.RuntimeConfigDTO;
+import com.liftsimulator.runtime.dto.SimulationLaunchResponse;
+import com.liftsimulator.runtime.service.RuntimeConfigService;
+import com.liftsimulator.runtime.service.RuntimeSimulationService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * REST controller for runtime configuration access.
+ * Provides read-only access to published configurations.
+ */
+@RestController
+@RequestMapping(&quot;/api/runtime/systems&quot;)
+public class RuntimeConfigController {
+
+    private final RuntimeConfigService runtimeConfigService;
+    private final RuntimeSimulationService runtimeSimulationService;
+
+    public RuntimeConfigController(
+            RuntimeConfigService runtimeConfigService,
+<span class="nc" id="L26">            RuntimeSimulationService runtimeSimulationService) {</span>
+<span class="nc" id="L27">        this.runtimeConfigService = runtimeConfigService;</span>
+<span class="nc" id="L28">        this.runtimeSimulationService = runtimeSimulationService;</span>
+<span class="nc" id="L29">    }</span>
+
+    /**
+     * Retrieves the currently published configuration for a lift system.
+     * Only returns configurations that are in PUBLISHED status.
+     *
+     * @param systemKey the unique system key
+     * @return the published configuration
+     */
+    @GetMapping(&quot;/{systemKey}/config&quot;)
+    public RuntimeConfigDTO getPublishedConfig(@PathVariable String systemKey) {
+<span class="nc" id="L40">        return runtimeConfigService.getPublishedConfig(systemKey);</span>
+    }
+
+    /**
+     * Retrieves a specific published version by system key and version number.
+     * Only returns the version if it is currently published.
+     *
+     * @param systemKey the unique system key
+     * @param versionNumber the version number
+     * @return the published version
+     */
+    @GetMapping(&quot;/{systemKey}/versions/{versionNumber}&quot;)
+    public RuntimeConfigDTO getPublishedVersion(
+            @PathVariable String systemKey,
+            @PathVariable Integer versionNumber) {
+<span class="nc" id="L55">        return runtimeConfigService.getPublishedVersion(systemKey, versionNumber);</span>
+    }
+
+    /**
+     * Launches a local simulator process using the currently published configuration.
+     *
+     * @param systemKey the unique system key
+     * @return response with launch status and process metadata
+     */
+    @PostMapping(&quot;/{systemKey}/simulate&quot;)
+    public SimulationLaunchResponse launchPublishedSimulation(@PathVariable String systemKey) {
+<span class="nc" id="L66">        return runtimeSimulationService.launchPublishedSimulation(systemKey);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

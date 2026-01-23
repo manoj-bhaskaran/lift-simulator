@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConfigValidationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.admin.service</a> &gt; <span class="el_source">ConfigValidationService.java</span></div><h1>ConfigValidationService.java</h1><pre class="source lang-java linenums">package com.liftsimulator.admin.service;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import com.liftsimulator.admin.dto.ConfigValidationResponse;
+import com.liftsimulator.admin.dto.LiftConfigDTO;
+import com.liftsimulator.admin.dto.ValidationIssue;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+/**
+ * Service for validating lift system configuration JSON.
+ * Performs both structural (JSON parsing, required fields) and domain (business rules) validation.
+ */
+@Service
+public class ConfigValidationService {
+
+    private final ObjectMapper objectMapper;
+    private final Validator validator;
+
+    @SuppressFBWarnings(
+            value = &quot;EI_EXPOSE_REP2&quot;,
+            justification = &quot;Spring-managed beans (ObjectMapper, Validator) injected via constructor. &quot;
+                    + &quot;Lifecycle and immutability managed by Spring container.&quot;
+    )
+<span class="nc" id="L36">    public ConfigValidationService(ObjectMapper objectMapper, Validator validator) {</span>
+<span class="nc" id="L37">        this.objectMapper = objectMapper;</span>
+<span class="nc" id="L38">        this.validator = validator;</span>
+<span class="nc" id="L39">    }</span>
+
+    /**
+     * Validates a configuration JSON string.
+     *
+     * @param configJson The configuration JSON to validate
+     * @return ConfigValidationResponse containing validation results
+     */
+    public ConfigValidationResponse validate(String configJson) {
+<span class="nc" id="L48">        List&lt;ValidationIssue&gt; errors = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L49">        List&lt;ValidationIssue&gt; warnings = new ArrayList&lt;&gt;();</span>
+
+        // Step 1: Parse JSON and perform structural validation
+        LiftConfigDTO config;
+        try {
+<span class="nc" id="L54">            config = objectMapper.readValue(configJson, LiftConfigDTO.class);</span>
+<span class="nc" id="L55">        } catch (UnrecognizedPropertyException e) {</span>
+            // Specific handling for unknown properties to provide clearer error messages
+<span class="nc" id="L57">            String fieldName = e.getPropertyName();</span>
+<span class="nc" id="L58">            errors.add(new ValidationIssue(</span>
+                fieldName,
+                &quot;Unknown property '&quot; + fieldName + &quot;' is not allowed in configuration schema&quot;,
+                ValidationIssue.Severity.ERROR
+            ));
+<span class="nc" id="L63">            return new ConfigValidationResponse(false, errors, warnings);</span>
+<span class="nc" id="L64">        } catch (InvalidFormatException e) {</span>
+            // Specific handling for type mismatch errors (e.g., string when number expected)
+<span class="nc" id="L66">            String fieldName = getFieldNameFromPath(e.getPath());</span>
+<span class="nc" id="L67">            String targetType = e.getTargetType().getSimpleName();</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            String value = e.getValue() != null ? e.getValue().toString() : &quot;null&quot;;</span>
+
+            String errorMessage;
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            if (targetType.equals(&quot;Integer&quot;)) {</span>
+<span class="nc" id="L72">                errorMessage = &quot;Field '&quot; + fieldName + &quot;' must be a numeric value, got '&quot; + value + &quot;'&quot;;</span>
+<span class="nc bnc" id="L73" title="All 4 branches missed.">            } else if (targetType.equals(&quot;ControllerStrategy&quot;) || targetType.equals(&quot;IdleParkingMode&quot;)) {</span>
+<span class="nc" id="L74">                errorMessage = &quot;Field '&quot; + fieldName + &quot;' has invalid value '&quot; + value + &quot;'&quot;;</span>
+            } else {
+<span class="nc" id="L76">                errorMessage = &quot;Field '&quot; + fieldName + &quot;' has invalid format. Expected type: &quot; + targetType;</span>
+            }
+
+<span class="nc" id="L79">            errors.add(new ValidationIssue(</span>
+                fieldName,
+                errorMessage,
+                ValidationIssue.Severity.ERROR
+            ));
+<span class="nc" id="L84">            return new ConfigValidationResponse(false, errors, warnings);</span>
+<span class="nc" id="L85">        } catch (MismatchedInputException e) {</span>
+            // Handles cases where the input type doesn't match expected type (e.g., boolean for Integer)
+<span class="nc" id="L87">            String fieldName = getFieldNameFromPath(e.getPath());</span>
+<span class="nc" id="L88">            String targetType = e.getTargetType().getSimpleName();</span>
+
+            String errorMessage;
+<span class="nc bnc" id="L91" title="All 2 branches missed.">            if (targetType.equals(&quot;Integer&quot;)) {</span>
+<span class="nc" id="L92">                errorMessage = &quot;Field '&quot; + fieldName + &quot;' must be a numeric value&quot;;</span>
+            } else {
+<span class="nc" id="L94">                errorMessage = &quot;Field '&quot; + fieldName + &quot;' has incorrect type. Expected: &quot; + targetType;</span>
+            }
+
+<span class="nc" id="L97">            errors.add(new ValidationIssue(</span>
+                fieldName,
+                errorMessage,
+                ValidationIssue.Severity.ERROR
+            ));
+<span class="nc" id="L102">            return new ConfigValidationResponse(false, errors, warnings);</span>
+<span class="nc" id="L103">        } catch (JsonProcessingException e) {</span>
+<span class="nc" id="L104">            errors.add(new ValidationIssue(</span>
+                &quot;config&quot;,
+<span class="nc" id="L106">                &quot;Invalid JSON format: &quot; + e.getOriginalMessage(),</span>
+                ValidationIssue.Severity.ERROR
+            ));
+<span class="nc" id="L109">            return new ConfigValidationResponse(false, errors, warnings);</span>
+<span class="nc" id="L110">        }</span>
+
+        // Step 2: Perform Jakarta Bean Validation (structural validation)
+<span class="nc" id="L113">        Set&lt;ConstraintViolation&lt;LiftConfigDTO&gt;&gt; violations = validator.validate(config);</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        for (ConstraintViolation&lt;LiftConfigDTO&gt; violation : violations) {</span>
+<span class="nc" id="L115">            errors.add(new ValidationIssue(</span>
+<span class="nc" id="L116">                violation.getPropertyPath().toString(),</span>
+<span class="nc" id="L117">                violation.getMessage(),</span>
+                ValidationIssue.Severity.ERROR
+            ));
+<span class="nc" id="L120">        }</span>
+
+        // Step 3: Perform domain validation (cross-field validation)
+<span class="nc" id="L123">        performDomainValidation(config, errors, warnings);</span>
+
+        // Determine if configuration is valid
+<span class="nc" id="L126">        boolean valid = errors.isEmpty();</span>
+
+<span class="nc" id="L128">        return new ConfigValidationResponse(valid, errors, warnings);</span>
+    }
+
+    /**
+     * Extracts the field name from Jackson's JsonMappingException path.
+     *
+     * @param path The path from the JsonMappingException
+     * @return The field name, or &quot;config&quot; if path is empty
+     */
+    private String getFieldNameFromPath(List&lt;JsonMappingException.Reference&gt; path) {
+<span class="nc bnc" id="L138" title="All 4 branches missed.">        if (path == null || path.isEmpty()) {</span>
+<span class="nc" id="L139">            return &quot;config&quot;;</span>
+        }
+        // Get the last reference in the path (most specific field)
+<span class="nc" id="L142">        JsonMappingException.Reference lastRef = path.get(path.size() - 1);</span>
+<span class="nc" id="L143">        String fieldName = lastRef.getFieldName();</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">        return fieldName != null ? fieldName : &quot;config&quot;;</span>
+    }
+
+    /**
+     * Performs domain-specific validation rules that span multiple fields.
+     * Only performs checks if all required fields are non-null.
+     *
+     * @param config The parsed configuration DTO
+     * @param errors List to add error issues to
+     * @param warnings List to add warning issues to
+     */
+    private void performDomainValidation(LiftConfigDTO config, List&lt;ValidationIssue&gt; errors, List&lt;ValidationIssue&gt; warnings) {
+        // Skip domain validation if structural validation failed (null fields present)
+<span class="nc bnc" id="L157" title="All 4 branches missed.">        if (config.doorReopenWindowTicks() == null || config.doorTransitionTicks() == null ||</span>
+<span class="nc bnc" id="L158" title="All 6 branches missed.">            config.minFloor() == null || config.maxFloor() == null || config.homeFloor() == null ||</span>
+<span class="nc bnc" id="L159" title="All 4 branches missed.">            config.idleParkingMode() == null || config.idleTimeoutTicks() == null ||</span>
+<span class="nc bnc" id="L160" title="All 4 branches missed.">            config.doorDwellTicks() == null || config.lifts() == null) {</span>
+<span class="nc" id="L161">            return; // Structural validation errors already reported</span>
+        }
+
+        // Validate doorReopenWindowTicks &lt;= doorTransitionTicks
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        if (config.doorReopenWindowTicks() &gt; config.doorTransitionTicks()) {</span>
+<span class="nc" id="L166">            errors.add(new ValidationIssue(</span>
+                &quot;doorReopenWindowTicks&quot;,
+<span class="nc" id="L168">                &quot;Door reopen window ticks (&quot; + config.doorReopenWindowTicks() +</span>
+<span class="nc" id="L169">                &quot;) must not exceed door transition ticks (&quot; + config.doorTransitionTicks() + &quot;)&quot;,</span>
+                ValidationIssue.Severity.ERROR
+            ));
+        }
+
+        // Validate floor range is at least two floors (maxFloor &gt; minFloor)
+<span class="nc bnc" id="L175" title="All 2 branches missed.">        if (config.maxFloor() &lt;= config.minFloor()) {</span>
+<span class="nc" id="L176">            errors.add(new ValidationIssue(</span>
+                &quot;maxFloor&quot;,
+<span class="nc" id="L178">                &quot;Maximum floor (&quot; + config.maxFloor() +</span>
+<span class="nc" id="L179">                &quot;) must be greater than minimum floor (&quot; + config.minFloor() + &quot;)&quot;,</span>
+                ValidationIssue.Severity.ERROR
+            ));
+        }
+
+        // Validate homeFloor is within valid floor range (minFloor to maxFloor)
+<span class="nc bnc" id="L185" title="All 4 branches missed.">        if (config.homeFloor() &lt; config.minFloor() || config.homeFloor() &gt; config.maxFloor()) {</span>
+<span class="nc" id="L186">            errors.add(new ValidationIssue(</span>
+                &quot;homeFloor&quot;,
+<span class="nc" id="L188">                &quot;Home floor (&quot; + config.homeFloor() +</span>
+<span class="nc" id="L189">                &quot;) must be within valid floor range (&quot; + config.minFloor() + &quot; to &quot; + config.maxFloor() + &quot;)&quot;,</span>
+                ValidationIssue.Severity.ERROR
+            ));
+        }
+
+        // Warning: If using PARK_TO_HOME_FLOOR but idleTimeoutTicks is very low
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        if (config.idleParkingMode() == com.liftsimulator.domain.IdleParkingMode.PARK_TO_HOME_FLOOR</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">            &amp;&amp; config.idleTimeoutTicks() &lt; 3) {</span>
+<span class="nc" id="L197">            warnings.add(new ValidationIssue(</span>
+                &quot;idleTimeoutTicks&quot;,
+<span class="nc" id="L199">                &quot;Idle timeout ticks (&quot; + config.idleTimeoutTicks() +</span>
+                &quot;) is very low for PARK_TO_HOME_FLOOR mode. Consider increasing to avoid excessive parking movements.&quot;,
+                ValidationIssue.Severity.WARNING
+            ));
+        }
+
+        // Warning: If doorDwellTicks is very low
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (config.doorDwellTicks() &lt; 2) {</span>
+<span class="nc" id="L207">            warnings.add(new ValidationIssue(</span>
+                &quot;doorDwellTicks&quot;,
+<span class="nc" id="L209">                &quot;Door dwell ticks (&quot; + config.doorDwellTicks() +</span>
+                &quot;) is very low. Consider increasing to allow sufficient time for passengers.&quot;,
+                ValidationIssue.Severity.WARNING
+            ));
+        }
+
+        // Warning: If number of lifts is greater than number of floors
+<span class="nc bnc" id="L216" title="All 2 branches missed.">        if (config.maxFloor() &gt; config.minFloor()) {</span>
+<span class="nc" id="L217">            int floorCount = config.maxFloor() - config.minFloor() + 1;</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            if (config.lifts() &gt; floorCount) {</span>
+<span class="nc" id="L219">                warnings.add(new ValidationIssue(</span>
+                    &quot;lifts&quot;,
+<span class="nc" id="L221">                    &quot;Number of lifts (&quot; + config.lifts() +</span>
+                    &quot;) exceeds number of floors (&quot; + floorCount + &quot;). This may be inefficient.&quot;,
+                    ValidationIssue.Severity.WARNING
+                ));
+            }
+        }
+
+        // Warning: If doorReopenWindowTicks is 0
+<span class="nc bnc" id="L229" title="All 2 branches missed.">        if (config.doorReopenWindowTicks() == 0) {</span>
+<span class="nc" id="L230">            warnings.add(new ValidationIssue(</span>
+                &quot;doorReopenWindowTicks&quot;,
+                &quot;Door reopen window ticks is set to 0. Doors will not respond to reopen requests during closing.&quot;,
+                ValidationIssue.Severity.WARNING
+            ));
+        }
+<span class="nc" id="L236">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

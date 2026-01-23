@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RuntimeSimulationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.runtime.service</a> &gt; <span class="el_source">RuntimeSimulationService.java</span></div><h1>RuntimeSimulationService.java</h1><pre class="source lang-java linenums">package com.liftsimulator.runtime.service;
+
+import com.liftsimulator.runtime.dto.RuntimeConfigDTO;
+import com.liftsimulator.runtime.dto.SimulationLaunchResponse;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.system.ApplicationHome;
+import org.springframework.stereotype.Service;
+
+import jakarta.annotation.PreDestroy;
+
+/**
+ * Service to launch local simulator processes using published configurations.
+ */
+@Service
+public class RuntimeSimulationService {
+<span class="nc" id="L32">    private static final Logger logger = LoggerFactory.getLogger(RuntimeSimulationService.class);</span>
+    private static final long SHUTDOWN_WAIT_SECONDS = 5L;
+
+    private final RuntimeConfigService runtimeConfigService;
+<span class="nc" id="L36">    private final Map&lt;Long, ManagedProcess&gt; activeProcesses = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="nc" id="L37">    private final ExecutorService logReaderExecutor = Executors.newCachedThreadPool(new SimulatorThreadFactory());</span>
+
+<span class="nc" id="L39">    public RuntimeSimulationService(RuntimeConfigService runtimeConfigService) {</span>
+<span class="nc" id="L40">        this.runtimeConfigService = runtimeConfigService;</span>
+<span class="nc" id="L41">    }</span>
+
+    /**
+     * Launches the simulator with the currently published configuration for the provided system key.
+     *
+     * @param systemKey the lift system key
+     * @return launch response with process metadata
+     */
+    public SimulationLaunchResponse launchPublishedSimulation(String systemKey) {
+<span class="nc" id="L50">        RuntimeConfigDTO config = runtimeConfigService.getPublishedConfig(systemKey);</span>
+<span class="nc" id="L51">        Path configPath = writeConfigToTempFile(systemKey, config.config());</span>
+<span class="nc" id="L52">        Process process = startSimulationProcess(systemKey, configPath);</span>
+<span class="nc" id="L53">        String message = &quot;Simulator started for system &quot; + systemKey + &quot; using config &quot; + configPath.getFileName();</span>
+<span class="nc" id="L54">        return new SimulationLaunchResponse(true, message, process.pid());</span>
+    }
+
+    private Path writeConfigToTempFile(String systemKey, String configJson) {
+        try {
+<span class="nc" id="L59">            Path configPath = Files.createTempFile(&quot;lift-simulator-&quot; + systemKey + &quot;-&quot;, &quot;.json&quot;);</span>
+<span class="nc" id="L60">            Files.writeString(configPath, configJson, StandardCharsets.UTF_8);</span>
+<span class="nc" id="L61">            configPath.toFile().deleteOnExit();</span>
+<span class="nc" id="L62">            logger.info(&quot;Wrote runtime config for system {} to {}&quot;, systemKey, configPath);</span>
+<span class="nc" id="L63">            return configPath;</span>
+<span class="nc" id="L64">        } catch (IOException ex) {</span>
+<span class="nc" id="L65">            throw new IllegalStateException(&quot;Failed to write configuration to temp file&quot;, ex);</span>
+        }
+    }
+
+    private Process startSimulationProcess(String systemKey, Path configPath) {
+<span class="nc" id="L70">        List&lt;String&gt; command = buildLaunchCommand(configPath);</span>
+<span class="nc" id="L71">        ProcessBuilder processBuilder = new ProcessBuilder(command);</span>
+<span class="nc" id="L72">        processBuilder.redirectErrorStream(true);</span>
+
+        try {
+<span class="nc" id="L75">            Process process = processBuilder.start();</span>
+<span class="nc" id="L76">            registerProcess(systemKey, process, command, configPath);</span>
+<span class="nc" id="L77">            return process;</span>
+<span class="nc" id="L78">        } catch (IOException ex) {</span>
+<span class="nc" id="L79">            throw new IllegalStateException(&quot;Failed to launch simulator process&quot;, ex);</span>
+        }
+    }
+
+    private List&lt;String&gt; buildLaunchCommand(Path configPath) {
+<span class="nc" id="L84">        Path sourcePath = resolveApplicationSource();</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (isPackagedJar(sourcePath)) {</span>
+<span class="nc" id="L86">            return buildPackagedCommand(sourcePath, configPath);</span>
+        }
+
+<span class="nc" id="L89">        List&lt;String&gt; command = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L90">        command.add(resolveJavaBinary());</span>
+<span class="nc" id="L91">        command.add(&quot;-cp&quot;);</span>
+<span class="nc" id="L92">        command.add(System.getProperty(&quot;java.class.path&quot;));</span>
+<span class="nc" id="L93">        command.add(&quot;com.liftsimulator.runtime.LocalSimulationMain&quot;);</span>
+<span class="nc" id="L94">        command.add(&quot;--config=&quot; + configPath.toAbsolutePath());</span>
+<span class="nc" id="L95">        return command;</span>
+    }
+
+    private List&lt;String&gt; buildPackagedCommand(Path sourcePath, Path configPath) {
+<span class="nc" id="L99">        List&lt;String&gt; command = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L100">        command.add(resolveJavaBinary());</span>
+<span class="nc" id="L101">        command.add(&quot;-cp&quot;);</span>
+<span class="nc" id="L102">        command.add(sourcePath.toAbsolutePath().toString());</span>
+<span class="nc" id="L103">        command.add(&quot;org.springframework.boot.loader.launch.PropertiesLauncher&quot;);</span>
+<span class="nc" id="L104">        command.add(&quot;--loader.main=com.liftsimulator.runtime.LocalSimulationMain&quot;);</span>
+<span class="nc" id="L105">        command.add(&quot;--config=&quot; + configPath.toAbsolutePath());</span>
+<span class="nc" id="L106">        return command;</span>
+    }
+
+    private void registerProcess(String systemKey, Process process, List&lt;String&gt; command, Path configPath) {
+<span class="nc" id="L110">        long pid = process.pid();</span>
+<span class="nc" id="L111">        ManagedProcess managedProcess = new ManagedProcess(systemKey, process, configPath);</span>
+<span class="nc" id="L112">        activeProcesses.put(pid, managedProcess);</span>
+<span class="nc" id="L113">        logger.info(&quot;Launched simulator process pid={} for system {} with config {} using command: {}&quot;,</span>
+<span class="nc" id="L114">            pid,</span>
+            systemKey,
+<span class="nc" id="L116">            configPath.getFileName(),</span>
+<span class="nc" id="L117">            String.join(&quot; &quot;, command));</span>
+
+<span class="nc" id="L119">        logReaderExecutor.execute(() -&gt; streamProcessOutput(systemKey, pid, process));</span>
+
+<span class="nc" id="L121">        process.onExit().thenAccept(exitedProcess -&gt; {</span>
+<span class="nc" id="L122">            activeProcesses.remove(pid, managedProcess);</span>
+<span class="nc" id="L123">            logger.info(&quot;Simulator process pid={} for system {} exited with code {}&quot;,</span>
+<span class="nc" id="L124">                pid,</span>
+                systemKey,
+<span class="nc" id="L126">                exitedProcess.exitValue());</span>
+<span class="nc" id="L127">        });</span>
+<span class="nc" id="L128">    }</span>
+
+    private void streamProcessOutput(String systemKey, long pid, Process process) {
+<span class="nc" id="L131">        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(),</span>
+            StandardCharsets.UTF_8))) {
+            String line;
+<span class="nc bnc" id="L134" title="All 2 branches missed.">            while ((line = reader.readLine()) != null) {</span>
+<span class="nc" id="L135">                logger.info(&quot;[simulator:{}:{}] {}&quot;, systemKey, pid, line);</span>
+            }
+<span class="nc" id="L137">        } catch (IOException ex) {</span>
+<span class="nc" id="L138">            logger.warn(&quot;Failed to read output from simulator process pid={} for system {}&quot;, pid, systemKey, ex);</span>
+<span class="nc" id="L139">        }</span>
+<span class="nc" id="L140">    }</span>
+
+    private String resolveJavaBinary() {
+<span class="nc" id="L143">        String javaHome = System.getProperty(&quot;java.home&quot;);</span>
+<span class="nc" id="L144">        Path javaPath = Paths.get(javaHome, &quot;bin&quot;, &quot;java&quot;);</span>
+<span class="nc" id="L145">        return javaPath.toString();</span>
+    }
+
+    private Path resolveApplicationSource() {
+<span class="nc" id="L149">        ApplicationHome home = new ApplicationHome(RuntimeSimulationService.class);</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (home.getSource() == null) {</span>
+<span class="nc" id="L151">            return null;</span>
+        }
+<span class="nc" id="L153">        return home.getSource().toPath();</span>
+    }
+
+    private boolean isPackagedJar(Path sourcePath) {
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        if (sourcePath == null) {</span>
+<span class="nc" id="L158">            return false;</span>
+        }
+<span class="nc bnc" id="L160" title="All 2 branches missed.">        return Files.isRegularFile(sourcePath)</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">            &amp;&amp; sourcePath.toString().endsWith(&quot;.jar&quot;);</span>
+    }
+
+    @PreDestroy
+    public void shutdownActiveProcesses() {
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        if (activeProcesses.isEmpty()) {</span>
+<span class="nc" id="L167">            logReaderExecutor.shutdown();</span>
+<span class="nc" id="L168">            return;</span>
+        }
+
+<span class="nc" id="L171">        logger.info(&quot;Shutting down {} active simulator process(es)&quot;, activeProcesses.size());</span>
+<span class="nc" id="L172">        List&lt;ManagedProcess&gt; processes = new ArrayList&lt;&gt;(activeProcesses.values());</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        for (ManagedProcess managedProcess : processes) {</span>
+<span class="nc" id="L174">            shutdownProcess(managedProcess);</span>
+<span class="nc" id="L175">        }</span>
+<span class="nc" id="L176">        logReaderExecutor.shutdown();</span>
+<span class="nc" id="L177">    }</span>
+
+    private void shutdownProcess(ManagedProcess managedProcess) {
+<span class="nc" id="L180">        Process process = managedProcess.process();</span>
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        if (!process.isAlive()) {</span>
+<span class="nc" id="L182">            return;</span>
+        }
+
+<span class="nc" id="L185">        logger.info(&quot;Stopping simulator process pid={} for system {}&quot;, process.pid(), managedProcess.systemKey());</span>
+<span class="nc" id="L186">        process.destroy();</span>
+        try {
+<span class="nc bnc" id="L188" title="All 2 branches missed.">            if (!process.waitFor(SHUTDOWN_WAIT_SECONDS, TimeUnit.SECONDS)) {</span>
+<span class="nc" id="L189">                logger.warn(&quot;Simulator process pid={} did not stop in time; forcing shutdown&quot;, process.pid());</span>
+<span class="nc" id="L190">                process.destroyForcibly();</span>
+            }
+<span class="nc" id="L192">        } catch (InterruptedException ex) {</span>
+<span class="nc" id="L193">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L194">            logger.warn(&quot;Interrupted while stopping simulator process pid={}&quot;, process.pid(), ex);</span>
+<span class="nc" id="L195">            process.destroyForcibly();</span>
+<span class="nc" id="L196">        }</span>
+<span class="nc" id="L197">    }</span>
+
+<span class="nc" id="L199">    private record ManagedProcess(String systemKey, Process process, Path configPath) {</span>
+    }
+
+<span class="nc" id="L202">    private static final class SimulatorThreadFactory implements ThreadFactory {</span>
+<span class="nc" id="L203">        private int counter = 1;</span>
+
+        @Override
+        public synchronized Thread newThread(Runnable runnable) {
+<span class="nc" id="L207">            Thread thread = new Thread(runnable, &quot;simulator-output-&quot; + counter++);</span>
+<span class="nc" id="L208">            thread.setDaemon(true);</span>
+<span class="nc" id="L209">            return thread;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

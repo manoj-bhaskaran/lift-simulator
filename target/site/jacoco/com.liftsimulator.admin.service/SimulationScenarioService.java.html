@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SimulationScenarioService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.admin.service</a> &gt; <span class="el_source">SimulationScenarioService.java</span></div><h1>SimulationScenarioService.java</h1><pre class="source lang-java linenums">package com.liftsimulator.admin.service;
+
+import com.liftsimulator.admin.entity.SimulationScenario;
+import com.liftsimulator.admin.repository.SimulationScenarioRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+/**
+ * Service for managing simulation scenarios.
+ */
+@Service
+@Transactional(readOnly = true)
+public class SimulationScenarioService {
+
+    private final SimulationScenarioRepository scenarioRepository;
+
+<span class="nc" id="L19">    public SimulationScenarioService(SimulationScenarioRepository scenarioRepository) {</span>
+<span class="nc" id="L20">        this.scenarioRepository = scenarioRepository;</span>
+<span class="nc" id="L21">    }</span>
+
+    /**
+     * Create a new simulation scenario.
+     *
+     * @param name the scenario name
+     * @param scenarioJson the scenario JSON configuration
+     * @return the created scenario
+     */
+    @Transactional
+    public SimulationScenario createScenario(String name, String scenarioJson) {
+<span class="nc" id="L32">        SimulationScenario scenario = new SimulationScenario(name, scenarioJson);</span>
+<span class="nc" id="L33">        return scenarioRepository.save(scenario);</span>
+    }
+
+    /**
+     * Get all simulation scenarios.
+     *
+     * @return list of all scenarios
+     */
+    public List&lt;SimulationScenario&gt; getAllScenarios() {
+<span class="nc" id="L42">        return scenarioRepository.findAll();</span>
+    }
+
+    /**
+     * Get a scenario by its ID.
+     *
+     * @param id the scenario id
+     * @return the scenario
+     * @throws ResourceNotFoundException if the scenario is not found
+     */
+    public SimulationScenario getScenarioById(Long id) {
+<span class="nc" id="L53">        return scenarioRepository.findById(id)</span>
+<span class="nc" id="L54">                .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                        &quot;Simulation scenario not found with id: &quot; + id));
+    }
+
+    /**
+     * Get a scenario by its name.
+     *
+     * @param name the scenario name
+     * @return the scenario
+     * @throws ResourceNotFoundException if the scenario is not found
+     */
+    public SimulationScenario getScenarioByName(String name) {
+<span class="nc" id="L66">        return scenarioRepository.findByName(name)</span>
+<span class="nc" id="L67">                .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                        &quot;Simulation scenario not found with name: &quot; + name));
+    }
+
+    /**
+     * Update a scenario's configuration.
+     *
+     * @param id the scenario id
+     * @param name the new name
+     * @param scenarioJson the new scenario JSON
+     * @return the updated scenario
+     * @throws ResourceNotFoundException if the scenario is not found
+     */
+    @Transactional
+    public SimulationScenario updateScenario(Long id, String name, String scenarioJson) {
+<span class="nc" id="L82">        SimulationScenario scenario = getScenarioById(id);</span>
+<span class="nc" id="L83">        scenario.setName(name);</span>
+<span class="nc" id="L84">        scenario.setScenarioJson(scenarioJson);</span>
+<span class="nc" id="L85">        return scenarioRepository.save(scenario);</span>
+    }
+
+    /**
+     * Delete a scenario.
+     *
+     * @param id the scenario id
+     * @throws ResourceNotFoundException if the scenario is not found
+     */
+    @Transactional
+    public void deleteScenario(Long id) {
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        if (!scenarioRepository.existsById(id)) {</span>
+<span class="nc" id="L97">            throw new ResourceNotFoundException(&quot;Simulation scenario not found with id: &quot; + id);</span>
+        }
+<span class="nc" id="L99">        scenarioRepository.deleteById(id);</span>
+<span class="nc" id="L100">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

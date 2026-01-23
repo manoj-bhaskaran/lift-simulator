@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArtefactService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.admin.service</a> &gt; <span class="el_source">ArtefactService.java</span></div><h1>ArtefactService.java</h1><pre class="source lang-java linenums">package com.liftsimulator.admin.service;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liftsimulator.admin.dto.ArtefactInfo;
+import com.liftsimulator.admin.entity.SimulationRun;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Stream;
+
+/**
+ * Service for managing simulation run artefacts with security controls.
+ */
+@Service
+public class ArtefactService {
+
+<span class="nc" id="L28">    private static final Logger logger = LoggerFactory.getLogger(ArtefactService.class);</span>
+    private static final int DEFAULT_TAIL_LINES = 100;
+    private static final int MAX_TAIL_LINES = 10000;
+
+    private final ObjectMapper objectMapper;
+
+<span class="nc" id="L34">    public ArtefactService(ObjectMapper objectMapper) {</span>
+<span class="nc" id="L35">        this.objectMapper = objectMapper;</span>
+<span class="nc" id="L36">    }</span>
+
+    /**
+     * Lists all artefacts in a simulation run's artefact directory.
+     *
+     * @param run the simulation run
+     * @return list of artefact information
+     * @throws IOException if directory access fails
+     * @throws IllegalStateException if artefact base path is not set
+     */
+    public List&lt;ArtefactInfo&gt; listArtefacts(SimulationRun run) throws IOException {
+<span class="nc" id="L47">        String basePath = run.getArtefactBasePath();</span>
+<span class="nc bnc" id="L48" title="All 4 branches missed.">        if (basePath == null || basePath.isBlank()) {</span>
+<span class="nc" id="L49">            throw new IllegalStateException(&quot;Artefact base path is not set for run &quot; + run.getId());</span>
+        }
+
+<span class="nc" id="L52">        Path directory = validateAndResolvePath(basePath, null);</span>
+
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (!Files.exists(directory)) {</span>
+<span class="nc" id="L55">            return Collections.emptyList();</span>
+        }
+
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (!Files.isDirectory(directory)) {</span>
+<span class="nc" id="L59">            throw new IllegalStateException(&quot;Artefact base path is not a directory: &quot; + basePath);</span>
+        }
+
+<span class="nc" id="L62">        List&lt;ArtefactInfo&gt; artefacts = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L64">        try (Stream&lt;Path&gt; paths = Files.walk(directory)) {</span>
+<span class="nc" id="L65">            paths.filter(Files::isRegularFile)</span>
+<span class="nc" id="L66">                .forEach(path -&gt; {</span>
+                    try {
+<span class="nc" id="L68">                        String relativePath = directory.relativize(path).toString();</span>
+<span class="nc" id="L69">                        String fileName = path.getFileName().toString();</span>
+<span class="nc" id="L70">                        long size = Files.size(path);</span>
+<span class="nc" id="L71">                        artefacts.add(ArtefactInfo.of(fileName, relativePath, size));</span>
+<span class="nc" id="L72">                    } catch (IOException e) {</span>
+<span class="nc" id="L73">                        logger.warn(&quot;Failed to read file info for: &quot; + path, e);</span>
+<span class="nc" id="L74">                    }</span>
+<span class="nc" id="L75">                });</span>
+        }
+
+<span class="nc" id="L78">        return artefacts;</span>
+    }
+
+    /**
+     * Reads logs from a simulation run with optional tail functionality.
+     *
+     * @param run the simulation run
+     * @param tail number of lines to read from the end (null for all)
+     * @return the log content
+     * @throws IOException if log file access fails
+     */
+    public String readLogs(SimulationRun run, Integer tail) throws IOException {
+<span class="nc" id="L90">        String basePath = run.getArtefactBasePath();</span>
+<span class="nc bnc" id="L91" title="All 4 branches missed.">        if (basePath == null || basePath.isBlank()) {</span>
+<span class="nc" id="L92">            throw new IllegalStateException(&quot;Artefact base path is not set for run &quot; + run.getId());</span>
+        }
+
+        // Try common log file names
+<span class="nc" id="L96">        String[] logFileNames = {&quot;simulation.log&quot;, &quot;output.log&quot;, &quot;run.log&quot;};</span>
+<span class="nc" id="L97">        Path logPath = null;</span>
+
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        for (String logFileName : logFileNames) {</span>
+<span class="nc" id="L100">            Path candidatePath = validateAndResolvePath(basePath, logFileName);</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">            if (Files.exists(candidatePath)) {</span>
+<span class="nc" id="L102">                logPath = candidatePath;</span>
+<span class="nc" id="L103">                break;</span>
+            }
+        }
+
+<span class="nc bnc" id="L107" title="All 4 branches missed.">        if (logPath == null || !Files.exists(logPath)) {</span>
+<span class="nc" id="L108">            return &quot;No log file found for simulation run &quot; + run.getId();</span>
+        }
+
+        // Validate tail parameter
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        int linesToRead = tail != null ? Math.min(tail, MAX_TAIL_LINES) : -1;</span>
+
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (linesToRead &lt; 0) {</span>
+            // Read entire file
+<span class="nc" id="L116">            return Files.readString(logPath);</span>
+        } else {
+            // Read last N lines
+<span class="nc" id="L119">            return readLastNLines(logPath, linesToRead);</span>
+        }
+    }
+
+    /**
+     * Reads the results JSON from a simulation run.
+     *
+     * @param run the simulation run
+     * @return the results as JSON
+     * @throws IOException if results file access fails
+     */
+    public JsonNode readResults(SimulationRun run) throws IOException {
+<span class="nc" id="L131">        String basePath = run.getArtefactBasePath();</span>
+<span class="nc bnc" id="L132" title="All 4 branches missed.">        if (basePath == null || basePath.isBlank()) {</span>
+<span class="nc" id="L133">            throw new IllegalStateException(&quot;Artefact base path is not set for run &quot; + run.getId());</span>
+        }
+
+        // Try common result file names
+<span class="nc" id="L137">        String[] resultFileNames = {&quot;results.json&quot;, &quot;output.json&quot;, &quot;simulation-results.json&quot;};</span>
+<span class="nc" id="L138">        Path resultsPath = null;</span>
+
+<span class="nc bnc" id="L140" title="All 2 branches missed.">        for (String resultFileName : resultFileNames) {</span>
+<span class="nc" id="L141">            Path candidatePath = validateAndResolvePath(basePath, resultFileName);</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            if (Files.exists(candidatePath)) {</span>
+<span class="nc" id="L143">                resultsPath = candidatePath;</span>
+<span class="nc" id="L144">                break;</span>
+            }
+        }
+
+<span class="nc bnc" id="L148" title="All 4 branches missed.">        if (resultsPath == null || !Files.exists(resultsPath)) {</span>
+<span class="nc" id="L149">            throw new IOException(&quot;No results file found for simulation run &quot; + run.getId());</span>
+        }
+
+<span class="nc" id="L152">        return objectMapper.readTree(resultsPath.toFile());</span>
+    }
+
+    /**
+     * Validates and resolves a path, preventing path traversal attacks.
+     *
+     * @param basePath the base directory path
+     * @param relativePath the relative path within the base directory (can be null)
+     * @return the validated absolute path
+     * @throws SecurityException if path traversal is detected
+     */
+    private Path validateAndResolvePath(String basePath, String relativePath) {
+        try {
+<span class="nc" id="L165">            Path base = Paths.get(basePath).toAbsolutePath().normalize();</span>
+            Path resolved;
+
+<span class="nc bnc" id="L168" title="All 4 branches missed.">            if (relativePath == null || relativePath.isBlank()) {</span>
+<span class="nc" id="L169">                resolved = base;</span>
+            } else {
+                // Normalize the relative path to prevent traversal
+<span class="nc" id="L172">                Path relative = Paths.get(relativePath).normalize();</span>
+
+                // Check for absolute path or path traversal attempts
+<span class="nc bnc" id="L175" title="All 4 branches missed.">                if (relative.isAbsolute() || relative.toString().contains(&quot;..&quot;)) {</span>
+<span class="nc" id="L176">                    throw new SecurityException(&quot;Path traversal attempt detected: &quot; + relativePath);</span>
+                }
+
+<span class="nc" id="L179">                resolved = base.resolve(relative).normalize();</span>
+            }
+
+            // Ensure the resolved path is still within the base directory
+<span class="nc bnc" id="L183" title="All 2 branches missed.">            if (!resolved.startsWith(base)) {</span>
+<span class="nc" id="L184">                throw new SecurityException(&quot;Path traversal attempt detected: resolved path &quot;</span>
+                        + resolved + &quot; is outside base directory &quot; + base);
+            }
+
+<span class="nc" id="L188">            return resolved;</span>
+<span class="nc" id="L189">        } catch (Exception e) {</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">            if (e instanceof SecurityException) {</span>
+<span class="nc" id="L191">                throw (SecurityException) e;</span>
+            }
+<span class="nc" id="L193">            throw new SecurityException(&quot;Invalid path: &quot; + basePath</span>
+<span class="nc bnc" id="L194" title="All 2 branches missed.">                    + (relativePath != null ? &quot;/&quot; + relativePath : &quot;&quot;), e);</span>
+        }
+    }
+
+    /**
+     * Reads the last N lines from a file efficiently.
+     *
+     * @param path the file path
+     * @param n the number of lines to read
+     * @return the last N lines as a string
+     * @throws IOException if file reading fails
+     */
+    private String readLastNLines(Path path, int n) throws IOException {
+<span class="nc" id="L207">        List&lt;String&gt; lines = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L209">        try (BufferedReader reader = new BufferedReader(new FileReader(path.toFile()))) {</span>
+            String line;
+<span class="nc bnc" id="L211" title="All 2 branches missed.">            while ((line = reader.readLine()) != null) {</span>
+<span class="nc" id="L212">                lines.add(line);</span>
+<span class="nc bnc" id="L213" title="All 2 branches missed.">                if (lines.size() &gt; n) {</span>
+<span class="nc" id="L214">                    lines.remove(0); // Remove oldest line to maintain size</span>
+                }
+            }
+        }
+
+<span class="nc" id="L219">        return String.join(&quot;\n&quot;, lines);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

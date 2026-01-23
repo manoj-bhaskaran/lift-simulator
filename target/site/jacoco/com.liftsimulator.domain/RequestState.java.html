@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RequestState.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.domain</a> &gt; <span class="el_source">RequestState.java</span></div><h1>RequestState.java</h1><pre class="source lang-java linenums">package com.liftsimulator.domain;
+
+/**
+ * Represents the lifecycle state of a lift request.
+ * Requests progress through these states from creation to completion or cancellation.
+ */
+<span class="nc" id="L7">public enum RequestState {</span>
+    /**
+     * Request has been created but not yet queued for processing.
+     */
+<span class="nc" id="L11">    CREATED,</span>
+
+    /**
+     * Request is waiting in the queue to be assigned to the lift.
+     */
+<span class="nc" id="L16">    QUEUED,</span>
+
+    /**
+     * Request has been assigned to the lift and is being considered for service.
+     */
+<span class="nc" id="L21">    ASSIGNED,</span>
+
+    /**
+     * The lift is actively serving this request (traveling to or at the target floor).
+     */
+<span class="nc" id="L26">    SERVING,</span>
+
+    /**
+     * Request has been successfully completed.
+     * This is a terminal state.
+     */
+<span class="nc" id="L32">    COMPLETED,</span>
+
+    /**
+     * Request has been cancelled before completion.
+     * This is a terminal state.
+     */
+<span class="nc" id="L38">    CANCELLED</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

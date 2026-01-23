@@ -1,9 +1,10 @@
 spring:
   datasource:
     # PostgreSQL test database
-    url: jdbc:postgresql://localhost:5432/lift_simulator_test
-    username: lift_admin
-    password: liftpassword
+    # Can be overridden with SPRING_DATASOURCE_URL environment variable
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lift_simulator_test}
+    username: ${SPRING_DATASOURCE_USERNAME:lift_admin}
+    password: ${SPRING_DATASOURCE_PASSWORD:liftpassword}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5

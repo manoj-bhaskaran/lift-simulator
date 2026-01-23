@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.admin.controller</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">package com.liftsimulator.admin.controller;
+
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import com.liftsimulator.admin.dto.ConfigValidationResponse;
+import com.liftsimulator.admin.dto.ScenarioValidationResponse;
+import com.liftsimulator.admin.service.ConfigValidationException;
+import com.liftsimulator.admin.service.ResourceNotFoundException;
+import com.liftsimulator.admin.service.ScenarioValidationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Global exception handler for REST API errors.
+ * Provides centralized exception handling with comprehensive logging for monitoring and debugging.
+ */
+@RestControllerAdvice
+<span class="nc" id="L30">public class GlobalExceptionHandler {</span>
+
+<span class="nc" id="L32">    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);</span>
+
+    /**
+     * Handles ResourceNotFoundException with 404 status.
+     */
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleResourceNotFound(ResourceNotFoundException ex) {
+<span class="nc" id="L39">        logger.info(&quot;Resource not found: {}&quot;, ex.getMessage());</span>
+
+<span class="nc" id="L41">        ErrorResponse error = new ErrorResponse(</span>
+<span class="nc" id="L42">            HttpStatus.NOT_FOUND.value(),</span>
+<span class="nc" id="L43">            ex.getMessage(),</span>
+<span class="nc" id="L44">            OffsetDateTime.now()</span>
+        );
+<span class="nc" id="L46">        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);</span>
+    }
+
+    /**
+     * Handles IllegalArgumentException with 400 status.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleIllegalArgument(IllegalArgumentException ex) {
+<span class="nc" id="L54">        logger.info(&quot;Illegal argument: {}&quot;, ex.getMessage());</span>
+
+<span class="nc" id="L56">        ErrorResponse error = new ErrorResponse(</span>
+<span class="nc" id="L57">            HttpStatus.BAD_REQUEST.value(),</span>
+<span class="nc" id="L58">            ex.getMessage(),</span>
+<span class="nc" id="L59">            OffsetDateTime.now()</span>
+        );
+<span class="nc" id="L61">        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);</span>
+    }
+
+    /**
+     * Handles IllegalStateException with 409 status.
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleIllegalState(IllegalStateException ex) {
+<span class="nc" id="L69">        logger.info(&quot;Illegal state: {}&quot;, ex.getMessage());</span>
+
+<span class="nc" id="L71">        ErrorResponse error = new ErrorResponse(</span>
+<span class="nc" id="L72">            HttpStatus.CONFLICT.value(),</span>
+<span class="nc" id="L73">            ex.getMessage(),</span>
+<span class="nc" id="L74">            OffsetDateTime.now()</span>
+        );
+<span class="nc" id="L76">        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);</span>
+    }
+
+    /**
+     * Handles configuration validation errors with 400 status.
+     */
+    @ExceptionHandler(ConfigValidationException.class)
+    public ResponseEntity&lt;ConfigValidationResponse&gt; handleConfigValidationError(
+        ConfigValidationException ex
+    ) {
+<span class="nc" id="L86">        logger.info(&quot;Configuration validation error: {}&quot;, ex.getMessage());</span>
+
+<span class="nc" id="L88">        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getValidationResponse());</span>
+    }
+
+    /**
+     * Handles scenario validation errors with 400 status.
+     */
+    @ExceptionHandler(ScenarioValidationException.class)
+    public ResponseEntity&lt;ScenarioValidationResponse&gt; handleScenarioValidationError(
+        ScenarioValidationException ex
+    ) {
+<span class="nc" id="L98">        logger.info(&quot;Scenario validation error: {}&quot;, ex.getMessage());</span>
+
+<span class="nc" id="L100">        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getValidationResponse());</span>
+    }
+
+    /**
+     * Handles HTTP message not readable exceptions with 400 status.
+     * Specifically handles unknown property errors from strict JSON deserialization.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleHttpMessageNotReadable(
+        HttpMessageNotReadableException ex
+    ) {
+<span class="nc" id="L111">        String message = &quot;Malformed JSON request&quot;;</span>
+
+        // Check if this is an unknown property error
+<span class="nc" id="L114">        Throwable cause = ex.getCause();</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        if (cause instanceof UnrecognizedPropertyException unrecognizedEx) {</span>
+<span class="nc" id="L116">            String fieldName = unrecognizedEx.getPropertyName();</span>
+<span class="nc" id="L117">            message = &quot;Unknown property '&quot; + fieldName + &quot;' is not allowed&quot;;</span>
+<span class="nc" id="L118">            logger.warn(&quot;Malformed JSON request - unknown property: {}&quot;, fieldName);</span>
+<span class="nc" id="L119">        } else {</span>
+<span class="nc" id="L120">            logger.warn(&quot;Malformed JSON request: {}&quot;, ex.getMessage());</span>
+        }
+
+<span class="nc" id="L123">        ErrorResponse error = new ErrorResponse(</span>
+<span class="nc" id="L124">            HttpStatus.BAD_REQUEST.value(),</span>
+            message,
+<span class="nc" id="L126">            OffsetDateTime.now()</span>
+        );
+<span class="nc" id="L128">        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);</span>
+    }
+
+    /**
+     * Handles validation errors with 400 status.
+     * Supports both field-level (FieldError) and object-level (ObjectError) validation constraints.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;ValidationErrorResponse&gt; handleValidationErrors(
+        MethodArgumentNotValidException ex
+    ) {
+<span class="nc" id="L139">        Map&lt;String, String&gt; fieldErrors = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L140">        ex.getBindingResult().getAllErrors().forEach(error -&gt; {</span>
+            String fieldName;
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            if (error instanceof FieldError fieldError) {</span>
+                // Field-level constraint violation
+<span class="nc" id="L144">                fieldName = fieldError.getField();</span>
+            } else {
+                // Object-level constraint violation (e.g., class-level validation)
+<span class="nc" id="L147">                fieldName = error.getObjectName();</span>
+            }
+<span class="nc" id="L149">            String errorMessage = error.getDefaultMessage();</span>
+<span class="nc" id="L150">            fieldErrors.put(fieldName, errorMessage);</span>
+<span class="nc" id="L151">        });</span>
+
+<span class="nc" id="L153">        logger.debug(&quot;Validation failed for {} field(s): {}&quot;, fieldErrors.size(), fieldErrors.keySet());</span>
+
+<span class="nc" id="L155">        ValidationErrorResponse error = new ValidationErrorResponse(</span>
+<span class="nc" id="L156">            HttpStatus.BAD_REQUEST.value(),</span>
+            &quot;Validation failed&quot;,
+            fieldErrors,
+<span class="nc" id="L159">            OffsetDateTime.now()</span>
+        );
+<span class="nc" id="L161">        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);</span>
+    }
+
+    /**
+     * Handles ResponseStatusException with the original status code.
+     * This preserves the intended HTTP status (e.g., 404) instead of converting to 500.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleResponseStatusException(ResponseStatusException ex) {
+<span class="nc" id="L170">        logger.info(&quot;Response status exception: {} - {}&quot;, ex.getStatusCode(), ex.getReason());</span>
+
+<span class="nc" id="L172">        ErrorResponse error = new ErrorResponse(</span>
+<span class="nc" id="L173">            ex.getStatusCode().value(),</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">            ex.getReason() != null ? ex.getReason() : ex.getStatusCode().toString(),</span>
+<span class="nc" id="L175">            OffsetDateTime.now()</span>
+        );
+<span class="nc" id="L177">        return ResponseEntity.status(ex.getStatusCode()).body(error);</span>
+    }
+
+    /**
+     * Handles unexpected exceptions with 500 status.
+     * Logs full stack trace for debugging production issues.
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleGenericException(Exception ex) {
+<span class="nc" id="L186">        logger.error(&quot;Unexpected error occurred: {}&quot;, ex.getMessage(), ex);</span>
+
+<span class="nc" id="L188">        ErrorResponse error = new ErrorResponse(</span>
+<span class="nc" id="L189">            HttpStatus.INTERNAL_SERVER_ERROR.value(),</span>
+            &quot;An unexpected error occurred&quot;,
+<span class="nc" id="L191">            OffsetDateTime.now()</span>
+        );
+<span class="nc" id="L193">        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);</span>
+    }
+
+    /**
+     * Standard error response.
+     */
+<span class="nc" id="L199">    public record ErrorResponse(</span>
+        int status,
+        String message,
+        OffsetDateTime timestamp
+    ) {
+    }
+
+    /**
+     * Validation error response with field-level errors.
+     * Uses defensive copying to prevent external modification of field errors.
+     */
+    public record ValidationErrorResponse(
+        int status,
+        String message,
+        Map&lt;String, String&gt; fieldErrors,
+        OffsetDateTime timestamp
+    ) {
+        /**
+         * Compact constructor that creates defensive copies of the field errors map.
+         */
+<span class="nc" id="L219">        public ValidationErrorResponse {</span>
+<span class="nc" id="L220">            fieldErrors = Map.copyOf(fieldErrors);</span>
+<span class="nc" id="L221">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

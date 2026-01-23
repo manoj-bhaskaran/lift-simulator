@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ScenarioService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.admin.service</a> &gt; <span class="el_source">ScenarioService.java</span></div><h1>ScenarioService.java</h1><pre class="source lang-java linenums">package com.liftsimulator.admin.service;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liftsimulator.admin.dto.ScenarioRequest;
+import com.liftsimulator.admin.dto.ScenarioResponse;
+import com.liftsimulator.admin.dto.ScenarioValidationResponse;
+import com.liftsimulator.admin.entity.Scenario;
+import com.liftsimulator.admin.repository.ScenarioRepository;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Service for managing stored scenarios.
+ */
+@Service
+@Transactional(readOnly = true)
+public class ScenarioService {
+
+    private final ScenarioRepository scenarioRepository;
+    private final ScenarioValidationService scenarioValidationService;
+    private final ObjectMapper objectMapper;
+
+    @SuppressFBWarnings(
+            value = &quot;EI_EXPOSE_REP2&quot;,
+            justification = &quot;Spring-managed beans injected via constructor. &quot;
+                    + &quot;Lifecycle and immutability managed by Spring container.&quot;
+    )
+    public ScenarioService(
+            ScenarioRepository scenarioRepository,
+            ScenarioValidationService scenarioValidationService,
+<span class="nc" id="L37">            ObjectMapper objectMapper) {</span>
+<span class="nc" id="L38">        this.scenarioRepository = scenarioRepository;</span>
+<span class="nc" id="L39">        this.scenarioValidationService = scenarioValidationService;</span>
+<span class="nc" id="L40">        this.objectMapper = objectMapper;</span>
+<span class="nc" id="L41">    }</span>
+
+    /**
+     * Creates a new scenario after validation.
+     *
+     * @param request scenario payload
+     * @return created scenario response
+     */
+    @Transactional
+    public ScenarioResponse createScenario(ScenarioRequest request) {
+<span class="nc" id="L51">        validateScenarioJson(request.scenarioJson());</span>
+
+<span class="nc" id="L53">        Scenario scenario = new Scenario(request.name(), serializeScenarioJson(request.scenarioJson()));</span>
+<span class="nc" id="L54">        Scenario savedScenario = scenarioRepository.save(scenario);</span>
+
+<span class="nc" id="L56">        return toResponse(savedScenario);</span>
+    }
+
+    /**
+     * Updates an existing scenario after validation.
+     *
+     * @param id scenario id
+     * @param request scenario payload
+     * @return updated scenario response
+     */
+    @Transactional
+    public ScenarioResponse updateScenario(Long id, ScenarioRequest request) {
+<span class="nc" id="L68">        Scenario scenario = scenarioRepository.findById(id)</span>
+<span class="nc" id="L69">            .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                &quot;Scenario not found with id: &quot; + id
+            ));
+
+<span class="nc" id="L73">        validateScenarioJson(request.scenarioJson());</span>
+
+<span class="nc" id="L75">        scenario.setName(request.name());</span>
+<span class="nc" id="L76">        scenario.setScenarioJson(serializeScenarioJson(request.scenarioJson()));</span>
+<span class="nc" id="L77">        Scenario savedScenario = scenarioRepository.save(scenario);</span>
+
+<span class="nc" id="L79">        return toResponse(savedScenario);</span>
+    }
+
+    /**
+     * Retrieves a scenario by id.
+     *
+     * @param id scenario id
+     * @return scenario response
+     */
+    public ScenarioResponse getScenario(Long id) {
+<span class="nc" id="L89">        Scenario scenario = scenarioRepository.findById(id)</span>
+<span class="nc" id="L90">            .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                &quot;Scenario not found with id: &quot; + id
+            ));
+
+<span class="nc" id="L94">        return toResponse(scenario);</span>
+    }
+
+    /**
+     * Retrieves all scenarios.
+     *
+     * @return list of scenario responses
+     */
+    public List&lt;ScenarioResponse&gt; getAllScenarios() {
+<span class="nc" id="L103">        return scenarioRepository.findAll().stream()</span>
+<span class="nc" id="L104">            .map(this::toResponse)</span>
+<span class="nc" id="L105">            .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Deletes a scenario by id.
+     *
+     * @param id scenario id
+     */
+    @Transactional
+    public void deleteScenario(Long id) {
+<span class="nc" id="L115">        Scenario scenario = scenarioRepository.findById(id)</span>
+<span class="nc" id="L116">            .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+                &quot;Scenario not found with id: &quot; + id
+            ));
+
+<span class="nc" id="L120">        scenarioRepository.delete(scenario);</span>
+<span class="nc" id="L121">    }</span>
+
+    private void validateScenarioJson(JsonNode scenarioJson) {
+<span class="nc" id="L124">        ScenarioValidationResponse validationResponse = scenarioValidationService.validate(scenarioJson);</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (validationResponse.hasErrors()) {</span>
+<span class="nc" id="L126">            throw new ScenarioValidationException(&quot;Scenario validation failed&quot;, validationResponse);</span>
+        }
+<span class="nc" id="L128">    }</span>
+
+    private String serializeScenarioJson(JsonNode scenarioJson) {
+        try {
+<span class="nc" id="L132">            return objectMapper.writeValueAsString(scenarioJson);</span>
+<span class="nc" id="L133">        } catch (JsonProcessingException e) {</span>
+<span class="nc" id="L134">            throw new IllegalArgumentException(&quot;Scenario JSON could not be serialized&quot;);</span>
+        }
+    }
+
+    private ScenarioResponse toResponse(Scenario scenario) {
+        try {
+<span class="nc" id="L140">            JsonNode scenarioJson = objectMapper.readTree(scenario.getScenarioJson());</span>
+<span class="nc" id="L141">            return new ScenarioResponse(</span>
+<span class="nc" id="L142">                scenario.getId(),</span>
+<span class="nc" id="L143">                scenario.getName(),</span>
+                scenarioJson,
+<span class="nc" id="L145">                scenario.getCreatedAt(),</span>
+<span class="nc" id="L146">                scenario.getUpdatedAt()</span>
+            );
+<span class="nc" id="L148">        } catch (JsonProcessingException e) {</span>
+<span class="nc" id="L149">            throw new IllegalStateException(&quot;Stored scenario JSON could not be parsed&quot;);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

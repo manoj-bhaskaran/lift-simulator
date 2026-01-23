@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ControllerFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lift Simulator</a> &gt; <a href="index.source.html" class="el_package">com.liftsimulator.engine</a> &gt; <span class="el_source">ControllerFactory.java</span></div><h1>ControllerFactory.java</h1><pre class="source lang-java linenums">package com.liftsimulator.engine;
+
+import com.liftsimulator.domain.ControllerStrategy;
+import com.liftsimulator.domain.IdleParkingMode;
+
+/**
+ * Factory for creating LiftController instances based on the selected strategy.
+ */
+<span class="nc" id="L9">public class ControllerFactory {</span>
+
+    /**
+     * Creates a LiftController using the default parameters for the given strategy.
+     *
+     * @param strategy the controller strategy to instantiate
+     * @return a new LiftController instance
+     * @throws IllegalArgumentException if the strategy is null
+     * @throws UnsupportedOperationException if the strategy is not yet implemented
+     */
+    public static LiftController createController(ControllerStrategy strategy) {
+<span class="nc bnc" id="L20" title="All 2 branches missed.">        if (strategy == null) {</span>
+<span class="nc" id="L21">            throw new IllegalArgumentException(&quot;Controller strategy cannot be null&quot;);</span>
+        }
+
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        return switch (strategy) {</span>
+<span class="nc" id="L25">            case NEAREST_REQUEST_ROUTING -&gt; new NaiveLiftController();</span>
+<span class="nc" id="L26">            case DIRECTIONAL_SCAN -&gt; new DirectionalScanLiftController();</span>
+        };
+    }
+
+    /**
+     * Creates a LiftController with custom parameters for the given strategy.
+     *
+     * @param strategy the controller strategy to instantiate
+     * @param homeFloor the home floor for the controller
+     * @param idleTimeoutTicks the number of ticks before the lift becomes idle
+     * @param idleParkingMode the parking behavior when idle
+     * @return a new LiftController instance
+     * @throws IllegalArgumentException if the strategy is null
+     * @throws UnsupportedOperationException if the strategy is not yet implemented
+     */
+    public static LiftController createController(
+            ControllerStrategy strategy,
+            int homeFloor,
+            int idleTimeoutTicks,
+            IdleParkingMode idleParkingMode) {
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (strategy == null) {</span>
+<span class="nc" id="L47">            throw new IllegalArgumentException(&quot;Controller strategy cannot be null&quot;);</span>
+        }
+
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        return switch (strategy) {</span>
+<span class="nc" id="L51">            case NEAREST_REQUEST_ROUTING -&gt; new NaiveLiftController(</span>
+                    homeFloor,
+                    idleTimeoutTicks,
+                    idleParkingMode
+            );
+<span class="nc" id="L56">            case DIRECTIONAL_SCAN -&gt; new DirectionalScanLiftController(</span>
+                    homeFloor,
+                    idleTimeoutTicks,
+                    idleParkingMode
+            );
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
