@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Random Seed Support**: Optional seed field for reproducible simulations
   - Added navigation link in main menu for easy access
   - Full CRUD operations (create, read, update, delete) with confirmation modals
+- **Simulator Run UI**: End-to-end UI flow for executing simulation runs
+  - Added Simulator landing page with lift system, published version, and scenario selection
+  - Run setup supports optional seed entry for reproducibility
+  - Polling-based run status with elapsed time, progress, and terminal state handling
+  - Results rendering with KPI cards, per-lift and per-floor tables, artefact downloads, and CLI reproduction guidance
+  - Published version list links into simulator flow with preselected system and version
 - **Backend Scenario Enhancements**:
   - Added `name` field to Scenario entity for better identification
   - Implemented `GET /api/scenarios` endpoint to list all scenarios
@@ -72,6 +78,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Provides unique passenger aliases (p1, p2, p3...) and proper event ordering
   - Added comprehensive test suite including golden-file tests and format validation
   - Documented in README with usage examples and API reference
+
+### Fixed
+- **Simulator Run UI**: Only apply preselected system/version from query params once so user selections are not overridden.
 
 ## [0.44.0] - 2026-01-20
 

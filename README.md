@@ -208,6 +208,10 @@ A modern React web application provides a user-friendly interface for managing l
   - Server-side validation with detailed error and warning feedback
   - Advanced JSON editor mode for direct scenario editing
   - Optional random seed for reproducible simulations
+- **Simulator Runs**: Launch published versions with scenarios, poll status, and review results
+  - Run setup with lift system, published version, and passenger flow scenario selection
+  - Live status updates with elapsed time and progress details
+  - Results view with KPI cards, per-lift/per-floor tables, artefact downloads, and CLI reproduction hints
 - **Validation Feedback**: Display detailed configuration validation errors when version creation fails
 - **Configuration Editor**: Edit configuration JSON with validation, save draft, and publish workflows
 - **Configuration Validator**: Validate configuration JSON before publishing
@@ -1893,6 +1897,10 @@ The current version (v0.45.0) includes comprehensive lift simulation and configu
   - Visual indicators for unsaved changes and last saved time
   - Read-only view for published and archived versions
   - Split-pane layout with editor and validation results side-by-side
+- **Simulator Runs**: End-to-end UI flow for executing and monitoring simulation runs
+  - Launch runs from published versions or the dedicated Simulator landing page
+  - Poll run status with elapsed time, progress, and status indicators
+  - Results rendering with KPI cards, per-lift/per-floor tables, artefact downloads, and CLI reproduction details
 - **Configuration Validator**: Interactive JSON editor for validating configurations
   - Live editing with syntax highlighting
   - Real-time validation using backend API
