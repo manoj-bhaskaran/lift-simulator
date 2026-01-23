@@ -73,7 +73,8 @@ public class SimulationRunServiceTest {
                 versionRepository,
                 scenarioRepository,
                 batchInputGenerator,
-                objectMapper
+                objectMapper,
+                tempDir.toString()
         );
 
         mockLiftSystem = new LiftSystem();
