@@ -2,8 +2,10 @@ package com.liftsimulator.admin.controller;
 
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
+import com.liftsimulator.admin.dto.ScenarioValidationResponse;
 import com.liftsimulator.admin.service.ConfigValidationException;
 import com.liftsimulator.admin.service.ResourceNotFoundException;
+import com.liftsimulator.admin.service.ScenarioValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -82,6 +84,18 @@ public class GlobalExceptionHandler {
         ConfigValidationException ex
     ) {
         logger.info("Configuration validation error: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getValidationResponse());
+    }
+
+    /**
+     * Handles scenario validation errors with 400 status.
+     */
+    @ExceptionHandler(ScenarioValidationException.class)
+    public ResponseEntity<ScenarioValidationResponse> handleScenarioValidationError(
+        ScenarioValidationException ex
+    ) {
+        logger.info("Scenario validation error: {}", ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getValidationResponse());
     }

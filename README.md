@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.44.0**
+Current version: **0.45.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -244,7 +244,7 @@ To package the React UI with the Spring Boot backend and serve everything from *
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.44.0.jar
+java -jar target/lift-simulator-0.45.0.jar
 ```
 
 This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api`.
@@ -265,7 +265,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.44.0.jar
+java -jar target/lift-simulator-0.45.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -479,6 +479,132 @@ The backend includes a comprehensive validation framework for lift system config
       "warnings": []
     }
     ```
+
+#### Scenario Management
+
+Scenario payloads define passenger flow for UI-driven simulation runs. The scenario schema is separate from the batch `.scenario` files used by the CLI.
+
+- **Create Scenario**: `POST /api/scenarios`
+  - Saves a scenario JSON payload after validation
+  - Request body:
+    ```json
+    {
+      "scenarioJson": {
+        "durationTicks": 60,
+        "passengerFlows": [
+          {
+            "startTick": 0,
+            "originFloor": 0,
+            "destinationFloor": 5,
+            "passengers": 3
+          }
+        ],
+        "seed": 42
+      }
+    }
+    ```
+  - Response (201 Created):
+    ```json
+    {
+      "id": 1,
+      "scenarioJson": {
+        "durationTicks": 60,
+        "passengerFlows": [
+          {
+            "startTick": 0,
+            "originFloor": 0,
+            "destinationFloor": 5,
+            "passengers": 3
+          }
+        ],
+        "seed": 42
+      },
+      "createdAt": "2026-01-11T10:00:00Z",
+      "updatedAt": "2026-01-11T10:00:00Z"
+    }
+    ```
+
+- **Update Scenario**: `PUT /api/scenarios/{id}`
+  - Updates an existing scenario payload after validation
+  - Request body: same as create
+  - Response (200 OK): Updated scenario details
+
+- **Get Scenario**: `GET /api/scenarios/{id}`
+  - Returns a stored scenario by ID
+  - Response (200 OK): Scenario details
+
+#### Scenario Validation
+
+- **Validate Scenario**: `POST /api/scenarios/validate`
+  - Validates a scenario JSON payload without saving it
+  - Request body:
+    ```json
+    {
+      "scenarioJson": {
+        "durationTicks": 60,
+        "passengerFlows": [
+          {
+            "startTick": 0,
+            "originFloor": 0,
+            "destinationFloor": 5,
+            "passengers": 3
+          }
+        ],
+        "seed": 42
+      }
+    }
+    ```
+  - Response (200 OK) - Valid scenario:
+    ```json
+    {
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    }
+    ```
+  - Response (200 OK) - Invalid scenario:
+    ```json
+    {
+      "valid": false,
+      "errors": [
+        {
+          "field": "passengerFlows[0].startTick",
+          "message": "startTick must be less than durationTicks (60)",
+          "severity": "ERROR"
+        }
+      ],
+      "warnings": []
+    }
+    ```
+
+**Scenario JSON Structure:**
+
+```json
+{
+  "durationTicks": 60,
+  "passengerFlows": [
+    {
+      "startTick": 0,
+      "originFloor": 0,
+      "destinationFloor": 5,
+      "passengers": 3
+    }
+  ],
+  "seed": 42
+}
+```
+
+**Scenario Validation Rules:**
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| `durationTicks` | Integer | Required, ≥ 1 | Total number of ticks to simulate |
+| `passengerFlows` | Array | Required, ≥ 1 entry | Passenger flow entries |
+| `passengerFlows[].startTick` | Integer | ≥ 0, < durationTicks | Tick when passengers arrive |
+| `passengerFlows[].originFloor` | Integer | Required | Origin floor for the flow |
+| `passengerFlows[].destinationFloor` | Integer | Required, ≠ origin | Destination floor for the flow |
+| `passengerFlows[].passengers` | Integer | Required, ≥ 1 | Number of passengers in the flow |
+| `seed` | Integer | Optional, ≥ 0 | Random seed for deterministic runs |
 
 **Configuration Structure:**
 
@@ -930,7 +1056,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.44.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.45.0.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -1174,7 +1300,7 @@ dropdb lift_simulator_test
 
 ## Features
 
-The current version (v0.44.0) includes comprehensive lift simulation and configuration management capabilities:
+The current version (v0.45.0) includes comprehensive lift simulation and configuration management capabilities:
 
 ### Admin Backend & REST API
 
@@ -1363,7 +1489,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.44.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.45.0.jar`.
 
 ## Running Tests
 
@@ -1413,7 +1539,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -1422,16 +1548,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -1445,7 +1571,7 @@ The demo runs a pre-configured scenario with several lift requests and displays 
 Use a published configuration JSON file to run a lightweight simulation:
 
 ```bash
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 
 Optional flags:
@@ -1463,7 +1589,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -1472,13 +1598,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**

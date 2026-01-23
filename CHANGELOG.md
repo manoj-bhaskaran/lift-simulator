@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-02-01
+
+### Added
+- Scenario management API with validation endpoints for UI-driven passenger-flow scenarios, including JSON schema validation and storage support.
+
 ## [0.44.0] - 2026-01-20
 
 ### Changed
