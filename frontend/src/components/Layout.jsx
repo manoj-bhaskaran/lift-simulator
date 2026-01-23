@@ -27,6 +27,9 @@ function Layout() {
             <Link to="/systems" className="nav-link">
               Lift Systems
             </Link>
+            <Link to="/scenarios" className="nav-link">
+              Scenarios
+            </Link>
             <Link to="/config-validator" className="nav-link">
               Config Validator
             </Link>

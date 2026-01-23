@@ -25,6 +25,9 @@ public class Scenario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "name", nullable = false, length = 200)
+    private String name;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "scenario_json", nullable = false, columnDefinition = "jsonb")
     private String scenarioJson;
@@ -38,7 +41,8 @@ public class Scenario {
     public Scenario() {
     }
 
-    public Scenario(String scenarioJson) {
+    public Scenario(String name, String scenarioJson) {
+        this.name = name;
         this.scenarioJson = scenarioJson;
     }
 
@@ -60,6 +64,14 @@ public class Scenario {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getScenarioJson() {

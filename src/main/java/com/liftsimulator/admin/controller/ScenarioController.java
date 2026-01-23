@@ -9,6 +9,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * REST controller for managing scenarios.
@@ -70,6 +73,17 @@ public class ScenarioController {
     }
 
     /**
+     * Retrieves all scenarios.
+     *
+     * @return list of scenario responses
+     */
+    @GetMapping
+    public ResponseEntity<List<ScenarioResponse>> getAllScenarios() {
+        List<ScenarioResponse> responses = scenarioService.getAllScenarios();
+        return ResponseEntity.ok(responses);
+    }
+
+    /**
      * Retrieves a scenario by id.
      *
      * @param id scenario id
@@ -79,6 +93,18 @@ public class ScenarioController {
     public ResponseEntity<ScenarioResponse> getScenario(@PathVariable Long id) {
         ScenarioResponse response = scenarioService.getScenario(id);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Deletes a scenario by id.
+     *
+     * @param id scenario id
+     * @return no content response
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteScenario(@PathVariable Long id) {
+        scenarioService.deleteScenario(id);
+        return ResponseEntity.noContent().build();
     }
 
     /**

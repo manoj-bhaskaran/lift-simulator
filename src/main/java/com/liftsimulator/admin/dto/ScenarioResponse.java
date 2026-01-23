@@ -9,6 +9,7 @@ import java.time.OffsetDateTime;
  */
 public record ScenarioResponse(
     Long id,
+    String name,
     JsonNode scenarioJson,
     OffsetDateTime createdAt,
     OffsetDateTime updatedAt

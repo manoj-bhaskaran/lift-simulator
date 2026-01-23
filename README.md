@@ -202,6 +202,12 @@ A modern React web application provides a user-friendly interface for managing l
   - Sort by version number, creation date, or status
   - Filter by status (All/Published/Draft/Archived)
   - Search by version number
+- **Scenario Builder**: Create and manage passenger flow scenarios for simulations
+  - Build scenarios using template-based quick start or custom flows
+  - Define passenger flows with origin, destination, timing, and passenger count
+  - Server-side validation with detailed error and warning feedback
+  - Advanced JSON editor mode for direct scenario editing
+  - Optional random seed for reproducible simulations
 - **Validation Feedback**: Display detailed configuration validation errors when version creation fails
 - **Configuration Editor**: Edit configuration JSON with validation, save draft, and publish workflows
 - **Configuration Validator**: Validate configuration JSON before publishing
