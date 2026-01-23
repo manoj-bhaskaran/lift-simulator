@@ -79,6 +79,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added comprehensive test suite including golden-file tests and format validation
   - Documented in README with usage examples and API reference
 
+### Fixed
+- **Simulator Run UI**: Only apply preselected system/version from query params once so user selections are not overridden.
+
 ## [0.44.0] - 2026-01-20
 
 ### Changed

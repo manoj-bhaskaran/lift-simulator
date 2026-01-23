@@ -1,5 +1,5 @@
 // @ts-check
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import { scenariosApi } from '../api/scenariosApi';
@@ -47,6 +47,7 @@ function Simulator() {
   const [artefacts, setArtefacts] = useState([]);
   const [now, setNow] = useState(Date.now());
   const [isStarting, setIsStarting] = useState(false);
+  const hasSyncedFromParams = useRef(false);
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -70,17 +71,23 @@ function Simulator() {
   }, []);
 
   useEffect(() => {
+    if (hasSyncedFromParams.current) {
+      return;
+    }
+
     const incomingSystemId = searchParams.get('systemId');
     const incomingVersionId = searchParams.get('versionId');
 
-    if (incomingSystemId && incomingSystemId !== selectedSystemId) {
+    if (incomingSystemId) {
       setSelectedSystemId(incomingSystemId);
     }
 
-    if (incomingVersionId && incomingVersionId !== selectedVersionId) {
+    if (incomingVersionId) {
       setSelectedVersionId(incomingVersionId);
     }
-  }, [searchParams, selectedSystemId, selectedVersionId]);
+
+    hasSyncedFromParams.current = true;
+  }, [searchParams]);
 
   const loadVersions = useCallback(async () => {
     if (!selectedSystemId) {
