@@ -626,7 +626,7 @@ All lift system configurations must conform to the following structure:
 }
 ```
 
-**Migration Guide (0.44.0 floor range update):**
+**Migration Guide (0.45.0 floor range update):**
 
 - Replace `floors` with explicit `minFloor` and `maxFloor`.
   - For existing configs, set `minFloor` to `0` and `maxFloor` to `floors - 1`.
@@ -1004,13 +1004,15 @@ SPRING_PROFILES_ACTIVE=prod mvn spring-boot:run
 
 #### Database Schema
 
-The initial schema (V1) includes:
+The schema includes the following tables:
 - `lift_simulator` - Application schema for lift configuration data (Flyway default)
 - `lift_simulator.flyway_schema_history` - Flyway migration tracking (auto-created)
 - `lift_system` - Lift system configuration roots
 - `lift_system_version` - Versioned lift configuration payloads (JSONB)
+- `simulation_scenario` - Reusable test scenarios with JSON configuration (V3)
+- `simulation_run` - Individual simulation run executions with lifecycle tracking (V3)
 
-Future migrations will extend lift configuration metadata, simulation runs, and other entities.
+The `simulation_run` table tracks run status (CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED) and maintains referential integrity with lift systems and versions for persistent run lifecycle management.
 
 ### JPA Entities and Repositories
 
@@ -1031,6 +1033,20 @@ The backend includes JPA entities and Spring Data repositories for database acce
   - Version status enum: DRAFT, PUBLISHED, ARCHIVED
   - Helper methods: `publish()`, `archive()`
 
+- **SimulationScenario** (`com.liftsimulator.admin.entity.SimulationScenario`)
+  - Maps to `simulation_scenario` table
+  - Reusable test scenarios for lift system testing
+  - **JSONB field mapping**: Stores scenario configuration as JSON
+  - Automatic timestamp management via `@PrePersist` and `@PreUpdate`
+
+- **SimulationRun** (`com.liftsimulator.admin.entity.SimulationRun`)
+  - Maps to `simulation_run` table
+  - Individual simulation run executions with lifecycle tracking
+  - Run status enum: CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED
+  - Relationships: Many-to-one with LiftSystem, LiftSystemVersion, and SimulationScenario
+  - Status transition methods: `start()`, `succeed()`, `fail()`, `cancel()`
+  - Progress tracking via `updateProgress(Long tick)`
+
 #### Repositories
 
 - **LiftSystemRepository** (`com.liftsimulator.admin.repository.LiftSystemRepository`)
@@ -1044,6 +1060,20 @@ The backend includes JPA entities and Spring Data repositories for database acce
   - Find published versions: `findByLiftSystemIdAndIsPublishedTrue(Long liftSystemId)`
   - Find by status: `findByStatus(VersionStatus status)`
   - Get max version number: `findMaxVersionNumberByLiftSystemId(Long liftSystemId)`
+
+- **SimulationScenarioRepository** (`com.liftsimulator.admin.repository.SimulationScenarioRepository`)
+  - Find by name: `findByName(String name)`
+  - Find by name pattern: `findByNameContainingIgnoreCase(String name)`
+  - Check existence: `existsByName(String name)`
+  - Standard CRUD operations via `JpaRepository`
+
+- **SimulationRunRepository** (`com.liftsimulator.admin.repository.SimulationRunRepository`)
+  - Find runs by lift system: `findByLiftSystemIdOrderByCreatedAtDesc(Long liftSystemId)`
+  - Find runs by version: `findByVersionIdOrderByCreatedAtDesc(Long versionId)`
+  - Find runs by scenario: `findByScenarioIdOrderByCreatedAtDesc(Long scenarioId)`
+  - Find runs by status: `findByStatusOrderByCreatedAtDesc(RunStatus status)`
+  - Find active runs: `findActiveRunsByLiftSystemId(Long liftSystemId)`
+  - Count operations: `countByLiftSystemId(Long liftSystemId)`, `countByStatus(RunStatus status)`
 
 #### Verifying JPA Operations
 
