@@ -13,6 +13,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -109,25 +110,35 @@ public class BatchInputGeneratorTest {
                 "Golden Test Scenario"
         );
 
-        String expected = """
-                name: Golden Test Scenario
-                ticks: 30
-                min_floor: 0
-                max_floor: 10
-                initial_floor: 0
-                travel_ticks_per_floor: 1
-                door_transition_ticks: 2
-                door_dwell_ticks: 3
-                door_reopen_window_ticks: 2
-                home_floor: 0
-                idle_timeout_ticks: 5
-                controller_strategy: NEAREST_REQUEST_ROUTING
-                idle_parking_mode: PARK_TO_HOME_FLOOR
+        String expected = readResource("batch-input/golden-basic.scenario");
 
-                0, hall_call, p1, 0, UP
-                5, hall_call, p2, 8, DOWN
-                5, hall_call, p3, 8, DOWN
-                """;
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testGenerateScenarioContent_GoldenFileDirectionalScan() throws IOException {
+        LiftConfigDTO liftConfig = new LiftConfigDTO(
+                -1, 12, 2, 2, 3, 4, 1, 1, 8,
+                ControllerStrategy.DIRECTIONAL_SCAN,
+                IdleParkingMode.STAY_AT_CURRENT_FLOOR
+        );
+
+        PassengerFlowDTO flow1 = new PassengerFlowDTO(0, -1, 6, 2);
+        PassengerFlowDTO flow2 = new PassengerFlowDTO(12, 10, 1, 1);
+
+        ScenarioDefinitionDTO scenario = new ScenarioDefinitionDTO(
+                40,
+                List.of(flow1, flow2),
+                null
+        );
+
+        String result = generator.generateScenarioContent(
+                liftConfig,
+                scenario,
+                "Directional Scan Scenario"
+        );
+
+        String expected = readResource("batch-input/golden-directional-scan.scenario");
 
         assertEquals(expected, result);
     }
@@ -463,5 +474,10 @@ public class BatchInputGeneratorTest {
             assertTrue(hasValidPrefix,
                     "Line contains unexpected field: " + line);
         }
+    }
+
+    private String readResource(String resourcePath) throws IOException {
+        Path path = Paths.get("src/test/resources").resolve(resourcePath);
+        return Files.readString(path).replace("\r\n", "\n");
     }
 }

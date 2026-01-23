@@ -78,6 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Provides unique passenger aliases (p1, p2, p3...) and proper event ordering
   - Added comprehensive test suite including golden-file tests and format validation
   - Documented in README with usage examples and API reference
+- **Testing**: Added run lifecycle integration coverage, golden-file contract checks for batch input generation,
+  and a CLI compatibility test for the demo scenario.
 
 ### Fixed
 - **Simulator Run UI**: Only apply preselected system/version from query params once so user selections are not overridden.
