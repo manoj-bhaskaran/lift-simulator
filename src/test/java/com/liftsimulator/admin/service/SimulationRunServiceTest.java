@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.SimulationRun;
@@ -12,10 +13,12 @@ import com.liftsimulator.admin.repository.SimulationScenarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -24,6 +27,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,16 +50,32 @@ public class SimulationRunServiceTest {
     @Mock
     private SimulationScenarioRepository scenarioRepository;
 
-    @InjectMocks
+    @Mock
+    private BatchInputGenerator batchInputGenerator;
+
     private SimulationRunService runService;
+    private ObjectMapper objectMapper;
 
     private LiftSystem mockLiftSystem;
     private LiftSystemVersion mockVersion;
     private SimulationScenario mockScenario;
     private SimulationRun mockRun;
 
+    @TempDir
+    Path tempDir;
+
     @BeforeEach
     public void setUp() {
+        objectMapper = new ObjectMapper();
+        runService = new SimulationRunService(
+                runRepository,
+                liftSystemRepository,
+                versionRepository,
+                scenarioRepository,
+                batchInputGenerator,
+                objectMapper
+        );
+
         mockLiftSystem = new LiftSystem();
         mockLiftSystem.setId(1L);
         mockLiftSystem.setSystemKey("test-system");
@@ -64,10 +84,12 @@ public class SimulationRunServiceTest {
         mockVersion.setId(1L);
         mockVersion.setVersionNumber(1);
         mockVersion.setLiftSystem(mockLiftSystem);
+        mockVersion.setConfig("{\"minFloor\":0,\"maxFloor\":10}");
 
         mockScenario = new SimulationScenario();
         mockScenario.setId(1L);
         mockScenario.setName("Test Scenario");
+        mockScenario.setScenarioJson("{\"durationTicks\":100,\"passengerFlows\":[]}");
 
         mockRun = new SimulationRun();
         mockRun.setId(1L);
@@ -416,5 +438,87 @@ public class SimulationRunServiceTest {
 
         assertEquals("Simulation run not found with id: 999", exception.getMessage());
         verify(runRepository).existsById(999L);
+    }
+
+    @Test
+    public void testGenerateBatchInputFile_Success() throws IOException {
+        String artefactPath = tempDir.toString();
+        mockRun.setScenario(mockScenario);
+        mockRun.setArtefactBasePath(artefactPath);
+
+        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+
+        Path result = runService.generateBatchInputFile(1L);
+
+        assertNotNull(result);
+        assertEquals(Path.of(artefactPath, "input.scenario"), result);
+        verify(runRepository).findById(1L);
+        verify(batchInputGenerator).generateBatchInputFile(
+                any(String.class),
+                any(),
+                any(String.class),
+                any(Path.class)
+        );
+    }
+
+    @Test
+    public void testGenerateBatchInputFile_NoScenario() {
+        mockRun.setScenario(null);
+        mockRun.setArtefactBasePath(tempDir.toString());
+
+        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> runService.generateBatchInputFile(1L)
+        );
+
+        assertTrue(exception.getMessage().contains("does not have a scenario"));
+        verify(runRepository).findById(1L);
+    }
+
+    @Test
+    public void testGenerateBatchInputFile_NoArtefactBasePath() {
+        mockRun.setScenario(mockScenario);
+        mockRun.setArtefactBasePath(null);
+
+        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> runService.generateBatchInputFile(1L)
+        );
+
+        assertTrue(exception.getMessage().contains("does not have an artefact base path"));
+        verify(runRepository).findById(1L);
+    }
+
+    @Test
+    public void testGenerateBatchInputFile_BlankArtefactBasePath() {
+        mockRun.setScenario(mockScenario);
+        mockRun.setArtefactBasePath("   ");
+
+        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> runService.generateBatchInputFile(1L)
+        );
+
+        assertTrue(exception.getMessage().contains("does not have an artefact base path"));
+        verify(runRepository).findById(1L);
+    }
+
+    @Test
+    public void testGenerateBatchInputFile_RunNotFound() {
+        when(runRepository.findById(999L)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> runService.generateBatchInputFile(999L)
+        );
+
+        assertEquals("Simulation run not found with id: 999", exception.getMessage());
+        verify(runRepository).findById(999L);
     }
 }
