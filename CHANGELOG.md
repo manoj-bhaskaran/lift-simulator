@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-01-23
+
+### Added
+- **Scenario Management UI**: Complete passenger flow scenario builder with form-based UI
+  - **Backend Infrastructure**:
+    - Database schema: Added `scenario` and `scenario_event` tables with Flyway migration (V3)
+    - JPA entities: `Scenario`, `ScenarioEvent` with proper relationships and lifecycle management
+    - DTOs: `ScenarioResponse`, `CreateScenarioRequest`, `UpdateScenarioRequest`, `ScenarioEventRequest`, `ScenarioValidationResponse`
+    - Repositories: `ScenarioRepository`, `ScenarioEventRepository` with custom query methods
+    - Service layer: `ScenarioService` with CRUD operations and comprehensive validation
+    - REST API: `ScenarioController` at `/api/scenarios` with endpoints for create, read, update, delete, and validate
+  - **Frontend Components**:
+    - `ScenarioList` page: Grid view of all scenarios with search, edit, and delete capabilities
+    - `ScenarioForm` page: Comprehensive form for creating and editing scenarios with:
+      - Basic information: name, description, total ticks, random seed
+      - Floor configuration: min/max floor, initial floor, home floor
+      - Timing configuration: travel ticks, door transition/dwell ticks
+      - Controller configuration: strategy (Naive/Simple/Directional Scan) and idle parking mode
+      - Passenger flow events: integrated event management with ScenarioEvents component
+    - `ScenarioEvents` component: Table-based event manager supporting:
+      - Hall calls: origin floor + direction (UP/DOWN)
+      - Car calls: destination floor
+      - Cancel events: cancel previous requests
+      - Event ordering by tick with visual badges
+      - Add/delete operations with inline form
+    - Navigation: Added "Scenarios" link to main navigation menu
+    - API integration: Extended `liftSystemsApi.js` with scenario endpoints
+    - TypeScript types: Added scenario-related type definitions in `models.d.ts`
+  - **Validation**:
+    - Server-side validation with detailed error messages
+    - Floor range validation (max > min, initial/home within range)
+    - Event validation (tick within duration, required fields by event type)
+    - Validate button with live feedback showing errors and warnings
+  - **UX Features**:
+    - Clear mapping of simulation parameters (ticks/duration, floor ranges, timing)
+    - Reproducibility support via optional random seed
+    - Only scenario inputs editable (lift parameters configured separately per requirement)
+    - Real-time validation feedback before save
+    - Scenario list shows key metrics: duration, floor range, controller, event count
+    - Search scenarios by name or description
+    - Confirmation dialog for deletions
+
 ## [0.44.0] - 2026-01-20
 
 ### Changed

@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.44.0**
+Current version: **0.45.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -1174,7 +1174,7 @@ dropdb lift_simulator_test
 
 ## Features
 
-The current version (v0.44.0) includes comprehensive lift simulation and configuration management capabilities:
+The current version (v0.45.0) includes comprehensive lift simulation, configuration management, and scenario building capabilities:
 
 ### Admin Backend & REST API
 
@@ -1238,6 +1238,47 @@ The current version (v0.44.0) includes comprehensive lift simulation and configu
   - Publish versions with validation and automatic archiving
   - View version configuration with expandable JSON display
   - Published/created timestamps for version tracking
+- **Scenario Management**: Comprehensive passenger flow scenario builder
+  - **Scenario List**: Grid view of all passenger flow scenarios
+    - Search scenarios by name or description
+    - Display key metrics: duration (ticks), floor range, controller strategy, event count
+    - Create, edit, and delete operations with confirmation dialogs
+    - Scenarios sorted by creation date (newest first)
+  - **Scenario Form**: Full-featured form for creating and editing scenarios
+    - Basic information: scenario name, description, total simulation ticks
+    - Floor configuration: min/max floor range, initial floor, home floor
+    - Timing parameters: travel ticks per floor, door transition/dwell ticks
+    - Controller settings: strategy selection (Naive/Simple/Directional Scan), idle parking mode
+    - Reproducibility: optional random seed for deterministic simulations
+    - Passenger flow events: integrated event management component
+    - Real-time validation with detailed server-side error messages
+    - Validate button to check scenario before saving
+  - **Event Management**: Interactive table-based component for passenger flows
+    - Hall calls: specify origin floor and direction (UP/DOWN)
+    - Car calls: specify destination floor
+    - Cancel events: cancel previously created requests
+    - Event ordering by tick with automatic sorting
+    - Visual event type badges with color coding
+    - Add/delete operations with inline form
+    - Event validation (tick within duration, required fields by type)
+  - **Server-Side Validation**: Comprehensive validation framework
+    - Floor range validation (max > min, initial/home within range)
+    - Event-specific validation (hall calls require origin + direction, car calls require destination)
+    - Tick validation (events must occur within scenario duration)
+    - Cross-field constraint checking
+    - Detailed error messages with field-level granularity
+  - **REST API**: Full CRUD operations at `/api/scenarios`
+    - GET `/api/scenarios` - List all scenarios
+    - GET `/api/scenarios/{id}` - Get scenario with events
+    - POST `/api/scenarios` - Create new scenario
+    - PUT `/api/scenarios/{id}` - Update existing scenario
+    - DELETE `/api/scenarios/{id}` - Delete scenario
+    - POST `/api/scenarios/validate` - Validate scenario without saving
+  - **Database**: PostgreSQL tables with proper relationships
+    - `scenario` table: stores scenario configuration
+    - `scenario_event` table: stores individual passenger flow events
+    - Flyway migration (V3) for schema versioning
+    - Cascade delete for events when scenario is deleted
 - **Configuration Editor**: Full-featured JSON editor for version configurations
   - Edit configuration JSON with syntax highlighting in monospace textarea
   - Save draft functionality to persist changes without publishing

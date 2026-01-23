@@ -9,6 +9,7 @@ import packageJson from '../../package.json';
  * Navigation links:
  * - Dashboard: Main overview page
  * - Lift Systems: Manage lift system configurations
+ * - Scenarios: Manage passenger flow scenarios
  * - Config Validator: Validate lift configuration JSON
  * - Health Check: System health status
  *
@@ -26,6 +27,9 @@ function Layout() {
             </Link>
             <Link to="/systems" className="nav-link">
               Lift Systems
+            </Link>
+            <Link to="/scenarios" className="nav-link">
+              Scenarios
             </Link>
             <Link to="/config-validator" className="nav-link">
               Config Validator

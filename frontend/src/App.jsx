@@ -5,6 +5,8 @@ import LiftSystems from './pages/LiftSystems';
 import LiftSystemDetail from './pages/LiftSystemDetail';
 import ConfigEditor from './pages/ConfigEditor';
 import ConfigValidator from './pages/ConfigValidator';
+import ScenarioList from './pages/ScenarioList';
+import ScenarioForm from './pages/ScenarioForm';
 import HealthCheck from './pages/HealthCheck';
 import './App.css';
 
@@ -17,6 +19,9 @@ function App() {
           <Route path="systems" element={<LiftSystems />} />
           <Route path="systems/:id" element={<LiftSystemDetail />} />
           <Route path="systems/:systemId/versions/:versionNumber/edit" element={<ConfigEditor />} />
+          <Route path="scenarios" element={<ScenarioList />} />
+          <Route path="scenarios/new" element={<ScenarioForm />} />
+          <Route path="scenarios/:id/edit" element={<ScenarioForm />} />
           <Route path="config-validator" element={<ConfigValidator />} />
           <Route path="health" element={<HealthCheck />} />
         </Route>
