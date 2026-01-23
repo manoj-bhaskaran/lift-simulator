@@ -2888,6 +2888,8 @@ mvn test
 
 The test suite includes integration coverage for the scenario system using fixtures in
 `src/test/resources/scenarios`.
+It also exercises simulation run lifecycle polling and batch input generator contracts
+with golden files under `src/test/resources/batch-input`.
 
 ## Quality Checks
 
