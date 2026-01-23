@@ -1,5 +1,7 @@
 package com.liftsimulator.admin.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liftsimulator.admin.dto.ScenarioDefinitionDTO;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.SimulationRun;
@@ -12,6 +14,9 @@ import com.liftsimulator.admin.repository.SimulationScenarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -25,16 +30,22 @@ public class SimulationRunService {
     private final LiftSystemRepository liftSystemRepository;
     private final LiftSystemVersionRepository versionRepository;
     private final SimulationScenarioRepository scenarioRepository;
+    private final BatchInputGenerator batchInputGenerator;
+    private final ObjectMapper objectMapper;
 
     public SimulationRunService(
             SimulationRunRepository runRepository,
             LiftSystemRepository liftSystemRepository,
             LiftSystemVersionRepository versionRepository,
-            SimulationScenarioRepository scenarioRepository) {
+            SimulationScenarioRepository scenarioRepository,
+            BatchInputGenerator batchInputGenerator,
+            ObjectMapper objectMapper) {
         this.runRepository = runRepository;
         this.liftSystemRepository = liftSystemRepository;
         this.versionRepository = versionRepository;
         this.scenarioRepository = scenarioRepository;
+        this.batchInputGenerator = batchInputGenerator;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -261,5 +272,55 @@ public class SimulationRunService {
             throw new ResourceNotFoundException("Simulation run not found with id: " + id);
         }
         runRepository.deleteById(id);
+    }
+
+    /**
+     * Generates a batch input file for a simulation run with a scenario.
+     * The file is written to {artefactBasePath}/input.scenario
+     *
+     * @param id the run id
+     * @return the path to the generated batch input file
+     * @throws ResourceNotFoundException if the run is not found
+     * @throws IllegalStateException if the run does not have a scenario or artefact base path
+     * @throws IOException if file generation fails
+     */
+    @Transactional(readOnly = true)
+    public Path generateBatchInputFile(Long id) throws IOException {
+        SimulationRun run = getRunById(id);
+
+        if (run.getScenario() == null) {
+            throw new IllegalStateException(
+                    "Cannot generate batch input file: run " + id + " does not have a scenario");
+        }
+
+        if (run.getArtefactBasePath() == null || run.getArtefactBasePath().isBlank()) {
+            throw new IllegalStateException(
+                    "Cannot generate batch input file: run " + id + " does not have an artefact base path");
+        }
+
+        String liftConfigJson = run.getVersion().getConfig();
+        String scenarioJson = run.getScenario().getScenarioJson();
+
+        ScenarioDefinitionDTO scenarioDefinition = objectMapper.readValue(
+                scenarioJson,
+                ScenarioDefinitionDTO.class
+        );
+
+        String scenarioName = String.format(
+                "Simulation Run %d - %s",
+                run.getId(),
+                run.getScenario().getName()
+        );
+
+        Path outputPath = Paths.get(run.getArtefactBasePath(), "input.scenario");
+
+        batchInputGenerator.generateBatchInputFile(
+                liftConfigJson,
+                scenarioDefinition,
+                scenarioName,
+                outputPath
+        );
+
+        return outputPath;
     }
 }

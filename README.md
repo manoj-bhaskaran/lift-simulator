@@ -620,6 +620,83 @@ Run artefacts are stored on disk using the configured `simulation.runs.artefacts
 - `scenario.json` - scenario payload for passenger flows
 - `run.log` - log output from the runner
 - `results.json` - results placeholder until a full results exporter is available
+#### Batch Input Generator
+
+The batch input generator converts stored scenario definitions and lift configurations into the legacy `.scenario` file format used by the CLI simulator. This enables backwards compatibility between the modern UI-driven workflow and the existing batch simulation infrastructure.
+
+**Purpose:**
+- Generates `.scenario` files from database-stored configurations
+- Ensures exact format compliance with `ScenarioParser`
+- Maintains backwards compatibility with CLI simulator
+- Stores generated files in run-specific artifact directories
+
+**How it works:**
+
+1. **Input**: Lift system version configuration (from database) + Scenario JSON (passenger flows)
+2. **Processing**: Converts passenger flows to `hall_call` events with proper direction calculation
+3. **Output**: `.scenario` file in the exact format expected by `ScenarioRunnerMain`
+
+**Example conversion:**
+
+Input scenario:
+```json
+{
+  "durationTicks": 30,
+  "passengerFlows": [
+    {
+      "startTick": 0,
+      "originFloor": 0,
+      "destinationFloor": 5,
+      "passengers": 2
+    },
+    {
+      "startTick": 10,
+      "originFloor": 8,
+      "destinationFloor": 2,
+      "passengers": 1
+    }
+  ]
+}
+```
+
+Generated `.scenario` file:
+```
+name: Simulation Run 123 - Morning Rush
+ticks: 30
+min_floor: 0
+max_floor: 10
+initial_floor: 0
+travel_ticks_per_floor: 1
+door_transition_ticks: 2
+door_dwell_ticks: 3
+door_reopen_window_ticks: 2
+home_floor: 0
+idle_timeout_ticks: 5
+controller_strategy: NEAREST_REQUEST_ROUTING
+idle_parking_mode: PARK_TO_HOME_FLOOR
+
+0, hall_call, p1, 0, UP
+0, hall_call, p2, 0, UP
+10, hall_call, p3, 8, DOWN
+```
+
+**Programmatic usage:**
+
+```java
+@Autowired
+private SimulationRunService runService;
+
+// Generate batch input file for a simulation run
+Path inputFile = runService.generateBatchInputFile(runId);
+// Returns: /path/to/artifacts/input.scenario
+```
+
+**Key features:**
+- **Automatic direction calculation**: Determines UP/DOWN based on origin and destination floors
+- **Unique passenger aliases**: Each passenger gets a unique alias (p1, p2, p3...)
+- **Event ordering**: Events are sorted by tick, then by alias
+- **Validation**: Ensures floor values are within configured range and start ticks are valid
+- **Artifact management**: Files are stored in run-specific directories under `artefactBasePath`
 
 **Scenario JSON Structure:**
 

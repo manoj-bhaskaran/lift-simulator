@@ -27,6 +27,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Asynchronous Simulation Runner**:
   - Added backend service and API to launch simulation runs asynchronously using stored configs and scenarios
   - Persisted run artefacts (inputs, logs, results placeholder) under a configurable artefact root
+- **Batch Input Generator**: Backwards-compatible wrapper for scenario-to-CLI conversion
+  - Implemented `BatchInputGenerator` service to generate `.scenario` files from stored configurations
+  - Converts lift system version configuration and scenario JSON to legacy batch input format
+  - Generates `hall_call` events from passenger flows with automatic direction calculation
+  - Ensures exact format compliance with `ScenarioParser` for CLI simulator compatibility
+  - Stores generated files in run-specific artifact directories under `artefactBasePath`
+  - Added `generateBatchInputFile()` method to `SimulationRunService` for programmatic access
+  - Validates floor ranges and tick constraints during generation
+  - Provides unique passenger aliases (p1, p2, p3...) and proper event ordering
+  - Added comprehensive test suite including golden-file tests and format validation
+  - Documented in README with usage examples and API reference
 
 ## [0.44.0] - 2026-01-20
 
