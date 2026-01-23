@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
 Test set: com.liftsimulator.admin.controller.LiftSystemControllerTest
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 1.715 s <<< FAILURE! -- in com.liftsimulator.admin.controller.LiftSystemControllerTest
-com.liftsimulator.admin.controller.LiftSystemControllerTest -- Time elapsed: 1.715 s <<< ERROR!
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.948 s <<< FAILURE! -- in com.liftsimulator.admin.controller.LiftSystemControllerTest
+com.liftsimulator.admin.controller.LiftSystemControllerTest -- Time elapsed: 0.948 s <<< ERROR!
 java.lang.IllegalStateException: Could not find a valid Docker environment. Please see logs and check configuration
 	at org.testcontainers.dockerclient.DockerClientProviderStrategy.lambda$getFirstValidStrategy$7(DockerClientProviderStrategy.java:277)
 	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
