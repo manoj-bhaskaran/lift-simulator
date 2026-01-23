@@ -50,8 +50,6 @@ public class BatchInputGenerator {
             Path outputPath
     ) throws IOException {
         LiftConfigDTO liftConfig = parseLiftConfig(liftConfigJson);
-        validateScenarioAgainstConfig(scenarioDefinition, liftConfig);
-
         String content = generateScenarioContent(liftConfig, scenarioDefinition, scenarioName);
         writeScenarioFile(outputPath, content);
     }
@@ -65,6 +63,7 @@ public class BatchInputGenerator {
             ScenarioDefinitionDTO scenarioDefinition,
             String scenarioName
     ) {
+        validateScenarioAgainstConfig(scenarioDefinition, liftConfig);
         StringBuilder sb = new StringBuilder();
 
         appendHeader(sb, scenarioName);
