@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -38,7 +39,14 @@ public class LiftSystemVersion {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "lift_system_id", nullable = false)
+    @JoinColumn(
+        name = "lift_system_id",
+        nullable = false,
+        foreignKey = @ForeignKey(
+            name = "fk_lift_system_version_lift_system",
+            foreignKeyDefinition = "FOREIGN KEY (lift_system_id) REFERENCES lift_system(id) ON DELETE CASCADE"
+        )
+    )
     private LiftSystem liftSystem;
 
     @Column(name = "version_number", nullable = false)
