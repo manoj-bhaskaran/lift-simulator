@@ -9,6 +9,7 @@ import com.liftsimulator.admin.dto.PassengerFlowDTO;
 import com.liftsimulator.admin.dto.ScenarioDefinitionDTO;
 import com.liftsimulator.admin.dto.ScenarioValidationResponse;
 import com.liftsimulator.admin.entity.SimulationRun;
+import com.liftsimulator.domain.Direction;
 import com.liftsimulator.domain.LiftRequest;
 import com.liftsimulator.engine.ControllerFactory;
 import com.liftsimulator.engine.RequestManagingLiftController;
@@ -96,6 +97,22 @@ public class SimulationRunExecutionService {
         RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, scenarioJson);
         executor.execute(() -> executeRun(request));
         return run;
+    }
+
+    /**
+     * Submits an existing simulation run for asynchronous execution.
+     * The run should be in CREATED state with configuration already set.
+     *
+     * @param runId the run id to execute
+     */
+    @Transactional
+    public void submitRunForExecution(Long runId) {
+        SimulationRun run = runService.getRunById(runId);
+        String configJson = run.getVersion().getConfig();
+        String scenarioJson = run.getScenario() != null ? run.getScenario().getScenarioJson() : null;
+
+        RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, scenarioJson);
+        executor.execute(() -> executeRun(request));
     }
 
     private void executeRun(RunExecutionRequest request) {
@@ -203,8 +220,21 @@ public class SimulationRunExecutionService {
             for (PassengerFlowDTO flow : flows) {
                 int passengers = flow.passengers() != null ? flow.passengers() : 1;
                 metrics.recordPassengerFlow(flow, passengers);
+
+                // Determine direction based on origin and destination floors
+                Direction direction;
+                if (flow.destinationFloor() > flow.originFloor()) {
+                    direction = Direction.UP;
+                } else if (flow.destinationFloor() < flow.originFloor()) {
+                    direction = Direction.DOWN;
+                } else {
+                    // Same floor - skip this flow as it doesn't require lift movement
+                    continue;
+                }
+
+                // Create hall calls (not car calls) to properly model passenger pickup
                 for (int i = 0; i < passengers; i++) {
-                    LiftRequest request = LiftRequest.carCall(flow.originFloor(), flow.destinationFloor());
+                    LiftRequest request = LiftRequest.hallCall(flow.originFloor(), direction);
                     metrics.recordRequestCreation(request, currentTick);
                     controller.addRequest(request);
                 }
