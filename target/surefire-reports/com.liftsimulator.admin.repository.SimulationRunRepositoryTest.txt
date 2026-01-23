@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.liftsimulator.admin.repository.SimulationRunRepositoryTest
 -------------------------------------------------------------------------------
-Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.417 s -- in com.liftsimulator.admin.repository.SimulationRunRepositoryTest
+Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.730 s -- in com.liftsimulator.admin.repository.SimulationRunRepositoryTest
