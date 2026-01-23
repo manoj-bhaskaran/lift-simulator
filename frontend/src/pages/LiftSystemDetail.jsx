@@ -45,10 +45,6 @@ function LiftSystemDetail() {
   /** @type {import('../types/models').ValidationResult | null} */
   const [createValidationResult, setCreateValidationResult] = useState(null);
   const [createValidationError, setCreateValidationError] = useState(null);
-  /** @type {number | null} */
-  const [runningVersion, setRunningVersion] = useState(null);
-  /** @type {{ type: 'success' | 'error'; message: string } | null} */
-  const [simulationStatus, setSimulationStatus] = useState(null);
 
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   /** @type {number | null} */
@@ -182,19 +178,12 @@ function LiftSystemDetail() {
   };
 
   /**
-   * Executes the lift simulator for a specific version.
-   * Uses the system key to run the simulation and displays status messages.
+   * Navigates to the simulator flow for a specific version.
    *
-   * @param {number} versionNumber - Version number to run simulation for
+   * @param {number} versionId - Version ID to run simulation for
    */
-  const handleRunSimulation = async (versionNumber) => {
-    setRunningVersion(versionNumber);
-    setSimulationStatus({
-      type: 'error',
-      message:
-        'This feature is currently unavailable and will be enabled in a future release.',
-    });
-    setRunningVersion(null);
+  const handleRunSimulation = (versionId) => {
+    navigate(`/simulator?systemId=${id}&versionId=${versionId}`);
   };
 
   /**
@@ -393,12 +382,6 @@ function LiftSystemDetail() {
           </button>
         </div>
 
-        {simulationStatus && (
-          <div className={`simulation-status ${simulationStatus.type}`}>
-            {simulationStatus.message}
-          </div>
-        )}
-
         {showCreateVersion && (
           <div className="create-version-form">
             <div className="version-number-display">
@@ -591,11 +574,11 @@ function LiftSystemDetail() {
                   </div>
                   <VersionActions
                     systemId={id}
+                    versionId={version.id}
                     versionNumber={version.versionNumber}
                     status={version.status}
                     onPublish={handlePublishVersion}
                     onRunSimulation={handleRunSimulation}
-                    runningVersion={runningVersion}
                   />
                 </div>
                 <div className="version-info">
