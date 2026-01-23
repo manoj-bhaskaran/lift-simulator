@@ -1,6 +1,7 @@
 package com.liftsimulator.admin.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liftsimulator.BaseIntegrationTest;
 import com.liftsimulator.admin.dto.CreateLiftSystemRequest;
 import com.liftsimulator.admin.dto.UpdateLiftSystemRequest;
 import com.liftsimulator.admin.entity.LiftSystem;
@@ -8,11 +9,8 @@ import com.liftsimulator.admin.repository.LiftSystemRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,12 +25,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Integration tests for LiftSystemController.
  */
-@SpringBootTest
 @AutoConfigureMockMvc
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@ActiveProfiles("test")
 @Transactional
-public class LiftSystemControllerTest {
+public class LiftSystemControllerTest extends BaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

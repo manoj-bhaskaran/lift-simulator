@@ -2,6 +2,7 @@ package com.liftsimulator.admin.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liftsimulator.BaseIntegrationTest;
 import com.liftsimulator.admin.dto.CreateSimulationRunRequest;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
@@ -16,11 +17,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -41,11 +39,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Integration test for simulation run lifecycle (start -> poll -> results).
  */
-@SpringBootTest
 @AutoConfigureMockMvc
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@ActiveProfiles("test")
-public class SimulationRunLifecycleIntegrationTest {
+public class SimulationRunLifecycleIntegrationTest extends BaseIntegrationTest {
 
     @TempDir
     static Path artefactsRoot;
