@@ -85,7 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handle unexpected IO failures when validating scenario payloads in the admin service.
 - Validate scenario floor ranges and start ticks when generating batch scenario content in memory.
 - Initialize the H2 test schema for Spring Boot integration tests to prevent application context startup failures.
-- Fix H2 JSON compatibility in @SpringBootTest integration tests by implementing custom `JsonStringConverter` AttributeConverter to replace Hibernate 6's `@JdbcTypeCode(SqlTypes.JSON)` annotation, which is only supported for Oracle and PostgreSQL databases. This resolves ApplicationContext loading failures caused by H2's lack of native JSON type support.
+- Fix H2 JSON compatibility in @SpringBootTest integration tests by implementing custom `JsonStringConverter` AttributeConverter with validation to replace Hibernate 6's `@JdbcTypeCode(SqlTypes.JSON)` annotation, which is only supported for Oracle and PostgreSQL databases. The converter validates JSON format at write time to prevent malformed JSON from being persisted (particularly for SimulationScenario entities where service-layer validation may be bypassed), ensuring errors are caught early rather than failing at simulation execution time.
 - **Simulator Run UI**: Only apply preselected system/version from query params once so user selections are not overridden.
 - **Simulator Landing**: Ignore stale version fetch responses when switching between systems quickly.
 - **Simulator Landing**: Clear version options when loading versions fails to prevent mismatched selections.
