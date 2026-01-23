@@ -811,6 +811,288 @@ When configuration validation fails:
 ```
 
 
+#### Simulation Run APIs
+
+The Simulation Run APIs enable UI to start simulations, poll their status, and access results/logs. These endpoints provide the complete lifecycle management for simulation execution.
+
+**Key Features:**
+- Create and start simulation runs atomically
+- Poll run status with progress tracking
+- Retrieve structured results when completed
+- Access logs with optional tail functionality
+- List and manage simulation artefacts
+- Security controls to prevent path traversal attacks
+
+---
+
+##### Create and Start Simulation Run
+
+**Endpoint:** `POST /api/simulation-runs`
+
+Creates a new simulation run, sets up the artefact directory, and immediately starts execution.
+
+**Request Body:**
+```json
+{
+  "liftSystemId": 1,
+  "versionId": 2,
+  "scenarioId": 3,
+  "seed": 12345
+}
+```
+
+**Request Fields:**
+- `liftSystemId` (required): ID of the lift system to simulate
+- `versionId` (required): ID of the version to use
+- `scenarioId` (optional): ID of the scenario to run (null for ad-hoc runs)
+- `seed` (optional): Random seed for reproducibility (auto-generated if not provided)
+
+**Response (201 Created):**
+```json
+{
+  "id": 1,
+  "liftSystemId": 1,
+  "versionId": 2,
+  "scenarioId": 3,
+  "status": "RUNNING",
+  "createdAt": "2026-01-23T10:00:00Z",
+  "startedAt": "2026-01-23T10:00:01Z",
+  "endedAt": null,
+  "totalTicks": 10000,
+  "currentTick": 0,
+  "seed": 12345,
+  "errorMessage": null
+}
+```
+
+**Status Values:**
+- `CREATED`: Run created but not yet started
+- `RUNNING`: Simulation is currently executing
+- `SUCCEEDED`: Simulation completed successfully
+- `FAILED`: Simulation failed with error
+- `CANCELLED`: Simulation was cancelled
+
+---
+
+##### Get Simulation Run Status
+
+**Endpoint:** `GET /api/simulation-runs/{id}`
+
+Retrieves the current status and details of a simulation run, including progress information.
+
+**Response (200 OK):**
+```json
+{
+  "id": 1,
+  "liftSystemId": 1,
+  "versionId": 2,
+  "scenarioId": 3,
+  "status": "RUNNING",
+  "createdAt": "2026-01-23T10:00:00Z",
+  "startedAt": "2026-01-23T10:00:01Z",
+  "endedAt": null,
+  "totalTicks": 10000,
+  "currentTick": 5432,
+  "seed": 12345,
+  "errorMessage": null
+}
+```
+
+**Progress Calculation:**
+- Progress percentage: `(currentTick / totalTicks) × 100`
+- Example: `(5432 / 10000) × 100 = 54.32%`
+
+**Error Response (404 Not Found):**
+```json
+{
+  "status": 404,
+  "message": "Simulation run not found with id: 999",
+  "timestamp": "2026-01-23T10:00:00Z"
+}
+```
+
+---
+
+##### Get Simulation Results
+
+**Endpoint:** `GET /api/simulation-runs/{id}/results`
+
+Retrieves the results of a simulation run. Response varies based on run status.
+
+**Response for SUCCEEDED (200 OK):**
+```json
+{
+  "runId": 1,
+  "status": "SUCCEEDED",
+  "results": {
+    "totalPassengersServed": 150,
+    "averageWaitTime": 12.5,
+    "maxWaitTime": 45.2,
+    "liftsUtilization": {
+      "lift1": 0.85,
+      "lift2": 0.78
+    }
+  },
+  "errorMessage": null,
+  "logsUrl": "/api/simulation-runs/1/logs"
+}
+```
+
+**Response for FAILED (200 OK):**
+```json
+{
+  "runId": 1,
+  "status": "FAILED",
+  "results": null,
+  "errorMessage": "Simulation engine crashed at tick 1234",
+  "logsUrl": "/api/simulation-runs/1/logs"
+}
+```
+
+**Response for RUNNING (409 Conflict):**
+```json
+{
+  "runId": 1,
+  "status": "RUNNING",
+  "results": null,
+  "errorMessage": "Simulation is still running",
+  "logsUrl": null
+}
+```
+
+**Response for CREATED/CANCELLED (400 Bad Request):**
+```json
+{
+  "runId": 1,
+  "status": "CREATED",
+  "results": null,
+  "errorMessage": "Results not available for CREATED runs",
+  "logsUrl": null
+}
+```
+
+---
+
+##### Get Simulation Logs
+
+**Endpoint:** `GET /api/simulation-runs/{id}/logs?tail=N`
+
+Retrieves simulation logs with optional tail functionality.
+
+**Query Parameters:**
+- `tail` (optional): Number of lines to retrieve from end of log
+  - Default: All lines
+  - Maximum: 10,000 lines
+
+**Response (200 OK):**
+```json
+{
+  "runId": "1",
+  "logs": "Starting simulation...\nTick 0: Initializing lifts\nTick 1: Processing requests\n...",
+  "tail": "100"
+}
+```
+
+**Common Log Files (searched in order):**
+- `simulation.log`
+- `output.log`
+- `run.log`
+
+**Error Response (500 Internal Server Error):**
+```json
+{
+  "runId": "1",
+  "error": "Failed to read logs: Artefact base path is not set for run 1"
+}
+```
+
+**Example Usage:**
+```bash
+# Get all logs
+curl http://localhost:8080/api/simulation-runs/1/logs
+
+# Get last 100 lines
+curl http://localhost:8080/api/simulation-runs/1/logs?tail=100
+```
+
+---
+
+##### List Simulation Artefacts
+
+**Endpoint:** `GET /api/simulation-runs/{id}/artefacts`
+
+Lists all artefacts (downloadable files) associated with a simulation run.
+
+**Response (200 OK):**
+```json
+[
+  {
+    "name": "results.json",
+    "path": "results.json",
+    "size": 1024,
+    "mimeType": "application/json"
+  },
+  {
+    "name": "simulation.log",
+    "path": "simulation.log",
+    "size": 5120,
+    "mimeType": "text/plain"
+  },
+  {
+    "name": "input.scenario",
+    "path": "input.scenario",
+    "size": 2048,
+    "mimeType": "text/plain"
+  }
+]
+```
+
+**Artefact Structure:**
+- `name`: File name
+- `path`: Relative path within artefact directory
+- `size`: File size in bytes
+- `mimeType`: MIME type based on file extension
+
+**Supported MIME Types:**
+- `.json` → `application/json`
+- `.txt`, `.log` → `text/plain`
+- `.csv` → `text/csv`
+- `.scenario` → `text/plain`
+- Others → `application/octet-stream`
+
+**Empty Directory Response (200 OK):**
+```json
+[]
+```
+
+---
+
+**Security Features:**
+- **Path Traversal Prevention**: All file access paths are normalized and validated
+- **Directory Isolation**: Artefacts are restricted to run-specific directories
+- **Secure Resolution**: Attempts to access files outside the artefact directory are blocked
+
+**Configuration:**
+```properties
+# Base directory for simulation artefacts (application.properties)
+simulation.artefacts.base-path=./simulation-runs
+```
+
+**Directory Structure:**
+```
+simulation-runs/
+├── run-1/
+│   ├── input.scenario
+│   ├── results.json
+│   └── simulation.log
+├── run-2/
+│   ├── results.json
+│   └── simulation.log
+└── run-3/
+    └── simulation.log
+```
+
+
 #### Runtime Configuration API
 
 The backend provides dedicated runtime APIs for retrieving published configurations. These APIs are read-only and return only configurations with `PUBLISHED` status.
