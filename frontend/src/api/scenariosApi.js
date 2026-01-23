@@ -9,5 +9,5 @@ export const scenariosApi = {
   deleteScenario: (id) => apiClient.delete(`/scenarios/${id}`),
 
   // Validation
-  validateScenario: (scenarioJson) => apiClient.post('/scenarios/validate', scenarioJson),
+  validateScenario: (data) => apiClient.post('/scenarios/validate', data),
 };

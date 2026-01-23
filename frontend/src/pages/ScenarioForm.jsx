@@ -183,7 +183,10 @@ function ScenarioForm() {
       setValidationWarnings([]);
 
       const scenarioJson = buildScenarioJson();
-      const response = await scenariosApi.validateScenario(scenarioJson);
+      const response = await scenariosApi.validateScenario({
+        name: scenarioName,
+        scenarioJson: scenarioJson
+      });
 
       if (response.data.valid) {
         setAlertMessage('Scenario is valid!');
