@@ -12,6 +12,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * Service for managing stored scenarios.
  */
@@ -47,7 +50,7 @@ public class ScenarioService {
     public ScenarioResponse createScenario(ScenarioRequest request) {
         validateScenarioJson(request.scenarioJson());
 
-        Scenario scenario = new Scenario(serializeScenarioJson(request.scenarioJson()));
+        Scenario scenario = new Scenario(request.name(), serializeScenarioJson(request.scenarioJson()));
         Scenario savedScenario = scenarioRepository.save(scenario);
 
         return toResponse(savedScenario);
@@ -69,6 +72,7 @@ public class ScenarioService {
 
         validateScenarioJson(request.scenarioJson());
 
+        scenario.setName(request.name());
         scenario.setScenarioJson(serializeScenarioJson(request.scenarioJson()));
         Scenario savedScenario = scenarioRepository.save(scenario);
 
@@ -88,6 +92,32 @@ public class ScenarioService {
             ));
 
         return toResponse(scenario);
+    }
+
+    /**
+     * Retrieves all scenarios.
+     *
+     * @return list of scenario responses
+     */
+    public List<ScenarioResponse> getAllScenarios() {
+        return scenarioRepository.findAll().stream()
+            .map(this::toResponse)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Deletes a scenario by id.
+     *
+     * @param id scenario id
+     */
+    @Transactional
+    public void deleteScenario(Long id) {
+        Scenario scenario = scenarioRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Scenario not found with id: " + id
+            ));
+
+        scenarioRepository.delete(scenario);
     }
 
     private void validateScenarioJson(JsonNode scenarioJson) {
@@ -110,6 +140,7 @@ public class ScenarioService {
             JsonNode scenarioJson = objectMapper.readTree(scenario.getScenarioJson());
             return new ScenarioResponse(
                 scenario.getId(),
+                scenario.getName(),
                 scenarioJson,
                 scenario.getCreatedAt(),
                 scenario.getUpdatedAt()

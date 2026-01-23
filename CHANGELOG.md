@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.45.0] - 2026-02-01
 
 ### Added
+- **Scenario Builder UI**: Complete UI for creating and managing passenger flow scenarios
+  - **Scenarios List Page**: Browse, search, and manage all saved scenarios
+  - **Scenario Form**: Create and edit scenarios with intuitive form-based or JSON editor modes
+  - **Template-Based Quick Start**: Pre-configured templates (Morning Rush, Evening Rush, Inter-Floor Traffic)
+  - **Passenger Flow Builder**: Visual component for building passenger flows with drag-and-drop reordering
+  - **Server-Side Validation**: Real-time validation with detailed error and warning feedback
+  - **Advanced JSON Mode**: Toggle between form mode and direct JSON editing
+  - **Random Seed Support**: Optional seed field for reproducible simulations
+  - Added navigation link in main menu for easy access
+  - Full CRUD operations (create, read, update, delete) with confirmation modals
+- **Backend Scenario Enhancements**:
+  - Added `name` field to Scenario entity for better identification
+  - Implemented `GET /api/scenarios` endpoint to list all scenarios
+  - Implemented `DELETE /api/scenarios/{id}` endpoint to delete scenarios
+  - Updated `ScenarioRequest` and `ScenarioResponse` DTOs to include name field
+  - Database migration (V4) to add name column to scenario table
 - **Scenario management API**:
   -  Validation endpoints for UI-driven passenger-flow scenarios
   -  JSON schema validation and storage support.
