@@ -82,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and a CLI compatibility test for the demo scenario.
 
 ### Fixed
+- Handle unexpected IO failures when validating scenario payloads in the admin service.
 - **Simulator Run UI**: Only apply preselected system/version from query params once so user selections are not overridden.
 - **Simulator Landing**: Ignore stale version fetch responses when switching between systems quickly.
 - **Simulator Landing**: Clear version options when loading versions fails to prevent mismatched selections.
