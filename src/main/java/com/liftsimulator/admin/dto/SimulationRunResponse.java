@@ -7,6 +7,10 @@ import java.time.OffsetDateTime;
 
 /**
  * Response DTO for simulation run details.
+import java.time.OffsetDateTime;
+
+/**
+ * Response payload for simulation run metadata.
  */
 public record SimulationRunResponse(
     Long id,
@@ -33,6 +37,14 @@ public record SimulationRunResponse(
             run.getId(),
             run.getLiftSystem().getId(),
             run.getVersion().getId(),
+    String errorMessage,
+    String artefactBasePath
+) {
+    public static SimulationRunResponse fromEntity(SimulationRun run) {
+        return new SimulationRunResponse(
+            run.getId(),
+            run.getLiftSystem() != null ? run.getLiftSystem().getId() : null,
+            run.getVersion() != null ? run.getVersion().getId() : null,
             run.getScenario() != null ? run.getScenario().getId() : null,
             run.getStatus(),
             run.getCreatedAt(),
@@ -55,5 +67,9 @@ public record SimulationRunResponse(
             return null;
         }
         return (currentTick.doubleValue() / totalTicks.doubleValue()) * 100.0;
+    }
+            run.getErrorMessage(),
+            run.getArtefactBasePath()
+        );
     }
 }

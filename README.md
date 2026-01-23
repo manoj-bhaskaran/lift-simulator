@@ -577,6 +577,49 @@ Scenario payloads define passenger flow for UI-driven simulation runs. The scena
     }
     ```
 
+#### Simulation Runs
+
+Simulation runs execute asynchronously using stored lift system configurations and UI scenarios.
+
+- **Start Simulation Run**: `POST /api/simulation-runs`
+  - Creates a run record, writes input artefacts, and launches the simulation asynchronously.
+  - Request body:
+    ```json
+    {
+      "liftSystemId": 1,
+      "versionId": 3,
+      "scenarioId": 5
+    }
+    ```
+  - Response (202 Accepted):
+    ```json
+    {
+      "id": 42,
+      "liftSystemId": 1,
+      "versionId": 3,
+      "scenarioId": 5,
+      "status": "CREATED",
+      "createdAt": "2026-02-01T10:00:00Z",
+      "startedAt": null,
+      "endedAt": null,
+      "totalTicks": null,
+      "currentTick": 0,
+      "seed": null,
+      "errorMessage": null,
+      "artefactBasePath": "run-artefacts/run-42"
+    }
+    ```
+
+- **Get Simulation Run**: `GET /api/simulation-runs/{id}`
+  - Returns the current status, progress, and artefact location.
+
+Run artefacts are stored on disk using the configured `simulation.runs.artefacts-root` directory
+(defaults to `run-artefacts/`). Each run folder contains:
+
+- `config.json` - exact configuration payload used
+- `scenario.json` - scenario payload for passenger flows
+- `run.log` - log output from the runner
+- `results.json` - results placeholder until a full results exporter is available
 #### Batch Input Generator
 
 The batch input generator converts stored scenario definitions and lift configurations into the legacy `.scenario` file format used by the CLI simulator. This enables backwards compatibility between the modern UI-driven workflow and the existing batch simulation infrastructure.
