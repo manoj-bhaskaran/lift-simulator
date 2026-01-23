@@ -81,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Simulator Run UI**: Only apply preselected system/version from query params once so user selections are not overridden.
+- **Simulator Landing**: Ignore stale version fetch responses when switching between systems quickly.
 
 ## [0.44.0] - 2026-01-20
 

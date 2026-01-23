@@ -1,5 +1,5 @@
 // @ts-check
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import { handleApiError } from '../utils/errorHandlers';
@@ -16,6 +16,7 @@ function SimulatorLanding() {
   const [selectedVersionId, setSelectedVersionId] = useState('');
   const [versions, setVersions] = useState([]);
   const [isLoadingVersions, setIsLoadingVersions] = useState(false);
+  const versionsRequestId = useRef(0);
 
   useEffect(() => {
     const loadSystems = async () => {
@@ -42,15 +43,25 @@ function SimulatorLanding() {
     }
 
     const loadVersions = async () => {
+      const requestId = versionsRequestId.current + 1;
+      versionsRequestId.current = requestId;
       try {
         setIsLoadingVersions(true);
         const response = await liftSystemsApi.getVersions(selectedSystemId);
+        if (versionsRequestId.current !== requestId) {
+          return;
+        }
         setVersions(response.data);
         setVersionsError(null);
       } catch (err) {
+        if (versionsRequestId.current !== requestId) {
+          return;
+        }
         handleApiError(err, setVersionsError, 'Failed to load versions');
       } finally {
-        setIsLoadingVersions(false);
+        if (versionsRequestId.current === requestId) {
+          setIsLoadingVersions(false);
+        }
       }
     };
 
