@@ -619,7 +619,76 @@ Run artefacts are stored on disk using the configured `simulation.runs.artefacts
 - `config.json` - exact configuration payload used
 - `scenario.json` - scenario payload for passenger flows
 - `run.log` - log output from the runner
-- `results.json` - results placeholder until a full results exporter is available
+- `results.json` - structured summary of the simulation run for UI rendering
+
+`results.json` provides a minimal, additive results schema suitable for UI consumption:
+
+```json
+{
+  "runSummary": {
+    "runId": 42,
+    "status": "SUCCEEDED",
+    "generatedAt": "2026-02-01T10:05:00Z",
+    "ticks": 120,
+    "durationTicks": 120,
+    "seed": 123,
+    "liftSystemId": 1,
+    "versionId": 3,
+    "scenarioId": 5
+  },
+  "kpis": {
+    "requestsTotal": 12,
+    "passengersServed": 12,
+    "passengersCancelled": 0,
+    "avgWaitTicks": 4.5,
+    "maxWaitTicks": 11,
+    "idleTicks": 30,
+    "movingTicks": 50,
+    "doorTicks": 40,
+    "utilisation": 0.75
+  },
+  "perLift": [
+    {
+      "liftId": "lift-1",
+      "minFloor": 0,
+      "maxFloor": 10,
+      "homeFloor": 0,
+      "travelTicksPerFloor": 1,
+      "doorTransitionTicks": 2,
+      "doorDwellTicks": 3,
+      "doorReopenWindowTicks": 2,
+      "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+      "idleParkingMode": "PARK_TO_HOME_FLOOR",
+      "statusCounts": {
+        "IDLE": 30,
+        "MOVING_UP": 25,
+        "MOVING_DOWN": 25,
+        "DOORS_OPENING": 8,
+        "DOORS_OPEN": 20,
+        "DOORS_CLOSING": 12
+      },
+      "totalTicks": 120,
+      "idleTicks": 30,
+      "movingTicks": 50,
+      "doorTicks": 40,
+      "utilisation": 0.75
+    }
+  ],
+  "perFloor": [
+    {
+      "floor": 0,
+      "originPassengers": 5,
+      "destinationPassengers": 2,
+      "liftVisits": 12
+    }
+  ]
+}
+```
+
+- `runSummary` includes tick counts, duration, seed, and lift system/version references.
+- `kpis` includes available wait-time metrics and utilisation from the simulation run.
+- `perLift` contains single-lift state counts and configuration metadata (one entry for now).
+- `perFloor` aggregates passenger origins/destinations and lift visit counts per floor (counted on floor changes).
 #### Batch Input Generator
 
 The batch input generator converts stored scenario definitions and lift configurations into the legacy `.scenario` file format used by the CLI simulator. This enables backwards compatibility between the modern UI-driven workflow and the existing batch simulation infrastructure.

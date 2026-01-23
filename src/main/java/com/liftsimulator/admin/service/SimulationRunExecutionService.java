@@ -22,9 +22,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -118,7 +121,7 @@ public class SimulationRunExecutionService {
             if (request.scenarioJson() == null) {
                 log(logWriter, "Missing scenario payload for run " + request.runId());
                 failRunWithMessage(request.runId(), logWriter, "Missing scenario payload for run.", false);
-                writeResultsPlaceholder(request.runId(), runDir, "FAILED", "Missing scenario payload for run.");
+                writeResults(request.runId(), runDir, null, null, null, "FAILED", "Missing scenario payload for run.");
                 return;
             }
 
@@ -126,7 +129,7 @@ public class SimulationRunExecutionService {
             if (!configValidation.valid()) {
                 log(logWriter, "Configuration validation failed: " + configValidation.errors());
                 failRunWithMessage(request.runId(), logWriter, "Invalid configuration payload.", false);
-                writeResultsPlaceholder(request.runId(), runDir, "FAILED", "Invalid configuration payload.");
+                writeResults(request.runId(), runDir, null, null, null, "FAILED", "Invalid configuration payload.");
                 return;
             }
 
@@ -135,7 +138,7 @@ public class SimulationRunExecutionService {
             if (!scenarioValidation.valid()) {
                 log(logWriter, "Scenario validation failed: " + scenarioValidation.errors());
                 failRunWithMessage(request.runId(), logWriter, "Invalid scenario payload.", false);
-                writeResultsPlaceholder(request.runId(), runDir, "FAILED", "Invalid scenario payload.");
+                writeResults(request.runId(), runDir, null, null, null, "FAILED", "Invalid scenario payload.");
                 return;
             }
 
@@ -154,27 +157,27 @@ public class SimulationRunExecutionService {
             started = true;
             log(logWriter, "Simulation started for run " + request.runId());
 
-            runSimulation(request.runId(), config, scenario, logWriter);
+            RunMetrics metrics = runSimulation(request.runId(), config, scenario, logWriter);
 
             runService.succeedRun(request.runId());
             log(logWriter, "Simulation succeeded for run " + request.runId());
-            writeResultsPlaceholder(request.runId(), runDir, "SUCCEEDED", "Results generation pending.");
+            writeResults(request.runId(), runDir, config, scenario, metrics, "SUCCEEDED", null);
         } catch (Exception ex) {
             String errorMessage = safeMessage(ex);
             logger.error("Simulation run {} failed", request.runId(), ex);
             failRunWithMessage(request.runId(), logPath, errorMessage, started);
             try {
-                writeResultsPlaceholder(request.runId(), runDir, "FAILED", errorMessage);
+                writeResults(request.runId(), runDir, null, null, null, "FAILED", errorMessage);
             } catch (IOException ioEx) {
-                logger.warn("Failed to write results placeholder for run {}", request.runId(), ioEx);
+                logger.warn("Failed to write results file for run {}", request.runId(), ioEx);
             }
         }
     }
 
-    private void runSimulation(Long runId,
-                               LiftConfigDTO config,
-                               ScenarioDefinitionDTO scenario,
-                               BufferedWriter logWriter) throws IOException {
+    private RunMetrics runSimulation(Long runId,
+                                     LiftConfigDTO config,
+                                     ScenarioDefinitionDTO scenario,
+                                     BufferedWriter logWriter) throws IOException {
         RequestManagingLiftController controller = (RequestManagingLiftController) ControllerFactory.createController(
             config.controllerStrategy(),
             config.homeFloor(),
@@ -191,6 +194,7 @@ public class SimulationRunExecutionService {
             .build();
 
         Map<Integer, List<PassengerFlowDTO>> flowsByTick = groupFlowsByTick(scenario);
+        RunMetrics metrics = new RunMetrics(config.minFloor(), config.maxFloor());
 
         log(logWriter, "Starting simulation for " + scenario.durationTicks() + " ticks.");
         for (int tick = 0; tick < scenario.durationTicks(); tick++) {
@@ -198,13 +202,18 @@ public class SimulationRunExecutionService {
             List<PassengerFlowDTO> flows = flowsByTick.getOrDefault((int) currentTick, List.of());
             for (PassengerFlowDTO flow : flows) {
                 int passengers = flow.passengers() != null ? flow.passengers() : 1;
+                metrics.recordPassengerFlow(flow, passengers);
                 for (int i = 0; i < passengers; i++) {
                     LiftRequest request = LiftRequest.carCall(flow.originFloor(), flow.destinationFloor());
+                    metrics.recordRequestCreation(request, currentTick);
                     controller.addRequest(request);
                 }
             }
 
+            metrics.recordLiftState(engine.getCurrentState());
+            metrics.recordActiveRequests(controller.getRequests(), currentTick);
             engine.tick();
+            metrics.recordTerminalRequests(currentTick);
 
             if (tick % PROGRESS_UPDATE_INTERVAL == 0) {
                 runService.updateProgress(runId, engine.getCurrentTick());
@@ -213,6 +222,8 @@ public class SimulationRunExecutionService {
 
         runService.updateProgress(runId, engine.getCurrentTick());
         log(logWriter, "Simulation completed at tick " + engine.getCurrentTick());
+        metrics.recordTerminalRequests(engine.getCurrentTick());
+        return metrics;
     }
 
     private Map<Integer, List<PassengerFlowDTO>> groupFlowsByTick(ScenarioDefinitionDTO scenario) {
@@ -263,12 +274,47 @@ public class SimulationRunExecutionService {
         }
     }
 
-    private void writeResultsPlaceholder(Long runId, Path runDir, String status, String message) throws IOException {
+    private void writeResults(Long runId,
+                              Path runDir,
+                              LiftConfigDTO config,
+                              ScenarioDefinitionDTO scenario,
+                              RunMetrics metrics,
+                              String status,
+                              String message) throws IOException {
         ObjectNode results = objectMapper.createObjectNode();
-        results.put("runId", runId);
-        results.put("status", status);
-        results.put("message", message);
-        results.put("generatedAt", OffsetDateTime.now().toString());
+        ObjectNode runSummary = results.putObject("runSummary");
+        runSummary.put("runId", runId);
+        runSummary.put("status", status);
+        runSummary.put("generatedAt", OffsetDateTime.now().toString());
+        if (message != null) {
+            runSummary.put("message", message);
+        }
+        if (scenario != null) {
+            runSummary.put("durationTicks", scenario.durationTicks());
+            if (scenario.seed() != null) {
+                runSummary.put("seed", scenario.seed());
+            }
+        }
+        if (metrics != null) {
+            runSummary.put("ticks", metrics.totalTicks());
+        }
+        try {
+            SimulationRun run = runService.getRunById(runId);
+            runSummary.put("liftSystemId", run.getLiftSystem().getId());
+            runSummary.put("versionId", run.getVersion().getId());
+            if (run.getScenario() != null) {
+                runSummary.put("scenarioId", run.getScenario().getId());
+            }
+        } catch (Exception ex) {
+            logger.warn("Failed to resolve run summary metadata for run {}", runId, ex);
+        }
+
+        if (metrics != null && config != null) {
+            results.set("kpis", metrics.toKpisNode(objectMapper));
+            results.set("perLift", metrics.toPerLiftNode(objectMapper, config));
+            results.set("perFloor", metrics.toPerFloorNode(objectMapper));
+        }
+
         objectMapper.writerWithDefaultPrettyPrinter()
             .writeValue(runDir.resolve(RESULTS_FILE_NAME).toFile(), results);
     }
@@ -303,6 +349,227 @@ public class SimulationRunExecutionService {
             Thread thread = new Thread(runnable, "simulation-runner-" + counter++);
             thread.setDaemon(true);
             return thread;
+        }
+    }
+
+    private static final class RunMetrics {
+        private final Map<Long, RequestLifecycle> lifecycles = new LinkedHashMap<>();
+        private final Map<com.liftsimulator.domain.LiftStatus, Long> statusCounts = new EnumMap<>(com.liftsimulator.domain.LiftStatus.class);
+        private final Map<Integer, FloorMetrics> floorMetrics = new HashMap<>();
+        private final int minFloor;
+        private final int maxFloor;
+        private long totalTicks;
+        private Integer lastRecordedFloor;
+
+        private RunMetrics(int minFloor, int maxFloor) {
+            this.minFloor = minFloor;
+            this.maxFloor = maxFloor;
+        }
+
+        private void recordPassengerFlow(PassengerFlowDTO flow, int passengers) {
+            if (flow.originFloor() != null) {
+                floorMetrics.computeIfAbsent(flow.originFloor(), FloorMetrics::new)
+                    .addOrigins(passengers);
+            }
+            if (flow.destinationFloor() != null) {
+                floorMetrics.computeIfAbsent(flow.destinationFloor(), FloorMetrics::new)
+                    .addDestinations(passengers);
+            }
+        }
+
+        private void recordLiftState(com.liftsimulator.domain.LiftState state) {
+            statusCounts.merge(state.getStatus(), 1L, Long::sum);
+            if (lastRecordedFloor == null || lastRecordedFloor != state.getFloor()) {
+                floorMetrics.computeIfAbsent(state.getFloor(), FloorMetrics::new)
+                    .addVisit();
+                lastRecordedFloor = state.getFloor();
+            }
+            totalTicks++;
+        }
+
+        private void recordRequestCreation(LiftRequest request, long tick) {
+            lifecycles.computeIfAbsent(request.getId(), id -> new RequestLifecycle(request, tick));
+        }
+
+        private void recordActiveRequests(Set<LiftRequest> requests, long tick) {
+            for (LiftRequest request : requests) {
+                recordRequestCreation(request, tick);
+            }
+        }
+
+        private void recordTerminalRequests(long tick) {
+            for (RequestLifecycle lifecycle : lifecycles.values()) {
+                if (lifecycle.terminalTick() != null || !lifecycle.request().isTerminal()) {
+                    continue;
+                }
+                lifecycle.markTerminal(tick, lifecycle.request().getState());
+            }
+        }
+
+        private long totalTicks() {
+            return totalTicks;
+        }
+
+        private ObjectNode toKpisNode(ObjectMapper objectMapper) {
+            ObjectNode kpis = objectMapper.createObjectNode();
+            long completed = lifecycles.values().stream()
+                .filter(lifecycle -> lifecycle.terminalState() == com.liftsimulator.domain.RequestState.COMPLETED)
+                .count();
+            long cancelled = lifecycles.values().stream()
+                .filter(lifecycle -> lifecycle.terminalState() == com.liftsimulator.domain.RequestState.CANCELLED)
+                .count();
+            long maxWait = lifecycles.values().stream()
+                .filter(lifecycle -> lifecycle.terminalState() == com.liftsimulator.domain.RequestState.COMPLETED)
+                .mapToLong(RequestLifecycle::waitTicks)
+                .max()
+                .orElse(0L);
+            double avgWait = lifecycles.values().stream()
+                .filter(lifecycle -> lifecycle.terminalState() == com.liftsimulator.domain.RequestState.COMPLETED)
+                .mapToLong(RequestLifecycle::waitTicks)
+                .average()
+                .orElse(0.0);
+
+            long idleTicks = statusCounts.getOrDefault(com.liftsimulator.domain.LiftStatus.IDLE, 0L)
+                + statusCounts.getOrDefault(com.liftsimulator.domain.LiftStatus.OUT_OF_SERVICE, 0L);
+            long movingTicks = statusCounts.getOrDefault(com.liftsimulator.domain.LiftStatus.MOVING_UP, 0L)
+                + statusCounts.getOrDefault(com.liftsimulator.domain.LiftStatus.MOVING_DOWN, 0L);
+            long doorTicks = statusCounts.getOrDefault(com.liftsimulator.domain.LiftStatus.DOORS_OPENING, 0L)
+                + statusCounts.getOrDefault(com.liftsimulator.domain.LiftStatus.DOORS_OPEN, 0L)
+                + statusCounts.getOrDefault(com.liftsimulator.domain.LiftStatus.DOORS_CLOSING, 0L);
+            double utilisation = totalTicks == 0 ? 0.0 : (double) (movingTicks + doorTicks) / (double) totalTicks;
+
+            kpis.put("requestsTotal", lifecycles.size());
+            kpis.put("passengersServed", completed);
+            kpis.put("passengersCancelled", cancelled);
+            kpis.put("avgWaitTicks", avgWait);
+            kpis.put("maxWaitTicks", maxWait);
+            kpis.put("idleTicks", idleTicks);
+            kpis.put("movingTicks", movingTicks);
+            kpis.put("doorTicks", doorTicks);
+            kpis.put("utilisation", utilisation);
+            return kpis;
+        }
+
+        private com.fasterxml.jackson.databind.node.ArrayNode toPerLiftNode(ObjectMapper objectMapper, LiftConfigDTO config) {
+            com.fasterxml.jackson.databind.node.ArrayNode lifts = objectMapper.createArrayNode();
+            ObjectNode lift = objectMapper.createObjectNode();
+            lift.put("liftId", "lift-1");
+            lift.put("minFloor", minFloor);
+            lift.put("maxFloor", maxFloor);
+            lift.put("homeFloor", config.homeFloor());
+            lift.put("travelTicksPerFloor", config.travelTicksPerFloor());
+            lift.put("doorTransitionTicks", config.doorTransitionTicks());
+            lift.put("doorDwellTicks", config.doorDwellTicks());
+            lift.put("doorReopenWindowTicks", config.doorReopenWindowTicks());
+            lift.put("controllerStrategy", config.controllerStrategy().name());
+            lift.put("idleParkingMode", config.idleParkingMode().name());
+
+            ObjectNode statusNode = objectMapper.createObjectNode();
+            for (Map.Entry<com.liftsimulator.domain.LiftStatus, Long> entry : statusCounts.entrySet()) {
+                statusNode.put(entry.getKey().name(), entry.getValue());
+            }
+            lift.set("statusCounts", statusNode);
+
+            long idleTicks = statusCounts.getOrDefault(com.liftsimulator.domain.LiftStatus.IDLE, 0L)
+                + statusCounts.getOrDefault(com.liftsimulator.domain.LiftStatus.OUT_OF_SERVICE, 0L);
+            long movingTicks = statusCounts.getOrDefault(com.liftsimulator.domain.LiftStatus.MOVING_UP, 0L)
+                + statusCounts.getOrDefault(com.liftsimulator.domain.LiftStatus.MOVING_DOWN, 0L);
+            long doorTicks = statusCounts.getOrDefault(com.liftsimulator.domain.LiftStatus.DOORS_OPENING, 0L)
+                + statusCounts.getOrDefault(com.liftsimulator.domain.LiftStatus.DOORS_OPEN, 0L)
+                + statusCounts.getOrDefault(com.liftsimulator.domain.LiftStatus.DOORS_CLOSING, 0L);
+            double utilisation = totalTicks == 0 ? 0.0 : (double) (movingTicks + doorTicks) / (double) totalTicks;
+
+            lift.put("totalTicks", totalTicks);
+            lift.put("idleTicks", idleTicks);
+            lift.put("movingTicks", movingTicks);
+            lift.put("doorTicks", doorTicks);
+            lift.put("utilisation", utilisation);
+
+            lifts.add(lift);
+            return lifts;
+        }
+
+        private com.fasterxml.jackson.databind.node.ArrayNode toPerFloorNode(ObjectMapper objectMapper) {
+            com.fasterxml.jackson.databind.node.ArrayNode floors = objectMapper.createArrayNode();
+            for (int floor = minFloor; floor <= maxFloor; floor++) {
+                FloorMetrics metrics = floorMetrics.getOrDefault(floor, new FloorMetrics(floor));
+                ObjectNode floorNode = objectMapper.createObjectNode();
+                floorNode.put("floor", floor);
+                floorNode.put("originPassengers", metrics.originPassengers());
+                floorNode.put("destinationPassengers", metrics.destinationPassengers());
+                floorNode.put("liftVisits", metrics.liftVisits());
+                floors.add(floorNode);
+            }
+            return floors;
+        }
+    }
+
+    private static final class FloorMetrics {
+        private long originPassengers;
+        private long destinationPassengers;
+        private long liftVisits;
+
+        private FloorMetrics(int floor) {
+        }
+
+        private void addOrigins(long count) {
+            originPassengers += count;
+        }
+
+        private void addDestinations(long count) {
+            destinationPassengers += count;
+        }
+
+        private void addVisit() {
+            liftVisits++;
+        }
+
+        private long originPassengers() {
+            return originPassengers;
+        }
+
+        private long destinationPassengers() {
+            return destinationPassengers;
+        }
+
+        private long liftVisits() {
+            return liftVisits;
+        }
+    }
+
+    private static final class RequestLifecycle {
+        private final LiftRequest request;
+        private final long createdTick;
+        private Long terminalTick;
+        private com.liftsimulator.domain.RequestState terminalState;
+
+        private RequestLifecycle(LiftRequest request, long createdTick) {
+            this.request = request;
+            this.createdTick = createdTick;
+        }
+
+        private LiftRequest request() {
+            return request;
+        }
+
+        private Long terminalTick() {
+            return terminalTick;
+        }
+
+        private com.liftsimulator.domain.RequestState terminalState() {
+            return terminalState;
+        }
+
+        private long waitTicks() {
+            if (terminalTick == null) {
+                return 0L;
+            }
+            return Math.max(0L, terminalTick - createdTick);
+        }
+
+        private void markTerminal(long tick, com.liftsimulator.domain.RequestState state) {
+            this.terminalTick = tick;
+            this.terminalState = state;
         }
     }
 }
