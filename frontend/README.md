@@ -18,6 +18,10 @@ This is the frontend admin application for the Lift Simulator system. It provide
 - Monitoring system health
 - Reviewing per-system version counts in the Lift Systems list
 
+## Versioning
+
+The footer displays the current UI version by reading the `version` field from `frontend/package.json` at build time. Update that field as part of each release to keep the footer in sync with the deployed build.
+
 ## Tech Stack
 
 This project uses the following core dependencies (version ranges as specified in `package.json`):
