@@ -170,7 +170,11 @@ public class SimulationRunExecutionService {
                 runDir.toAbsolutePath().toString()
             );
 
-            runService.startRun(request.runId());
+            // Start the run if not already started (it may have been started by createAndStartRun)
+            SimulationRun currentRun = runService.getRunById(request.runId());
+            if (currentRun.getStatus() != SimulationRun.RunStatus.RUNNING) {
+                runService.startRun(request.runId());
+            }
             started = true;
             log(logWriter, "Simulation started for run " + request.runId());
 

@@ -89,7 +89,7 @@ public class ArtefactService {
     public String readLogs(SimulationRun run, Integer tail) throws IOException {
         String basePath = run.getArtefactBasePath();
         if (basePath == null || basePath.isBlank()) {
-            throw new IllegalStateException("Artefact base path is not set for run " + run.getId());
+            throw new IOException("Artefact base path is not set for run " + run.getId());
         }
 
         // Try common log file names
