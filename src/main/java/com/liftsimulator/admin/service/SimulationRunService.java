@@ -62,7 +62,7 @@ public class SimulationRunService {
      * @param executionService the execution service
      */
     @org.springframework.beans.factory.annotation.Autowired
-    public void setExecutionService(SimulationRunExecutionService executionService) {
+    public void setExecutionService(@org.springframework.context.annotation.Lazy SimulationRunExecutionService executionService) {
         this.executionService = executionService;
     }
 
