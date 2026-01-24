@@ -30,7 +30,7 @@ public class BatchInputGenerator {
     private final ObjectMapper objectMapper;
 
     public BatchInputGenerator(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+        this.objectMapper = objectMapper.copy();
     }
 
     /**

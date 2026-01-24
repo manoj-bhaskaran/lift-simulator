@@ -2910,6 +2910,8 @@ Run static analysis:
 mvn spotbugs:check
 ```
 
+SpotBugs suppressions are limited to Spring-managed dependency injection in service constructors.
+
 Run dependency vulnerability checks:
 
 ```bash
