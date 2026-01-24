@@ -91,12 +91,6 @@ function ScenarioForm() {
   const [showAdvancedJson, setShowAdvancedJson] = useState(false);
   const [jsonText, setJsonText] = useState('');
 
-  useEffect(() => {
-    if (isEditMode) {
-      loadScenario();
-    }
-  }, [id, isEditMode, loadScenario]);
-
   /**
    * Loads scenario data for editing.
    */
@@ -121,6 +115,12 @@ function ScenarioForm() {
       setLoading(false);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (isEditMode) {
+      loadScenario();
+    }
+  }, [isEditMode, loadScenario]);
 
   /**
    * Applies a scenario template.
