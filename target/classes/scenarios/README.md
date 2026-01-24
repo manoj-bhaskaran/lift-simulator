@@ -9,7 +9,7 @@ This directory contains example lift system configurations for testing and refer
 **Use Case:** Small to medium office building
 
 **Configuration:**
-- 10 floors
+- Floors 0 through 9
 - 2 lifts
 - NEAREST_REQUEST_ROUTING strategy (simple nearest-floor algorithm)
 - Parks to home floor (ground floor) when idle
@@ -28,7 +28,7 @@ This directory contains example lift system configurations for testing and refer
 **Use Case:** Large residential high-rise building
 
 **Configuration:**
-- 30 floors
+- Floors 0 through 29
 - 4 lifts
 - DIRECTIONAL_SCAN strategy (SCAN/LOOK algorithm with direction commitment)
 - Parks to home floor when idle
@@ -53,11 +53,11 @@ This directory contains example lift system configurations for testing and refer
 - Shows configuration constraints
 
 **Known Errors:**
-- `floors: 1` - Must be at least 2
+- `maxFloor: 0` - Must be greater than minFloor
 - `lifts: 0` - Must be at least 1
 - `travelTicksPerFloor: -1` - Must be at least 1
 - `doorReopenWindowTicks: 5` exceeds `doorTransitionTicks: 2`
-- `homeFloor: 20` - Out of range for 1 floor
+- `homeFloor: 20` - Out of range for the configured floor span
 - `idleTimeoutTicks: -5` - Must be non-negative
 - `controllerStrategy: "INVALID_STRATEGY"` - Invalid enum value
 
@@ -107,13 +107,14 @@ Use these as templates and modify to suit your needs:
 ### Required Fields
 
 All configurations must include these fields:
-- `floors` (integer, ≥ 2)
+- `minFloor` (integer, required)
+- `maxFloor` (integer, > minFloor)
 - `lifts` (integer, ≥ 1)
 - `travelTicksPerFloor` (integer, ≥ 1)
 - `doorTransitionTicks` (integer, ≥ 1)
 - `doorDwellTicks` (integer, ≥ 1)
 - `doorReopenWindowTicks` (integer, ≥ 0, ≤ doorTransitionTicks)
-- `homeFloor` (integer, ≥ 0, < floors)
+- `homeFloor` (integer, minFloor ≤ homeFloor ≤ maxFloor)
 - `idleTimeoutTicks` (integer, ≥ 0)
 - `controllerStrategy` (enum: "NEAREST_REQUEST_ROUTING" or "DIRECTIONAL_SCAN")
 - `idleParkingMode` (enum: "STAY_AT_CURRENT_FLOOR" or "PARK_TO_HOME_FLOOR")
@@ -121,7 +122,7 @@ All configurations must include these fields:
 ### Validation Rules
 
 - **Cross-field validation:** `doorReopenWindowTicks` must not exceed `doorTransitionTicks`
-- **Range validation:** `homeFloor` must be within `[0, floors)`
+- **Range validation:** `homeFloor` must be within `[minFloor, maxFloor]`
 - **Enum validation:** Strategy and mode values must match exactly (case-sensitive)
 
 See the main [README.md](../../../../README.md) for complete validation rules and API documentation.

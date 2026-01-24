@@ -1,24 +1,33 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    # PostgreSQL test database with schema specified in URL
+    # Can be overridden with SPRING_DATASOURCE_URL environment variable
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lift_simulator_test?currentSchema=lift_simulator}
+    username: ${SPRING_DATASOURCE_USERNAME:lift_admin}
+    password: ${SPRING_DATASOURCE_PASSWORD:liftpassword}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
 
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
         format_sql: true
         default_schema: lift_simulator
         hbm2ddl:
-          create_namespaces: true
+          create_namespaces: false
 
   flyway:
     enabled: false
+    locations: classpath:db/migration
 
 logging:
   level:

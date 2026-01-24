@@ -1,0 +1,11 @@
+{
+  "runSummary" : {
+    "runId" : 181,
+    "status" : "FAILED",
+    "generatedAt" : "2026-01-24T10:56:22.730967300+05:30",
+    "message" : "Can only succeed a run in RUNNING state. Current state: SUCCEEDED",
+    "liftSystemId" : 346,
+    "versionId" : 310,
+    "scenarioId" : 196
+  }
+}

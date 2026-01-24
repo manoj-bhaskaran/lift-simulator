@@ -1,6 +1,7 @@
 package com.liftsimulator.admin.repository;
 
 import com.liftsimulator.admin.entity.LiftSystem;
+import com.liftsimulator.admin.entity.LiftSystemVersion;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -30,6 +31,9 @@ public class LiftSystemRepositoryTest {
 
     @Autowired
     private LiftSystemRepository liftSystemRepository;
+
+    @Autowired
+    private LiftSystemVersionRepository liftSystemVersionRepository;
 
     @Test
     public void testSaveAndFindById() {
@@ -144,5 +148,63 @@ public class LiftSystemRepositoryTest {
         liftSystemRepository.deleteById(id);
 
         assertFalse(liftSystemRepository.existsById(id));
+    }
+
+    @Test
+    public void testCascadeDeleteLiftSystemWithVersions() {
+        // Create a lift system
+        LiftSystem system = new LiftSystem(
+                "cascade-delete-test",
+                "Cascade Delete Test",
+                "System to test cascade delete"
+        );
+        entityManager.persist(system);
+        entityManager.flush();
+
+        // Create multiple versions for this system
+        LiftSystemVersion version1 = new LiftSystemVersion(
+                system,
+                1,
+                "{\"lifts\": 2}"
+        );
+        LiftSystemVersion version2 = new LiftSystemVersion(
+                system,
+                2,
+                "{\"lifts\": 3}"
+        );
+        LiftSystemVersion version3 = new LiftSystemVersion(
+                system,
+                3,
+                "{\"lifts\": 4}"
+        );
+
+        entityManager.persist(version1);
+        entityManager.persist(version2);
+        entityManager.persist(version3);
+        entityManager.flush();
+
+        Long systemId = system.getId();
+        Long version1Id = version1.getId();
+        Long version2Id = version2.getId();
+        Long version3Id = version3.getId();
+
+        // Verify all entities exist
+        assertTrue(liftSystemRepository.existsById(systemId));
+        assertTrue(liftSystemVersionRepository.existsById(version1Id));
+        assertTrue(liftSystemVersionRepository.existsById(version2Id));
+        assertTrue(liftSystemVersionRepository.existsById(version3Id));
+
+        // Delete the lift system
+        liftSystemRepository.deleteById(systemId);
+        entityManager.flush();
+        entityManager.clear();
+
+        // Verify lift system is deleted
+        assertFalse(liftSystemRepository.existsById(systemId));
+
+        // Verify all versions are cascade deleted
+        assertFalse(liftSystemVersionRepository.existsById(version1Id));
+        assertFalse(liftSystemVersionRepository.existsById(version2Id));
+        assertFalse(liftSystemVersionRepository.existsById(version3Id));
     }
 }

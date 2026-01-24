@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.44.0**
+Current version: **0.45.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -182,6 +182,10 @@ Use these as starting points or reference examples.
 - Verify PostgreSQL version is 12+
 - Check Flyway migration files in `src/main/resources/db/migration/`
 
+**Scenario validation fails with "Unable to read scenario payload":**
+- Confirm the scenario JSON is valid and not empty
+- Retry the request after verifying the payload format
+
 For detailed troubleshooting, see the relevant sections below.
 
 ---
@@ -202,6 +206,18 @@ A modern React web application provides a user-friendly interface for managing l
   - Sort by version number, creation date, or status
   - Filter by status (All/Published/Draft/Archived)
   - Search by version number
+- **Scenario Builder**: Create and manage passenger flow scenarios for simulations
+  - Build scenarios using template-based quick start or custom flows
+  - Define passenger flows with origin, destination, timing, and passenger count
+  - Server-side validation with detailed error and warning feedback
+  - Advanced JSON editor mode for direct scenario editing
+  - Optional random seed for reproducible simulations
+- **Simulator Runs**: Launch published versions with scenarios, poll status, and review results
+  - **Simulator landing page**: Choose a lift system and published version before configuring scenarios
+  - **Run Simulator button**: Quick access button next to each published version for immediate simulation launch
+  - Run setup with lift system, published version, and passenger flow scenario selection
+  - Live status updates with elapsed time and progress details
+  - Results view with KPI cards, per-lift/per-floor tables, artefact downloads, and CLI reproduction hints
 - **Validation Feedback**: Display detailed configuration validation errors when version creation fails
 - **Configuration Editor**: Edit configuration JSON with validation, save draft, and publish workflows
 - **Configuration Validator**: Validate configuration JSON before publishing
@@ -244,7 +260,7 @@ To package the React UI with the Spring Boot backend and serve everything from *
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.44.0.jar
+java -jar target/lift-simulator-0.45.0.jar
 ```
 
 This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api`.
@@ -265,7 +281,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.44.0.jar
+java -jar target/lift-simulator-0.45.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -480,6 +496,322 @@ The backend includes a comprehensive validation framework for lift system config
     }
     ```
 
+#### Scenario Management
+
+Scenario payloads define passenger flow for UI-driven simulation runs. The scenario schema is separate from the batch `.scenario` files used by the CLI.
+
+- **Create Scenario**: `POST /api/scenarios`
+  - Saves a scenario JSON payload after validation
+  - Request body:
+    ```json
+    {
+      "scenarioJson": {
+        "durationTicks": 60,
+        "passengerFlows": [
+          {
+            "startTick": 0,
+            "originFloor": 0,
+            "destinationFloor": 5,
+            "passengers": 3
+          }
+        ],
+        "seed": 42
+      }
+    }
+    ```
+  - Response (201 Created):
+    ```json
+    {
+      "id": 1,
+      "scenarioJson": {
+        "durationTicks": 60,
+        "passengerFlows": [
+          {
+            "startTick": 0,
+            "originFloor": 0,
+            "destinationFloor": 5,
+            "passengers": 3
+          }
+        ],
+        "seed": 42
+      },
+      "createdAt": "2026-01-11T10:00:00Z",
+      "updatedAt": "2026-01-11T10:00:00Z"
+    }
+    ```
+
+- **Update Scenario**: `PUT /api/scenarios/{id}`
+  - Updates an existing scenario payload after validation
+  - Request body: same as create
+  - Response (200 OK): Updated scenario details
+
+- **Get Scenario**: `GET /api/scenarios/{id}`
+  - Returns a stored scenario by ID
+  - Response (200 OK): Scenario details
+
+#### Scenario Validation
+
+- **Validate Scenario**: `POST /api/scenarios/validate`
+  - Validates a scenario JSON payload without saving it
+  - Request body:
+    ```json
+    {
+      "scenarioJson": {
+        "durationTicks": 60,
+        "passengerFlows": [
+          {
+            "startTick": 0,
+            "originFloor": 0,
+            "destinationFloor": 5,
+            "passengers": 3
+          }
+        ],
+        "seed": 42
+      }
+    }
+    ```
+  - Response (200 OK) - Valid scenario:
+    ```json
+    {
+      "valid": true,
+      "errors": [],
+      "warnings": []
+    }
+    ```
+  - Response (200 OK) - Invalid scenario:
+    ```json
+    {
+      "valid": false,
+      "errors": [
+        {
+          "field": "passengerFlows[0].startTick",
+          "message": "startTick must be less than durationTicks (60)",
+          "severity": "ERROR"
+        }
+      ],
+      "warnings": []
+    }
+    ```
+
+#### Simulation Runs
+
+Simulation runs execute asynchronously using stored lift system configurations and UI scenarios.
+
+- **Start Simulation Run**: `POST /api/simulation-runs`
+  - Creates a run record, writes input artefacts, and launches the simulation asynchronously.
+  - Request body:
+    ```json
+    {
+      "liftSystemId": 1,
+      "versionId": 3,
+      "scenarioId": 5
+    }
+    ```
+  - Response (202 Accepted):
+    ```json
+    {
+      "id": 42,
+      "liftSystemId": 1,
+      "versionId": 3,
+      "scenarioId": 5,
+      "status": "CREATED",
+      "createdAt": "2026-02-01T10:00:00Z",
+      "startedAt": null,
+      "endedAt": null,
+      "totalTicks": null,
+      "currentTick": 0,
+      "seed": null,
+      "errorMessage": null,
+      "artefactBasePath": "run-artefacts/run-42"
+    }
+    ```
+
+- **Get Simulation Run**: `GET /api/simulation-runs/{id}`
+  - Returns the current status, progress, and artefact location.
+
+Run artefacts are stored on disk using the configured `simulation.runs.artefacts-root` directory
+(defaults to `run-artefacts/`). Each run folder contains:
+
+- `config.json` - exact configuration payload used
+- `scenario.json` - scenario payload for passenger flows
+- `run.log` - log output from the runner
+- `results.json` - structured summary of the simulation run for UI rendering
+
+`results.json` provides a minimal, additive results schema suitable for UI consumption:
+
+```json
+{
+  "runSummary": {
+    "runId": 42,
+    "status": "SUCCEEDED",
+    "generatedAt": "2026-02-01T10:05:00Z",
+    "ticks": 120,
+    "durationTicks": 120,
+    "seed": 123,
+    "liftSystemId": 1,
+    "versionId": 3,
+    "scenarioId": 5
+  },
+  "kpis": {
+    "requestsTotal": 12,
+    "passengersServed": 12,
+    "passengersCancelled": 0,
+    "avgWaitTicks": 4.5,
+    "maxWaitTicks": 11,
+    "idleTicks": 30,
+    "movingTicks": 50,
+    "doorTicks": 40,
+    "utilisation": 0.75
+  },
+  "perLift": [
+    {
+      "liftId": "lift-1",
+      "minFloor": 0,
+      "maxFloor": 10,
+      "homeFloor": 0,
+      "travelTicksPerFloor": 1,
+      "doorTransitionTicks": 2,
+      "doorDwellTicks": 3,
+      "doorReopenWindowTicks": 2,
+      "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+      "idleParkingMode": "PARK_TO_HOME_FLOOR",
+      "statusCounts": {
+        "IDLE": 30,
+        "MOVING_UP": 25,
+        "MOVING_DOWN": 25,
+        "DOORS_OPENING": 8,
+        "DOORS_OPEN": 20,
+        "DOORS_CLOSING": 12
+      },
+      "totalTicks": 120,
+      "idleTicks": 30,
+      "movingTicks": 50,
+      "doorTicks": 40,
+      "utilisation": 0.75
+    }
+  ],
+  "perFloor": [
+    {
+      "floor": 0,
+      "originPassengers": 5,
+      "destinationPassengers": 2,
+      "liftVisits": 12
+    }
+  ]
+}
+```
+
+- `runSummary` includes tick counts, duration, seed, and lift system/version references.
+- `kpis` includes available wait-time metrics and utilisation from the simulation run.
+- `perLift` contains single-lift state counts and configuration metadata (one entry for now).
+- `perFloor` aggregates passenger origins/destinations and lift visit counts per floor (counted on floor changes).
+#### Batch Input Generator
+
+The batch input generator converts stored scenario definitions and lift configurations into the legacy `.scenario` file format used by the CLI simulator. This enables backwards compatibility between the modern UI-driven workflow and the existing batch simulation infrastructure.
+
+**Purpose:**
+- Generates `.scenario` files from database-stored configurations
+- Ensures exact format compliance with `ScenarioParser`
+- Maintains backwards compatibility with CLI simulator
+- Stores generated files in run-specific artifact directories
+
+**How it works:**
+
+1. **Input**: Lift system version configuration (from database) + Scenario JSON (passenger flows)
+2. **Processing**: Converts passenger flows to `hall_call` events with proper direction calculation
+3. **Output**: `.scenario` file in the exact format expected by `ScenarioRunnerMain`
+
+**Example conversion:**
+
+Input scenario:
+```json
+{
+  "durationTicks": 30,
+  "passengerFlows": [
+    {
+      "startTick": 0,
+      "originFloor": 0,
+      "destinationFloor": 5,
+      "passengers": 2
+    },
+    {
+      "startTick": 10,
+      "originFloor": 8,
+      "destinationFloor": 2,
+      "passengers": 1
+    }
+  ]
+}
+```
+
+Generated `.scenario` file:
+```
+name: Simulation Run 123 - Morning Rush
+ticks: 30
+min_floor: 0
+max_floor: 10
+initial_floor: 0
+travel_ticks_per_floor: 1
+door_transition_ticks: 2
+door_dwell_ticks: 3
+door_reopen_window_ticks: 2
+home_floor: 0
+idle_timeout_ticks: 5
+controller_strategy: NEAREST_REQUEST_ROUTING
+idle_parking_mode: PARK_TO_HOME_FLOOR
+
+0, hall_call, p1, 0, UP
+0, hall_call, p2, 0, UP
+10, hall_call, p3, 8, DOWN
+```
+
+**Programmatic usage:**
+
+```java
+@Autowired
+private SimulationRunService runService;
+
+// Generate batch input file for a simulation run
+Path inputFile = runService.generateBatchInputFile(runId);
+// Returns: /path/to/artifacts/input.scenario
+```
+
+**Key features:**
+- **Automatic direction calculation**: Determines UP/DOWN based on origin and destination floors
+- **Unique passenger aliases**: Each passenger gets a unique alias (p1, p2, p3...)
+- **Event ordering**: Events are sorted by tick, then by alias
+- **Validation**: Ensures floor values are within configured range and start ticks are valid when generating content or files
+- **Artifact management**: Files are stored in run-specific directories under `artefactBasePath`
+
+**Scenario JSON Structure:**
+
+```json
+{
+  "durationTicks": 60,
+  "passengerFlows": [
+    {
+      "startTick": 0,
+      "originFloor": 0,
+      "destinationFloor": 5,
+      "passengers": 3
+    }
+  ],
+  "seed": 42
+}
+```
+
+**Scenario Validation Rules:**
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| `durationTicks` | Integer | Required, ≥ 1 | Total number of ticks to simulate |
+| `passengerFlows` | Array | Required, ≥ 1 entry | Passenger flow entries |
+| `passengerFlows[].startTick` | Integer | ≥ 0, < durationTicks | Tick when passengers arrive |
+| `passengerFlows[].originFloor` | Integer | Required | Origin floor for the flow |
+| `passengerFlows[].destinationFloor` | Integer | Required, ≠ origin | Destination floor for the flow |
+| `passengerFlows[].passengers` | Integer | Required, ≥ 1 | Number of passengers in the flow |
+| `seed` | Integer | Optional, ≥ 0 | Random seed for deterministic runs |
+
 **Configuration Structure:**
 
 All lift system configurations must conform to the following structure:
@@ -500,7 +832,7 @@ All lift system configurations must conform to the following structure:
 }
 ```
 
-**Migration Guide (0.44.0 floor range update):**
+**Migration Guide (0.45.0 floor range update):**
 
 - Replace `floors` with explicit `minFloor` and `maxFloor`.
   - For existing configs, set `minFloor` to `0` and `maxFloor` to `floors - 1`.
@@ -563,6 +895,1155 @@ When configuration validation fails:
 }
 ```
 
+
+#### Simulation Run APIs
+
+The Simulation Run APIs enable UI to start simulations, poll their status, and access results/logs. These endpoints provide the complete lifecycle management for simulation execution.
+
+**Key Features:**
+- Create and start simulation runs atomically
+- Poll run status with progress tracking
+- Retrieve structured results when completed
+- Access logs with optional tail functionality
+- List and manage simulation artefacts
+- Security controls to prevent path traversal attacks
+
+---
+
+##### Create and Start Simulation Run
+
+**Endpoint:** `POST /api/simulation-runs`
+
+Creates a new simulation run, sets up the artefact directory, and immediately starts execution.
+
+**Request Body:**
+```json
+{
+  "liftSystemId": 1,
+  "versionId": 2,
+  "scenarioId": 3,
+  "seed": 12345
+}
+```
+
+**Request Fields:**
+- `liftSystemId` (required): ID of the lift system to simulate
+- `versionId` (required): ID of the version to use
+- `scenarioId` (optional): ID of the scenario to run (null for ad-hoc runs)
+- `seed` (optional): Random seed for reproducibility (auto-generated if not provided)
+
+**Response (201 Created):**
+```json
+{
+  "id": 1,
+  "liftSystemId": 1,
+  "versionId": 2,
+  "scenarioId": 3,
+  "status": "RUNNING",
+  "createdAt": "2026-01-23T10:00:00Z",
+  "startedAt": "2026-01-23T10:00:01Z",
+  "endedAt": null,
+  "totalTicks": 10000,
+  "currentTick": 0,
+  "seed": 12345,
+  "errorMessage": null
+}
+```
+
+**Status Values:**
+- `CREATED`: Run created but not yet started
+- `RUNNING`: Simulation is currently executing
+- `SUCCEEDED`: Simulation completed successfully
+- `FAILED`: Simulation failed with error
+- `CANCELLED`: Simulation was cancelled
+
+---
+
+##### Get Simulation Run Status
+
+**Endpoint:** `GET /api/simulation-runs/{id}`
+
+Retrieves the current status and details of a simulation run, including progress information.
+
+**Response (200 OK):**
+```json
+{
+  "id": 1,
+  "liftSystemId": 1,
+  "versionId": 2,
+  "scenarioId": 3,
+  "status": "RUNNING",
+  "createdAt": "2026-01-23T10:00:00Z",
+  "startedAt": "2026-01-23T10:00:01Z",
+  "endedAt": null,
+  "totalTicks": 10000,
+  "currentTick": 5432,
+  "seed": 12345,
+  "errorMessage": null
+}
+```
+
+**Progress Calculation:**
+- Progress percentage: `(currentTick / totalTicks) × 100`
+- Example: `(5432 / 10000) × 100 = 54.32%`
+
+**Error Response (404 Not Found):**
+```json
+{
+  "status": 404,
+  "message": "Simulation run not found with id: 999",
+  "timestamp": "2026-01-23T10:00:00Z"
+}
+```
+
+---
+
+##### Get Simulation Results
+
+**Endpoint:** `GET /api/simulation-runs/{id}/results`
+
+Retrieves the results of a simulation run. Response varies based on run status.
+
+**Response for SUCCEEDED (200 OK):**
+```json
+{
+  "runId": 1,
+  "status": "SUCCEEDED",
+  "results": {
+    "totalPassengersServed": 150,
+    "averageWaitTime": 12.5,
+    "maxWaitTime": 45.2,
+    "liftsUtilization": {
+      "lift1": 0.85,
+      "lift2": 0.78
+    }
+  },
+  "errorMessage": null,
+  "logsUrl": "/api/simulation-runs/1/logs"
+}
+```
+
+**Response for SUCCEEDED without results file (200 OK):**
+```json
+{
+  "runId": 1,
+  "status": "SUCCEEDED",
+  "results": null,
+  "errorMessage": "Results file not available: No results file found for simulation run 1",
+  "logsUrl": "/api/simulation-runs/1/logs"
+}
+```
+
+*Note: If a simulation completed successfully but the results file cannot be read (e.g., file not found, permission denied), the response preserves the SUCCEEDED status while indicating results are unavailable via errorMessage.*
+
+**Response for FAILED (200 OK):**
+```json
+{
+  "runId": 1,
+  "status": "FAILED",
+  "results": null,
+  "errorMessage": "Simulation engine crashed at tick 1234",
+  "logsUrl": "/api/simulation-runs/1/logs"
+}
+```
+
+**Response for RUNNING (409 Conflict):**
+```json
+{
+  "runId": 1,
+  "status": "RUNNING",
+  "results": null,
+  "errorMessage": "Simulation is still running",
+  "logsUrl": null
+}
+```
+
+**Response for CREATED/CANCELLED (400 Bad Request):**
+```json
+{
+  "runId": 1,
+  "status": "CREATED",
+  "results": null,
+  "errorMessage": "Results not available for CREATED runs",
+  "logsUrl": null
+}
+```
+
+---
+
+##### Get Simulation Logs
+
+**Endpoint:** `GET /api/simulation-runs/{id}/logs?tail=N`
+
+Retrieves simulation logs with optional tail functionality.
+
+**Query Parameters:**
+- `tail` (optional): Number of lines to retrieve from end of log
+  - Default: All lines
+  - Maximum: 10,000 lines
+
+**Response (200 OK):**
+```json
+{
+  "runId": "1",
+  "logs": "Starting simulation...\nTick 0: Initializing lifts\nTick 1: Processing requests\n...",
+  "tail": "100"
+}
+```
+
+**Common Log Files (searched in order):**
+- `simulation.log`
+- `output.log`
+- `run.log`
+
+**Error Response (500 Internal Server Error):**
+```json
+{
+  "runId": "1",
+  "error": "Failed to read logs: Artefact base path is not set for run 1"
+}
+```
+
+**Example Usage:**
+```bash
+# Get all logs
+curl http://localhost:8080/api/simulation-runs/1/logs
+
+# Get last 100 lines
+curl http://localhost:8080/api/simulation-runs/1/logs?tail=100
+```
+
+---
+
+##### List Simulation Artefacts
+
+**Endpoint:** `GET /api/simulation-runs/{id}/artefacts`
+
+Lists all artefacts (downloadable files) associated with a simulation run.
+
+**Response (200 OK):**
+```json
+[
+  {
+    "name": "results.json",
+    "path": "results.json",
+    "size": 1024,
+    "mimeType": "application/json"
+  },
+  {
+    "name": "simulation.log",
+    "path": "simulation.log",
+    "size": 5120,
+    "mimeType": "text/plain"
+  },
+  {
+    "name": "input.scenario",
+    "path": "input.scenario",
+    "size": 2048,
+    "mimeType": "text/plain"
+  }
+]
+```
+
+**Artefact Structure:**
+- `name`: File name
+- `path`: Relative path within artefact directory
+- `size`: File size in bytes
+- `mimeType`: MIME type based on file extension
+
+**Supported MIME Types:**
+- `.json` → `application/json`
+- `.txt`, `.log` → `text/plain`
+- `.csv` → `text/csv`
+- `.scenario` → `text/plain`
+- Others → `application/octet-stream`
+
+**Empty Directory Response (200 OK):**
+```json
+[]
+```
+
+---
+
+**Security Features:**
+- **Path Traversal Prevention**: All file access paths are normalized and validated
+- **Directory Isolation**: Artefacts are restricted to run-specific directories
+- **Secure Resolution**: Attempts to access files outside the artefact directory are blocked
+
+**Configuration:**
+```properties
+# Base directory for simulation artefacts (application.properties)
+simulation.artefacts.base-path=./simulation-runs
+```
+
+**Directory Structure:**
+```
+simulation-runs/
+├── run-1/
+│   ├── input.scenario
+│   ├── results.json
+│   └── simulation.log
+├── run-2/
+│   ├── results.json
+│   └── simulation.log
+└── run-3/
+    └── simulation.log
+```
+
+---
+
+#### CLI and UI-Run Workflows
+
+This section documents how to run simulations using both the command-line interface (CLI) and the web UI. The CLI interface remains fully backward compatible with previous versions, while the new UI provides a streamlined workflow for running simulations with managed configurations and scenarios.
+
+##### Overview
+
+The Lift Simulator supports two primary workflows:
+
+1. **CLI Workflow (Backward Compatible)**: Run simulations directly from the command line using scenario files
+2. **UI-Driven Workflow (New in v0.45.0)**: Run simulations through the web interface with Version + Scenario selection
+
+Both workflows produce the same simulation results and use the same underlying simulation engine.
+
+---
+
+##### CLI Usage (Unchanged)
+
+The command-line interface remains **fully backward compatible** with previous versions. All existing scripts and automation will continue to work without modification.
+
+**Available CLI Entry Points:**
+
+1. **Demo Simulation** - Quick test with sample configuration
+2. **Scenario Runner** - Run scripted scenarios from `.scenario` files
+3. **Local Simulation** - Run with JSON configuration files
+
+###### Scenario Runner (Primary CLI)
+
+Run a simulation using a `.scenario` file:
+
+```bash
+java -cp target/lift-simulator-0.45.0.jar \
+  com.liftsimulator.scenario.ScenarioRunnerMain \
+  path/to/scenario.scenario
+```
+
+**Options:**
+- `-h, --help` - Show help message
+
+**Default Behavior:**
+If no scenario file is provided, uses `demo.scenario` from the classpath.
+
+**Example:**
+```bash
+# Run with a specific scenario file
+java -cp target/lift-simulator-0.45.0.jar \
+  com.liftsimulator.scenario.ScenarioRunnerMain \
+  my-test-scenario.scenario
+
+# Run with default demo scenario
+java -cp target/lift-simulator-0.45.0.jar \
+  com.liftsimulator.scenario.ScenarioRunnerMain
+```
+
+**Scenario File Format:**
+
+Scenario files use a simple text format with metadata and events:
+
+```
+# Metadata (required)
+min_floor: 0
+max_floor: 10
+home_floor: 0
+controller_strategy: NEAREST_REQUEST_ROUTING
+idle_parking_mode: PARK_TO_HOME_FLOOR
+travel_ticks_per_floor: 1
+door_transition_ticks: 2
+door_dwell_ticks: 3
+door_reopen_window_ticks: -1
+idle_timeout_ticks: 5
+
+# Events (tick number, event type, parameters)
+0 car_call 0 5           # At tick 0: Car call from floor 0 to floor 5
+5 hall_call 3 UP         # At tick 5: Hall call at floor 3, going UP
+10 hall_call 8 DOWN      # At tick 10: Hall call at floor 8, going DOWN
+```
+
+**Event Types:**
+- `car_call <origin_floor> <destination_floor>` - Passenger inside the lift
+- `hall_call <floor> <direction>` - Passenger waiting (UP/DOWN/NONE)
+- `cancel <floor> <direction>` - Cancel a hall call
+- `out_of_service <lift_id>` - Take a lift out of service
+- `return_to_service <lift_id>` - Return a lift to service
+
+###### Local Simulation with JSON Config
+
+Run a simulation using a JSON configuration file:
+
+```bash
+java -cp target/lift-simulator-0.45.0.jar \
+  com.liftsimulator.runtime.LocalSimulationMain \
+  --config=path/to/config.json \
+  --ticks=100
+```
+
+**Options:**
+- `--config=PATH` - Path to configuration JSON file (required)
+- `--ticks=N` - Number of ticks to simulate (default: 25)
+- `-h, --help` - Show help message
+
+**Example:**
+```bash
+java -cp target/lift-simulator-0.45.0.jar \
+  com.liftsimulator.runtime.LocalSimulationMain \
+  --config=building-a.json \
+  --ticks=1000
+```
+
+###### Demo Simulation
+
+Run a quick demo simulation with built-in configuration:
+
+```bash
+java -cp target/lift-simulator-0.45.0.jar \
+  com.liftsimulator.Main \
+  --strategy=directional-scan
+```
+
+**Options:**
+- `--strategy=<strategy>` - Controller strategy to use
+  - Valid values: `nearest-request`, `directional-scan`
+  - Default: `nearest-request`
+- `-h, --help` - Show help message
+
+---
+
+##### UI-Driven Run Workflow (New in v0.45.0)
+
+The web UI provides a streamlined workflow for running simulations with managed configurations and scenarios.
+
+###### Workflow Steps
+
+1. **Navigate to Simulator Page**
+   - Access the simulator at `http://localhost:3000/simulator`
+
+2. **Select Lift System**
+   - Choose from configured lift systems (e.g., "Building A Lifts", "Building B Lifts")
+
+3. **Select Published Version**
+   - Choose a published version of the lift configuration
+   - Dropdown shows only published versions for the selected system
+   - Each version has configuration details (floors, lifts, strategy, etc.)
+
+4. **Select Scenario**
+   - Choose a scenario to run
+   - Scenarios define passenger flows and events over time
+   - View scenario details (duration, flow count)
+
+5. **Configure Run (Optional)**
+   - Set random seed for reproducible results (optional)
+   - Default seed is generated if not specified
+
+6. **Start Run**
+   - Click "Start Run" button
+   - Run begins executing asynchronously
+   - Progress updates every 3 seconds
+
+7. **Monitor Progress**
+   - Real-time status: CREATED → RUNNING → SUCCEEDED/FAILED
+   - Progress bar shows tick progress (e.g., "5000 / 10000 ticks")
+   - Elapsed time displayed
+
+8. **View Results**
+   - KPI cards (wait times, utilization, passengers served)
+   - Per-lift metrics table
+   - Per-floor metrics table
+   - Download artefacts (logs, results, input files)
+
+###### Run States
+
+| State | Description |
+|-------|-------------|
+| `CREATED` | Run record created, waiting to start execution |
+| `RUNNING` | Simulation actively executing |
+| `SUCCEEDED` | Simulation completed successfully with results |
+| `FAILED` | Simulation encountered an error and stopped |
+| `CANCELLED` | User cancelled the run before completion |
+
+###### API Workflow
+
+Behind the scenes, the UI uses these APIs:
+
+```bash
+# 1. Create and start run
+POST /api/simulation-runs
+{
+  "liftSystemId": 1,
+  "versionId": 3,
+  "scenarioId": 5,
+  "seed": 12345
+}
+
+# 2. Poll for status (every 3 seconds)
+GET /api/simulation-runs/{id}
+
+# 3. Get results (when SUCCEEDED)
+GET /api/simulation-runs/{id}/results
+
+# 4. Get logs (if needed)
+GET /api/simulation-runs/{id}/logs?tail=100
+
+# 5. List artefacts
+GET /api/simulation-runs/{id}/artefacts
+```
+
+---
+
+##### Artefact Storage
+
+Each simulation run produces a set of artefacts stored in a run-specific directory.
+
+###### Directory Structure
+
+```
+simulation-runs/
+└── run-{runId}/
+    ├── config.json       # Input: Lift configuration used for the run
+    ├── scenario.json     # Input: Scenario with passenger flows
+    ├── run.log           # Output: Execution log with timestamps
+    └── results.json      # Output: Structured results with KPIs
+```
+
+**Configuration:**
+```properties
+# Base directory for simulation artefacts (application.properties)
+simulation.artefacts.base-path=./simulation-runs
+```
+
+###### Artefact Files
+
+**config.json** - Lift Configuration
+
+The exact configuration used for the simulation run:
+
+```json
+{
+  "minFloor": 0,
+  "maxFloor": 10,
+  "homeFloor": 0,
+  "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+  "idleParkingMode": "PARK_TO_HOME_FLOOR",
+  "travelTicksPerFloor": 1,
+  "doorTransitionTicks": 2,
+  "doorDwellTicks": 3,
+  "doorReopenWindowTicks": -1,
+  "idleTimeoutTicks": 5
+}
+```
+
+**scenario.json** - Scenario Definition
+
+The scenario with passenger flows used for the simulation:
+
+```json
+{
+  "durationTicks": 1000,
+  "seed": 12345,
+  "passengerFlows": [
+    {
+      "startTick": 0,
+      "originFloor": 0,
+      "destinationFloor": 5,
+      "passengers": 2
+    },
+    {
+      "startTick": 50,
+      "originFloor": 8,
+      "destinationFloor": 2,
+      "passengers": 1
+    }
+  ]
+}
+```
+
+**run.log** - Execution Log
+
+Timestamped log of simulation execution:
+
+```
+[2025-01-23T12:34:56.123Z] Run directory initialized at /path/to/run-42
+[2025-01-23T12:34:56.234Z] Wrote config input to config.json
+[2025-01-23T12:34:56.345Z] Wrote scenario input to scenario.json
+[2025-01-23T12:34:56.456Z] Simulation started for run 42
+[2025-01-23T12:34:56.567Z] Starting simulation for 1000 ticks
+[2025-01-23T12:35:12.890Z] Simulation completed at tick 1000
+[2025-01-23T12:35:12.901Z] Simulation succeeded for run 42
+```
+
+**results.json** - Structured Results
+
+Comprehensive results with KPIs and metrics:
+
+```json
+{
+  "runSummary": {
+    "runId": 42,
+    "status": "SUCCEEDED",
+    "generatedAt": "2025-01-23T12:35:13Z",
+    "durationTicks": 1000,
+    "seed": 12345,
+    "ticks": 1000,
+    "liftSystemId": 1,
+    "versionId": 3,
+    "scenarioId": 5
+  },
+  "kpis": {
+    "requestsTotal": 150,
+    "passengersServed": 145,
+    "passengersCancelled": 5,
+    "avgWaitTicks": 25.5,
+    "maxWaitTicks": 85,
+    "idleTicks": 200,
+    "movingTicks": 500,
+    "doorTicks": 300,
+    "utilisation": 0.80
+  },
+  "perLift": [
+    {
+      "liftId": "lift-1",
+      "minFloor": 0,
+      "maxFloor": 10,
+      "homeFloor": 0,
+      "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+      "idleParkingMode": "PARK_TO_HOME_FLOOR",
+      "totalTicks": 1000,
+      "idleTicks": 200,
+      "movingTicks": 500,
+      "doorTicks": 300,
+      "utilisation": 0.80,
+      "statusCounts": {
+        "IDLE": 200,
+        "MOVING_UP": 250,
+        "MOVING_DOWN": 250,
+        "DOOR_OPENING": 100,
+        "DOOR_OPEN": 100,
+        "DOOR_CLOSING": 100
+      }
+    }
+  ],
+  "perFloor": [
+    {
+      "floor": 0,
+      "originPassengers": 50,
+      "destinationPassengers": 20,
+      "liftVisits": 45
+    },
+    {
+      "floor": 5,
+      "originPassengers": 20,
+      "destinationPassengers": 50,
+      "liftVisits": 40
+    }
+  ]
+}
+```
+
+---
+
+##### Reproducing UI Runs via CLI
+
+You can reproduce any UI-driven run using the CLI by downloading the generated input files.
+
+###### Step-by-Step Reproduction
+
+1. **Download Artefacts from UI**
+   - Navigate to completed run in Simulator page
+   - Scroll to "Artefacts" section
+   - Download `config.json` and `scenario.json`
+
+2. **Convert to CLI Format**
+   - Use the Batch Input Generator to convert UI format to CLI format:
+   ```bash
+   POST /api/batch/generate-input
+   {
+     "config": { ... },      # Contents of config.json
+     "scenario": { ... }     # Contents of scenario.json
+   }
+   ```
+
+3. **Save Generated Scenario File**
+   - Save the response to a `.scenario` file (e.g., `run-42-reproduction.scenario`)
+
+4. **Run via CLI**
+   ```bash
+   java -cp target/lift-simulator-0.45.0.jar \
+     com.liftsimulator.scenario.ScenarioRunnerMain \
+     run-42-reproduction.scenario
+   ```
+
+###### Example: Reproducing Run #42
+
+**1. Download config.json and scenario.json from run 42**
+
+**2. Generate CLI scenario file:**
+
+```bash
+curl -X POST http://localhost:8080/api/batch/generate-input \
+  -H "Content-Type: application/json" \
+  -d '{
+    "config": {
+      "minFloor": 0,
+      "maxFloor": 10,
+      "homeFloor": 0,
+      "controllerStrategy": "NEAREST_REQUEST_ROUTING",
+      "idleParkingMode": "PARK_TO_HOME_FLOOR",
+      "travelTicksPerFloor": 1,
+      "doorTransitionTicks": 2,
+      "doorDwellTicks": 3,
+      "doorReopenWindowTicks": -1,
+      "idleTimeoutTicks": 5
+    },
+    "scenario": {
+      "durationTicks": 1000,
+      "seed": 12345,
+      "passengerFlows": [
+        {
+          "startTick": 0,
+          "originFloor": 0,
+          "destinationFloor": 5,
+          "passengers": 2
+        }
+      ]
+    }
+  }' > run-42-reproduction.scenario
+```
+
+**3. Run the scenario:**
+
+```bash
+java -cp target/lift-simulator-0.45.0.jar \
+  com.liftsimulator.scenario.ScenarioRunnerMain \
+  run-42-reproduction.scenario
+```
+
+**Expected Output:**
+
+The CLI will produce the same simulation results as the UI run (given the same seed).
+
+###### Verifying Reproduction
+
+To verify the reproduction matches the original run:
+
+1. Compare tick counts: Should match `durationTicks` in scenario
+2. Compare KPIs: Should match `kpis` in `results.json` (wait times, utilization, etc.)
+3. Compare passenger counts: Should match `requestsTotal`, `passengersServed`, etc.
+
+**Note:** Results are deterministic when using the same seed value.
+
+---
+
+##### Example Scenario Walkthrough
+
+This example demonstrates a complete workflow from UI run to CLI reproduction.
+
+###### Scenario: Morning Rush Hour
+
+**Setup:**
+- Lift System: "Office Building Lifts"
+- Published Version: v2 (10 floors, 2 lifts, Nearest Request strategy)
+- Scenario: "Morning Rush - Ground to Upper Floors"
+- Seed: 42
+
+**Passenger Flows:**
+- Ticks 0-100: Heavy traffic from ground floor to floors 5-10 (30 passengers)
+- Ticks 200-300: Light return traffic from upper floors to ground (5 passengers)
+- Duration: 500 ticks
+
+###### UI Workflow
+
+1. **Select Configuration:**
+   - System: "Office Building Lifts"
+   - Version: v2
+   - Scenario: "Morning Rush - Ground to Upper Floors"
+   - Seed: 42
+
+2. **Start Run:**
+   - Click "Start Run"
+   - Run ID: 123
+
+3. **Monitor Progress:**
+   - Status: RUNNING
+   - Progress: 250 / 500 ticks (50%)
+   - Elapsed: 15 seconds
+
+4. **View Results (after completion):**
+   - Status: SUCCEEDED
+   - Passengers Served: 35 / 35
+   - Avg Wait Time: 18 ticks
+   - Max Wait Time: 45 ticks
+   - Lift Utilization: 85%
+
+###### Download Artefacts
+
+From the Simulator page, download:
+- `config.json` - Contains v2 configuration
+- `scenario.json` - Contains passenger flows with seed 42
+- `results.json` - Contains KPIs and metrics
+- `run.log` - Contains execution trace
+
+###### Reproduce via CLI
+
+**1. Generate CLI scenario file:**
+
+```bash
+curl -X POST http://localhost:8080/api/batch/generate-input \
+  -H "Content-Type: application/json" \
+  -d @run-123-inputs.json \
+  > morning-rush-reproduction.scenario
+```
+
+Where `run-123-inputs.json` contains:
+```json
+{
+  "config": { /* contents of config.json */ },
+  "scenario": { /* contents of scenario.json */ }
+}
+```
+
+**2. Run via CLI:**
+
+```bash
+java -cp target/lift-simulator-0.45.0.jar \
+  com.liftsimulator.scenario.ScenarioRunnerMain \
+  morning-rush-reproduction.scenario
+```
+
+**3. Verify Results:**
+
+CLI output should show:
+- Same number of requests (35)
+- Same avg wait time (18 ticks)
+- Same max wait time (45 ticks)
+- Same utilization (85%)
+
+The results are deterministic because we used seed 42 in both runs.
+
+---
+
+##### Troubleshooting
+
+###### Run Failed (Status: FAILED)
+
+**Symptom:** Run status shows FAILED in the UI
+
+**Steps to Diagnose:**
+
+1. **Check Run Logs:**
+   ```bash
+   # Via API
+   curl http://localhost:8080/api/simulation-runs/{id}/logs?tail=100
+
+   # Or download from UI
+   Navigate to run → Artefacts → Download run.log
+   ```
+
+2. **Look for Error Messages:**
+   - Configuration validation errors
+   - Scenario validation errors
+   - Runtime exceptions during simulation
+
+3. **Common Causes:**
+   - Invalid floor range (minFloor > maxFloor)
+   - Invalid passenger flows (origin/destination out of range)
+   - Invalid tick values (negative or zero duration)
+   - Controller strategy not recognized
+
+**Example Error in Logs:**
+
+```
+[2025-01-23T12:34:56Z] ERROR: Configuration validation failed
+[2025-01-23T12:34:56Z] minFloor (5) cannot be greater than maxFloor (3)
+```
+
+**Resolution:** Fix the configuration and create a new run.
+
+###### Where to Find Logs
+
+**Option 1: Via UI**
+1. Navigate to Simulator page
+2. Find the run in the results table
+3. Click to view run details
+4. Scroll to "Artefacts" section
+5. Download `run.log`
+
+**Option 2: Via API**
+```bash
+# Get full logs
+curl http://localhost:8080/api/simulation-runs/123/logs
+
+# Get last 100 lines
+curl http://localhost:8080/api/simulation-runs/123/logs?tail=100
+
+# Get last 50 lines
+curl http://localhost:8080/api/simulation-runs/123/logs?tail=50
+```
+
+**Option 3: Direct File Access**
+```bash
+# Navigate to run directory
+cd simulation-runs/run-123
+
+# View logs
+cat run.log
+
+# Or tail logs in real-time
+tail -f run.log
+```
+
+###### Common Validation Errors
+
+**1. Invalid Floor Range**
+
+**Error Message:**
+```
+minFloor (10) cannot be greater than maxFloor (5)
+```
+
+**Cause:** Configuration has inverted floor range.
+
+**Resolution:**
+- Ensure minFloor ≤ maxFloor
+- Common for underground parking: minFloor can be negative (e.g., -2 to 20)
+
+**2. Home Floor Out of Range**
+
+**Error Message:**
+```
+homeFloor (15) must be between minFloor (0) and maxFloor (10)
+```
+
+**Cause:** Home floor is outside the valid floor range.
+
+**Resolution:** Set homeFloor to a value between minFloor and maxFloor (inclusive).
+
+**3. Invalid Passenger Flow Floor**
+
+**Error Message:**
+```
+Passenger flow at tick 0: originFloor (15) is out of range [0, 10]
+```
+
+**Cause:** Scenario has passenger flows with floors outside the configuration's floor range.
+
+**Resolution:**
+- Update scenario to use valid floors
+- Or update configuration to support the required floor range
+
+**4. Invalid Controller Strategy**
+
+**Error Message:**
+```
+Unknown controller strategy: INVALID_STRATEGY
+```
+
+**Cause:** Configuration specifies a controller strategy that doesn't exist.
+
+**Valid Values:**
+- `NEAREST_REQUEST_ROUTING`
+- `DIRECTIONAL_SCAN`
+
+**Resolution:** Use one of the valid strategy names (case-sensitive).
+
+**5. Invalid Idle Parking Mode**
+
+**Error Message:**
+```
+Unknown idle parking mode: INVALID_MODE
+```
+
+**Cause:** Configuration specifies an idle parking mode that doesn't exist.
+
+**Valid Values:**
+- `STAY_WHERE_STOPPED`
+- `PARK_TO_HOME_FLOOR`
+
+**Resolution:** Use one of the valid parking modes (case-sensitive).
+
+**6. Negative Tick Values**
+
+**Error Message:**
+```
+durationTicks (-100) must be positive
+```
+
+**Cause:** Scenario has negative or zero duration.
+
+**Resolution:** Set durationTicks to a positive value (typically 100-10000).
+
+**7. Invalid Seed**
+
+**Error Message:**
+```
+seed must be a valid integer
+```
+
+**Cause:** Seed is not a valid integer or is outside valid range.
+
+**Resolution:**
+- Use a positive integer for the seed
+- Or omit seed to use auto-generated value
+
+###### Run Stuck in CREATED State
+
+**Symptom:** Run shows CREATED status for extended period
+
+**Possible Causes:**
+1. Backend execution service is not running
+2. Thread pool exhausted (too many concurrent runs)
+3. Database connection issue
+
+**Steps to Diagnose:**
+
+1. **Check Backend Logs:**
+   ```bash
+   # Application logs
+   tail -f logs/lift-simulator.log
+
+   # Look for execution service startup
+   grep "SimulationRunExecutionService" logs/lift-simulator.log
+   ```
+
+2. **Check Thread Pool:**
+   ```bash
+   # Look for thread pool warnings
+   grep "Thread pool" logs/lift-simulator.log
+   ```
+
+3. **Restart Backend:**
+   ```bash
+   # Stop backend
+   pkill -f "lift-simulator"
+
+   # Start backend
+   mvn spring-boot:run
+   ```
+
+**Resolution:**
+- Wait for concurrent runs to complete
+- Increase thread pool size in `application.properties`:
+  ```properties
+  simulation.execution.thread-pool-size=5
+  ```
+- Restart backend if needed
+
+###### Run Stuck in RUNNING State
+
+**Symptom:** Run shows RUNNING status indefinitely, progress not updating
+
+**Possible Causes:**
+1. Infinite loop in simulation logic (bug)
+2. Process crashed without updating status
+3. Very long-running simulation (large tick count)
+
+**Steps to Diagnose:**
+
+1. **Check Expected Duration:**
+   - View scenario to see total ticks
+   - Estimate time: ~1000 ticks per second (approximate)
+   - Example: 100,000 ticks ≈ 100 seconds
+
+2. **Check Run Logs:**
+   ```bash
+   curl http://localhost:8080/api/simulation-runs/{id}/logs?tail=50
+   ```
+   - Look for recent tick progress
+   - Look for errors or exceptions
+
+3. **Check Backend Process:**
+   ```bash
+   # Check if backend is running
+   ps aux | grep "lift-simulator"
+
+   # Check CPU usage (high CPU = still running)
+   top -p <backend-pid>
+   ```
+
+**Resolution:**
+- If truly stuck: Restart backend (will mark in-progress runs as FAILED)
+- If just slow: Wait for completion or cancel the run
+
+###### Results Not Available After SUCCEEDED
+
+**Symptom:** Run shows SUCCEEDED but results.json is missing
+
+**Steps to Diagnose:**
+
+1. **Check Artefacts:**
+   ```bash
+   curl http://localhost:8080/api/simulation-runs/{id}/artefacts
+   ```
+
+2. **Check File System:**
+   ```bash
+   ls -lh simulation-runs/run-{id}/
+   ```
+
+3. **Check Run Logs:**
+   ```bash
+   cat simulation-runs/run-{id}/run.log | grep "results.json"
+   ```
+
+**Possible Causes:**
+- File write permission issue
+- Disk full
+- Results generation failed after simulation
+
+**Resolution:**
+- Check file permissions on `simulation-runs/` directory
+- Check disk space: `df -h`
+- Re-run the simulation
+
+###### CLI Reproduction Produces Different Results
+
+**Symptom:** CLI run produces different KPIs than UI run
+
+**Possible Causes:**
+1. **Different seed values** - Most common cause
+2. **Different configurations** - Verify config.json matches
+3. **Different scenarios** - Verify scenario.json matches
+4. **Code version mismatch** - Different versions of simulator
+
+**Steps to Diagnose:**
+
+1. **Verify Seed:**
+   - Check UI run seed in `scenario.json`
+   - Ensure CLI scenario file uses same seed
+   - Seeds should be identical for deterministic results
+
+2. **Compare Configurations:**
+   ```bash
+   # Download UI config
+   curl http://localhost:8080/api/simulation-runs/{id}/artefacts/config.json > ui-config.json
+
+   # Extract config from CLI scenario file
+   grep -A 20 "^min_floor:" run-reproduction.scenario > cli-config.txt
+
+   # Compare manually
+   ```
+
+3. **Verify Code Version:**
+   ```bash
+   # Check version in pom.xml
+   grep "<version>" pom.xml | head -1
+
+   # Should match UI backend version
+   ```
+
+**Resolution:**
+- Use exact same seed from UI run
+- Verify all configuration parameters match
+- Rebuild CLI JAR if versions don't match: `mvn clean package`
+
+---
 
 #### Runtime Configuration API
 
@@ -878,13 +2359,15 @@ SPRING_PROFILES_ACTIVE=prod mvn spring-boot:run
 
 #### Database Schema
 
-The initial schema (V1) includes:
+The schema includes the following tables:
 - `lift_simulator` - Application schema for lift configuration data (Flyway default)
 - `lift_simulator.flyway_schema_history` - Flyway migration tracking (auto-created)
 - `lift_system` - Lift system configuration roots
 - `lift_system_version` - Versioned lift configuration payloads (JSONB)
+- `simulation_scenario` - Reusable test scenarios with JSON configuration (V3)
+- `simulation_run` - Individual simulation run executions with lifecycle tracking (V3)
 
-Future migrations will extend lift configuration metadata, simulation runs, and other entities.
+The `simulation_run` table tracks run status (CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED) and maintains referential integrity with lift systems and versions for persistent run lifecycle management.
 
 ### JPA Entities and Repositories
 
@@ -905,6 +2388,20 @@ The backend includes JPA entities and Spring Data repositories for database acce
   - Version status enum: DRAFT, PUBLISHED, ARCHIVED
   - Helper methods: `publish()`, `archive()`
 
+- **SimulationScenario** (`com.liftsimulator.admin.entity.SimulationScenario`)
+  - Maps to `simulation_scenario` table
+  - Reusable test scenarios for lift system testing
+  - **JSONB field mapping**: Stores scenario configuration as JSON
+  - Automatic timestamp management via `@PrePersist` and `@PreUpdate`
+
+- **SimulationRun** (`com.liftsimulator.admin.entity.SimulationRun`)
+  - Maps to `simulation_run` table
+  - Individual simulation run executions with lifecycle tracking
+  - Run status enum: CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED
+  - Relationships: Many-to-one with LiftSystem, LiftSystemVersion, and SimulationScenario
+  - Status transition methods: `start()`, `succeed()`, `fail()`, `cancel()`
+  - Progress tracking via `updateProgress(Long tick)`
+
 #### Repositories
 
 - **LiftSystemRepository** (`com.liftsimulator.admin.repository.LiftSystemRepository`)
@@ -919,6 +2416,20 @@ The backend includes JPA entities and Spring Data repositories for database acce
   - Find by status: `findByStatus(VersionStatus status)`
   - Get max version number: `findMaxVersionNumberByLiftSystemId(Long liftSystemId)`
 
+- **SimulationScenarioRepository** (`com.liftsimulator.admin.repository.SimulationScenarioRepository`)
+  - Find by name: `findByName(String name)`
+  - Find by name pattern: `findByNameContainingIgnoreCase(String name)`
+  - Check existence: `existsByName(String name)`
+  - Standard CRUD operations via `JpaRepository`
+
+- **SimulationRunRepository** (`com.liftsimulator.admin.repository.SimulationRunRepository`)
+  - Find runs by lift system: `findByLiftSystemIdOrderByCreatedAtDesc(Long liftSystemId)`
+  - Find runs by version: `findByVersionIdOrderByCreatedAtDesc(Long versionId)`
+  - Find runs by scenario: `findByScenarioIdOrderByCreatedAtDesc(Long scenarioId)`
+  - Find runs by status: `findByStatusOrderByCreatedAtDesc(RunStatus status)`
+  - Find active runs: `findActiveRunsByLiftSystemId(Long liftSystemId)`
+  - Count operations: `countByLiftSystemId(Long liftSystemId)`, `countByStatus(RunStatus status)`
+
 #### Verifying JPA Operations
 
 To verify the JPA entities and repositories are working correctly, run the Spring Boot application with the JPA verification runner:
@@ -930,7 +2441,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.44.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.45.0.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -962,6 +2473,7 @@ Integration tests for the repositories are available:
 
 **Test Database Configuration:**
 - Tests use **H2 in-memory database** with PostgreSQL compatibility mode
+- The H2 test database initializes the `lift_simulator` schema automatically for integration tests
 - No external database required for running tests
 - Schema is automatically created via JPA's `ddl-auto: create-drop`
 - Flyway is disabled for tests (schema created from JPA entities)
@@ -1174,7 +2686,7 @@ dropdb lift_simulator_test
 
 ## Features
 
-The current version (v0.44.0) includes comprehensive lift simulation and configuration management capabilities:
+The current version (v0.45.0) includes comprehensive lift simulation and configuration management capabilities:
 
 ### Admin Backend & REST API
 
@@ -1246,6 +2758,12 @@ The current version (v0.44.0) includes comprehensive lift simulation and configu
   - Visual indicators for unsaved changes and last saved time
   - Read-only view for published and archived versions
   - Split-pane layout with editor and validation results side-by-side
+- **Simulator Runs**: End-to-end UI flow for executing and monitoring simulation runs
+  - **Run Simulator button**: Discoverable button next to each published version for quick access to simulation workflow
+  - Launch runs from published versions (via button) or the dedicated Simulator landing page
+  - Automatic preselection of lift system and version when launching from published version list
+  - Poll run status with elapsed time, progress, and status indicators
+  - Results rendering with KPI cards, per-lift/per-floor tables, artefact downloads, and CLI reproduction details
 - **Configuration Validator**: Interactive JSON editor for validating configurations
   - Live editing with syntax highlighting
   - Real-time validation using backend API
@@ -1363,7 +2881,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.44.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.45.0.jar`.
 
 ## Running Tests
 
@@ -1375,6 +2893,8 @@ mvn test
 
 The test suite includes integration coverage for the scenario system using fixtures in
 `src/test/resources/scenarios`.
+It also exercises simulation run lifecycle polling and batch input generator contracts
+with golden files under `src/test/resources/batch-input`.
 
 ## Quality Checks
 
@@ -1389,6 +2909,8 @@ Run static analysis:
 ```bash
 mvn spotbugs:check
 ```
+
+SpotBugs suppressions are limited to Spring-managed dependency injection in service constructors.
 
 Run dependency vulnerability checks:
 
@@ -1413,7 +2935,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -1422,16 +2944,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -1445,7 +2967,7 @@ The demo runs a pre-configured scenario with several lift requests and displays 
 Use a published configuration JSON file to run a lightweight simulation:
 
 ```bash
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 
 Optional flags:
@@ -1463,7 +2985,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -1472,13 +2994,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.44.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**

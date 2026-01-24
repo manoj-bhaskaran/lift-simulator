@@ -7,6 +7,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-02-01
+
+### Added
+- **Scenario Builder UI**: Complete UI for creating and managing passenger flow scenarios
+  - **Scenarios List Page**: Browse, search, and manage all saved scenarios
+  - **Scenario Form**: Create and edit scenarios with intuitive form-based or JSON editor modes
+  - **Template-Based Quick Start**: Pre-configured templates (Morning Rush, Evening Rush, Inter-Floor Traffic)
+  - **Passenger Flow Builder**: Visual component for building passenger flows with drag-and-drop reordering
+  - **Server-Side Validation**: Real-time validation with detailed error and warning feedback
+  - **Advanced JSON Mode**: Toggle between form mode and direct JSON editing
+  - **Random Seed Support**: Optional seed field for reproducible simulations
+  - Added navigation link in main menu for easy access
+  - Full CRUD operations (create, read, update, delete) with confirmation modals
+- **Simulator Run UI**: End-to-end UI flow for executing simulation runs
+  - Added Simulator landing page for lift system + published version selection before run setup
+  - Run setup supports optional seed entry for reproducibility
+  - Polling-based run status with elapsed time, progress, and terminal state handling
+  - Results rendering with KPI cards, per-lift and per-floor tables, artefact downloads, and CLI reproduction guidance
+  - **Run Simulator button**: Added discoverable "Run Simulator" button next to each published version that launches the run workflow with preselected system and version
+- **Backend Scenario Enhancements**:
+  - Added `name` field to Scenario entity for better identification
+  - Implemented `GET /api/scenarios` endpoint to list all scenarios
+  - Implemented `DELETE /api/scenarios/{id}` endpoint to delete scenarios
+  - Updated `ScenarioRequest` and `ScenarioResponse` DTOs to include name field
+  - Database migration (V4) to add name column to scenario table
+- **Scenario management API**:
+  -  Validation endpoints for UI-driven passenger-flow scenarios
+  -  JSON schema validation and storage support.
+- **Simulation Run APIs**: Comprehensive API endpoints for simulation execution and monitoring
+  - **POST /api/simulation-runs**: Create and start simulation runs with liftSystemId, versionId, optional scenarioId and seed
+  - **GET /api/simulation-runs/{id}**: Retrieve run status, timestamps (created/started/ended), progress (currentTick/totalTicks), and error messages
+  - **GET /api/simulation-runs/{id}/results**: Access structured results JSON (200 for SUCCEEDED, 409 for RUNNING, 400 for CREATED/CANCELLED)
+  - **GET /api/simulation-runs/{id}/logs?tail=N**: Stream simulation logs with optional tail parameter (default: all lines, max: 10,000)
+  - **GET /api/simulation-runs/{id}/artefacts**: List downloadable artefacts with name, path, size, and MIME type
+  - Implemented `SimulationRunController` with comprehensive error handling and status-based responses
+  - Created `ArtefactService` with path traversal prevention and secure file access controls
+  - Enhanced `SimulationRunService` with `createAndStartRun()` method for atomic run creation and execution
+  - Added DTOs: `CreateSimulationRunRequest`, `SimulationRunResponse`, `SimulationResultResponse`, `ArtefactInfo`
+  - Configurable artefacts storage via `simulation.artefacts.base-path` property (default: ./simulation-runs)
+  - Automatic artefact directory creation with structure: `{base-path}/run-{id}/`
+  - Added comprehensive integration tests covering all endpoints and edge cases
+  - Security: Prevents path traversal attacks in artefact access with normalized path validation
+- **Simulation Run Domain Model**: Introduced persistent run lifecycle for simulation execution tracking
+  - Created `simulation_scenario` table to store reusable test scenarios with JSON configuration
+  - Created `simulation_run` table to track individual simulation executions with lifecycle status
+  - Added `RunStatus` enum with states: CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED
+  - Established referential integrity with existing `lift_system` and `lift_system_version` tables
+  - Implemented JPA entities: `SimulationScenario` and `SimulationRun` with proper relationships
+  - Created repositories: `SimulationScenarioRepository` and `SimulationRunRepository` with custom queries
+  - Implemented service layer: `SimulationScenarioService` and `SimulationRunService` with status transition methods
+  - Added comprehensive unit and integration tests for all new components
+  - Database migration (V3) maintains backward compatibility with existing schema
+  - Documented architectural decision in ADR-0016
+- **Asynchronous Simulation Runner**:
+  - Added backend service and API to launch simulation runs asynchronously using stored configs and scenarios
+  - Persisted run artefacts (inputs, logs, results placeholder) under a configurable artefact root
+- **Structured simulation results output**:
+  - Generate `results.json` with run summary, KPI metrics, per-lift status counts, and per-floor aggregates
+  - Results are additive and do not change existing CLI outputs
+  - Per-floor lift visit counts reflect floor changes (arrivals)
+- **Batch Input Generator**: Backwards-compatible wrapper for scenario-to-CLI conversion
+  - Implemented `BatchInputGenerator` service to generate `.scenario` files from stored configurations
+  - Converts lift system version configuration and scenario JSON to legacy batch input format
+  - Generates `hall_call` events from passenger flows with automatic direction calculation
+  - Ensures exact format compliance with `ScenarioParser` for CLI simulator compatibility
+  - Stores generated files in run-specific artifact directories under `artefactBasePath`
+  - Added `generateBatchInputFile()` method to `SimulationRunService` for programmatic access
+  - Validates floor ranges and tick constraints during generation
+  - Provides unique passenger aliases (p1, p2, p3...) and proper event ordering
+  - Added comprehensive test suite including golden-file tests and format validation
+  - Documented in README with usage examples and API reference
+- **Testing**: Added run lifecycle integration coverage, golden-file contract checks for batch input generation,
+  and a CLI compatibility test for the demo scenario.
+
+### Fixed
+- Avoid SpotBugs EI_EXPOSE_REP2 warnings in admin services by using defensive ObjectMapper copies and lazy execution service injection.
+- Handle unexpected IO failures when validating scenario payloads in the admin service.
+- Validate scenario floor ranges and start ticks when generating batch scenario content in memory.
+- Initialize the H2 test schema for Spring Boot integration tests to prevent application context startup failures.
+- Fix H2 JSON compatibility in @SpringBootTest integration tests by implementing custom `JsonStringConverter` AttributeConverter with validation to replace Hibernate 6's `@JdbcTypeCode(SqlTypes.JSON)` annotation, which is only supported for Oracle and PostgreSQL databases. The converter validates JSON format at write time to prevent malformed JSON from being persisted (particularly for SimulationScenario entities where service-layer validation may be bypassed), ensuring errors are caught early rather than failing at simulation execution time.
+- **Simulator Run UI**: Only apply preselected system/version from query params once so user selections are not overridden.
+- **Simulator Landing**: Ignore stale version fetch responses when switching between systems quickly.
+- **Simulator Landing**: Clear version options when loading versions fails to prevent mismatched selections.
+- Add database-level ON DELETE CASCADE constraint to SimulationRun foreign keys (lift_system_id and version_id) via Hibernate's @OnDelete annotation. This ensures SimulationRun records are automatically deleted when their parent LiftSystem or LiftSystemVersion is deleted, matching the existing database schema and preventing constraint violations.
+
 ## [0.44.0] - 2026-01-20
 
 ### Changed
