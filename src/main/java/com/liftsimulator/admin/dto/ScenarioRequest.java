@@ -10,6 +10,8 @@ public record ScenarioRequest(
     @NotNull(message = "Name is required")
     String name,
     @NotNull(message = "Scenario JSON is required")
-    JsonNode scenarioJson
+    JsonNode scenarioJson,
+    @NotNull(message = "Lift system version ID is required")
+    Long liftSystemVersionId
 ) {
 }
