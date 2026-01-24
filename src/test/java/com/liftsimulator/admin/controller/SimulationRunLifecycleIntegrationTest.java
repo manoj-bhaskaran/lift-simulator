@@ -130,7 +130,7 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
                     Files.createDirectories(runDir);
                     Files.writeString(runDir.resolve("results.json"), objectMapper.writeValueAsString(Map.of(
                             "runSummary", Map.of("runId", runId, "status", "SUCCEEDED", "ticks", 20),
-                            "metrics", Map.of("totalPassengersServed", 1, "averageWaitTime", 2.5)
+                            "kpis", Map.of("passengersServed", 1, "avgWaitTicks", 2.5)
                     )));
                     runService.updateProgress(runId, 20L);
                     try {
@@ -165,7 +165,7 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCEEDED"))
                 .andExpect(jsonPath("$.results.runSummary.status").value("SUCCEEDED"))
-                .andExpect(jsonPath("$.results.metrics.totalPassengersServed").value(1))
+                .andExpect(jsonPath("$.results.kpis.passengersServed").value(1))
                 .andExpect(jsonPath("$.logsUrl").value("/api/simulation-runs/" + runId + "/logs"));
     }
 }
