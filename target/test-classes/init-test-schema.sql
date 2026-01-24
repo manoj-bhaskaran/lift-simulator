@@ -1,2 +1,0 @@
--- Initialize test database schema
-CREATE SCHEMA IF NOT EXISTS lift_simulator;
