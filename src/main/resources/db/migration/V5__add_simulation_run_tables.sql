@@ -1,5 +1,5 @@
 -- Add Simulation Run and Scenario tables
--- Version: 3
+-- Version: 5
 -- Description: Introduce persistent run lifecycle for simulation execution tracking
 
 SET search_path TO lift_simulator;
