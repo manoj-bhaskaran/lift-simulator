@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { scenariosApi } from '../api/scenariosApi';
+import { liftSystemsApi } from '../api/liftSystemsApi';
 import AlertModal from '../components/AlertModal';
 import PassengerFlowBuilder from '../components/PassengerFlowBuilder';
 import { handleApiError } from '../utils/errorHandlers';
@@ -84,6 +85,13 @@ function ScenarioForm() {
   const [seed, setSeed] = useState('');
   const [useSeed, setUseSeed] = useState(false);
 
+  // Lift system selection
+  const [liftSystems, setLiftSystems] = useState([]);
+  const [selectedSystemId, setSelectedSystemId] = useState('');
+  const [versions, setVersions] = useState([]);
+  const [selectedVersionId, setSelectedVersionId] = useState('');
+  const [floorRange, setFloorRange] = useState(null);
+
   const [validationErrors, setValidationErrors] = useState([]);
   const [validationWarnings, setValidationWarnings] = useState([]);
   const [formErrors, setFormErrors] = useState({});
@@ -91,11 +99,85 @@ function ScenarioForm() {
   const [showAdvancedJson, setShowAdvancedJson] = useState(false);
   const [jsonText, setJsonText] = useState('');
 
+  /**
+   * Parses version config to extract floor range.
+   *
+   * @param {string} configJson - The config JSON string
+   * @returns {Object|null} Floor range {minFloor, maxFloor} or null if parsing fails
+   */
+  const parseVersionConfig = (configJson) => {
+    if (!configJson) return null;
+    try {
+      const config = JSON.parse(configJson);
+      return {
+        minFloor: config.minFloor,
+        maxFloor: config.maxFloor
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    loadLiftSystems();
+  }, []);
+
   useEffect(() => {
     if (isEditMode) {
       loadScenario();
     }
   }, [id, isEditMode, loadScenario]);
+
+  useEffect(() => {
+    if (selectedSystemId) {
+      loadVersions(selectedSystemId);
+    } else {
+      setVersions([]);
+      setSelectedVersionId('');
+      setFloorRange(null);
+    }
+  }, [selectedSystemId]);
+
+  useEffect(() => {
+    if (selectedVersionId && versions.length > 0) {
+      const selectedVersion = versions.find(v => v.id === parseInt(selectedVersionId, 10));
+      if (selectedVersion) {
+        const floorInfo = parseVersionConfig(selectedVersion.config);
+        setFloorRange(floorInfo);
+      } else {
+        setFloorRange(null);
+      }
+    } else {
+      setFloorRange(null);
+    }
+  }, [selectedVersionId, versions]);
+
+  /**
+   * Loads all lift systems.
+   */
+  const loadLiftSystems = async () => {
+    try {
+      const response = await liftSystemsApi.getAllSystems();
+      setLiftSystems(response.data || []);
+    } catch (err) {
+      handleApiError(err, setAlertMessage, 'Failed to load lift systems');
+    }
+  };
+
+  /**
+   * Loads versions for a specific lift system.
+   *
+   * @param {number|string} systemId - The lift system ID
+   */
+  const loadVersions = async (systemId) => {
+    try {
+      const response = await liftSystemsApi.getVersions(systemId);
+      setVersions(response.data || []);
+    } catch (err) {
+      handleApiError(err, setAlertMessage, 'Failed to load versions');
+      setVersions([]);
+    }
+  };
 
   /**
    * Loads scenario data for editing.
@@ -113,6 +195,15 @@ function ScenarioForm() {
         if (scenario.scenarioJson.seed !== undefined && scenario.scenarioJson.seed !== null) {
           setSeed(String(scenario.scenarioJson.seed));
           setUseSeed(true);
+        }
+      }
+
+      // Load version information if available
+      if (scenario.liftSystemVersionId) {
+        setSelectedVersionId(String(scenario.liftSystemVersionId));
+        // Find the system ID from version info if available
+        if (scenario.versionInfo?.liftSystemId) {
+          setSelectedSystemId(String(scenario.versionInfo.liftSystemId));
         }
       }
     } catch (err) {
@@ -171,6 +262,9 @@ function ScenarioForm() {
     if (!scenarioName.trim()) {
       errors.scenarioName = 'Scenario name is required';
     }
+    if (!selectedVersionId) {
+      errors.liftSystemVersion = 'Lift system version is required';
+    }
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
@@ -185,7 +279,8 @@ function ScenarioForm() {
       const scenarioJson = buildScenarioJson();
       const response = await scenariosApi.validateScenario({
         name: scenarioName,
-        scenarioJson: scenarioJson
+        scenarioJson: scenarioJson,
+        liftSystemVersionId: parseInt(selectedVersionId, 10)
       });
 
       if (response.data.valid) {
@@ -213,6 +308,9 @@ function ScenarioForm() {
     if (!scenarioName.trim()) {
       errors.scenarioName = 'Scenario name is required';
     }
+    if (!selectedVersionId) {
+      errors.liftSystemVersion = 'Lift system version is required';
+    }
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
@@ -227,7 +325,8 @@ function ScenarioForm() {
       const scenarioJson = buildScenarioJson();
       const payload = {
         name: scenarioName,
-        scenarioJson: scenarioJson
+        scenarioJson: scenarioJson,
+        liftSystemVersionId: parseInt(selectedVersionId, 10)
       };
 
       if (isEditMode) {
@@ -313,6 +412,80 @@ function ScenarioForm() {
               <span className="error-message">{formErrors.scenarioName}</span>
             )}
           </div>
+
+          {/* Lift System Selection */}
+          <div className="form-group">
+            <label htmlFor="liftSystem">
+              Lift System <span className="required">*</span>
+            </label>
+            <select
+              id="liftSystem"
+              value={selectedSystemId}
+              onChange={(e) => {
+                setSelectedSystemId(e.target.value);
+                setSelectedVersionId('');
+                if (formErrors.liftSystemVersion) {
+                  setFormErrors(prev => ({ ...prev, liftSystemVersion: '' }));
+                }
+              }}
+              className={formErrors.liftSystemVersion ? 'error' : ''}
+            >
+              <option value="">-- Select Lift System --</option>
+              {liftSystems.map((system) => (
+                <option key={system.id} value={system.id}>
+                  {system.displayName}
+                </option>
+              ))}
+            </select>
+            <p className="help-text">
+              Select the lift system this scenario will be designed for
+            </p>
+          </div>
+
+          {/* Version Selection */}
+          {selectedSystemId && (
+            <div className="form-group">
+              <label htmlFor="liftSystemVersion">
+                Version <span className="required">*</span>
+              </label>
+              <select
+                id="liftSystemVersion"
+                value={selectedVersionId}
+                onChange={(e) => {
+                  setSelectedVersionId(e.target.value);
+                  if (formErrors.liftSystemVersion) {
+                    setFormErrors(prev => ({ ...prev, liftSystemVersion: '' }));
+                  }
+                }}
+                className={formErrors.liftSystemVersion ? 'error' : ''}
+              >
+                <option value="">-- Select Version --</option>
+                {versions.map((version) => {
+                  const floorInfo = parseVersionConfig(version.config);
+                  return (
+                    <option key={version.id} value={version.id}>
+                      Version {version.versionNumber}
+                      {floorInfo ?
+                        ` (Floors ${floorInfo.minFloor} to ${floorInfo.maxFloor})` :
+                        ''
+                      }
+                    </option>
+                  );
+                })}
+              </select>
+              <p className="help-text">
+                Select the version to ensure floor ranges are validated correctly
+              </p>
+              {floorRange && (
+                <p className="help-text">
+                  <strong>Valid floor range: {floorRange.minFloor} to {floorRange.maxFloor}</strong>
+                </p>
+              )}
+              {formErrors.liftSystemVersion && (
+                <span className="error-message">{formErrors.liftSystemVersion}</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Template Selection */}
@@ -424,6 +597,7 @@ function ScenarioForm() {
                 flows={passengerFlows}
                 onChange={setPassengerFlows}
                 maxTick={parseInt(durationTicks, 10) || 100}
+                floorRange={floorRange}
               />
             </div>
           </>

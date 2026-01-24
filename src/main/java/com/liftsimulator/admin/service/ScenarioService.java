@@ -3,10 +3,14 @@ package com.liftsimulator.admin.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liftsimulator.admin.dto.LiftConfigDTO;
 import com.liftsimulator.admin.dto.ScenarioRequest;
 import com.liftsimulator.admin.dto.ScenarioResponse;
 import com.liftsimulator.admin.dto.ScenarioValidationResponse;
+import com.liftsimulator.admin.entity.LiftSystem;
+import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.Scenario;
+import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.ScenarioRepository;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.stereotype.Service;
@@ -23,6 +27,7 @@ import java.util.stream.Collectors;
 public class ScenarioService {
 
     private final ScenarioRepository scenarioRepository;
+    private final LiftSystemVersionRepository versionRepository;
     private final ScenarioValidationService scenarioValidationService;
     private final ObjectMapper objectMapper;
 
@@ -33,9 +38,11 @@ public class ScenarioService {
     )
     public ScenarioService(
             ScenarioRepository scenarioRepository,
+            LiftSystemVersionRepository versionRepository,
             ScenarioValidationService scenarioValidationService,
             ObjectMapper objectMapper) {
         this.scenarioRepository = scenarioRepository;
+        this.versionRepository = versionRepository;
         this.scenarioValidationService = scenarioValidationService;
         this.objectMapper = objectMapper;
     }
@@ -43,14 +50,27 @@ public class ScenarioService {
     /**
      * Creates a new scenario after validation.
      *
-     * @param request scenario payload
+     * @param request scenario payload including lift system version ID
      * @return created scenario response
+     * @throws ResourceNotFoundException if lift system version not found
+     * @throws ScenarioValidationException if scenario validation fails
      */
     @Transactional
     public ScenarioResponse createScenario(ScenarioRequest request) {
-        validateScenarioJson(request.scenarioJson());
+        // Fetch and validate lift system version exists
+        LiftSystemVersion version = versionRepository.findById(request.liftSystemVersionId())
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Lift system version not found with id: " + request.liftSystemVersionId()
+            ));
 
-        Scenario scenario = new Scenario(request.name(), serializeScenarioJson(request.scenarioJson()));
+        // Validate scenario JSON with floor range validation
+        validateScenarioJson(request.scenarioJson(), request.liftSystemVersionId());
+
+        Scenario scenario = new Scenario(
+            request.name(),
+            serializeScenarioJson(request.scenarioJson()),
+            version
+        );
         Scenario savedScenario = scenarioRepository.save(scenario);
 
         return toResponse(savedScenario);
@@ -60,8 +80,10 @@ public class ScenarioService {
      * Updates an existing scenario after validation.
      *
      * @param id scenario id
-     * @param request scenario payload
+     * @param request scenario payload including lift system version ID
      * @return updated scenario response
+     * @throws ResourceNotFoundException if scenario or lift system version not found
+     * @throws ScenarioValidationException if scenario validation fails
      */
     @Transactional
     public ScenarioResponse updateScenario(Long id, ScenarioRequest request) {
@@ -70,10 +92,18 @@ public class ScenarioService {
                 "Scenario not found with id: " + id
             ));
 
-        validateScenarioJson(request.scenarioJson());
+        // Fetch and validate lift system version exists
+        LiftSystemVersion version = versionRepository.findById(request.liftSystemVersionId())
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Lift system version not found with id: " + request.liftSystemVersionId()
+            ));
+
+        // Validate scenario JSON with floor range validation
+        validateScenarioJson(request.scenarioJson(), request.liftSystemVersionId());
 
         scenario.setName(request.name());
         scenario.setScenarioJson(serializeScenarioJson(request.scenarioJson()));
+        scenario.setLiftSystemVersion(version);
         Scenario savedScenario = scenarioRepository.save(scenario);
 
         return toResponse(savedScenario);
@@ -120,8 +150,9 @@ public class ScenarioService {
         scenarioRepository.delete(scenario);
     }
 
-    private void validateScenarioJson(JsonNode scenarioJson) {
-        ScenarioValidationResponse validationResponse = scenarioValidationService.validate(scenarioJson);
+    private void validateScenarioJson(JsonNode scenarioJson, Long liftSystemVersionId) {
+        ScenarioValidationResponse validationResponse =
+            scenarioValidationService.validate(scenarioJson, liftSystemVersionId);
         if (validationResponse.hasErrors()) {
             throw new ScenarioValidationException("Scenario validation failed", validationResponse);
         }
@@ -138,15 +169,43 @@ public class ScenarioService {
     private ScenarioResponse toResponse(Scenario scenario) {
         try {
             JsonNode scenarioJson = objectMapper.readTree(scenario.getScenarioJson());
+
+            // Build version info if available
+            ScenarioResponse.LiftSystemVersionInfo versionInfo = null;
+            Long versionId = null;
+
+            if (scenario.getLiftSystemVersion() != null) {
+                LiftSystemVersion version = scenario.getLiftSystemVersion();
+                LiftSystem liftSystem = version.getLiftSystem();
+                versionId = version.getId();
+
+                // Parse config to get floor range
+                LiftConfigDTO config = objectMapper.readValue(
+                    version.getConfig(),
+                    LiftConfigDTO.class
+                );
+
+                versionInfo = new ScenarioResponse.LiftSystemVersionInfo(
+                    liftSystem.getId(),
+                    liftSystem.getSystemKey(),
+                    liftSystem.getDisplayName(),
+                    version.getVersionNumber(),
+                    config.minFloor(),
+                    config.maxFloor()
+                );
+            }
+
             return new ScenarioResponse(
                 scenario.getId(),
                 scenario.getName(),
                 scenarioJson,
+                versionId,
+                versionInfo,
                 scenario.getCreatedAt(),
                 scenario.getUpdatedAt()
             );
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Stored scenario JSON could not be parsed");
+            throw new IllegalStateException("Stored scenario JSON could not be parsed", e);
         }
     }
 }

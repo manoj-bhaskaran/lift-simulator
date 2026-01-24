@@ -161,6 +161,13 @@ function Scenarios() {
                   <span>Flows: {info.flowCount}</span>
                   {info.hasSeed && <span className="seed-badge">Seeded</span>}
                 </div>
+                {scenario.versionInfo && (
+                  <div className="scenario-meta">
+                    <span>System: {scenario.versionInfo.displayName}</span>
+                    <span>Version: {scenario.versionInfo.versionNumber}</span>
+                    <span>Floors: {scenario.versionInfo.minFloor} to {scenario.versionInfo.maxFloor}</span>
+                  </div>
+                )}
                 <div className="scenario-details">
                   <span className="created-date">
                     Created: {new Date(scenario.createdAt).toLocaleDateString()}

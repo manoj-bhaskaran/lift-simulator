@@ -18,9 +18,10 @@ import './PassengerFlowBuilder.css';
  * @param {PassengerFlow[]} props.flows - Current passenger flows
  * @param {Function} props.onChange - Callback when flows change
  * @param {number} props.maxTick - Maximum tick value (from scenario duration)
+ * @param {Object} props.floorRange - Floor range constraints {minFloor, maxFloor}
  * @returns {JSX.Element} The passenger flow builder component
  */
-function PassengerFlowBuilder({ flows, onChange, maxTick }) {
+function PassengerFlowBuilder({ flows, onChange, maxTick, floorRange }) {
   const [editingIndex, setEditingIndex] = useState(null);
   const [newFlow, setNewFlow] = useState({
     startTick: 0,
@@ -117,6 +118,7 @@ function PassengerFlowBuilder({ flows, onChange, maxTick }) {
                 <FlowEditForm
                   flow={flow}
                   maxTick={maxTick}
+                  floorRange={floorRange}
                   onSave={(updatedFlow) => handleUpdateFlow(index, updatedFlow)}
                   onCancel={() => setEditingIndex(null)}
                 />
@@ -143,6 +145,7 @@ function PassengerFlowBuilder({ flows, onChange, maxTick }) {
           <FlowEditForm
             flow={newFlow}
             maxTick={maxTick}
+            floorRange={floorRange}
             onSave={handleAddFlow}
             onCancel={() => setShowAddForm(false)}
           />
@@ -232,11 +235,12 @@ function FlowDisplayItem({ flow, index, onEdit, onRemove, onMoveUp, onMoveDown, 
  * @param {Object} props - Component props
  * @param {PassengerFlow} props.flow - The flow to edit
  * @param {number} props.maxTick - Maximum tick value
+ * @param {Object} props.floorRange - Floor range constraints {minFloor, maxFloor}
  * @param {Function} props.onSave - Save callback
  * @param {Function} props.onCancel - Cancel callback
  * @returns {JSX.Element} The flow edit component
  */
-function FlowEditForm({ flow, maxTick, onSave, onCancel }) {
+function FlowEditForm({ flow, maxTick, floorRange, onSave, onCancel }) {
   const [formData, setFormData] = useState({ ...flow });
 
   const handleChange = (field, value) => {
@@ -272,9 +276,13 @@ function FlowEditForm({ flow, maxTick, onSave, onCancel }) {
             id="originFloor"
             value={formData.originFloor}
             onChange={(e) => handleChange('originFloor', e.target.value)}
+            min={floorRange?.minFloor}
+            max={floorRange?.maxFloor}
             required
           />
-          <span className="field-hint">Floor number</span>
+          <span className="field-hint">
+            {floorRange ? `${floorRange.minFloor} to ${floorRange.maxFloor}` : 'Floor number'}
+          </span>
         </div>
 
         <div className="flow-edit-field">
@@ -284,9 +292,13 @@ function FlowEditForm({ flow, maxTick, onSave, onCancel }) {
             id="destinationFloor"
             value={formData.destinationFloor}
             onChange={(e) => handleChange('destinationFloor', e.target.value)}
+            min={floorRange?.minFloor}
+            max={floorRange?.maxFloor}
             required
           />
-          <span className="field-hint">Floor number</span>
+          <span className="field-hint">
+            {floorRange ? `${floorRange.minFloor} to ${floorRange.maxFloor}` : 'Floor number'}
+          </span>
         </div>
 
         <div className="flow-edit-field">

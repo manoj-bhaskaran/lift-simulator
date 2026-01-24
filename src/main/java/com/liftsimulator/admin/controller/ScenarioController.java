@@ -109,15 +109,19 @@ public class ScenarioController {
 
     /**
      * Validates a scenario payload without persisting it.
+     * Validates both structure and floor ranges against the specified lift system version.
      *
-     * @param request scenario payload
+     * @param request scenario payload including lift system version ID
      * @return validation response
      */
     @PostMapping("/validate")
     public ResponseEntity<ScenarioValidationResponse> validateScenario(
         @Valid @RequestBody ScenarioRequest request
     ) {
-        ScenarioValidationResponse response = scenarioValidationService.validate(request.scenarioJson());
+        ScenarioValidationResponse response = scenarioValidationService.validate(
+            request.scenarioJson(),
+            request.liftSystemVersionId()
+        );
         return ResponseEntity.ok(response);
     }
 }

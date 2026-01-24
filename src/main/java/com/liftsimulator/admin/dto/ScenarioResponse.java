@@ -11,7 +11,21 @@ public record ScenarioResponse(
     Long id,
     String name,
     JsonNode scenarioJson,
+    Long liftSystemVersionId,
+    LiftSystemVersionInfo versionInfo,
     OffsetDateTime createdAt,
     OffsetDateTime updatedAt
 ) {
+    /**
+     * Nested DTO containing lift system version information for display purposes.
+     */
+    public record LiftSystemVersionInfo(
+        Long liftSystemId,
+        String systemKey,
+        String displayName,
+        Integer versionNumber,
+        Integer minFloor,
+        Integer maxFloor
+    ) {
+    }
 }
