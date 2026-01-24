@@ -82,7 +82,7 @@ public class ScenarioValidationService {
         ScenarioValidationResponse baseValidation = validate(scenarioJson);
 
         // If base validation already failed, return early
-        if (!baseValidation.isValid()) {
+        if (!baseValidation.valid()) {
             return baseValidation;
         }
 
