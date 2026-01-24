@@ -3,36 +3,37 @@ package com.liftsimulator;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Base class for local integration tests that use Testcontainers.
  * 
  * This class provides a PostgreSQL container for local development testing.
- * The container is automatically started and provides database credentials
- * to the Spring Boot test context via @DynamicPropertySource.
+ * The container is only started when SPRING_DATASOURCE_URL is not set (i.e., not in CI/CD).
  * 
  * Use this class for integration tests in local development.
- * For CI/CD environments, tests should extend BaseIntegrationTest which
- * uses the GitHub Actions PostgreSQL service via environment variables.
+ * For CI/CD environments, the container is not started and the workflow's
+ * PostgreSQL service is used via environment variables.
  */
-@Testcontainers
 public abstract class LocalIntegrationTest extends BaseIntegrationTest {
 
     private static final boolean USE_TESTCONTAINERS = System.getenv("SPRING_DATASOURCE_URL") == null;
+    
+    static PostgreSQLContainer<?> postgres;
 
-    @Container
-    static PostgreSQLContainer<?> postgres = USE_TESTCONTAINERS
-            ? new PostgreSQLContainer<>("postgres:15-alpine")
+    static {
+        // Manually start container only in local development
+        if (USE_TESTCONTAINERS) {
+            postgres = new PostgreSQLContainer<>("postgres:15-alpine")
                     .withDatabaseName("lift_simulator_test")
                     .withUsername("lift_admin")
-                    .withPassword("liftpassword")
-            : null;
+                    .withPassword("liftpassword");
+            postgres.start();
+        }
+    }
 
     @DynamicPropertySource
     static void registerLocalPostgresProperties(DynamicPropertyRegistry registry) {
-        // Only register and start Testcontainers when no external datasource is provided
+        // Only register Testcontainers properties when no external datasource is provided
         if (USE_TESTCONTAINERS && postgres != null) {
             registry.add("spring.datasource.url", postgres::getJdbcUrl);
             registry.add("spring.datasource.username", postgres::getUsername);
