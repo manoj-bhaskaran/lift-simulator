@@ -170,8 +170,13 @@ public class SimulationRunService {
             generateBatchInputFile(run.getId());
         }
 
+        // Start the run before submitting for async execution
+        // This ensures the API returns RUNNING status immediately
+        run.start();
+        run = runRepository.save(run);
+
         // Submit the run for execution
-        // The execution service will transition the run to RUNNING and handle the actual simulation
+        // The execution service will handle the actual simulation
         executionService.submitRunForExecution(run.getId());
         return run;
     }
