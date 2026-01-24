@@ -95,7 +95,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
 
         testScenario = new SimulationScenario();
         testScenario.setName("Test Scenario");
-        testScenario.setScenarioJson("{\"passengerFlows\": []}");
+        testScenario.setScenarioJson("{\"durationTicks\": 10, \"passengerFlows\": [{\"startTick\": 0, \"originFloor\": 0, \"destinationFloor\": 5, \"passengers\": 1}]}");
         testScenario = scenarioRepository.save(testScenario);
     }
 

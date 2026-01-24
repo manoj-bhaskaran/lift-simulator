@@ -7,6 +7,7 @@ import com.liftsimulator.admin.dto.CreateSimulationRunRequest;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.LiftSystemVersion.VersionStatus;
+import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.entity.SimulationScenario;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
@@ -121,14 +122,23 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
         CompletableFuture<Void> completion = CompletableFuture.runAsync(() -> {
             try {
                 Thread.sleep(150);
-                Path runDir = Path.of(runService.getRunById(runId).getArtefactBasePath());
-                Files.createDirectories(runDir);
-                Files.writeString(runDir.resolve("results.json"), objectMapper.writeValueAsString(Map.of(
-                        "runSummary", Map.of("runId", runId, "status", "SUCCEEDED", "ticks", 20),
-                        "metrics", Map.of("totalPassengersServed", 1, "averageWaitTime", 2.5)
-                )));
-                runService.updateProgress(runId, 20L);
-                runService.succeedRun(runId);
+                SimulationRun run = runService.getRunById(runId);
+
+                // Only write results and update status if the actual simulation hasn't completed yet
+                if (run.getStatus() != SimulationRun.RunStatus.SUCCEEDED) {
+                    Path runDir = Path.of(run.getArtefactBasePath());
+                    Files.createDirectories(runDir);
+                    Files.writeString(runDir.resolve("results.json"), objectMapper.writeValueAsString(Map.of(
+                            "runSummary", Map.of("runId", runId, "status", "SUCCEEDED", "ticks", 20),
+                            "metrics", Map.of("totalPassengersServed", 1, "averageWaitTime", 2.5)
+                    )));
+                    runService.updateProgress(runId, 20L);
+                    try {
+                        runService.succeedRun(runId);
+                    } catch (IllegalStateException e) {
+                        // Ignore if already succeeded by the actual execution service
+                    }
+                }
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
