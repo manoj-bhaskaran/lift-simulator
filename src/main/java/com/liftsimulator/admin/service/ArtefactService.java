@@ -32,7 +32,7 @@ public class ArtefactService {
     private final ObjectMapper objectMapper;
 
     public ArtefactService(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+        this.objectMapper = objectMapper.copy();
     }
 
     /**

@@ -82,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and a CLI compatibility test for the demo scenario.
 
 ### Fixed
+- Avoid SpotBugs EI_EXPOSE_REP2 warnings in admin services by using defensive ObjectMapper copies and lazy execution service injection.
 - Handle unexpected IO failures when validating scenario payloads in the admin service.
 - Validate scenario floor ranges and start ticks when generating batch scenario content in memory.
 - Initialize the H2 test schema for Spring Boot integration tests to prevent application context startup failures.

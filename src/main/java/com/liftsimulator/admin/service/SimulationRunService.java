@@ -11,7 +11,9 @@ import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
 import com.liftsimulator.admin.repository.SimulationScenarioRepository;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,8 +38,12 @@ public class SimulationRunService {
     private final BatchInputGenerator batchInputGenerator;
     private final ObjectMapper objectMapper;
     private final String artefactsBasePath;
-    private SimulationRunExecutionService executionService;
+    private final SimulationRunExecutionService executionService;
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "Spring-managed services are injected and treated as shared dependencies."
+    )
     public SimulationRunService(
             SimulationRunRepository runRepository,
             LiftSystemRepository liftSystemRepository,
@@ -45,25 +51,16 @@ public class SimulationRunService {
             SimulationScenarioRepository scenarioRepository,
             BatchInputGenerator batchInputGenerator,
             ObjectMapper objectMapper,
+            @Lazy SimulationRunExecutionService executionService,
             @Value("${simulation.artefacts.base-path:./simulation-runs}") String artefactsBasePath) {
         this.runRepository = runRepository;
         this.liftSystemRepository = liftSystemRepository;
         this.versionRepository = versionRepository;
         this.scenarioRepository = scenarioRepository;
         this.batchInputGenerator = batchInputGenerator;
-        this.objectMapper = objectMapper;
-        this.artefactsBasePath = artefactsBasePath;
-    }
-
-    /**
-     * Sets the execution service. This is called by Spring after construction
-     * to avoid circular dependency issues.
-     *
-     * @param executionService the execution service
-     */
-    @org.springframework.beans.factory.annotation.Autowired
-    public void setExecutionService(@org.springframework.context.annotation.Lazy SimulationRunExecutionService executionService) {
+        this.objectMapper = objectMapper.copy();
         this.executionService = executionService;
+        this.artefactsBasePath = artefactsBasePath;
     }
 
     /**
