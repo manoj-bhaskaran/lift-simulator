@@ -98,6 +98,7 @@ function ScenarioForm() {
   const [alertMessage, setAlertMessage] = useState(null);
   const [showAdvancedJson, setShowAdvancedJson] = useState(false);
   const [jsonText, setJsonText] = useState('');
+  const [selectedTemplateKey, setSelectedTemplateKey] = useState('');
 
   /**
    * Parses version config to extract floor range.
@@ -222,6 +223,7 @@ function ScenarioForm() {
     const template = SCENARIO_TEMPLATES[templateKey];
     if (!template) return;
 
+    setSelectedTemplateKey(templateKey);
     const json = template.scenarioJson;
     setDurationTicks(json.durationTicks);
     setPassengerFlows(json.passengerFlows || []);
@@ -497,8 +499,9 @@ function ScenarioForm() {
                 <button
                   key={key}
                   type="button"
-                  className="template-card"
+                  className={`template-card${selectedTemplateKey === key ? ' is-selected' : ''}`}
                   onClick={() => applyTemplate(key)}
+                  aria-pressed={selectedTemplateKey === key}
                 >
                   <div className="template-name">{template.name}</div>
                   <div className="template-description">{template.description}</div>
@@ -561,14 +564,14 @@ function ScenarioForm() {
 
               {/* Seed */}
               <div className="form-group">
-                <label htmlFor="useSeed">
+                <label htmlFor="useSeed" className="checkbox-label">
                   <input
                     type="checkbox"
                     id="useSeed"
                     checked={useSeed}
                     onChange={(e) => setUseSeed(e.target.checked)}
                   />
-                  {' '}Use Random Seed (for reproducibility)
+                  Use Random Seed (for reproducibility)
                 </label>
               </div>
 
