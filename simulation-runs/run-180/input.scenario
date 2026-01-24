@@ -1,0 +1,15 @@
+name: Simulation Run 180 - Test Scenario
+ticks: 10
+min_floor: 0
+max_floor: 10
+initial_floor: 0
+travel_ticks_per_floor: 1
+door_transition_ticks: 2
+door_dwell_ticks: 3
+door_reopen_window_ticks: 2
+home_floor: 0
+idle_timeout_ticks: 5
+controller_strategy: NEAREST_REQUEST_ROUTING
+idle_parking_mode: PARK_TO_HOME_FLOOR
+
+0, hall_call, p1, 0, UP

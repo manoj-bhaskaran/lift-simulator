@@ -53,6 +53,9 @@ public class SimulationRunServiceTest {
     @Mock
     private BatchInputGenerator batchInputGenerator;
 
+    @Mock
+    private SimulationRunExecutionService executionService;
+
     private SimulationRunService runService;
     private ObjectMapper objectMapper;
 
@@ -74,6 +77,7 @@ public class SimulationRunServiceTest {
                 scenarioRepository,
                 batchInputGenerator,
                 objectMapper,
+                executionService,
                 tempDir.toString()
         );
 

@@ -1,14 +1,15 @@
 -------------------------------------------------------------------------------
 Test set: com.liftsimulator.admin.controller.SimulationRunLifecycleIntegrationTest
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 8.386 s <<< FAILURE! -- in com.liftsimulator.admin.controller.SimulationRunLifecycleIntegrationTest
-com.liftsimulator.admin.controller.SimulationRunLifecycleIntegrationTest.testRunLifecycle_StartPollResults -- Time elapsed: 0.358 s <<< FAILURE!
-java.lang.AssertionError: Status expected:<201> but was:<500>
+Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 3.877 s <<< FAILURE! -- in com.liftsimulator.admin.controller.SimulationRunLifecycleIntegrationTest
+com.liftsimulator.admin.controller.SimulationRunLifecycleIntegrationTest.testRunLifecycle_StartPollResults -- Time elapsed: 0.504 s <<< FAILURE!
+java.lang.AssertionError: JSON path "$.results.runSummary.status" expected:<SUCCEEDED> but was:<FAILED>
 	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:59)
 	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:122)
-	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$9(StatusResultMatchers.java:637)
+	at org.springframework.test.util.JsonPathExpectationsHelper.assertValue(JsonPathExpectationsHelper.java:123)
+	at org.springframework.test.web.servlet.result.JsonPathResultMatchers.lambda$value$2(JsonPathResultMatchers.java:111)
 	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
-	at com.liftsimulator.admin.controller.SimulationRunLifecycleIntegrationTest.testRunLifecycle_StartPollResults(SimulationRunLifecycleIntegrationTest.java:110)
+	at com.liftsimulator.admin.controller.SimulationRunLifecycleIntegrationTest.testRunLifecycle_StartPollResults(SimulationRunLifecycleIntegrationTest.java:167)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1597)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1597)
