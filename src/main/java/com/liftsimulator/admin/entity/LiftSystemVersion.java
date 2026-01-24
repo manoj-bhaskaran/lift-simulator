@@ -16,8 +16,8 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import com.liftsimulator.admin.config.JsonStringConverter;
-import jakarta.persistence.Convert;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.Objects;
@@ -62,8 +62,8 @@ public class LiftSystemVersion {
     @Column(name = "published_at")
     private OffsetDateTime publishedAt;
 
-    @Convert(converter = JsonStringConverter.class)
     @Column(name = "config", nullable = false)
+    @JdbcTypeCode(SqlTypes.JSON)
     private String config;
 
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -1,8 +1,6 @@
 package com.liftsimulator.admin.entity;
 
-import com.liftsimulator.admin.config.JsonStringConverter;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -10,6 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.Objects;
@@ -29,8 +29,8 @@ public class SimulationScenario {
     @Column(name = "name", nullable = false, length = 200)
     private String name;
 
-    @Convert(converter = JsonStringConverter.class)
     @Column(name = "scenario_json", nullable = false)
+    @JdbcTypeCode(SqlTypes.JSON)
     private String scenarioJson;
 
     @Column(name = "created_at", nullable = false, updatable = false)
