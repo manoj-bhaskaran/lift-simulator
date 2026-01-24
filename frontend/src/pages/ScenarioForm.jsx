@@ -99,6 +99,25 @@ function ScenarioForm() {
   const [showAdvancedJson, setShowAdvancedJson] = useState(false);
   const [jsonText, setJsonText] = useState('');
 
+  /**
+   * Parses version config to extract floor range.
+   *
+   * @param {string} configJson - The config JSON string
+   * @returns {Object|null} Floor range {minFloor, maxFloor} or null if parsing fails
+   */
+  const parseVersionConfig = (configJson) => {
+    if (!configJson) return null;
+    try {
+      const config = JSON.parse(configJson);
+      return {
+        minFloor: config.minFloor,
+        maxFloor: config.maxFloor
+      };
+    } catch {
+      return null;
+    }
+  };
+
   useEffect(() => {
     loadLiftSystems();
   }, []);
@@ -122,11 +141,11 @@ function ScenarioForm() {
   useEffect(() => {
     if (selectedVersionId && versions.length > 0) {
       const selectedVersion = versions.find(v => v.id === parseInt(selectedVersionId, 10));
-      if (selectedVersion && selectedVersion.config) {
-        setFloorRange({
-          minFloor: selectedVersion.config.minFloor,
-          maxFloor: selectedVersion.config.maxFloor
-        });
+      if (selectedVersion) {
+        const floorInfo = parseVersionConfig(selectedVersion.config);
+        setFloorRange(floorInfo);
+      } else {
+        setFloorRange(null);
       }
     } else {
       setFloorRange(null);
@@ -441,15 +460,18 @@ function ScenarioForm() {
                 className={formErrors.liftSystemVersion ? 'error' : ''}
               >
                 <option value="">-- Select Version --</option>
-                {versions.map((version) => (
-                  <option key={version.id} value={version.id}>
-                    Version {version.versionNumber}
-                    {version.config ?
-                      ` (Floors ${version.config.minFloor} to ${version.config.maxFloor})` :
-                      ''
-                    }
-                  </option>
-                ))}
+                {versions.map((version) => {
+                  const floorInfo = parseVersionConfig(version.config);
+                  return (
+                    <option key={version.id} value={version.id}>
+                      Version {version.versionNumber}
+                      {floorInfo ?
+                        ` (Floors ${floorInfo.minFloor} to ${floorInfo.maxFloor})` :
+                        ''
+                      }
+                    </option>
+                  );
+                })}
               </select>
               <p className="help-text">
                 Select the version to ensure floor ranges are validated correctly
