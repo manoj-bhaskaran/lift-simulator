@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.entity;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -54,6 +55,11 @@ public class Scenario {
         this.scenarioJson = scenarioJson;
     }
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "JPA entity with managed relationship. "
+                    + "Direct reference required for ORM functionality and lazy loading."
+    )
     public Scenario(String name, String scenarioJson, LiftSystemVersion liftSystemVersion) {
         this.name = name;
         this.scenarioJson = scenarioJson;
@@ -112,10 +118,20 @@ public class Scenario {
         this.updatedAt = updatedAt;
     }
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP",
+            justification = "JPA entity with managed relationship. "
+                    + "Direct reference required for ORM functionality and lazy loading."
+    )
     public LiftSystemVersion getLiftSystemVersion() {
         return liftSystemVersion;
     }
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "JPA entity with managed relationship. "
+                    + "Direct reference required for ORM functionality and lazy loading."
+    )
     public void setLiftSystemVersion(LiftSystemVersion liftSystemVersion) {
         this.liftSystemVersion = liftSystemVersion;
     }
