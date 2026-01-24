@@ -1,5 +1,5 @@
 // @ts-check
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { scenariosApi } from '../api/scenariosApi';
 import AlertModal from '../components/AlertModal';
@@ -100,7 +100,7 @@ function ScenarioForm() {
   /**
    * Loads scenario data for editing.
    */
-  const loadScenario = async () => {
+  const loadScenario = useCallback(async () => {
     try {
       setLoading(true);
       const response = await scenariosApi.getScenario(id);
@@ -120,7 +120,7 @@ function ScenarioForm() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   /**
    * Applies a scenario template.
