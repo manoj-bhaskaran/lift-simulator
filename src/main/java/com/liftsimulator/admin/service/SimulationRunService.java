@@ -20,7 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Service for managing simulation runs.
@@ -152,7 +152,7 @@ public class SimulationRunService {
         }
 
         // Generate seed if not provided
-        Long runSeed = seed != null ? seed : new Random().nextLong();
+        Long runSeed = seed != null ? seed : ThreadLocalRandom.current().nextLong();
 
         // Set up artefact directory
         String artefactPath = setupArtefactDirectory(run.getId());

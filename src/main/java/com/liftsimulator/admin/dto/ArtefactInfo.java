@@ -1,5 +1,7 @@
 package com.liftsimulator.admin.dto;
 
+import java.util.Locale;
+
 /**
  * DTO representing an artefact file associated with a simulation run.
  */
@@ -28,7 +30,7 @@ public record ArtefactInfo(
      * @return the MIME type
      */
     private static String determineMimeType(String fileName) {
-        String lowerName = fileName.toLowerCase();
+        String lowerName = fileName.toLowerCase(Locale.ROOT);
         if (lowerName.endsWith(".json")) {
             return "application/json";
         } else if (lowerName.endsWith(".txt") || lowerName.endsWith(".log")) {

@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,8 +65,13 @@ public class ArtefactService {
             paths.filter(Files::isRegularFile)
                 .forEach(path -> {
                     try {
+                        Path fileNamePath = path.getFileName();
+                        if (fileNamePath == null) {
+                            logger.warn("Skipping file with null name: " + path);
+                            return;
+                        }
                         String relativePath = directory.relativize(path).toString();
-                        String fileName = path.getFileName().toString();
+                        String fileName = fileNamePath.toString();
                         long size = Files.size(path);
                         artefacts.add(ArtefactInfo.of(fileName, relativePath, size));
                     } catch (IOException e) {
@@ -206,7 +211,7 @@ public class ArtefactService {
     private String readLastNLines(Path path, int n) throws IOException {
         List<String> lines = new ArrayList<>();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(path.toFile()))) {
+        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             String line;
             while ((line = reader.readLine()) != null) {
                 lines.add(line);

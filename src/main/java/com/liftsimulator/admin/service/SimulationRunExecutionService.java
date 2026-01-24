@@ -183,7 +183,7 @@ public class SimulationRunExecutionService {
             runService.succeedRun(request.runId());
             log(logWriter, "Simulation succeeded for run " + request.runId());
             writeResults(request.runId(), runDir, config, scenario, metrics, "SUCCEEDED", null);
-        } catch (Exception ex) {
+        } catch (IOException | RuntimeException ex) {
             String errorMessage = safeMessage(ex);
             logger.error("Simulation run {} failed", request.runId(), ex);
             failRunWithMessage(request.runId(), logPath, errorMessage, started);

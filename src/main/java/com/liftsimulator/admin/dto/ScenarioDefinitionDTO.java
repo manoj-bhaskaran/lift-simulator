@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -23,4 +25,18 @@ public record ScenarioDefinitionDTO(
     @Min(value = 0, message = "seed must be 0 or greater")
     Integer seed
 ) {
+    /**
+     * Compact constructor that creates a defensive copy of the passenger flows list.
+     */
+    public ScenarioDefinitionDTO {
+        passengerFlows = passengerFlows != null ? new ArrayList<>(passengerFlows) : null;
+    }
+
+    /**
+     * Returns an unmodifiable view of the passenger flows list.
+     */
+    @Override
+    public List<PassengerFlowDTO> passengerFlows() {
+        return passengerFlows != null ? Collections.unmodifiableList(passengerFlows) : null;
+    }
 }
