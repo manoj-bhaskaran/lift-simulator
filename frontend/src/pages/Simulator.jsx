@@ -335,6 +335,9 @@ function Simulator() {
           </p>
         </div>
         <div className="page-actions">
+          <Link to="/simulation-runs" className="btn-secondary">
+            View All Runs
+          </Link>
           <Link to="/simulator" className="btn-secondary">
             Choose System
           </Link>
@@ -505,7 +508,12 @@ function Simulator() {
 
       {isTerminal && runInfo && (
         <section className="simulator-card">
-          <h3>Results</h3>
+          <div className="results-header">
+            <h3>Results</h3>
+            <Link to={`/simulation-runs/${runInfo.id}`} className="btn-secondary btn-small">
+              View Full Details
+            </Link>
+          </div>
           {resultsError && <p className="error">{resultsError}</p>}
 
           {runStatus === 'FAILED' && (

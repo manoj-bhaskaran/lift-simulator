@@ -27,6 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Polling-based run status with elapsed time, progress, and terminal state handling
   - Results rendering with KPI cards, per-lift and per-floor tables, artefact downloads, and CLI reproduction guidance
   - **Run Simulator button**: Added discoverable "Run Simulator" button next to each published version that launches the run workflow with preselected system and version
+- **Simulation Runs History**: Persistent access to past simulation run results
+  - **Runs List Page**: View history of all simulation runs with status, system, version, and scenario information
+  - **Filtering**: Filter runs by lift system and status (SUCCEEDED, FAILED, RUNNING, CREATED, CANCELLED)
+  - **Run Detail Page**: View full results, KPIs, per-lift and per-floor metrics, and downloadable artefacts for any past run
+  - **Navigation Integration**: Added "Runs" link in main navigation and "View All Runs" button in Simulator
+  - **Backend API**: New `GET /api/simulation-runs` endpoint with optional `systemId` and `status` query parameters
+  - Results persist after navigation away from the simulator, addressing UAT feedback
 - **Backend Scenario Enhancements**:
   - Added `name` field to Scenario entity for better identification
   - Implemented `GET /api/scenarios` endpoint to list all scenarios

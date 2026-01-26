@@ -1,0 +1,206 @@
+.simulation-runs .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.simulation-runs .page-title h2 {
+  margin: 0 0 0.5rem 0;
+}
+
+.simulation-runs .page-subtitle {
+  margin: 0;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+
+.simulation-runs .filters-section {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.simulation-runs .filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.simulation-runs .filter-group label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.simulation-runs .filter-group select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  min-width: 180px;
+}
+
+.simulation-runs .btn-link {
+  background: none;
+  border: none;
+  color: #3498db;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  text-decoration: underline;
+}
+
+.simulation-runs .btn-link:hover {
+  color: #2980b9;
+}
+
+.simulation-runs .empty-state {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.simulation-runs .empty-state p {
+  color: #7f8c8d;
+  margin-bottom: 1rem;
+}
+
+.simulation-runs .runs-table-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+.simulation-runs .runs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.simulation-runs .runs-table th,
+.simulation-runs .runs-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.simulation-runs .runs-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #2c3e50;
+  white-space: nowrap;
+}
+
+.simulation-runs .runs-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.simulation-runs .runs-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.simulation-runs .run-id {
+  font-family: monospace;
+  font-weight: 500;
+  color: #7f8c8d;
+}
+
+.simulation-runs .status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.simulation-runs .status-succeeded {
+  background: #d4edda;
+  color: #155724;
+}
+
+.simulation-runs .status-failed {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.simulation-runs .status-running {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.simulation-runs .status-cancelled {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.simulation-runs .status-created {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.simulation-runs .progress-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.simulation-runs .mini-progress {
+  width: 60px;
+  height: 4px;
+  background: #ecf0f1;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.simulation-runs .mini-progress-fill {
+  height: 100%;
+  background: #3498db;
+  transition: width 0.3s;
+}
+
+.simulation-runs .btn-small {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.simulation-runs .btn-small.btn-secondary {
+  background: #ecf0f1;
+  color: #2c3e50;
+  border: none;
+}
+
+.simulation-runs .btn-small.btn-secondary:hover {
+  background: #bdc3c7;
+}
+
+@media (max-width: 768px) {
+  .simulation-runs .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .simulation-runs .filters-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .simulation-runs .filter-group select {
+    min-width: 100%;
+  }
+}
