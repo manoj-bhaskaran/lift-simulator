@@ -215,7 +215,66 @@ function ScenarioForm() {
   }, [id]);
 
   /**
+   * Adapts passenger flows to fit within the valid floor range.
+   * Floors are scaled proportionally to fit the available range.
+   *
+   * @param {Array} flows - Original passenger flows
+   * @param {Object} range - Floor range {minFloor, maxFloor}
+   * @returns {Array} Adapted passenger flows
+   */
+  const adaptFlowsToFloorRange = (flows, range) => {
+    if (!flows || flows.length === 0 || !range) return flows;
+
+    const { minFloor, maxFloor } = range;
+    const availableFloors = maxFloor - minFloor;
+
+    // Find the range used by the template
+    let templateMin = Infinity;
+    let templateMax = -Infinity;
+    flows.forEach(flow => {
+      templateMin = Math.min(templateMin, flow.originFloor, flow.destinationFloor);
+      templateMax = Math.max(templateMax, flow.originFloor, flow.destinationFloor);
+    });
+
+    const templateRange = templateMax - templateMin;
+
+    return flows.map(flow => {
+      // Scale floors proportionally to fit the available range
+      let originFloor, destinationFloor;
+
+      if (templateRange === 0) {
+        // All template floors are the same, use minFloor
+        originFloor = minFloor;
+        destinationFloor = maxFloor;
+      } else {
+        // Scale proportionally
+        const originRatio = (flow.originFloor - templateMin) / templateRange;
+        const destRatio = (flow.destinationFloor - templateMin) / templateRange;
+
+        originFloor = Math.round(minFloor + originRatio * availableFloors);
+        destinationFloor = Math.round(minFloor + destRatio * availableFloors);
+
+        // Ensure floors are different (no same-floor trips)
+        if (originFloor === destinationFloor) {
+          if (destinationFloor < maxFloor) {
+            destinationFloor += 1;
+          } else {
+            originFloor -= 1;
+          }
+        }
+      }
+
+      return {
+        ...flow,
+        originFloor,
+        destinationFloor
+      };
+    });
+  };
+
+  /**
    * Applies a scenario template.
+   * When a floor range is selected, adapts the template to fit the valid range.
    *
    * @param {string} templateKey - The template key to apply
    */
@@ -226,7 +285,15 @@ function ScenarioForm() {
     setSelectedTemplateKey(templateKey);
     const json = template.scenarioJson;
     setDurationTicks(json.durationTicks);
-    setPassengerFlows(json.passengerFlows || []);
+
+    // Adapt flows to floor range if a version is selected
+    const flows = json.passengerFlows || [];
+    if (floorRange && flows.length > 0) {
+      setPassengerFlows(adaptFlowsToFloorRange(flows, floorRange));
+    } else {
+      setPassengerFlows(flows);
+    }
+
     if (json.seed !== null && json.seed !== undefined) {
       setSeed(String(json.seed));
       setUseSeed(true);
@@ -264,7 +331,9 @@ function ScenarioForm() {
     if (!scenarioName.trim()) {
       errors.scenarioName = 'Scenario name is required';
     }
-    if (!selectedVersionId) {
+    if (!selectedSystemId) {
+      errors.liftSystem = 'Lift system is required';
+    } else if (!selectedVersionId) {
       errors.liftSystemVersion = 'Lift system version is required';
     }
 
@@ -310,7 +379,9 @@ function ScenarioForm() {
     if (!scenarioName.trim()) {
       errors.scenarioName = 'Scenario name is required';
     }
-    if (!selectedVersionId) {
+    if (!selectedSystemId) {
+      errors.liftSystem = 'Lift system is required';
+    } else if (!selectedVersionId) {
       errors.liftSystemVersion = 'Lift system version is required';
     }
 
@@ -426,11 +497,11 @@ function ScenarioForm() {
               onChange={(e) => {
                 setSelectedSystemId(e.target.value);
                 setSelectedVersionId('');
-                if (formErrors.liftSystemVersion) {
-                  setFormErrors(prev => ({ ...prev, liftSystemVersion: '' }));
+                if (formErrors.liftSystem || formErrors.liftSystemVersion) {
+                  setFormErrors(prev => ({ ...prev, liftSystem: '', liftSystemVersion: '' }));
                 }
               }}
-              className={formErrors.liftSystemVersion ? 'error' : ''}
+              className={formErrors.liftSystem ? 'error' : ''}
             >
               <option value="">-- Select Lift System --</option>
               {liftSystems.map((system) => (
@@ -439,6 +510,9 @@ function ScenarioForm() {
                 </option>
               ))}
             </select>
+            {formErrors.liftSystem && (
+              <span className="error-message">{formErrors.liftSystem}</span>
+            )}
             <p className="help-text">
               Select the lift system this scenario will be designed for
             </p>
@@ -494,6 +568,16 @@ function ScenarioForm() {
         {!isEditMode && (
           <div className="form-section">
             <h3>Quick Start Templates</h3>
+            {floorRange && (
+              <p className="help-text" style={{ marginBottom: '1rem' }}>
+                Templates will be adapted to the selected floor range ({floorRange.minFloor} to {floorRange.maxFloor}).
+              </p>
+            )}
+            {!selectedVersionId && (
+              <p className="help-text" style={{ marginBottom: '1rem', color: '#e67e22' }}>
+                Select a lift system and version above to ensure templates use valid floor ranges.
+              </p>
+            )}
             <div className="template-grid">
               {Object.entries(SCENARIO_TEMPLATES).map(([key, template]) => (
                 <button
