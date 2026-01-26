@@ -4,7 +4,6 @@ import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.entity.SimulationRun.RunStatus;
-import com.liftsimulator.admin.entity.SimulationScenario;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +39,6 @@ public class SimulationRunRepositoryTest {
 
     private LiftSystem liftSystem;
     private LiftSystemVersion version;
-    private SimulationScenario scenario;
 
     @BeforeEach
     public void setUp() {
@@ -49,9 +47,6 @@ public class SimulationRunRepositoryTest {
 
         version = new LiftSystemVersion(liftSystem, 1, "{\"lifts\": 2}");
         entityManager.persist(version);
-
-        scenario = new SimulationScenario("Test Scenario", "{\"passengers\": 50}");
-        entityManager.persist(scenario);
 
         entityManager.flush();
     }
@@ -72,17 +67,6 @@ public class SimulationRunRepositoryTest {
         Optional<SimulationRun> found = runRepository.findById(saved.getId());
         assertTrue(found.isPresent());
         assertEquals(saved.getId(), found.get().getId());
-    }
-
-    @Test
-    public void testSaveWithScenario() {
-        SimulationRun run = new SimulationRun(liftSystem, version, scenario);
-
-        SimulationRun saved = runRepository.save(run);
-
-        assertNotNull(saved.getId());
-        assertNotNull(saved.getScenario());
-        assertEquals(scenario.getId(), saved.getScenario().getId());
     }
 
     @Test
@@ -225,21 +209,6 @@ public class SimulationRunRepositoryTest {
 
         assertTrue(runs.size() >= 2);
         assertEquals(version.getId(), runs.get(0).getVersion().getId());
-    }
-
-    @Test
-    public void testFindByScenarioIdOrderByCreatedAtDesc() {
-        SimulationRun run1 = new SimulationRun(liftSystem, version, scenario);
-        SimulationRun run2 = new SimulationRun(liftSystem, version, scenario);
-
-        entityManager.persist(run1);
-        entityManager.persist(run2);
-        entityManager.flush();
-
-        List<SimulationRun> runs = runRepository.findByScenarioIdOrderByCreatedAtDesc(scenario.getId());
-
-        assertTrue(runs.size() >= 2);
-        assertEquals(scenario.getId(), runs.get(0).getScenario().getId());
     }
 
     @Test

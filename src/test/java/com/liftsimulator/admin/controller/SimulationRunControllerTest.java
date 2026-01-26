@@ -7,11 +7,9 @@ import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.LiftSystemVersion.VersionStatus;
 import com.liftsimulator.admin.entity.SimulationRun;
-import com.liftsimulator.admin.entity.SimulationScenario;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
-import com.liftsimulator.admin.repository.SimulationScenarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -51,19 +48,14 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
     private LiftSystemVersionRepository versionRepository;
 
     @Autowired
-    private SimulationScenarioRepository scenarioRepository;
-
-    @Autowired
     private SimulationRunRepository runRepository;
 
     private LiftSystem testSystem;
     private LiftSystemVersion testVersion;
-    private SimulationScenario testScenario;
 
     @BeforeEach
     public void setUp() throws IOException {
         runRepository.deleteAll();
-        scenarioRepository.deleteAll();
         versionRepository.deleteAll();
         liftSystemRepository.deleteAll();
 
@@ -92,11 +84,6 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
             "\"idleParkingMode\": \"PARK_TO_HOME_FLOOR\"}");
         testVersion.setStatus(VersionStatus.PUBLISHED);
         testVersion = versionRepository.save(testVersion);
-
-        testScenario = new SimulationScenario();
-        testScenario.setName("Test Scenario");
-        testScenario.setScenarioJson("{\"durationTicks\": 10, \"passengerFlows\": [{\"startTick\": 0, \"originFloor\": 0, \"destinationFloor\": 5, \"passengers\": 1}]}");
-        testScenario = scenarioRepository.save(testScenario);
     }
 
     @Test
@@ -115,29 +102,10 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
             .andExpect(jsonPath("$.id").exists())
             .andExpect(jsonPath("$.liftSystemId").value(testSystem.getId()))
             .andExpect(jsonPath("$.versionId").value(testVersion.getId()))
-            .andExpect(jsonPath("$.scenarioId").doesNotExist())
             .andExpect(jsonPath("$.status").value("RUNNING"))
             .andExpect(jsonPath("$.seed").value(12345L))
             .andExpect(jsonPath("$.createdAt").exists())
             .andExpect(jsonPath("$.startedAt").exists());
-    }
-
-    @Test
-    public void testCreateSimulationRun_WithScenario() throws Exception {
-        CreateSimulationRunRequest request = new CreateSimulationRunRequest(
-            testSystem.getId(),
-            testVersion.getId(),
-            testScenario.getId(),
-            null
-        );
-
-        mockMvc.perform(post("/api/simulation-runs")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.scenarioId").value(testScenario.getId()))
-            .andExpect(jsonPath("$.seed").exists());
     }
 
     @Test

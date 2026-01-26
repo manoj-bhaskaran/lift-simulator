@@ -1,16 +1,14 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.liftsimulator.admin.dto.ScenarioDefinitionDTO;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
+import com.liftsimulator.admin.entity.Scenario;
 import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.entity.SimulationRun.RunStatus;
-import com.liftsimulator.admin.entity.SimulationScenario;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
+import com.liftsimulator.admin.repository.ScenarioRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
-import com.liftsimulator.admin.repository.SimulationScenarioRepository;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -34,9 +32,7 @@ public class SimulationRunService {
     private final SimulationRunRepository runRepository;
     private final LiftSystemRepository liftSystemRepository;
     private final LiftSystemVersionRepository versionRepository;
-    private final SimulationScenarioRepository scenarioRepository;
-    private final BatchInputGenerator batchInputGenerator;
-    private final ObjectMapper objectMapper;
+    private final ScenarioRepository scenarioRepository;
     private final String artefactsBasePath;
     private final SimulationRunExecutionService executionService;
 
@@ -48,32 +44,30 @@ public class SimulationRunService {
             SimulationRunRepository runRepository,
             LiftSystemRepository liftSystemRepository,
             LiftSystemVersionRepository versionRepository,
-            SimulationScenarioRepository scenarioRepository,
-            BatchInputGenerator batchInputGenerator,
-            ObjectMapper objectMapper,
+            ScenarioRepository scenarioRepository,
             @Lazy SimulationRunExecutionService executionService,
             @Value("${simulation.artefacts.base-path:./simulation-runs}") String artefactsBasePath) {
         this.runRepository = runRepository;
         this.liftSystemRepository = liftSystemRepository;
         this.versionRepository = versionRepository;
         this.scenarioRepository = scenarioRepository;
-        this.batchInputGenerator = batchInputGenerator;
-        this.objectMapper = objectMapper.copy();
         this.executionService = executionService;
         this.artefactsBasePath = artefactsBasePath;
     }
 
     /**
-     * Create a new simulation run without a scenario (ad-hoc run).
+     * Create a new simulation run.
      *
      * @param liftSystemId the lift system id
      * @param versionId the version id
+     * @param scenarioId the scenario id (optional)
      * @return the created run
-     * @throws ResourceNotFoundException if the lift system or version is not found
+     * @throws ResourceNotFoundException if the lift system, version, or scenario is not found
      * @throws IllegalArgumentException if the version does not belong to the lift system
+     *                                  or the scenario does not belong to the version
      */
     @Transactional
-    public SimulationRun createRun(Long liftSystemId, Long versionId) {
+    public SimulationRun createRun(Long liftSystemId, Long versionId, Long scenarioId) {
         LiftSystem liftSystem = liftSystemRepository.findById(liftSystemId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Lift system not found with id: " + liftSystemId));
@@ -88,39 +82,22 @@ public class SimulationRunService {
         }
 
         SimulationRun run = new SimulationRun(liftSystem, version);
-        return runRepository.save(run);
-    }
 
-    /**
-     * Create a new simulation run with a scenario.
-     *
-     * @param liftSystemId the lift system id
-     * @param versionId the version id
-     * @param scenarioId the scenario id
-     * @return the created run
-     * @throws ResourceNotFoundException if any of the entities is not found
-     * @throws IllegalArgumentException if the version does not belong to the lift system
-     */
-    @Transactional
-    public SimulationRun createRunWithScenario(Long liftSystemId, Long versionId, Long scenarioId) {
-        LiftSystem liftSystem = liftSystemRepository.findById(liftSystemId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Lift system not found with id: " + liftSystemId));
+        // Set scenario if provided
+        if (scenarioId != null) {
+            Scenario scenario = scenarioRepository.findById(scenarioId)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Scenario not found with id: " + scenarioId));
 
-        LiftSystemVersion version = versionRepository.findById(versionId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Lift system version not found with id: " + versionId));
+            // Validate that the scenario belongs to the same version
+            if (!scenario.getLiftSystemVersion().getId().equals(versionId)) {
+                throw new IllegalArgumentException(
+                        "Scenario " + scenarioId + " does not belong to version " + versionId);
+            }
 
-        if (!version.getLiftSystem().getId().equals(liftSystemId)) {
-            throw new IllegalArgumentException(
-                    "Version " + versionId + " does not belong to lift system " + liftSystemId);
+            run.setScenario(scenario);
         }
 
-        SimulationScenario scenario = scenarioRepository.findById(scenarioId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Simulation scenario not found with id: " + scenarioId));
-
-        SimulationRun run = new SimulationRun(liftSystem, version, scenario);
         return runRepository.save(run);
     }
 
@@ -135,18 +112,14 @@ public class SimulationRunService {
      * @return the started run
      * @throws ResourceNotFoundException if any of the entities is not found
      * @throws IllegalArgumentException if the version does not belong to the lift system
+     *                                  or the scenario does not belong to the version
      * @throws IOException if artefact directory creation fails
      */
     @Transactional
     public SimulationRun createAndStartRun(Long liftSystemId, Long versionId, Long scenarioId, Long seed)
             throws IOException {
         // Create the run
-        SimulationRun run;
-        if (scenarioId != null) {
-            run = createRunWithScenario(liftSystemId, versionId, scenarioId);
-        } else {
-            run = createRun(liftSystemId, versionId);
-        }
+        SimulationRun run = createRun(liftSystemId, versionId, scenarioId);
 
         // Generate seed if not provided
         Long runSeed = seed != null ? seed : ThreadLocalRandom.current().nextLong();
@@ -161,11 +134,6 @@ public class SimulationRunService {
 
         // Save configuration
         run = runRepository.save(run);
-
-        // Generate batch input file if scenario is present
-        if (run.getScenario() != null) {
-            generateBatchInputFile(run.getId());
-        }
 
         // Start the run before submitting for async execution
         // This ensures the API returns RUNNING status immediately
@@ -357,55 +325,5 @@ public class SimulationRunService {
             throw new ResourceNotFoundException("Simulation run not found with id: " + id);
         }
         runRepository.deleteById(id);
-    }
-
-    /**
-     * Generates a batch input file for a simulation run with a scenario.
-     * The file is written to {artefactBasePath}/input.scenario
-     *
-     * @param id the run id
-     * @return the path to the generated batch input file
-     * @throws ResourceNotFoundException if the run is not found
-     * @throws IllegalStateException if the run does not have a scenario or artefact base path
-     * @throws IOException if file generation fails
-     */
-    @Transactional(readOnly = true)
-    public Path generateBatchInputFile(Long id) throws IOException {
-        SimulationRun run = getRunById(id);
-
-        if (run.getScenario() == null) {
-            throw new IllegalStateException(
-                    "Cannot generate batch input file: run " + id + " does not have a scenario");
-        }
-
-        if (run.getArtefactBasePath() == null || run.getArtefactBasePath().isBlank()) {
-            throw new IllegalStateException(
-                    "Cannot generate batch input file: run " + id + " does not have an artefact base path");
-        }
-
-        String liftConfigJson = run.getVersion().getConfig();
-        String scenarioJson = run.getScenario().getScenarioJson();
-
-        ScenarioDefinitionDTO scenarioDefinition = objectMapper.readValue(
-                scenarioJson,
-                ScenarioDefinitionDTO.class
-        );
-
-        String scenarioName = String.format(
-                "Simulation Run %d - %s",
-                run.getId(),
-                run.getScenario().getName()
-        );
-
-        Path outputPath = Paths.get(run.getArtefactBasePath(), "input.scenario");
-
-        batchInputGenerator.generateBatchInputFile(
-                liftConfigJson,
-                scenarioDefinition,
-                scenarioName,
-                outputPath
-        );
-
-        return outputPath;
     }
 }

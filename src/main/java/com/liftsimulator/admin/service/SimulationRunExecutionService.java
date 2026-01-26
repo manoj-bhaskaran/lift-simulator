@@ -82,14 +82,12 @@ public class SimulationRunExecutionService {
      *
      * @param liftSystemId the lift system id
      * @param versionId the version id
-     * @param scenarioId optional scenario id
+     * @param scenarioId the scenario id (optional)
      * @return the created simulation run (CREATED)
      */
     @Transactional
     public SimulationRun startAsyncRun(Long liftSystemId, Long versionId, Long scenarioId) {
-        SimulationRun run = scenarioId == null
-            ? runService.createRun(liftSystemId, versionId)
-            : runService.createRunWithScenario(liftSystemId, versionId, scenarioId);
+        SimulationRun run = runService.createRun(liftSystemId, versionId, scenarioId);
 
         String configJson = run.getVersion().getConfig();
         String scenarioJson = run.getScenario() != null ? run.getScenario().getScenarioJson() : null;
@@ -336,9 +334,6 @@ public class SimulationRunExecutionService {
             SimulationRun run = runService.getRunById(runId);
             runSummary.put("liftSystemId", run.getLiftSystem().getId());
             runSummary.put("versionId", run.getVersion().getId());
-            if (run.getScenario() != null) {
-                runSummary.put("scenarioId", run.getScenario().getId());
-            }
         } catch (Exception ex) {
             logger.warn("Failed to resolve run summary metadata for run {}", runId, ex);
         }
