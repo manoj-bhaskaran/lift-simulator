@@ -33,13 +33,15 @@ function PassengerFlowBuilder({ flows, onChange, maxTick, floorRange }) {
 
   /**
    * Handles adding a new flow.
+   *
+   * @param {PassengerFlow} flowData - The flow data from the form
    */
-  const handleAddFlow = () => {
+  const handleAddFlow = (flowData) => {
     const flow = {
-      startTick: parseInt(newFlow.startTick, 10),
-      originFloor: parseInt(newFlow.originFloor, 10),
-      destinationFloor: parseInt(newFlow.destinationFloor, 10),
-      passengers: parseInt(newFlow.passengers, 10)
+      startTick: parseInt(flowData.startTick, 10),
+      originFloor: parseInt(flowData.originFloor, 10),
+      destinationFloor: parseInt(flowData.destinationFloor, 10),
+      passengers: parseInt(flowData.passengers, 10)
     };
 
     onChange([...flows, flow]);
@@ -247,13 +249,12 @@ function FlowEditForm({ flow, maxTick, floorRange, onSave, onCancel }) {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSave = () => {
     onSave(formData);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flow-edit-form">
+    <div className="flow-edit-form">
       <div className="flow-edit-grid">
         <div className="flow-edit-field">
           <label htmlFor="startTick">Start Tick</label>
@@ -319,11 +320,11 @@ function FlowEditForm({ flow, maxTick, floorRange, onSave, onCancel }) {
         <button type="button" onClick={onCancel} className="btn-secondary">
           Cancel
         </button>
-        <button type="submit" className="btn-primary">
+        <button type="button" onClick={handleSave} className="btn-primary">
           Save
         </button>
       </div>
-    </form>
+    </div>
   );
 }
 

@@ -213,40 +213,6 @@ function ScenarioForm() {
     }
   }, [selectedVersionId, versions]);
 
-  useEffect(() => {
-    loadLiftSystems();
-  }, []);
-
-  useEffect(() => {
-    if (isEditMode) {
-      loadScenario();
-    }
-  }, [id, isEditMode, loadScenario]);
-
-  useEffect(() => {
-    if (selectedSystemId) {
-      loadVersions(selectedSystemId);
-    } else {
-      setVersions([]);
-      setSelectedVersionId('');
-      setFloorRange(null);
-    }
-  }, [selectedSystemId]);
-
-  useEffect(() => {
-    if (selectedVersionId && versions.length > 0) {
-      const selectedVersion = versions.find(v => v.id === parseInt(selectedVersionId, 10));
-      if (selectedVersion) {
-        const floorInfo = parseVersionConfig(selectedVersion.config);
-        setFloorRange(floorInfo);
-      } else {
-        setFloorRange(null);
-      }
-    } else {
-      setFloorRange(null);
-    }
-  }, [selectedVersionId, versions]);
-
   /**
    * Adapts passenger flows to fit within the valid floor range.
    * Floors are scaled proportionally to fit the available range.
