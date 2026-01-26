@@ -382,7 +382,8 @@ function ScenarioForm() {
         if (showAdvancedJson) {
           syncJsonToFormState(scenarioJson);
         }
-      } catch {
+      } catch (error) {
+        console.error('JSON parsing error during validation:', error);
         setAlertMessage('Invalid JSON format. Please fix the JSON before validating.');
         setValidating(false);
         return;
@@ -444,7 +445,8 @@ function ScenarioForm() {
         if (showAdvancedJson) {
           syncJsonToFormState(scenarioJson);
         }
-      } catch {
+      } catch (error) {
+        console.error('JSON parsing error during save:', error);
         setAlertMessage('Invalid JSON format. Please fix the JSON before saving.');
         setSaving(false);
         return;
