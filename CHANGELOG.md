@@ -92,6 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Scenario Builder**: Add clear selection styling for quick start templates on the Create Scenario screen.
 - **Scenario Builder**: Align the random seed checkbox with its label text on the Create Scenario screen.
 - **Scenario Builder**: Prevent blank page regression when navigating to the Create New Scenario screen.
+- Return a conflict response with guidance when deleting lift systems that still have scenarios tied to their versions.
 - Update the frontend footer to report the current application version (0.45.0) from the admin UI package metadata.
 - Avoid SpotBugs EI_EXPOSE_REP2 warnings in admin services by using defensive ObjectMapper copies and lazy execution service injection.
 - Handle unexpected IO failures when validating scenario payloads in the admin service.

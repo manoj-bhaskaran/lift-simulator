@@ -6,6 +6,7 @@ import com.liftsimulator.admin.dto.UpdateLiftSystemRequest;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
+import com.liftsimulator.admin.repository.ScenarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,13 +23,16 @@ public class LiftSystemService {
 
     private final LiftSystemRepository liftSystemRepository;
     private final LiftSystemVersionRepository liftSystemVersionRepository;
+    private final ScenarioRepository scenarioRepository;
 
     public LiftSystemService(
             LiftSystemRepository liftSystemRepository,
-            LiftSystemVersionRepository liftSystemVersionRepository
+            LiftSystemVersionRepository liftSystemVersionRepository,
+            ScenarioRepository scenarioRepository
     ) {
         this.liftSystemRepository = liftSystemRepository;
         this.liftSystemVersionRepository = liftSystemVersionRepository;
+        this.scenarioRepository = scenarioRepository;
     }
 
     /**
@@ -121,6 +125,14 @@ public class LiftSystemService {
         if (!liftSystemRepository.existsById(id)) {
             throw new ResourceNotFoundException(
                 "Lift system not found with id: " + id
+            );
+        }
+        long scenarioCount = scenarioRepository.countByLiftSystemId(id);
+        if (scenarioCount > 0) {
+            throw new IllegalStateException(
+                "Cannot delete lift system because " + scenarioCount
+                    + " scenario(s) exist for its versions. "
+                    + "Delete the scenarios (or versions) first."
             );
         }
         liftSystemRepository.deleteById(id);

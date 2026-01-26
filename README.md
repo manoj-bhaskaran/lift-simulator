@@ -186,6 +186,10 @@ Use these as starting points or reference examples.
 - Confirm the scenario JSON is valid and not empty
 - Retry the request after verifying the payload format
 
+**Cannot delete a lift system due to scenario dependencies:**
+- Delete scenarios (or the versions that reference them) before deleting the lift system
+- Retry the delete once dependent scenarios are removed
+
 For detailed troubleshooting, see the relevant sections below.
 
 ---
