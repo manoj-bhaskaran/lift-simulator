@@ -16,6 +16,63 @@ import java.util.List;
 public interface SimulationRunRepository extends JpaRepository<SimulationRun, Long> {
 
     /**
+     * Find all runs with their relationships eagerly loaded.
+     *
+     * @return list of runs ordered by creation date descending
+     */
+    @Query("SELECT r FROM SimulationRun r "
+            + "LEFT JOIN FETCH r.liftSystem "
+            + "LEFT JOIN FETCH r.version "
+            + "LEFT JOIN FETCH r.scenario "
+            + "ORDER BY r.createdAt DESC")
+    List<SimulationRun> findAllWithDetails();
+
+    /**
+     * Find all runs for a specific lift system with relationships eagerly loaded.
+     *
+     * @param liftSystemId the lift system id
+     * @return list of runs ordered by creation date descending
+     */
+    @Query("SELECT r FROM SimulationRun r "
+            + "LEFT JOIN FETCH r.liftSystem "
+            + "LEFT JOIN FETCH r.version "
+            + "LEFT JOIN FETCH r.scenario "
+            + "WHERE r.liftSystem.id = :liftSystemId "
+            + "ORDER BY r.createdAt DESC")
+    List<SimulationRun> findByLiftSystemIdWithDetails(@Param("liftSystemId") Long liftSystemId);
+
+    /**
+     * Find all runs with a specific status with relationships eagerly loaded.
+     *
+     * @param status the run status
+     * @return list of runs ordered by creation date descending
+     */
+    @Query("SELECT r FROM SimulationRun r "
+            + "LEFT JOIN FETCH r.liftSystem "
+            + "LEFT JOIN FETCH r.version "
+            + "LEFT JOIN FETCH r.scenario "
+            + "WHERE r.status = :status "
+            + "ORDER BY r.createdAt DESC")
+    List<SimulationRun> findByStatusWithDetails(@Param("status") RunStatus status);
+
+    /**
+     * Find all runs for a specific lift system with a specific status with relationships eagerly loaded.
+     *
+     * @param liftSystemId the lift system id
+     * @param status the run status
+     * @return list of runs ordered by creation date descending
+     */
+    @Query("SELECT r FROM SimulationRun r "
+            + "LEFT JOIN FETCH r.liftSystem "
+            + "LEFT JOIN FETCH r.version "
+            + "LEFT JOIN FETCH r.scenario "
+            + "WHERE r.liftSystem.id = :liftSystemId AND r.status = :status "
+            + "ORDER BY r.createdAt DESC")
+    List<SimulationRun> findByLiftSystemIdAndStatusWithDetails(
+            @Param("liftSystemId") Long liftSystemId,
+            @Param("status") RunStatus status);
+
+    /**
      * Find all runs for a specific lift system.
      *
      * @param liftSystemId the lift system id

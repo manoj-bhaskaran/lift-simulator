@@ -172,6 +172,35 @@ public class SimulationRunService {
     }
 
     /**
+     * Get all simulation runs with their related entities (lift system, version, scenario).
+     *
+     * @return list of all runs with details, ordered by creation date descending
+     */
+    public List<SimulationRun> getAllRunsWithDetails() {
+        return runRepository.findAllWithDetails();
+    }
+
+    /**
+     * Get runs with optional filtering by lift system ID and status.
+     * Returns runs with their related entities eagerly loaded.
+     *
+     * @param liftSystemId optional lift system ID filter
+     * @param status optional status filter
+     * @return list of matching runs with details, ordered by creation date descending
+     */
+    public List<SimulationRun> getRunsWithDetails(Long liftSystemId, RunStatus status) {
+        if (liftSystemId != null && status != null) {
+            return runRepository.findByLiftSystemIdAndStatusWithDetails(liftSystemId, status);
+        } else if (liftSystemId != null) {
+            return runRepository.findByLiftSystemIdWithDetails(liftSystemId);
+        } else if (status != null) {
+            return runRepository.findByStatusWithDetails(status);
+        } else {
+            return runRepository.findAllWithDetails();
+        }
+    }
+
+    /**
      * Get a run by its ID.
      *
      * @param id the run id

@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.liftsimulator.admin.dto.ArtefactInfo;
 import com.liftsimulator.admin.dto.CreateSimulationRunRequest;
 import com.liftsimulator.admin.dto.SimulationResultResponse;
+import com.liftsimulator.admin.dto.SimulationRunListResponse;
 import com.liftsimulator.admin.dto.SimulationRunResponse;
 import com.liftsimulator.admin.entity.SimulationRun;
+import com.liftsimulator.admin.entity.SimulationRun.RunStatus;
 import com.liftsimulator.admin.service.ArtefactService;
 import com.liftsimulator.admin.service.SimulationRunService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -45,6 +47,26 @@ public class SimulationRunController {
             ArtefactService artefactService) {
         this.simulationRunService = simulationRunService;
         this.artefactService = artefactService;
+    }
+
+    /**
+     * Lists all simulation runs with optional filtering.
+     * Endpoint: GET /api/simulation-runs
+     *
+     * @param systemId optional filter by lift system ID
+     * @param status optional filter by run status (CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED)
+     * @return list of simulation runs with their details
+     */
+    @GetMapping
+    public ResponseEntity<List<SimulationRunListResponse>> listSimulationRuns(
+            @RequestParam(required = false) Long systemId,
+            @RequestParam(required = false) RunStatus status
+    ) {
+        List<SimulationRun> runs = simulationRunService.getRunsWithDetails(systemId, status);
+        List<SimulationRunListResponse> responses = runs.stream()
+                .map(SimulationRunListResponse::fromEntity)
+                .toList();
+        return ResponseEntity.ok(responses);
     }
 
     /**
