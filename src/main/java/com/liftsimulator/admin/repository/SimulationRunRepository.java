@@ -36,16 +36,6 @@ public interface SimulationRunRepository extends JpaRepository<SimulationRun, Lo
     List<SimulationRun> findByVersionIdOrderByCreatedAtDesc(@Param("versionId") Long versionId);
 
     /**
-     * Find all runs for a specific scenario.
-     *
-     * @param scenarioId the scenario id
-     * @return list of runs ordered by creation date descending
-     */
-    @Query("SELECT r FROM SimulationRun r WHERE r.scenario.id = :scenarioId "
-            + "ORDER BY r.createdAt DESC")
-    List<SimulationRun> findByScenarioIdOrderByCreatedAtDesc(@Param("scenarioId") Long scenarioId);
-
-    /**
      * Find all runs with a specific status.
      *
      * @param status the run status

@@ -8,11 +8,9 @@ import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.LiftSystemVersion.VersionStatus;
 import com.liftsimulator.admin.entity.SimulationRun;
-import com.liftsimulator.admin.entity.SimulationScenario;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
-import com.liftsimulator.admin.repository.SimulationScenarioRepository;
 import com.liftsimulator.admin.service.SimulationRunService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,9 +62,6 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
     private LiftSystemVersionRepository versionRepository;
 
     @Autowired
-    private SimulationScenarioRepository scenarioRepository;
-
-    @Autowired
     private SimulationRunRepository runRepository;
 
     @Autowired
@@ -74,12 +69,10 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
 
     private LiftSystem testSystem;
     private LiftSystemVersion testVersion;
-    private SimulationScenario testScenario;
 
     @BeforeEach
     public void setUp() {
         runRepository.deleteAll();
-        scenarioRepository.deleteAll();
         versionRepository.deleteAll();
         liftSystemRepository.deleteAll();
 
@@ -93,11 +86,6 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
             "\"idleParkingMode\": \"PARK_TO_HOME_FLOOR\"}");
         testVersion.setStatus(VersionStatus.PUBLISHED);
         testVersion = versionRepository.save(testVersion);
-
-        testScenario = new SimulationScenario();
-        testScenario.setName("Lifecycle Scenario");
-        testScenario.setScenarioJson("{\"durationTicks\": 20, \"passengerFlows\": [{\"startTick\": 0, \"originFloor\": 0, \"destinationFloor\": 5, \"passengers\": 1}]}");
-        testScenario = scenarioRepository.save(testScenario);
     }
 
     @Test
@@ -105,7 +93,6 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
         CreateSimulationRunRequest request = new CreateSimulationRunRequest(
                 testSystem.getId(),
                 testVersion.getId(),
-                testScenario.getId(),
                 4242L
         );
 

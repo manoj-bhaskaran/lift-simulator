@@ -10,8 +10,6 @@ public record SimulationRunStartRequest(
     Long liftSystemId,
 
     @NotNull(message = "versionId is required")
-    Long versionId,
-
-    Long scenarioId
+    Long versionId
 ) {
 }

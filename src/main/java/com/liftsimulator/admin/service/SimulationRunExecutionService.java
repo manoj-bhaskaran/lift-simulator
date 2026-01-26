@@ -82,19 +82,15 @@ public class SimulationRunExecutionService {
      *
      * @param liftSystemId the lift system id
      * @param versionId the version id
-     * @param scenarioId optional scenario id
      * @return the created simulation run (CREATED)
      */
     @Transactional
-    public SimulationRun startAsyncRun(Long liftSystemId, Long versionId, Long scenarioId) {
-        SimulationRun run = scenarioId == null
-            ? runService.createRun(liftSystemId, versionId)
-            : runService.createRunWithScenario(liftSystemId, versionId, scenarioId);
+    public SimulationRun startAsyncRun(Long liftSystemId, Long versionId) {
+        SimulationRun run = runService.createRun(liftSystemId, versionId);
 
         String configJson = run.getVersion().getConfig();
-        String scenarioJson = run.getScenario() != null ? run.getScenario().getScenarioJson() : null;
 
-        RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, scenarioJson);
+        RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, null);
         executor.execute(() -> executeRun(request));
         return run;
     }
@@ -109,9 +105,8 @@ public class SimulationRunExecutionService {
     public void submitRunForExecution(Long runId) {
         SimulationRun run = runService.getRunById(runId);
         String configJson = run.getVersion().getConfig();
-        String scenarioJson = run.getScenario() != null ? run.getScenario().getScenarioJson() : null;
 
-        RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, scenarioJson);
+        RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, null);
         executor.execute(() -> executeRun(request));
     }
 
@@ -336,9 +331,6 @@ public class SimulationRunExecutionService {
             SimulationRun run = runService.getRunById(runId);
             runSummary.put("liftSystemId", run.getLiftSystem().getId());
             runSummary.put("versionId", run.getVersion().getId());
-            if (run.getScenario() != null) {
-                runSummary.put("scenarioId", run.getScenario().getId());
-            }
         } catch (Exception ex) {
             logger.warn("Failed to resolve run summary metadata for run {}", runId, ex);
         }

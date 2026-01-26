@@ -17,7 +17,7 @@ import jakarta.persistence.Converter;
  * malformed JSON from being stored.
  *
  * <p><strong>Why Validation is Needed:</strong>
- * Not all service methods validate JSON before persistence (e.g., SimulationScenarioService).
+ * Not all service methods validate JSON before persistence.
  * Without converter-level validation, invalid JSON can be stored and will only fail at
  * execution time when SimulationRunExecutionService attempts to parse it, causing runtime
  * failures instead of rejecting bad data at write time.
