@@ -208,6 +208,7 @@ A modern React web application provides a user-friendly interface for managing l
   - Search by version number
 - **Scenario Builder**: Create and manage passenger flow scenarios for simulations
   - Build scenarios using template-based quick start or custom flows
+  - Navigate directly to the Create Scenario screen at `/scenarios/new` without blank-page regressions
   - Highlight the selected quick start template for clear visual feedback
   - Align the random seed checkbox with its label text for consistent form layout
   - Define passenger flows with origin, destination, timing, and passenger count
