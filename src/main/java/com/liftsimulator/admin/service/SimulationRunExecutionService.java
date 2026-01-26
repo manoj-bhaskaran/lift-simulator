@@ -82,15 +82,17 @@ public class SimulationRunExecutionService {
      *
      * @param liftSystemId the lift system id
      * @param versionId the version id
+     * @param scenarioId the scenario id (optional)
      * @return the created simulation run (CREATED)
      */
     @Transactional
-    public SimulationRun startAsyncRun(Long liftSystemId, Long versionId) {
-        SimulationRun run = runService.createRun(liftSystemId, versionId);
+    public SimulationRun startAsyncRun(Long liftSystemId, Long versionId, Long scenarioId) {
+        SimulationRun run = runService.createRun(liftSystemId, versionId, scenarioId);
 
         String configJson = run.getVersion().getConfig();
+        String scenarioJson = run.getScenario() != null ? run.getScenario().getScenarioJson() : null;
 
-        RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, null);
+        RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, scenarioJson);
         executor.execute(() -> executeRun(request));
         return run;
     }
@@ -105,8 +107,9 @@ public class SimulationRunExecutionService {
     public void submitRunForExecution(Long runId) {
         SimulationRun run = runService.getRunById(runId);
         String configJson = run.getVersion().getConfig();
+        String scenarioJson = run.getScenario() != null ? run.getScenario().getScenarioJson() : null;
 
-        RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, null);
+        RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, scenarioJson);
         executor.execute(() -> executeRun(request));
     }
 
