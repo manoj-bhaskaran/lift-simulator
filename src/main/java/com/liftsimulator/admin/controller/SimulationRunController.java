@@ -51,7 +51,8 @@ public class SimulationRunController {
      * Creates and starts a new simulation run.
      * Endpoint: POST /api/simulation-runs
      *
-     * @param request the creation request containing liftSystemId, versionId, seed (optional)
+     * @param request the creation request containing liftSystemId, versionId, scenarioId (optional),
+     *                seed (optional)
      * @return the created and started simulation run with 201 status
      */
     @PostMapping
@@ -61,6 +62,7 @@ public class SimulationRunController {
         SimulationRun run = simulationRunService.createAndStartRun(
                 request.liftSystemId(),
                 request.versionId(),
+                request.scenarioId(),
                 request.seed()
         );
         SimulationRunResponse response = SimulationRunResponse.fromEntity(run);

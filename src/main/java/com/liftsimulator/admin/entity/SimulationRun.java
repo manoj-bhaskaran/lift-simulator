@@ -41,6 +41,11 @@ public class SimulationRun {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private LiftSystemVersion version;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "scenario_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Scenario scenario;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private RunStatus status = RunStatus.CREATED;
@@ -190,6 +195,24 @@ public class SimulationRun {
     )
     public void setVersion(LiftSystemVersion version) {
         this.version = version;
+    }
+
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP",
+            justification = "JPA entity getters must return mutable parent entity for "
+                    + "relationship navigation and lazy loading."
+    )
+    public Scenario getScenario() {
+        return scenario;
+    }
+
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "JPA entity setters require direct field assignment for Hibernate "
+                    + "to manage relationships and lazy loading correctly."
+    )
+    public void setScenario(Scenario scenario) {
+        this.scenario = scenario;
     }
 
     public RunStatus getStatus() {

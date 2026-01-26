@@ -15,6 +15,9 @@ public record CreateSimulationRunRequest(
     @JsonProperty("versionId")
     Long versionId,
 
+    @JsonProperty("scenarioId")
+    Long scenarioId,
+
     @JsonProperty("seed")
     Long seed
 ) {

@@ -2,10 +2,12 @@ package com.liftsimulator.admin.service;
 
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
+import com.liftsimulator.admin.entity.Scenario;
 import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.entity.SimulationRun.RunStatus;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
+import com.liftsimulator.admin.repository.ScenarioRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +32,7 @@ public class SimulationRunService {
     private final SimulationRunRepository runRepository;
     private final LiftSystemRepository liftSystemRepository;
     private final LiftSystemVersionRepository versionRepository;
+    private final ScenarioRepository scenarioRepository;
     private final String artefactsBasePath;
     private final SimulationRunExecutionService executionService;
 
@@ -41,11 +44,13 @@ public class SimulationRunService {
             SimulationRunRepository runRepository,
             LiftSystemRepository liftSystemRepository,
             LiftSystemVersionRepository versionRepository,
+            ScenarioRepository scenarioRepository,
             @Lazy SimulationRunExecutionService executionService,
             @Value("${simulation.artefacts.base-path:./simulation-runs}") String artefactsBasePath) {
         this.runRepository = runRepository;
         this.liftSystemRepository = liftSystemRepository;
         this.versionRepository = versionRepository;
+        this.scenarioRepository = scenarioRepository;
         this.executionService = executionService;
         this.artefactsBasePath = artefactsBasePath;
     }
@@ -55,12 +60,14 @@ public class SimulationRunService {
      *
      * @param liftSystemId the lift system id
      * @param versionId the version id
+     * @param scenarioId the scenario id (optional)
      * @return the created run
-     * @throws ResourceNotFoundException if the lift system or version is not found
+     * @throws ResourceNotFoundException if the lift system, version, or scenario is not found
      * @throws IllegalArgumentException if the version does not belong to the lift system
+     *                                  or the scenario does not belong to the version
      */
     @Transactional
-    public SimulationRun createRun(Long liftSystemId, Long versionId) {
+    public SimulationRun createRun(Long liftSystemId, Long versionId, Long scenarioId) {
         LiftSystem liftSystem = liftSystemRepository.findById(liftSystemId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Lift system not found with id: " + liftSystemId));
@@ -75,6 +82,22 @@ public class SimulationRunService {
         }
 
         SimulationRun run = new SimulationRun(liftSystem, version);
+
+        // Set scenario if provided
+        if (scenarioId != null) {
+            Scenario scenario = scenarioRepository.findById(scenarioId)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Scenario not found with id: " + scenarioId));
+
+            // Validate that the scenario belongs to the same version
+            if (!scenario.getLiftSystemVersion().getId().equals(versionId)) {
+                throw new IllegalArgumentException(
+                        "Scenario " + scenarioId + " does not belong to version " + versionId);
+            }
+
+            run.setScenario(scenario);
+        }
+
         return runRepository.save(run);
     }
 
@@ -84,17 +107,19 @@ public class SimulationRunService {
      *
      * @param liftSystemId the lift system id
      * @param versionId the version id
+     * @param scenarioId the scenario id (optional)
      * @param seed the random seed (optional, will be generated if not provided)
      * @return the started run
      * @throws ResourceNotFoundException if any of the entities is not found
      * @throws IllegalArgumentException if the version does not belong to the lift system
+     *                                  or the scenario does not belong to the version
      * @throws IOException if artefact directory creation fails
      */
     @Transactional
-    public SimulationRun createAndStartRun(Long liftSystemId, Long versionId, Long seed)
+    public SimulationRun createAndStartRun(Long liftSystemId, Long versionId, Long scenarioId, Long seed)
             throws IOException {
         // Create the run
-        SimulationRun run = createRun(liftSystemId, versionId);
+        SimulationRun run = createRun(liftSystemId, versionId, scenarioId);
 
         // Generate seed if not provided
         Long runSeed = seed != null ? seed : ThreadLocalRandom.current().nextLong();

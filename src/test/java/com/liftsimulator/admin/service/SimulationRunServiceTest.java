@@ -6,6 +6,7 @@ import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.entity.SimulationRun.RunStatus;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
+import com.liftsimulator.admin.repository.ScenarioRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,9 @@ public class SimulationRunServiceTest {
     private LiftSystemVersionRepository versionRepository;
 
     @Mock
+    private ScenarioRepository scenarioRepository;
+
+    @Mock
     private SimulationRunExecutionService executionService;
 
     private SimulationRunService runService;
@@ -60,6 +64,7 @@ public class SimulationRunServiceTest {
                 runRepository,
                 liftSystemRepository,
                 versionRepository,
+                scenarioRepository,
                 executionService,
                 tempDir.toString()
         );
@@ -88,7 +93,7 @@ public class SimulationRunServiceTest {
         when(versionRepository.findById(1L)).thenReturn(Optional.of(mockVersion));
         when(runRepository.save(any(SimulationRun.class))).thenReturn(mockRun);
 
-        SimulationRun result = runService.createRun(1L, 1L);
+        SimulationRun result = runService.createRun(1L, 1L, null);
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
@@ -103,7 +108,7 @@ public class SimulationRunServiceTest {
 
         ResourceNotFoundException exception = assertThrows(
             ResourceNotFoundException.class,
-            () -> runService.createRun(999L, 1L)
+            () -> runService.createRun(999L, 1L, null)
         );
 
         assertEquals("Lift system not found with id: 999", exception.getMessage());
@@ -117,7 +122,7 @@ public class SimulationRunServiceTest {
 
         ResourceNotFoundException exception = assertThrows(
             ResourceNotFoundException.class,
-            () -> runService.createRun(1L, 999L)
+            () -> runService.createRun(1L, 999L, null)
         );
 
         assertEquals("Lift system version not found with id: 999", exception.getMessage());
@@ -140,7 +145,7 @@ public class SimulationRunServiceTest {
 
         IllegalArgumentException exception = assertThrows(
             IllegalArgumentException.class,
-            () -> runService.createRun(1L, 5L)
+            () -> runService.createRun(1L, 5L, null)
         );
 
         assertEquals("Version 5 does not belong to lift system 1", exception.getMessage());
