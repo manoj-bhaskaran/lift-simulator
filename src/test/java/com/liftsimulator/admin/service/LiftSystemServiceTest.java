@@ -6,6 +6,7 @@ import com.liftsimulator.admin.dto.UpdateLiftSystemRequest;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
+import com.liftsimulator.admin.repository.ScenarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +36,9 @@ public class LiftSystemServiceTest {
 
     @Mock
     private LiftSystemVersionRepository liftSystemVersionRepository;
+
+    @Mock
+    private ScenarioRepository scenarioRepository;
 
     @InjectMocks
     private LiftSystemService liftSystemService;
@@ -172,10 +176,12 @@ public class LiftSystemServiceTest {
     @Test
     public void testDeleteLiftSystem_Success() {
         when(liftSystemRepository.existsById(1L)).thenReturn(true);
+        when(scenarioRepository.countByLiftSystemId(1L)).thenReturn(0L);
 
         liftSystemService.deleteLiftSystem(1L);
 
         verify(liftSystemRepository).existsById(1L);
+        verify(scenarioRepository).countByLiftSystemId(1L);
         verify(liftSystemRepository).deleteById(1L);
     }
 
