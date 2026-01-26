@@ -244,13 +244,62 @@ function FlowDisplayItem({ flow, index, onEdit, onRemove, onMoveUp, onMoveDown, 
  */
 function FlowEditForm({ flow, maxTick, floorRange, onSave, onCancel }) {
   const [formData, setFormData] = useState({ ...flow });
+  const [errors, setErrors] = useState({});
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error for this field when user modifies it
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  /**
+   * Validates form data before saving.
+   *
+   * @returns {boolean} True if valid, false otherwise
+   */
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Validate startTick
+    const startTick = parseInt(formData.startTick, 10);
+    if (isNaN(startTick) || startTick < 0) {
+      newErrors.startTick = 'Start tick must be a non-negative number';
+    } else if (startTick >= maxTick) {
+      newErrors.startTick = `Start tick must be less than ${maxTick}`;
+    }
+
+    // Validate originFloor
+    const originFloor = parseInt(formData.originFloor, 10);
+    if (isNaN(originFloor)) {
+      newErrors.originFloor = 'Origin floor is required';
+    } else if (floorRange && (originFloor < floorRange.minFloor || originFloor > floorRange.maxFloor)) {
+      newErrors.originFloor = `Origin floor must be between ${floorRange.minFloor} and ${floorRange.maxFloor}`;
+    }
+
+    // Validate destinationFloor
+    const destinationFloor = parseInt(formData.destinationFloor, 10);
+    if (isNaN(destinationFloor)) {
+      newErrors.destinationFloor = 'Destination floor is required';
+    } else if (floorRange && (destinationFloor < floorRange.minFloor || destinationFloor > floorRange.maxFloor)) {
+      newErrors.destinationFloor = `Destination floor must be between ${floorRange.minFloor} and ${floorRange.maxFloor}`;
+    }
+
+    // Validate passengers
+    const passengers = parseInt(formData.passengers, 10);
+    if (isNaN(passengers) || passengers < 1) {
+      newErrors.passengers = 'At least 1 passenger is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = () => {
-    onSave(formData);
+    if (validateForm()) {
+      onSave(formData);
+    }
   };
 
   return (
@@ -265,9 +314,13 @@ function FlowEditForm({ flow, maxTick, floorRange, onSave, onCancel }) {
             onChange={(e) => handleChange('startTick', e.target.value)}
             min="0"
             max={maxTick - 1}
-            required
+            className={errors.startTick ? 'error' : ''}
           />
-          <span className="field-hint">0 to {maxTick - 1}</span>
+          {errors.startTick ? (
+            <span className="field-error">{errors.startTick}</span>
+          ) : (
+            <span className="field-hint">0 to {maxTick - 1}</span>
+          )}
         </div>
 
         <div className="flow-edit-field">
@@ -279,11 +332,15 @@ function FlowEditForm({ flow, maxTick, floorRange, onSave, onCancel }) {
             onChange={(e) => handleChange('originFloor', e.target.value)}
             min={floorRange?.minFloor}
             max={floorRange?.maxFloor}
-            required
+            className={errors.originFloor ? 'error' : ''}
           />
-          <span className="field-hint">
-            {floorRange ? `${floorRange.minFloor} to ${floorRange.maxFloor}` : 'Floor number'}
-          </span>
+          {errors.originFloor ? (
+            <span className="field-error">{errors.originFloor}</span>
+          ) : (
+            <span className="field-hint">
+              {floorRange ? `${floorRange.minFloor} to ${floorRange.maxFloor}` : 'Floor number'}
+            </span>
+          )}
         </div>
 
         <div className="flow-edit-field">
@@ -295,11 +352,15 @@ function FlowEditForm({ flow, maxTick, floorRange, onSave, onCancel }) {
             onChange={(e) => handleChange('destinationFloor', e.target.value)}
             min={floorRange?.minFloor}
             max={floorRange?.maxFloor}
-            required
+            className={errors.destinationFloor ? 'error' : ''}
           />
-          <span className="field-hint">
-            {floorRange ? `${floorRange.minFloor} to ${floorRange.maxFloor}` : 'Floor number'}
-          </span>
+          {errors.destinationFloor ? (
+            <span className="field-error">{errors.destinationFloor}</span>
+          ) : (
+            <span className="field-hint">
+              {floorRange ? `${floorRange.minFloor} to ${floorRange.maxFloor}` : 'Floor number'}
+            </span>
+          )}
         </div>
 
         <div className="flow-edit-field">
@@ -310,9 +371,13 @@ function FlowEditForm({ flow, maxTick, floorRange, onSave, onCancel }) {
             value={formData.passengers}
             onChange={(e) => handleChange('passengers', e.target.value)}
             min="1"
-            required
+            className={errors.passengers ? 'error' : ''}
           />
-          <span className="field-hint">At least 1</span>
+          {errors.passengers ? (
+            <span className="field-error">{errors.passengers}</span>
+          ) : (
+            <span className="field-hint">At least 1</span>
+          )}
         </div>
       </div>
 
