@@ -75,13 +75,14 @@
   margin-right: 0.5rem;
 }
 
-.checkbox-label {
-  display: flex;
+.form-group label.checkbox-label {
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  margin-bottom: 0;
 }
 
-.checkbox-label input[type="checkbox"] {
+.form-group label.checkbox-label input[type="checkbox"] {
   margin: 0;
 }
 
