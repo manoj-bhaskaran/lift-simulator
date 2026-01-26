@@ -146,10 +146,15 @@ function ScenarioForm() {
     }
   };
 
-  /**
-   * Loads scenario data for editing.
-   */
+  useEffect(() => {
+    loadLiftSystems();
+  }, []);
+
   const loadScenario = useCallback(async () => {
+    if (!isEditMode) {
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await scenariosApi.getScenario(id);
@@ -178,7 +183,35 @@ function ScenarioForm() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, isEditMode]);
+
+  useEffect(() => {
+    loadScenario();
+  }, [loadScenario]);
+
+  useEffect(() => {
+    if (selectedSystemId) {
+      loadVersions(selectedSystemId);
+    } else {
+      setVersions([]);
+      setSelectedVersionId('');
+      setFloorRange(null);
+    }
+  }, [selectedSystemId]);
+
+  useEffect(() => {
+    if (selectedVersionId && versions.length > 0) {
+      const selectedVersion = versions.find(v => v.id === parseInt(selectedVersionId, 10));
+      if (selectedVersion) {
+        const floorInfo = parseVersionConfig(selectedVersion.config);
+        setFloorRange(floorInfo);
+      } else {
+        setFloorRange(null);
+      }
+    } else {
+      setFloorRange(null);
+    }
+  }, [selectedVersionId, versions]);
 
   useEffect(() => {
     loadLiftSystems();
