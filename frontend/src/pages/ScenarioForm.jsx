@@ -1,5 +1,5 @@
 // @ts-check
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { scenariosApi } from '../api/scenariosApi';
 import { liftSystemsApi } from '../api/liftSystemsApi';
@@ -150,44 +150,44 @@ function ScenarioForm() {
     loadLiftSystems();
   }, []);
 
-  useEffect(() => {
+  const loadScenario = useCallback(async () => {
     if (!isEditMode) {
       return;
     }
 
-    const loadScenario = async () => {
-      try {
-        setLoading(true);
-        const response = await scenariosApi.getScenario(id);
-        const scenario = response.data;
+    try {
+      setLoading(true);
+      const response = await scenariosApi.getScenario(id);
+      const scenario = response.data;
 
-        setScenarioName(scenario.name || '');
-        if (scenario.scenarioJson) {
-          setDurationTicks(scenario.scenarioJson.durationTicks || 100);
-          setPassengerFlows(scenario.scenarioJson.passengerFlows || []);
-          if (scenario.scenarioJson.seed !== undefined && scenario.scenarioJson.seed !== null) {
-            setSeed(String(scenario.scenarioJson.seed));
-            setUseSeed(true);
-          }
+      setScenarioName(scenario.name || '');
+      if (scenario.scenarioJson) {
+        setDurationTicks(scenario.scenarioJson.durationTicks || 100);
+        setPassengerFlows(scenario.scenarioJson.passengerFlows || []);
+        if (scenario.scenarioJson.seed !== undefined && scenario.scenarioJson.seed !== null) {
+          setSeed(String(scenario.scenarioJson.seed));
+          setUseSeed(true);
         }
-
-        // Load version information if available
-        if (scenario.liftSystemVersionId) {
-          setSelectedVersionId(String(scenario.liftSystemVersionId));
-          // Find the system ID from version info if available
-          if (scenario.versionInfo?.liftSystemId) {
-            setSelectedSystemId(String(scenario.versionInfo.liftSystemId));
-          }
-        }
-      } catch (err) {
-        handleApiError(err, setAlertMessage, 'Failed to load scenario');
-      } finally {
-        setLoading(false);
       }
-    };
 
-    loadScenario();
+      // Load version information if available
+      if (scenario.liftSystemVersionId) {
+        setSelectedVersionId(String(scenario.liftSystemVersionId));
+        // Find the system ID from version info if available
+        if (scenario.versionInfo?.liftSystemId) {
+          setSelectedSystemId(String(scenario.versionInfo.liftSystemId));
+        }
+      }
+    } catch (err) {
+      handleApiError(err, setAlertMessage, 'Failed to load scenario');
+    } finally {
+      setLoading(false);
+    }
   }, [id, isEditMode]);
+
+  useEffect(() => {
+    loadScenario();
+  }, [loadScenario]);
 
   useEffect(() => {
     if (selectedSystemId) {
