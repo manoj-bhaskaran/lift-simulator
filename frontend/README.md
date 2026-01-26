@@ -17,6 +17,7 @@ This is the frontend admin application for the Lift Simulator system. It provide
 - Displaying detailed validation errors when configuration JSON is invalid
 - Monitoring system health
 - Reviewing per-system version counts in the Lift Systems list
+- Maintaining consistent form control alignment across scenario creation screens
 
 ## Versioning
 

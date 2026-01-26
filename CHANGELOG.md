@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Align the "Use Random Seed (for reproducibility)" checkbox with its label on the Create Scenario screen.
+
 ## [0.45.0] - 2026-02-01
 
 ### Added
