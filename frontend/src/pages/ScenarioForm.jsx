@@ -305,11 +305,20 @@ function ScenarioForm() {
   };
 
   /**
-   * Builds the scenario JSON from form state.
+   * Builds the scenario JSON from form state or JSON text.
+   * When in Advanced JSON Mode, parses and returns the JSON text.
+   * When in Form Mode, builds JSON from form state.
    *
    * @returns {Object} The scenario JSON
+   * @throws {Error} If JSON text is invalid when in Advanced JSON Mode
    */
   const buildScenarioJson = () => {
+    // If in Advanced JSON Mode, parse and return the JSON text
+    if (showAdvancedJson) {
+      return JSON.parse(jsonText);
+    }
+
+    // Otherwise, build from form state
     const scenarioJson = {
       durationTicks: parseInt(durationTicks, 10),
       passengerFlows: passengerFlows
@@ -346,7 +355,29 @@ function ScenarioForm() {
       setValidationErrors([]);
       setValidationWarnings([]);
 
-      const scenarioJson = buildScenarioJson();
+      let scenarioJson;
+      try {
+        scenarioJson = buildScenarioJson();
+        
+        // If in Advanced JSON Mode, sync the parsed JSON back to form state
+        // so that switching back to form mode shows the validated values
+        if (showAdvancedJson) {
+          setDurationTicks(scenarioJson.durationTicks || 100);
+          setPassengerFlows(scenarioJson.passengerFlows || []);
+          if (scenarioJson.seed !== undefined && scenarioJson.seed !== null) {
+            setSeed(String(scenarioJson.seed));
+            setUseSeed(true);
+          } else {
+            setSeed('');
+            setUseSeed(false);
+          }
+        }
+      } catch {
+        setAlertMessage('Invalid JSON format. Please fix the JSON before validating.');
+        setValidating(false);
+        return;
+      }
+
       const response = await scenariosApi.validateScenario({
         name: scenarioName,
         scenarioJson: scenarioJson,
@@ -394,7 +425,29 @@ function ScenarioForm() {
       setValidationErrors([]);
       setValidationWarnings([]);
 
-      const scenarioJson = buildScenarioJson();
+      let scenarioJson;
+      try {
+        scenarioJson = buildScenarioJson();
+        
+        // If in Advanced JSON Mode, sync the parsed JSON back to form state
+        // This ensures data consistency if there's any error and user needs to edit
+        if (showAdvancedJson) {
+          setDurationTicks(scenarioJson.durationTicks || 100);
+          setPassengerFlows(scenarioJson.passengerFlows || []);
+          if (scenarioJson.seed !== undefined && scenarioJson.seed !== null) {
+            setSeed(String(scenarioJson.seed));
+            setUseSeed(true);
+          } else {
+            setSeed('');
+            setUseSeed(false);
+          }
+        }
+      } catch {
+        setAlertMessage('Invalid JSON format. Please fix the JSON before saving.');
+        setSaving(false);
+        return;
+      }
+
       const payload = {
         name: scenarioName,
         scenarioJson: scenarioJson,
