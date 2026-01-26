@@ -1,5 +1,5 @@
 // @ts-check
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { scenariosApi } from '../api/scenariosApi';
 import { liftSystemsApi } from '../api/liftSystemsApi';
@@ -119,40 +119,6 @@ function ScenarioForm() {
     }
   };
 
-  useEffect(() => {
-    loadLiftSystems();
-  }, []);
-
-  useEffect(() => {
-    if (isEditMode) {
-      loadScenario();
-    }
-  }, [id, isEditMode, loadScenario]);
-
-  useEffect(() => {
-    if (selectedSystemId) {
-      loadVersions(selectedSystemId);
-    } else {
-      setVersions([]);
-      setSelectedVersionId('');
-      setFloorRange(null);
-    }
-  }, [selectedSystemId]);
-
-  useEffect(() => {
-    if (selectedVersionId && versions.length > 0) {
-      const selectedVersion = versions.find(v => v.id === parseInt(selectedVersionId, 10));
-      if (selectedVersion) {
-        const floorInfo = parseVersionConfig(selectedVersion.config);
-        setFloorRange(floorInfo);
-      } else {
-        setFloorRange(null);
-      }
-    } else {
-      setFloorRange(null);
-    }
-  }, [selectedVersionId, versions]);
-
   /**
    * Loads all lift systems.
    */
@@ -180,39 +146,72 @@ function ScenarioForm() {
     }
   };
 
-  /**
-   * Loads scenario data for editing.
-   */
-  const loadScenario = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await scenariosApi.getScenario(id);
-      const scenario = response.data;
+  useEffect(() => {
+    loadLiftSystems();
+  }, []);
 
-      setScenarioName(scenario.name || '');
-      if (scenario.scenarioJson) {
-        setDurationTicks(scenario.scenarioJson.durationTicks || 100);
-        setPassengerFlows(scenario.scenarioJson.passengerFlows || []);
-        if (scenario.scenarioJson.seed !== undefined && scenario.scenarioJson.seed !== null) {
-          setSeed(String(scenario.scenarioJson.seed));
-          setUseSeed(true);
-        }
-      }
-
-      // Load version information if available
-      if (scenario.liftSystemVersionId) {
-        setSelectedVersionId(String(scenario.liftSystemVersionId));
-        // Find the system ID from version info if available
-        if (scenario.versionInfo?.liftSystemId) {
-          setSelectedSystemId(String(scenario.versionInfo.liftSystemId));
-        }
-      }
-    } catch (err) {
-      handleApiError(err, setAlertMessage, 'Failed to load scenario');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (!isEditMode) {
+      return;
     }
-  }, [id]);
+
+    const loadScenario = async () => {
+      try {
+        setLoading(true);
+        const response = await scenariosApi.getScenario(id);
+        const scenario = response.data;
+
+        setScenarioName(scenario.name || '');
+        if (scenario.scenarioJson) {
+          setDurationTicks(scenario.scenarioJson.durationTicks || 100);
+          setPassengerFlows(scenario.scenarioJson.passengerFlows || []);
+          if (scenario.scenarioJson.seed !== undefined && scenario.scenarioJson.seed !== null) {
+            setSeed(String(scenario.scenarioJson.seed));
+            setUseSeed(true);
+          }
+        }
+
+        // Load version information if available
+        if (scenario.liftSystemVersionId) {
+          setSelectedVersionId(String(scenario.liftSystemVersionId));
+          // Find the system ID from version info if available
+          if (scenario.versionInfo?.liftSystemId) {
+            setSelectedSystemId(String(scenario.versionInfo.liftSystemId));
+          }
+        }
+      } catch (err) {
+        handleApiError(err, setAlertMessage, 'Failed to load scenario');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadScenario();
+  }, [id, isEditMode]);
+
+  useEffect(() => {
+    if (selectedSystemId) {
+      loadVersions(selectedSystemId);
+    } else {
+      setVersions([]);
+      setSelectedVersionId('');
+      setFloorRange(null);
+    }
+  }, [selectedSystemId]);
+
+  useEffect(() => {
+    if (selectedVersionId && versions.length > 0) {
+      const selectedVersion = versions.find(v => v.id === parseInt(selectedVersionId, 10));
+      if (selectedVersion) {
+        const floorInfo = parseVersionConfig(selectedVersion.config);
+        setFloorRange(floorInfo);
+      } else {
+        setFloorRange(null);
+      }
+    } else {
+      setFloorRange(null);
+    }
+  }, [selectedVersionId, versions]);
 
   /**
    * Adapts passenger flows to fit within the valid floor range.
