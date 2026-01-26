@@ -332,6 +332,24 @@ function ScenarioForm() {
   };
 
   /**
+   * Syncs parsed scenario JSON back to form state.
+   * This ensures consistency between JSON mode and form mode.
+   *
+   * @param {Object} scenarioJson - The parsed scenario JSON
+   */
+  const syncJsonToFormState = (scenarioJson) => {
+    setDurationTicks(scenarioJson.durationTicks || 100);
+    setPassengerFlows(scenarioJson.passengerFlows || []);
+    if (scenarioJson.seed !== undefined && scenarioJson.seed !== null) {
+      setSeed(String(scenarioJson.seed));
+      setUseSeed(true);
+    } else {
+      setSeed('');
+      setUseSeed(false);
+    }
+  };
+
+  /**
    * Validates the scenario using server-side validation.
    */
   const handleValidate = async () => {
@@ -362,15 +380,7 @@ function ScenarioForm() {
         // If in Advanced JSON Mode, sync the parsed JSON back to form state
         // so that switching back to form mode shows the validated values
         if (showAdvancedJson) {
-          setDurationTicks(scenarioJson.durationTicks || 100);
-          setPassengerFlows(scenarioJson.passengerFlows || []);
-          if (scenarioJson.seed !== undefined && scenarioJson.seed !== null) {
-            setSeed(String(scenarioJson.seed));
-            setUseSeed(true);
-          } else {
-            setSeed('');
-            setUseSeed(false);
-          }
+          syncJsonToFormState(scenarioJson);
         }
       } catch {
         setAlertMessage('Invalid JSON format. Please fix the JSON before validating.');
@@ -432,15 +442,7 @@ function ScenarioForm() {
         // If in Advanced JSON Mode, sync the parsed JSON back to form state
         // This ensures data consistency if there's any error and user needs to edit
         if (showAdvancedJson) {
-          setDurationTicks(scenarioJson.durationTicks || 100);
-          setPassengerFlows(scenarioJson.passengerFlows || []);
-          if (scenarioJson.seed !== undefined && scenarioJson.seed !== null) {
-            setSeed(String(scenarioJson.seed));
-            setUseSeed(true);
-          } else {
-            setSeed('');
-            setUseSeed(false);
-          }
+          syncJsonToFormState(scenarioJson);
         }
       } catch {
         setAlertMessage('Invalid JSON format. Please fix the JSON before saving.');
