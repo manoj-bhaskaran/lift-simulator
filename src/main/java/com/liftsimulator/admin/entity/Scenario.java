@@ -37,8 +37,8 @@ public class Scenario {
     @JdbcTypeCode(SqlTypes.JSON)
     private String scenarioJson;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lift_system_version_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "lift_system_version_id", nullable = false)
     private LiftSystemVersion liftSystemVersion;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -48,11 +48,6 @@ public class Scenario {
     private OffsetDateTime updatedAt;
 
     public Scenario() {
-    }
-
-    public Scenario(String name, String scenarioJson) {
-        this.name = name;
-        this.scenarioJson = scenarioJson;
     }
 
     @SuppressFBWarnings(
