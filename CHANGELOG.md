@@ -81,8 +81,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Documented in README with usage examples and API reference
 - **Testing**: Added run lifecycle integration coverage, golden-file contract checks for batch input generation,
   and a CLI compatibility test for the demo scenario.
+- **E2E Testing - Scenario Management**: Added comprehensive Playwright E2E test suite for scenario creation and editing
+  - TC_SCENARIO_001: Create scenario using form mode
+  - TC_SCENARIO_002: Create scenario using Advanced JSON Mode with validation and save
+  - TC_SCENARIO_003: Edit existing scenario using Advanced JSON Mode
+  - TC_SCENARIO_004: Validate invalid JSON shows proper error messages
 
 ### Fixed
+- **Scenario Builder - Advanced JSON Mode**: Fixed critical bug where updates made in Advanced JSON Mode were not persisted after clicking "Validate" then "Update Scenario". The form state was not synchronized with the JSON text editor, causing old values to be sent to the backend. Now `buildScenarioJson()` correctly parses the JSON text when in Advanced JSON Mode, and both validate and save operations sync the parsed JSON back to form state for consistency.
 - **Scenario Builder**: Add clear selection styling for quick start templates on the Create Scenario screen.
 - **Scenario Builder**: Align the random seed checkbox with its label text on the Create Scenario screen.
 - **Scenario Builder**: Prevent blank page regression when navigating to the Create New Scenario screen.
