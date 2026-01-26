@@ -2366,7 +2366,7 @@ The schema includes the following tables:
 - `lift_simulator.flyway_schema_history` - Flyway migration tracking (auto-created)
 - `lift_system` - Lift system configuration roots
 - `lift_system_version` - Versioned lift configuration payloads (JSONB)
-- `simulation_scenario` - Reusable test scenarios with JSON configuration (V3)
+- `scenario` - Reusable test scenarios with JSON configuration (V3)
 - `simulation_run` - Individual simulation run executions with lifecycle tracking (V3)
 
 The `simulation_run` table tracks run status (CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED) and maintains referential integrity with lift systems and versions for persistent run lifecycle management.
@@ -2390,8 +2390,8 @@ The backend includes JPA entities and Spring Data repositories for database acce
   - Version status enum: DRAFT, PUBLISHED, ARCHIVED
   - Helper methods: `publish()`, `archive()`
 
-- **SimulationScenario** (`com.liftsimulator.admin.entity.SimulationScenario`)
-  - Maps to `simulation_scenario` table
+- **Scenario** (`com.liftsimulator.admin.entity.Scenario`)
+  - Maps to `scenario` table
   - Reusable test scenarios for lift system testing
   - **JSONB field mapping**: Stores scenario configuration as JSON
   - Automatic timestamp management via `@PrePersist` and `@PreUpdate`
@@ -2400,7 +2400,7 @@ The backend includes JPA entities and Spring Data repositories for database acce
   - Maps to `simulation_run` table
   - Individual simulation run executions with lifecycle tracking
   - Run status enum: CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED
-  - Relationships: Many-to-one with LiftSystem, LiftSystemVersion, and SimulationScenario
+  - Relationships: Many-to-one with LiftSystem, LiftSystemVersion, and Scenario
   - Status transition methods: `start()`, `succeed()`, `fail()`, `cancel()`
   - Progress tracking via `updateProgress(Long tick)`
 
@@ -2418,7 +2418,7 @@ The backend includes JPA entities and Spring Data repositories for database acce
   - Find by status: `findByStatus(VersionStatus status)`
   - Get max version number: `findMaxVersionNumberByLiftSystemId(Long liftSystemId)`
 
-- **SimulationScenarioRepository** (`com.liftsimulator.admin.repository.SimulationScenarioRepository`)
+- **ScenarioRepository** (`com.liftsimulator.admin.repository.ScenarioRepository`)
   - Find by name: `findByName(String name)`
   - Find by name pattern: `findByNameContainingIgnoreCase(String name)`
   - Check existence: `existsByName(String name)`
