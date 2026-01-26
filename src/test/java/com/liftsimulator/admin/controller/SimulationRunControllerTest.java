@@ -91,6 +91,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         CreateSimulationRunRequest request = new CreateSimulationRunRequest(
             testSystem.getId(),
             testVersion.getId(),
+            null,
             12345L
         );
 
@@ -112,6 +113,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         CreateSimulationRunRequest request = new CreateSimulationRunRequest(
             999L,
             testVersion.getId(),
+            null,
             null
         );
 
