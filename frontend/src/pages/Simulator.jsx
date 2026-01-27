@@ -176,7 +176,8 @@ function Simulator() {
         setSelectedScenarioId('');
       }
     }
-  }, [selectedVersionId, filteredScenarios, selectedScenarioId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedVersionId, filteredScenarios]);
 
   useEffect(() => {
     if (!runInfo || isTerminal) {
