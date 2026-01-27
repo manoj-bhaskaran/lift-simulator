@@ -351,6 +351,50 @@ public class SimulationRunServiceTest {
     }
 
     @Test
+    public void testConfigureRun_PreservesExistingValuesWhenNullPassed() {
+        // Set up a run with existing configuration
+        mockRun.setTotalTicks(5000L);
+        mockRun.setSeed(99999L);
+        mockRun.setArtefactBasePath("/original/path");
+        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Configure with only artefactBasePath, keeping other values null
+        SimulationRun result = runService.configureRun(1L, null, null, "/new/path");
+
+        assertNotNull(result);
+        // Existing values should be preserved
+        assertEquals(5000L, result.getTotalTicks());
+        assertEquals(99999L, result.getSeed());
+        // New value should be updated
+        assertEquals("/new/path", result.getArtefactBasePath());
+        verify(runRepository).findById(1L);
+        verify(runRepository).save(any(SimulationRun.class));
+    }
+
+    @Test
+    public void testConfigureRun_PartialUpdate() {
+        // Set up a run with existing configuration
+        mockRun.setTotalTicks(5000L);
+        mockRun.setSeed(99999L);
+        mockRun.setArtefactBasePath("/original/path");
+        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Update only totalTicks, keeping seed null
+        SimulationRun result = runService.configureRun(1L, 10000L, null, null);
+
+        assertNotNull(result);
+        // New value should be updated
+        assertEquals(10000L, result.getTotalTicks());
+        // Existing values should be preserved
+        assertEquals(99999L, result.getSeed());
+        assertEquals("/original/path", result.getArtefactBasePath());
+        verify(runRepository).findById(1L);
+        verify(runRepository).save(any(SimulationRun.class));
+    }
+
+    @Test
     public void testDeleteRun_Success() {
         when(runRepository.existsById(1L)).thenReturn(true);
 

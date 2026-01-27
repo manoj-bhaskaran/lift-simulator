@@ -325,20 +325,27 @@ public class SimulationRunService {
 
     /**
      * Set configuration for a run before starting.
+     * Only updates non-null values, preserving existing configuration.
      *
      * @param id the run id
-     * @param totalTicks total number of ticks for the simulation
-     * @param seed random seed for reproducibility
-     * @param artefactBasePath base path for output artefacts
+     * @param totalTicks total number of ticks for the simulation (null to keep existing)
+     * @param seed random seed for reproducibility (null to keep existing)
+     * @param artefactBasePath base path for output artefacts (null to keep existing)
      * @return the updated run
      * @throws ResourceNotFoundException if the run is not found
      */
     @Transactional
     public SimulationRun configureRun(Long id, Long totalTicks, Long seed, String artefactBasePath) {
         SimulationRun run = getRunById(id);
-        run.setTotalTicks(totalTicks);
-        run.setSeed(seed);
-        run.setArtefactBasePath(artefactBasePath);
+        if (totalTicks != null) {
+            run.setTotalTicks(totalTicks);
+        }
+        if (seed != null) {
+            run.setSeed(seed);
+        }
+        if (artefactBasePath != null) {
+            run.setArtefactBasePath(artefactBasePath);
+        }
         return runRepository.save(run);
     }
 

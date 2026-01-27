@@ -1,5 +1,5 @@
 // @ts-check
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import { simulationRunsApi } from '../api/simulationRunsApi';
@@ -7,6 +7,7 @@ import { handleApiError } from '../utils/errorHandlers';
 import './SimulationRuns.css';
 
 const statusOptions = ['ALL', 'SUCCEEDED', 'FAILED', 'RUNNING', 'CREATED', 'CANCELLED'];
+const activeStatuses = new Set(['RUNNING', 'CREATED']);
 
 /**
  * Simulation runs history page component.
@@ -46,29 +47,53 @@ function SimulationRuns() {
     loadSystems();
   }, []);
 
-  const loadRuns = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = {};
-      if (selectedSystemId) {
-        params.systemId = selectedSystemId;
+  const loadRuns = useCallback(
+    async (isPolling = false) => {
+      try {
+        if (!isPolling) {
+          setLoading(true);
+        }
+        const params = {};
+        if (selectedSystemId) {
+          params.systemId = selectedSystemId;
+        }
+        if (selectedStatus && selectedStatus !== 'ALL') {
+          params.status = selectedStatus;
+        }
+        const response = await simulationRunsApi.listRuns(params);
+        setRuns(response.data);
+        setError(null);
+      } catch (err) {
+        handleApiError(err, setError, 'Failed to load simulation runs');
+      } finally {
+        if (!isPolling) {
+          setLoading(false);
+        }
       }
-      if (selectedStatus && selectedStatus !== 'ALL') {
-        params.status = selectedStatus;
-      }
-      const response = await simulationRunsApi.listRuns(params);
-      setRuns(response.data);
-      setError(null);
-    } catch (err) {
-      handleApiError(err, setError, 'Failed to load simulation runs');
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedSystemId, selectedStatus]);
+    },
+    [selectedSystemId, selectedStatus]
+  );
 
   useEffect(() => {
-    loadRuns();
+    loadRuns(false);
   }, [loadRuns]);
+
+  // Check if any runs are active (RUNNING or CREATED) and need polling
+  const hasActiveRuns = useMemo(
+    () => runs.some((run) => activeStatuses.has(run.status)),
+    [runs]
+  );
+
+  // Poll for updates when there are active runs
+  useEffect(() => {
+    if (!hasActiveRuns) return undefined;
+
+    const intervalId = setInterval(() => {
+      loadRuns(true);
+    }, 3000);
+
+    return () => clearInterval(intervalId);
+  }, [hasActiveRuns, loadRuns]);
 
   useEffect(() => {
     const params = new URLSearchParams();
