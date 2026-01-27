@@ -19,4 +19,5 @@ export const simulationRunsApi = {
   getRun: (id) => apiClient.get(`/simulation-runs/${id}`),
   getResults: (id) => apiClient.get(`/simulation-runs/${id}/results`),
   getArtefacts: (id) => apiClient.get(`/simulation-runs/${id}/artefacts`),
+  cancelRun: (id) => apiClient.post(`/simulation-runs/${id}/cancel`),
 };

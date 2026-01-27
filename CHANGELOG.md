@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Simulation Run APIs**: Comprehensive API endpoints for simulation execution and monitoring
   - **POST /api/simulation-runs**: Create and start simulation runs with liftSystemId, versionId, optional scenarioId and seed
   - **GET /api/simulation-runs/{id}**: Retrieve run status, timestamps (created/started/ended), progress (currentTick/totalTicks), and error messages
+  - **POST /api/simulation-runs/{id}/cancel**: Cancel in-progress simulation runs and transition to CANCELLED
   - **GET /api/simulation-runs/{id}/results**: Access structured results JSON (200 for SUCCEEDED, 409 for RUNNING, 400 for CREATED/CANCELLED)
   - **GET /api/simulation-runs/{id}/logs?tail=N**: Stream simulation logs with optional tail parameter (default: all lines, max: 10,000)
   - **GET /api/simulation-runs/{id}/artefacts**: List downloadable artefacts with name, path, size, and MIME type

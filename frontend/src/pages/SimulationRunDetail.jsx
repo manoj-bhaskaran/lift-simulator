@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { simulationRunsApi } from '../api/simulationRunsApi';
+import ConfirmModal from '../components/ConfirmModal';
 import { handleApiError } from '../utils/errorHandlers';
 import './SimulationRunDetail.css';
 
@@ -36,6 +37,8 @@ function SimulationRunDetail() {
   const [error, setError] = useState(null);
   const [resultsError, setResultsError] = useState(null);
   const [now, setNow] = useState(() => Date.now());
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const runStatus = runInfo?.status;
   const isTerminal = runStatus ? terminalStatuses.has(runStatus) : false;
@@ -50,6 +53,22 @@ function SimulationRunDetail() {
       handleApiError(err, setError, 'Failed to load simulation run');
     }
   }, [id]);
+
+  const handleCancelRun = useCallback(async () => {
+    if (!runInfo?.id) {
+      return;
+    }
+    try {
+      setIsCancelling(true);
+      const response = await simulationRunsApi.cancelRun(runInfo.id);
+      setRunInfo(response.data);
+      setError(null);
+    } catch (err) {
+      handleApiError(err, setError, 'Failed to cancel simulation run');
+    } finally {
+      setIsCancelling(false);
+    }
+  }, [runInfo?.id]);
 
   useEffect(() => {
     const loadInitial = async () => {
@@ -218,9 +237,21 @@ function SimulationRunDetail() {
       <section className="detail-card">
         <div className="status-header">
           <h3>Run Status</h3>
-          <span className={`status-pill ${runStatus?.toLowerCase()}`}>
-            {runStatus}
-          </span>
+          <div className="status-actions">
+            <span className={`status-pill ${runStatus?.toLowerCase()}`}>
+              {runStatus}
+            </span>
+            {(runStatus === 'RUNNING' || runStatus === 'CREATED') && (
+              <button
+                className="btn-danger"
+                type="button"
+                onClick={() => setShowCancelModal(true)}
+                disabled={isCancelling}
+              >
+                {isCancelling ? 'Cancelling...' : 'Cancel Run'}
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="status-grid">
@@ -478,6 +509,17 @@ function SimulationRunDetail() {
           )}
         </section>
       )}
+
+      <ConfirmModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleCancelRun}
+        title="Cancel simulation run?"
+        message="This will stop the current simulation run. Partial results will be preserved, but the run will be marked as cancelled."
+        confirmText="Cancel run"
+        cancelText="Keep running"
+        confirmStyle="danger"
+      />
     </div>
   );
 }

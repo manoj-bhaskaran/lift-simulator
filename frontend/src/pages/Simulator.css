@@ -67,6 +67,14 @@
   gap: 12px;
 }
 
+.status-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .status-pill {
   padding: 6px 12px;
   border-radius: 999px;
@@ -216,6 +224,26 @@
   background: #f8fafc;
   border-radius: 10px;
   padding: 16px;
+}
+
+.btn-danger {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #c0392b;
+}
+
+.btn-danger:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
 }
 
 .reproduce-actions {

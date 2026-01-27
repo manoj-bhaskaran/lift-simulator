@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import { scenariosApi } from '../api/scenariosApi';
 import { simulationRunsApi } from '../api/simulationRunsApi';
+import ConfirmModal from '../components/ConfirmModal';
 import { handleApiError } from '../utils/errorHandlers';
 import './Simulator.css';
 
@@ -47,6 +48,8 @@ function Simulator() {
   const [artefacts, setArtefacts] = useState([]);
   const [now, setNow] = useState(Date.now());
   const [isStarting, setIsStarting] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const hasSyncedFromParams = useRef(false);
 
   useEffect(() => {
@@ -252,6 +255,22 @@ function Simulator() {
     }
   };
 
+  const handleCancelRun = async () => {
+    if (!runInfo?.id) {
+      return;
+    }
+    try {
+      setIsCancelling(true);
+      const response = await simulationRunsApi.cancelRun(runInfo.id);
+      setRunInfo(response.data);
+      setRunError(null);
+    } catch (err) {
+      handleApiError(err, setRunError, 'Failed to cancel simulation run');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   const elapsedMs = useMemo(() => {
     if (!runInfo?.createdAt) {
       return null;
@@ -453,9 +472,21 @@ function Simulator() {
         <section className="simulator-card">
           <div className="status-header">
             <h3>Run Status</h3>
-            <span className={`status-pill ${runStatus?.toLowerCase()}`}>
-              {runStatus}
-            </span>
+            <div className="status-actions">
+              <span className={`status-pill ${runStatus?.toLowerCase()}`}>
+                {runStatus}
+              </span>
+              {(runStatus === 'RUNNING' || runStatus === 'CREATED') && (
+                <button
+                  className="btn-danger"
+                  type="button"
+                  onClick={() => setShowCancelModal(true)}
+                  disabled={isCancelling}
+                >
+                  {isCancelling ? 'Cancelling...' : 'Cancel Run'}
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="status-grid">
@@ -506,6 +537,17 @@ function Simulator() {
         </section>
       )}
 
+      <ConfirmModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleCancelRun}
+        title="Cancel simulation run?"
+        message="This will stop the current simulation run. Partial results will be preserved, but the run will be marked as cancelled."
+        confirmText="Cancel run"
+        cancelText="Keep running"
+        confirmStyle="danger"
+      />
+
       {isTerminal && runInfo && (
         <section className="simulator-card">
           <div className="results-header">
@@ -525,6 +567,12 @@ function Simulator() {
                   View logs
                 </a>
               )}
+            </div>
+          )}
+
+          {runStatus === 'CANCELLED' && (
+            <div className="result-banner warning">
+              <strong>Simulation was cancelled.</strong>
             </div>
           )}
 

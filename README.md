@@ -910,6 +910,7 @@ The Simulation Run APIs enable UI to start simulations, poll their status, and a
 **Key Features:**
 - Create and start simulation runs atomically
 - Poll run status with progress tracking
+- Cancel in-progress simulation runs
 - Retrieve structured results when completed
 - Access logs with optional tail functionality
 - List and manage simulation artefacts
@@ -1000,6 +1001,41 @@ Retrieves the current status and details of a simulation run, including progress
   "status": 404,
   "message": "Simulation run not found with id: 999",
   "timestamp": "2026-01-23T10:00:00Z"
+}
+```
+
+---
+
+##### Cancel Simulation Run
+
+**Endpoint:** `POST /api/simulation-runs/{id}/cancel`
+
+Cancels a running simulation run and transitions it to a terminal `CANCELLED` state.
+
+**Response (200 OK):**
+```json
+{
+  "id": 1,
+  "liftSystemId": 1,
+  "versionId": 2,
+  "scenarioId": 3,
+  "status": "CANCELLED",
+  "createdAt": "2026-01-23T10:00:00Z",
+  "startedAt": "2026-01-23T10:00:01Z",
+  "endedAt": "2026-01-23T10:05:00Z",
+  "totalTicks": 10000,
+  "currentTick": 4321,
+  "seed": 12345,
+  "errorMessage": null
+}
+```
+
+**Error Response (409 Conflict):**
+```json
+{
+  "status": 409,
+  "message": "Can only cancel a run in CREATED or RUNNING state. Current state: SUCCEEDED",
+  "timestamp": "2026-01-23T10:05:30Z"
 }
 ```
 
