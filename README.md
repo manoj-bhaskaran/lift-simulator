@@ -1208,6 +1208,28 @@ Lists all artefacts (downloadable files) associated with a simulation run.
 
 ---
 
+##### Download Simulation Artefact
+
+**Endpoint:** `GET /api/simulation-runs/{id}/artefacts/{path}`
+
+Downloads a specific artefact file for a simulation run. The `{path}` value should match the
+`path` field returned by the artefact list endpoint.
+
+**Response (200 OK):**
+- Binary file content with `Content-Disposition: attachment` and the appropriate MIME type.
+
+**Error Responses:**
+- **404 Not Found** when the artefact does not exist.
+- **400 Bad Request** when the artefact path is invalid or attempts path traversal.
+- **409 Conflict** when the run artefact base path is not configured.
+
+**Example Usage:**
+```bash
+curl -O http://localhost:8080/api/simulation-runs/1/artefacts/results.json
+```
+
+---
+
 **Security Features:**
 - **Path Traversal Prevention**: All file access paths are normalized and validated
 - **Directory Isolation**: Artefacts are restricted to run-specific directories
@@ -1437,6 +1459,9 @@ GET /api/simulation-runs/{id}/logs?tail=100
 
 # 5. List artefacts
 GET /api/simulation-runs/{id}/artefacts
+
+# 6. Download an artefact
+GET /api/simulation-runs/{id}/artefacts/{path}
 ```
 
 ---

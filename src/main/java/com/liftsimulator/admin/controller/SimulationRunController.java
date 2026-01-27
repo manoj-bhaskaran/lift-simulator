@@ -13,7 +13,11 @@ import com.liftsimulator.admin.service.SimulationRunExecutionService;
 import com.liftsimulator.admin.service.SimulationRunService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.Valid;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -218,5 +222,37 @@ public class SimulationRunController {
             // Return empty list if directory doesn't exist or can't be read
             return ResponseEntity.ok(List.of());
         }
+    }
+
+    /**
+     * Downloads a specific artefact file associated with a simulation run.
+     * Endpoint: GET /api/simulation-runs/{id}/artefacts/{path}
+     *
+     * @param id the run ID
+     * @param path the artefact path relative to the run artefact directory
+     * @return the artefact file as a downloadable resource
+     */
+    @GetMapping("/{id}/artefacts/{path:**}")
+    public ResponseEntity<Resource> downloadSimulationArtefact(
+            @PathVariable Long id,
+            @PathVariable String path
+    ) throws IOException {
+        SimulationRun run = simulationRunService.getRunById(id);
+        ArtefactService.ArtefactDownload artefact = artefactService.getArtefact(run, path);
+
+        MediaType mediaType;
+        try {
+            mediaType = MediaType.parseMediaType(artefact.mimeType());
+        } catch (IllegalArgumentException e) {
+            mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+
+        Resource resource = new FileSystemResource(artefact.path());
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .contentLength(artefact.size())
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + artefact.fileName() + "\"")
+                .body(resource);
     }
 }

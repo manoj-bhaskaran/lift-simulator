@@ -140,6 +140,50 @@ function SimulationRunDetail() {
     return `${normalizedApiBaseUrl}/simulation-runs/${runInfo.id}/artefacts/${encodeURI(path)}`;
   };
 
+  const handleArtefactDownload = useCallback(
+    async (event, artefact) => {
+      event.preventDefault();
+      if (!runInfo?.id || !artefact?.path) {
+        setResultsError('Artefact path is unavailable for download.');
+        return;
+      }
+
+      try {
+        setResultsError(null);
+        const response = await fetch(artefactDownloadUrl(artefact.path));
+        if (!response.ok) {
+          let errorMessage = `Unable to download ${artefact.name || 'artefact'}.`;
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = await response.json();
+            if (data?.message) {
+              errorMessage = data.message;
+            }
+          } else {
+            const text = await response.text();
+            if (text) {
+              errorMessage = text;
+            }
+          }
+          throw new Error(errorMessage);
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = artefact.name || artefact.path.split('/').pop() || 'artefact';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        handleApiError(err, setResultsError, `Failed to download ${artefact.name || 'artefact'}`);
+      }
+    },
+    [runInfo?.id, artefactDownloadUrl]
+  );
+
   const formatDuration = (durationMs) => {
     if (durationMs == null) return '—';
     const totalSeconds = Math.floor(durationMs / 1000);
@@ -480,6 +524,7 @@ function SimulationRunDetail() {
                           <a
                             className="link"
                             href={artefactDownloadUrl(artefact.path)}
+                            onClick={(event) => handleArtefactDownload(event, artefact)}
                           >
                             Download
                           </a>
@@ -500,7 +545,11 @@ function SimulationRunDetail() {
                 CLI simulator.
               </p>
               <div className="reproduce-actions">
-                <a className="btn-secondary" href={artefactDownloadUrl(inputArtefact.path)}>
+                <a
+                  className="btn-secondary"
+                  href={artefactDownloadUrl(inputArtefact.path)}
+                  onClick={(event) => handleArtefactDownload(event, inputArtefact)}
+                >
                   Download input.scenario
                 </a>
                 <code>lift-simulator --input {inputArtefact.path}</code>
