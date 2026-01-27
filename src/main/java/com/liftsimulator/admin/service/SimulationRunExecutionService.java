@@ -463,9 +463,10 @@ public class SimulationRunExecutionService {
     }
 
     private static final class RunCancelledException extends CancellationException {
-        private final RunMetrics metrics;
-        private final LiftConfigDTO config;
-        private final ScenarioDefinitionDTO scenario;
+        private static final long serialVersionUID = 1L;
+        private final transient RunMetrics metrics;
+        private final transient LiftConfigDTO config;
+        private final transient ScenarioDefinitionDTO scenario;
 
         private RunCancelledException(String message, RunMetrics metrics, LiftConfigDTO config, ScenarioDefinitionDTO scenario) {
             super(message);
