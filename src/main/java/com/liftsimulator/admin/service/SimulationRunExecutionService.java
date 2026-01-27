@@ -130,10 +130,6 @@ public class SimulationRunExecutionService {
         SimulationRun run = runService.cancelRun(runId);
         CancellationToken token = cancellationTokens.computeIfAbsent(runId, id -> new CancellationToken());
         token.cancel();
-        Future<?> future = runningTasks.get(runId);
-        if (future != null) {
-            future.cancel(true);
-        }
         return run;
     }
 
