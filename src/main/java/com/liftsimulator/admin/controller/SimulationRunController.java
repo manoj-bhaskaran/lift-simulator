@@ -232,7 +232,7 @@ public class SimulationRunController {
      * @param path the artefact path relative to the run artefact directory
      * @return the artefact file as a downloadable resource
      */
-    @GetMapping("/{id}/artefacts/{*path}")
+    @GetMapping("/{id}/artefacts/{path:**}")
     public ResponseEntity<Resource> downloadSimulationArtefact(
             @PathVariable Long id,
             @PathVariable String path
