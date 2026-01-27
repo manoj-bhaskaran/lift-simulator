@@ -148,12 +148,35 @@ function Simulator() {
   const selectedVersion = publishedVersions.find(
     (version) => String(version.id) === String(selectedVersionId)
   );
+
+  // Filter scenarios to only show those belonging to the selected version
+  const filteredScenarios = useMemo(() => {
+    if (!selectedVersionId) {
+      return [];
+    }
+    return scenarios.filter(
+      (scenario) => String(scenario.liftSystemVersionId) === String(selectedVersionId)
+    );
+  }, [scenarios, selectedVersionId]);
+
   const selectedScenario = scenarios.find(
     (scenario) => String(scenario.id) === String(selectedScenarioId)
   );
 
   const runStatus = runInfo?.status;
   const isTerminal = runStatus ? terminalStatuses.has(runStatus) : false;
+
+  // Clear selected scenario when version changes if it's not compatible
+  useEffect(() => {
+    if (selectedScenarioId && selectedVersionId) {
+      const isScenarioCompatible = filteredScenarios.some(
+        (scenario) => String(scenario.id) === String(selectedScenarioId)
+      );
+      if (!isScenarioCompatible) {
+        setSelectedScenarioId('');
+      }
+    }
+  }, [selectedVersionId, filteredScenarios, selectedScenarioId]);
 
   useEffect(() => {
     if (!runInfo || isTerminal) {
@@ -399,18 +422,21 @@ function Simulator() {
               <select
                 value={selectedScenarioId}
                 onChange={(event) => setSelectedScenarioId(event.target.value)}
-                disabled={scenarios.length === 0}
+                disabled={!selectedVersionId || filteredScenarios.length === 0}
               >
                 <option value="">Select a scenario</option>
-                {scenarios.map((scenario) => (
+                {filteredScenarios.map((scenario) => (
                   <option key={scenario.id} value={scenario.id}>
                     {scenario.name}
                   </option>
                 ))}
               </select>
-              {scenarios.length === 0 && (
+              {!selectedVersionId && (
+                <small>Select a version to view compatible scenarios.</small>
+              )}
+              {selectedVersionId && filteredScenarios.length === 0 && (
                 <small className="warning">
-                  No scenarios found. Create one from the Scenarios page.
+                  No scenarios available for this version. Create one from the Scenarios page.
                 </small>
               )}
             </label>
