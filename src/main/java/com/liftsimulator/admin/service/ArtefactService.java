@@ -78,7 +78,8 @@ public class ArtefactService {
                             logger.warn("Skipping file with null name: " + path);
                             return;
                         }
-                        String relativePath = directory.relativize(path).toString();
+                        String relativePath = directory.relativize(path).toString()
+                            .replace('\\', '/');
                         String fileName = fileNamePath.toString();
                         long size = Files.size(path);
                         artefacts.add(ArtefactInfo.of(fileName, relativePath, size));

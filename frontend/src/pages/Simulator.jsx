@@ -311,11 +311,22 @@ function Simulator() {
     return Math.min(100, (runInfo.currentTick / runInfo.totalTicks) * 100);
   }, [runInfo?.currentTick, runInfo?.totalTicks]);
 
+  const encodeArtefactPath = (path) => {
+    if (!path) {
+      return '';
+    }
+    const normalizedPath = path.replace(/\\/g, '/');
+    return normalizedPath
+      .split('/')
+      .map((segment) => encodeURIComponent(segment))
+      .join('/');
+  };
+
   const artefactDownloadUrl = (path) => {
     if (!runInfo?.id || !path) {
       return '#';
     }
-    return `${normalizedApiBaseUrl}/simulation-runs/${runInfo.id}/artefacts/${encodeURI(path)}`;
+    return `${normalizedApiBaseUrl}/simulation-runs/${runInfo.id}/artefacts/${encodeArtefactPath(path)}`;
   };
 
   const handleArtefactDownload = useCallback(
