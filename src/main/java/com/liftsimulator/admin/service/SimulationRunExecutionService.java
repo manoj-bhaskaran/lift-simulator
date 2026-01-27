@@ -29,9 +29,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,6 +62,8 @@ public class SimulationRunExecutionService {
     private final ObjectMapper objectMapper;
     private final ExecutorService executor;
     private final Path artefactsRoot;
+    private final Map<Long, Future<?>> runningTasks = new ConcurrentHashMap<>();
+    private final Map<Long, CancellationToken> cancellationTokens = new ConcurrentHashMap<>();
 
     @SuppressFBWarnings(
         value = "EI_EXPOSE_REP2",
@@ -93,7 +99,7 @@ public class SimulationRunExecutionService {
         String scenarioJson = run.getScenario() != null ? run.getScenario().getScenarioJson() : null;
 
         RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, scenarioJson);
-        executor.execute(() -> executeRun(request));
+        submitExecution(request);
         return run;
     }
 
@@ -110,13 +116,28 @@ public class SimulationRunExecutionService {
         String scenarioJson = run.getScenario() != null ? run.getScenario().getScenarioJson() : null;
 
         RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, scenarioJson);
-        executor.execute(() -> executeRun(request));
+        submitExecution(request);
+    }
+
+    /**
+     * Cancels a running simulation and interrupts execution.
+     *
+     * @param runId the run id
+     * @return the updated run
+     */
+    @Transactional
+    public SimulationRun cancelRun(Long runId) {
+        SimulationRun run = runService.cancelRun(runId);
+        CancellationToken token = cancellationTokens.computeIfAbsent(runId, id -> new CancellationToken());
+        token.cancel();
+        return run;
     }
 
     private void executeRun(RunExecutionRequest request) {
         Path runDir = buildRunDirectory(request.runId());
         Path logPath = runDir.resolve(LOG_FILE_NAME);
         boolean started = false;
+        CancellationToken cancelToken = cancellationTokens.computeIfAbsent(request.runId(), id -> new CancellationToken());
 
         try {
             Files.createDirectories(runDir);
@@ -170,17 +191,35 @@ public class SimulationRunExecutionService {
 
             // Start the run if not already started (it may have been started by createAndStartRun)
             SimulationRun currentRun = runService.getRunById(request.runId());
+            if (currentRun.getStatus() == SimulationRun.RunStatus.CANCELLED || cancelToken.isCancelled()) {
+                log(logWriter, "Run cancelled before start for run " + request.runId());
+                cancelRunSafely(request.runId(), logWriter, "Run cancelled before start.");
+                writeResults(request.runId(), runDir, config, scenario, null, "CANCELLED", "Run cancelled before start.");
+                return;
+            }
             if (currentRun.getStatus() != SimulationRun.RunStatus.RUNNING) {
                 runService.startRun(request.runId());
             }
             started = true;
             log(logWriter, "Simulation started for run " + request.runId());
 
-            RunMetrics metrics = runSimulation(request.runId(), config, scenario, logWriter);
+            RunMetrics metrics = runSimulation(request.runId(), config, scenario, logWriter, cancelToken);
 
+            if (cancelToken.isCancelled() || runService.getRunById(request.runId()).getStatus() == SimulationRun.RunStatus.CANCELLED) {
+                log(logWriter, "Run cancelled for run " + request.runId());
+                writeResults(request.runId(), runDir, config, scenario, metrics, "CANCELLED", "Run cancelled.");
+                return;
+            }
             runService.succeedRun(request.runId());
             log(logWriter, "Simulation succeeded for run " + request.runId());
             writeResults(request.runId(), runDir, config, scenario, metrics, "SUCCEEDED", null);
+        } catch (RunCancelledException ex) {
+            try {
+                cancelRunSafely(request.runId(), logPath, ex.getMessage());
+                writeResults(request.runId(), runDir, ex.getConfig(), ex.getScenario(), ex.getMetrics(), "CANCELLED", ex.getMessage());
+            } catch (IOException ioEx) {
+                logger.warn("Failed to write cancellation results file for run {}", request.runId(), ioEx);
+            }
         } catch (IOException | RuntimeException ex) {
             String errorMessage = safeMessage(ex);
             logger.error("Simulation run {} failed", request.runId(), ex);
@@ -190,13 +229,17 @@ public class SimulationRunExecutionService {
             } catch (IOException ioEx) {
                 logger.warn("Failed to write results file for run {}", request.runId(), ioEx);
             }
+        } finally {
+            runningTasks.remove(request.runId());
+            cancellationTokens.remove(request.runId());
         }
     }
 
     private RunMetrics runSimulation(Long runId,
                                      LiftConfigDTO config,
                                      ScenarioDefinitionDTO scenario,
-                                     BufferedWriter logWriter) throws IOException {
+                                     BufferedWriter logWriter,
+                                     CancellationToken cancelToken) throws IOException {
         RequestManagingLiftController controller = (RequestManagingLiftController) ControllerFactory.createController(
             config.controllerStrategy(),
             config.homeFloor(),
@@ -217,6 +260,12 @@ public class SimulationRunExecutionService {
 
         log(logWriter, "Starting simulation for " + scenario.durationTicks() + " ticks.");
         for (int tick = 0; tick < scenario.durationTicks(); tick++) {
+            if (cancelToken.isCancelled() || Thread.currentThread().isInterrupted()) {
+                throw new RunCancelledException("Run cancelled at tick " + engine.getCurrentTick() + ".",
+                    metrics,
+                    config,
+                    scenario);
+            }
             long currentTick = engine.getCurrentTick();
             List<PassengerFlowDTO> flows = flowsByTick.getOrDefault((int) currentTick, List.of());
             for (PassengerFlowDTO flow : flows) {
@@ -306,6 +355,32 @@ public class SimulationRunExecutionService {
         }
     }
 
+    private void cancelRunSafely(Long runId, BufferedWriter logWriter, String message) throws IOException {
+        log(logWriter, message);
+        cancelRunSafely(runId, message);
+    }
+
+    private void cancelRunSafely(Long runId, Path logPath, String message) {
+        try (BufferedWriter logWriter = Files.newBufferedWriter(logPath, StandardCharsets.UTF_8, java.nio.file.StandardOpenOption.APPEND)) {
+            log(logWriter, message);
+        } catch (IOException ex) {
+            logger.warn("Failed to append cancellation message to run log for run {}", runId, ex);
+        }
+        cancelRunSafely(runId, message);
+    }
+
+    private void cancelRunSafely(Long runId, String message) {
+        try {
+            SimulationRun run = runService.getRunById(runId);
+            if (run.getStatus() == SimulationRun.RunStatus.CANCELLED) {
+                return;
+            }
+            runService.cancelRun(runId);
+        } catch (Exception ex) {
+            logger.error("Failed to mark run {} as cancelled", runId, ex);
+        }
+    }
+
     private void writeResults(Long runId,
                               Path runDir,
                               LiftConfigDTO config,
@@ -368,6 +443,49 @@ public class SimulationRunExecutionService {
     }
 
     private record RunExecutionRequest(Long runId, String configJson, String scenarioJson) {
+    }
+
+    private void submitExecution(RunExecutionRequest request) {
+        Future<?> future = executor.submit(() -> executeRun(request));
+        runningTasks.put(request.runId(), future);
+    }
+
+    private static final class CancellationToken {
+        private final AtomicBoolean cancelled = new AtomicBoolean(false);
+
+        private void cancel() {
+            cancelled.set(true);
+        }
+
+        private boolean isCancelled() {
+            return cancelled.get();
+        }
+    }
+
+    private static final class RunCancelledException extends CancellationException {
+        private static final long serialVersionUID = 1L;
+        private final transient RunMetrics metrics;
+        private final transient LiftConfigDTO config;
+        private final transient ScenarioDefinitionDTO scenario;
+
+        private RunCancelledException(String message, RunMetrics metrics, LiftConfigDTO config, ScenarioDefinitionDTO scenario) {
+            super(message);
+            this.metrics = metrics;
+            this.config = config;
+            this.scenario = scenario;
+        }
+
+        private RunMetrics getMetrics() {
+            return metrics;
+        }
+
+        private LiftConfigDTO getConfig() {
+            return config;
+        }
+
+        private ScenarioDefinitionDTO getScenario() {
+            return scenario;
+        }
     }
 
     private static final class SimulationRunnerThreadFactory implements ThreadFactory {

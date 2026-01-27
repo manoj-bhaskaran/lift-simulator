@@ -9,6 +9,7 @@ import com.liftsimulator.admin.dto.SimulationRunResponse;
 import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.entity.SimulationRun.RunStatus;
 import com.liftsimulator.admin.service.ArtefactService;
+import com.liftsimulator.admin.service.SimulationRunExecutionService;
 import com.liftsimulator.admin.service.SimulationRunService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.Valid;
@@ -35,6 +36,7 @@ import java.util.Map;
 public class SimulationRunController {
 
     private final SimulationRunService simulationRunService;
+    private final SimulationRunExecutionService executionService;
     private final ArtefactService artefactService;
 
     @SuppressFBWarnings(
@@ -44,8 +46,10 @@ public class SimulationRunController {
     )
     public SimulationRunController(
             SimulationRunService simulationRunService,
+            SimulationRunExecutionService executionService,
             ArtefactService artefactService) {
         this.simulationRunService = simulationRunService;
+        this.executionService = executionService;
         this.artefactService = artefactService;
     }
 
@@ -101,6 +105,20 @@ public class SimulationRunController {
     @GetMapping("/{id}")
     public ResponseEntity<SimulationRunResponse> getSimulationRun(@PathVariable Long id) {
         SimulationRun run = simulationRunService.getRunById(id);
+        SimulationRunResponse response = SimulationRunResponse.fromEntity(run);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Cancels a running simulation run.
+     * Endpoint: POST /api/simulation-runs/{id}/cancel
+     *
+     * @param id the run ID
+     * @return the updated simulation run details
+     */
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<SimulationRunResponse> cancelSimulationRun(@PathVariable Long id) {
+        SimulationRun run = executionService.cancelRun(id);
         SimulationRunResponse response = SimulationRunResponse.fromEntity(run);
         return ResponseEntity.ok(response);
     }
