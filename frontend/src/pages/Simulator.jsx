@@ -477,18 +477,24 @@ function Simulator() {
                 onClick={handleStartRun}
                 disabled={
                   isStarting ||
+                  (runInfo && !isTerminal) ||
                   !selectedSystemId ||
                   !selectedVersionId ||
                   !selectedScenarioId
                 }
               >
-                {isStarting ? 'Starting...' : 'Start Run'}
+                {isStarting ? 'Starting...' : (runInfo && !isTerminal) ? 'Run in Progress' : 'Start Run'}
               </button>
               {selectedSystem && selectedVersion && selectedScenario && (
                 <div className="selection-summary">
                   <strong>Selected:</strong> {selectedSystem.displayName} · Version{' '}
                   {selectedVersion.versionNumber} · {selectedScenario.name}
                 </div>
+              )}
+              {runInfo && !isTerminal && (
+                <small className="run-in-progress-hint">
+                  A simulation run is in progress. Wait for it to complete or cancel it to start a new run.
+                </small>
               )}
             </div>
           </div>

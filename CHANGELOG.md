@@ -114,6 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add database-level ON DELETE CASCADE constraint to SimulationRun foreign keys (lift_system_id and version_id) via Hibernate's @OnDelete annotation. This ensures SimulationRun records are automatically deleted when their parent LiftSystem or LiftSystemVersion is deleted, matching the existing database schema and preventing constraint violations.
 - Align the "Use Random Seed (for reproducibility)" checkbox with its label on the Create Scenario screen.
 - Align README schema/entity references to the `scenario` table after legacy `simulation_scenario` removal.
+- **Run Simulator**: Fixed UI hang when clicking Start Run multiple times before a previous run completes. The Start Run button is now disabled while a run is in progress (RUNNING or CREATED status), preventing duplicate run requests and state conflicts. Button text changes to "Run in Progress" and a hint message guides users to wait for completion or cancel the current run before starting a new one.
 
 ## [0.44.0] - 2026-01-20
 
