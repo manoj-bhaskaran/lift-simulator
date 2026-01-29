@@ -1,0 +1,1 @@
+{"seed": 8976, "durationTicks": 100, "passengerFlows": [{"startTick": 0, "passengers": 1, "originFloor": -1, "destinationFloor": 1}, {"startTick": 1, "passengers": 5, "originFloor": 0, "destinationFloor": 1}, {"startTick": 2, "passengers": 5, "originFloor": 1, "destinationFloor": 0}]}

@@ -1,0 +1,64 @@
+{
+  "runSummary" : {
+    "runId" : 9,
+    "status" : "SUCCEEDED",
+    "generatedAt" : "2026-01-27T02:34:13.728025800+05:30",
+    "durationTicks" : 100,
+    "seed" : 8976,
+    "ticks" : 100,
+    "liftSystemId" : 5,
+    "versionId" : 17
+  },
+  "kpis" : {
+    "requestsTotal" : 11,
+    "passengersServed" : 11,
+    "passengersCancelled" : 0,
+    "avgWaitTicks" : 20.363636363636363,
+    "maxWaitTicks" : 28,
+    "idleTicks" : 67,
+    "movingTicks" : 6,
+    "doorTicks" : 27,
+    "utilisation" : 0.33
+  },
+  "perLift" : [ {
+    "liftId" : "lift-1",
+    "minFloor" : -1,
+    "maxFloor" : 1,
+    "homeFloor" : 0,
+    "travelTicksPerFloor" : 2,
+    "doorTransitionTicks" : 3,
+    "doorDwellTicks" : 5,
+    "doorReopenWindowTicks" : 2,
+    "controllerStrategy" : "DIRECTIONAL_SCAN",
+    "idleParkingMode" : "STAY_AT_CURRENT_FLOOR",
+    "statusCounts" : {
+      "IDLE" : 67,
+      "MOVING_UP" : 4,
+      "MOVING_DOWN" : 2,
+      "DOORS_OPENING" : 6,
+      "DOORS_OPEN" : 15,
+      "DOORS_CLOSING" : 6
+    },
+    "totalTicks" : 100,
+    "idleTicks" : 67,
+    "movingTicks" : 6,
+    "doorTicks" : 27,
+    "utilisation" : 0.33
+  } ],
+  "perFloor" : [ {
+    "floor" : -1,
+    "originPassengers" : 1,
+    "destinationPassengers" : 0,
+    "liftVisits" : 1
+  }, {
+    "floor" : 0,
+    "originPassengers" : 5,
+    "destinationPassengers" : 5,
+    "liftVisits" : 2
+  }, {
+    "floor" : 1,
+    "originPassengers" : 5,
+    "destinationPassengers" : 6,
+    "liftVisits" : 1
+  } ]
+}
