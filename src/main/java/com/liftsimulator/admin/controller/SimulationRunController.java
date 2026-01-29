@@ -238,7 +238,9 @@ public class SimulationRunController {
             @PathVariable String path
     ) throws IOException {
         SimulationRun run = simulationRunService.getRunById(id);
-        ArtefactService.ArtefactDownload artefact = artefactService.getArtefact(run, path);
+        // Remove leading slash from wildcard path capture
+        String relativePath = path.startsWith("/") ? path.substring(1) : path;
+        ArtefactService.ArtefactDownload artefact = artefactService.getArtefact(run, relativePath);
 
         MediaType mediaType;
         try {
