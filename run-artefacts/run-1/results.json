@@ -1,0 +1,202 @@
+{
+  "runSummary" : {
+    "runId" : 1,
+    "status" : "SUCCEEDED",
+    "generatedAt" : "2026-01-27T01:58:09.419073200+05:30",
+    "durationTicks" : 100,
+    "ticks" : 100,
+    "liftSystemId" : 3,
+    "versionId" : 16
+  },
+  "kpis" : {
+    "requestsTotal" : 14,
+    "passengersServed" : 14,
+    "passengersCancelled" : 0,
+    "avgWaitTicks" : 13.071428571428571,
+    "maxWaitTicks" : 14,
+    "idleTicks" : 80,
+    "movingTicks" : 2,
+    "doorTicks" : 18,
+    "utilisation" : 0.2
+  },
+  "perLift" : [ {
+    "liftId" : "lift-1",
+    "minFloor" : -1,
+    "maxFloor" : 29,
+    "homeFloor" : -1,
+    "travelTicksPerFloor" : 2,
+    "doorTransitionTicks" : 3,
+    "doorDwellTicks" : 5,
+    "doorReopenWindowTicks" : 2,
+    "controllerStrategy" : "DIRECTIONAL_SCAN",
+    "idleParkingMode" : "STAY_AT_CURRENT_FLOOR",
+    "statusCounts" : {
+      "IDLE" : 80,
+      "MOVING_UP" : 2,
+      "DOORS_OPENING" : 4,
+      "DOORS_OPEN" : 10,
+      "DOORS_CLOSING" : 4
+    },
+    "totalTicks" : 100,
+    "idleTicks" : 80,
+    "movingTicks" : 2,
+    "doorTicks" : 18,
+    "utilisation" : 0.2
+  } ],
+  "perFloor" : [ {
+    "floor" : -1,
+    "originPassengers" : 1,
+    "destinationPassengers" : 0,
+    "liftVisits" : 1
+  }, {
+    "floor" : 0,
+    "originPassengers" : 13,
+    "destinationPassengers" : 0,
+    "liftVisits" : 1
+  }, {
+    "floor" : 1,
+    "originPassengers" : 0,
+    "destinationPassengers" : 1,
+    "liftVisits" : 0
+  }, {
+    "floor" : 2,
+    "originPassengers" : 0,
+    "destinationPassengers" : 1,
+    "liftVisits" : 0
+  }, {
+    "floor" : 3,
+    "originPassengers" : 0,
+    "destinationPassengers" : 4,
+    "liftVisits" : 0
+  }, {
+    "floor" : 4,
+    "originPassengers" : 0,
+    "destinationPassengers" : 8,
+    "liftVisits" : 0
+  }, {
+    "floor" : 5,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 6,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 7,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 8,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 9,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 10,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 11,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 12,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 13,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 14,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 15,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 16,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 17,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 18,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 19,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 20,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 21,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 22,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 23,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 24,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 25,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 26,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 27,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 28,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  }, {
+    "floor" : 29,
+    "originPassengers" : 0,
+    "destinationPassengers" : 0,
+    "liftVisits" : 0
+  } ]
+}

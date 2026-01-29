@@ -1,0 +1,1 @@
+{"lifts": 1, "maxFloor": 1, "minFloor": -1, "homeFloor": 0, "doorDwellTicks": 5, "idleParkingMode": "STAY_AT_CURRENT_FLOOR", "idleTimeoutTicks": 5, "controllerStrategy": "DIRECTIONAL_SCAN", "doorTransitionTicks": 3, "travelTicksPerFloor": 2, "doorReopenWindowTicks": 2}

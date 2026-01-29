@@ -1,0 +1,1 @@
+{"durationTicks": 100, "passengerFlows": [{"startTick": 0, "passengers": 1, "originFloor": -1, "destinationFloor": 1}, {"startTick": 0, "passengers": 1, "originFloor": 0, "destinationFloor": 2}, {"startTick": 0, "passengers": 4, "originFloor": 0, "destinationFloor": 3}, {"startTick": 0, "passengers": 8, "originFloor": 0, "destinationFloor": 4}]}

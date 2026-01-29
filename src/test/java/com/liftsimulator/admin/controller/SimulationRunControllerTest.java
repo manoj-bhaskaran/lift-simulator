@@ -25,6 +25,8 @@ import java.nio.file.Paths;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -298,5 +300,37 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$").isArray())
             .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    public void testDownloadSimulationArtefact_Success() throws Exception {
+        SimulationRun run = new SimulationRun(testSystem, testVersion);
+        run.setArtefactBasePath("./simulation-runs/run-download");
+        run = runRepository.save(run);
+
+        Path artefactDir = Paths.get(run.getArtefactBasePath());
+        Files.createDirectories(artefactDir);
+        Path resultsFile = artefactDir.resolve("results.json");
+        Files.writeString(resultsFile, "{\"ok\": true}");
+
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/artefacts/results.json"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("Content-Disposition", "attachment; filename=\"results.json\""))
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+            .andExpect(content().string("{\"ok\": true}"));
+    }
+
+    @Test
+    public void testDownloadSimulationArtefact_NotFound() throws Exception {
+        SimulationRun run = new SimulationRun(testSystem, testVersion);
+        run.setArtefactBasePath("./simulation-runs/run-download-missing");
+        run = runRepository.save(run);
+
+        Path artefactDir = Paths.get(run.getArtefactBasePath());
+        Files.createDirectories(artefactDir);
+
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/artefacts/missing.json"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.message").value("Artefact not found: missing.json"));
     }
 }

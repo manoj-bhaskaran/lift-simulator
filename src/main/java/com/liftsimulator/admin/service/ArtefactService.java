@@ -35,6 +35,14 @@ public class ArtefactService {
         this.objectMapper = objectMapper.copy();
     }
 
+    public record ArtefactDownload(
+        Path path,
+        String fileName,
+        long size,
+        String mimeType
+    ) {
+    }
+
     /**
      * Lists all artefacts in a simulation run's artefact directory.
      *
@@ -70,7 +78,8 @@ public class ArtefactService {
                             logger.warn("Skipping file with null name: " + path);
                             return;
                         }
-                        String relativePath = directory.relativize(path).toString();
+                        String relativePath = directory.relativize(path).toString()
+                            .replace('\\', '/');
                         String fileName = fileNamePath.toString();
                         long size = Files.size(path);
                         artefacts.add(ArtefactInfo.of(fileName, relativePath, size));
@@ -81,6 +90,47 @@ public class ArtefactService {
         }
 
         return artefacts;
+    }
+
+    /**
+     * Resolves an artefact file for download.
+     *
+     * @param run the simulation run
+     * @param relativePath the relative path within the artefact directory
+     * @return artefact download metadata
+     * @throws IOException if file metadata cannot be read
+     */
+    public ArtefactDownload getArtefact(SimulationRun run, String relativePath) throws IOException {
+        String basePath = run.getArtefactBasePath();
+        if (basePath == null || basePath.isBlank()) {
+            throw new IllegalStateException("Artefact base path is not set for run " + run.getId());
+        }
+        if (relativePath == null || relativePath.isBlank()) {
+            throw new IllegalArgumentException("Artefact path must be provided");
+        }
+
+        Path artefactPath;
+        try {
+            artefactPath = validateAndResolvePath(basePath, relativePath);
+        } catch (SecurityException e) {
+            throw new IllegalArgumentException("Invalid artefact path: " + relativePath, e);
+        }
+
+        if (!Files.exists(artefactPath) || Files.isDirectory(artefactPath)) {
+            throw new ResourceNotFoundException("Artefact not found: " + relativePath);
+        }
+
+        Path fileNamePath = artefactPath.getFileName();
+        String fileName = fileNamePath != null
+            ? fileNamePath.toString()
+            : relativePath;
+        long size = Files.size(artefactPath);
+        String mimeType = Files.probeContentType(artefactPath);
+        if (mimeType == null || mimeType.isBlank()) {
+            mimeType = "application/octet-stream";
+        }
+
+        return new ArtefactDownload(artefactPath, fileName, size, mimeType);
     }
 
     /**
