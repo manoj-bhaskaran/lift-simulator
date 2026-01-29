@@ -120,8 +120,9 @@ public class ArtefactService {
             throw new ResourceNotFoundException("Artefact not found: " + relativePath);
         }
 
-        String fileName = artefactPath.getFileName() != null
-            ? artefactPath.getFileName().toString()
+        Path fileNamePath = artefactPath.getFileName();
+        String fileName = fileNamePath != null
+            ? fileNamePath.toString()
             : relativePath;
         long size = Files.size(artefactPath);
         String mimeType = Files.probeContentType(artefactPath);
