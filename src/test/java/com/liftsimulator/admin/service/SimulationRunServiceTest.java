@@ -329,13 +329,14 @@ public class SimulationRunServiceTest {
     @Test
     public void testUpdateProgress_Success() {
         when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
-        when(runRepository.save(any(SimulationRun.class))).thenReturn(mockRun);
+        when(runRepository.saveAndFlush(any(SimulationRun.class))).thenReturn(mockRun);
 
         SimulationRun result = runService.updateProgress(1L, 500L);
 
         assertNotNull(result);
+        assertEquals(500L, mockRun.getCurrentTick());
         verify(runRepository).findById(1L);
-        verify(runRepository).save(any(SimulationRun.class));
+        verify(runRepository).saveAndFlush(any(SimulationRun.class));
     }
 
     @Test
