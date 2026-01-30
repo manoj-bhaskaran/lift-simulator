@@ -13,6 +13,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
@@ -310,17 +311,21 @@ public class SimulationRunService {
 
     /**
      * Update the progress of a running simulation.
+     * Uses REQUIRES_NEW propagation to ensure a fresh transaction is created,
+     * which is important when called from async threads. Uses saveAndFlush
+     * to ensure the update is immediately written to the database for
+     * visibility by other transactions (e.g., polling requests).
      *
      * @param id the run id
      * @param currentTick the current tick number
      * @return the updated run
      * @throws ResourceNotFoundException if the run is not found
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public SimulationRun updateProgress(Long id, Long currentTick) {
         SimulationRun run = getRunById(id);
-        run.updateProgress(currentTick);
-        return runRepository.save(run);
+        run.setCurrentTick(currentTick);
+        return runRepository.saveAndFlush(run);
     }
 
     /**
