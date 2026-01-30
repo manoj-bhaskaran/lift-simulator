@@ -323,9 +323,11 @@ public class SimulationRunService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public SimulationRun updateProgress(Long id, Long currentTick) {
-        SimulationRun run = getRunById(id);
-        run.setCurrentTick(currentTick);
-        return runRepository.saveAndFlush(run);
+        int updated = runRepository.updateCurrentTick(id, currentTick);
+        if (updated == 0) {
+            throw new ResourceNotFoundException("Simulation run not found with id: " + id);
+        }
+        return getRunById(id);
     }
 
     /**

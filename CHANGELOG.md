@@ -7,7 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-
 ## [0.45.0] - 2026-02-01
 
 ### Added
@@ -97,6 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Run Simulator Artefacts**: Added a dedicated artefact download endpoint with secure path validation and improved UI error feedback when downloads fail.
+- Ensure simulation run progress ticks persist during execution so the UI progress bar and tick counter advance while runs are active.
 - **Run Simulator**: Fixed scenario dropdown to only show scenarios belonging to the selected Lift System Version. Previously, all scenarios were shown regardless of version compatibility, leading to backend validation errors when incompatible scenarios were selected. The dropdown now filters scenarios by `liftSystemVersionId` and automatically clears the selection when switching to a version that doesn't have the currently selected scenario. Added helpful messages when no version is selected or no scenarios are available for the selected version.
 - **Scenario Builder - Advanced JSON Mode**: Fixed critical bug where updates made in Advanced JSON Mode were not persisted after clicking "Validate" then "Update Scenario". The form state was not synchronized with the JSON text editor, causing old values to be sent to the backend. Now `buildScenarioJson()` correctly parses the JSON text when in Advanced JSON Mode, and both validate and save operations sync the parsed JSON back to form state for consistency.
 - **Scenario Builder**: Add clear selection styling for quick start templates on the Create Scenario screen.

@@ -3,6 +3,7 @@ package com.liftsimulator.admin.repository;
 import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.entity.SimulationRun.RunStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -140,4 +141,15 @@ public interface SimulationRunRepository extends JpaRepository<SimulationRun, Lo
      * @return total number of runs with the given status
      */
     long countByStatus(RunStatus status);
+
+    /**
+     * Update the current tick for a simulation run.
+     *
+     * @param id the run id
+     * @param currentTick the current tick
+     * @return number of rows updated
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE SimulationRun r SET r.currentTick = :currentTick WHERE r.id = :id")
+    int updateCurrentTick(@Param("id") Long id, @Param("currentTick") Long currentTick);
 }
