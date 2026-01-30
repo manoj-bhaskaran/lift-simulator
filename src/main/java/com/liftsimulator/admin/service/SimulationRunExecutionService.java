@@ -296,12 +296,13 @@ public class SimulationRunExecutionService {
             engine.tick();
             metrics.recordTerminalRequests(currentTick);
 
+            long progressTick = tick + 1L;
             if (tick % PROGRESS_UPDATE_INTERVAL == 0) {
-                runService.updateProgress(runId, engine.getCurrentTick());
+                runService.updateProgress(runId, progressTick);
             }
         }
 
-        runService.updateProgress(runId, engine.getCurrentTick());
+        runService.updateProgress(runId, (long) scenario.durationTicks());
         log(logWriter, "Simulation completed at tick " + engine.getCurrentTick());
         metrics.recordTerminalRequests(engine.getCurrentTick());
         return metrics;
