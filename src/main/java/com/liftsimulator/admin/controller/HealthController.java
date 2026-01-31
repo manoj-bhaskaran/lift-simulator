@@ -14,7 +14,7 @@ import java.util.Map;
  * Note: Spring Boot Actuator also provides /actuator/health endpoint.
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 public class HealthController {
 
     @GetMapping("/health")
