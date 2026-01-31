@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.46.0] - 2026-02-01
+
+### Added
+- **API Versioning**: Introduced URL-based API versioning with `/api/v1` prefix
+  - All REST endpoints now available under `/api/v1` path
+  - Updated all controllers: HealthController, LiftSystemController, LiftSystemVersionController, ScenarioController, SimulationRunController, ConfigValidationController, RuntimeConfigController
+  - Frontend API client updated to use versioned base URL (`/api/v1`)
+  - All integration tests updated with versioned endpoints
+  - All E2E tests updated with versioned endpoints
+  - ADR-0018 documents API versioning strategy and lifecycle policy
+  - Version support policy: Each major version supported for minimum 6 months after next version release
+  - Clear path for future API evolution and breaking changes
+
+### Changed
+- **Breaking Change**: API endpoints moved from `/api/*` to `/api/v1/*`
+  - This is a breaking change for any external API clients
+  - Frontend automatically uses new versioned endpoints
+  - All tests updated to use versioned paths
+
 ## [0.45.0] - 2026-02-01
 
 ### Added
