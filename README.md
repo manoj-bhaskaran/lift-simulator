@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.45.0**
+Current version: **0.46.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -267,14 +267,30 @@ To package the React UI with the Spring Boot backend and serve everything from *
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.45.0.jar
+java -jar target/lift-simulator-0.46.0.jar
 ```
 
-This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api`.
+This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api/v1`.
 
 ### Backend API
 
 The Spring Boot backend service (`Lift Config Service`) provides a RESTful API for managing lift simulator configurations.
+
+#### API Versioning
+
+The API uses URL-based versioning with the `/api/v1` prefix. All endpoints are versioned to ensure:
+- **Backwards compatibility**: Existing clients continue working when new features are added
+- **Stable contracts**: Each API version maintains a consistent contract
+- **Gradual migration**: Clients can migrate to new versions at their own pace
+- **Clear evolution**: Breaking changes are introduced in new versions (e.g., v2) without affecting v1
+
+**Version Support Policy:**
+- Each major version is supported for a minimum of 6 months after the next version is released
+- Deprecated APIs include warnings in documentation
+- Breaking changes are only allowed in new major versions
+- Bug fixes are applied to all supported versions
+
+See [ADR-0018](docs/decisions/0018-api-versioning-with-url-prefix.md) for detailed versioning strategy.
 
 #### Running the Backend
 
@@ -288,7 +304,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.45.0.jar
+java -jar target/lift-simulator-0.46.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -297,7 +313,7 @@ The backend will start on `http://localhost:8080`.
 
 #### Lift System Management
 
-- **Create Lift System**: `POST /api/lift-systems`
+- **Create Lift System**: `POST /api/v1/lift-systems`
   - Creates a new lift system configuration
   - Request body:
     ```json
@@ -320,7 +336,7 @@ The backend will start on `http://localhost:8080`.
     }
     ```
 
-- **List All Lift Systems**: `GET /api/lift-systems`
+- **List All Lift Systems**: `GET /api/v1/lift-systems`
   - Returns all lift systems
   - Response (200 OK):
     ```json
@@ -337,7 +353,7 @@ The backend will start on `http://localhost:8080`.
     ]
     ```
 
-- **Get Lift System by ID**: `GET /api/lift-systems/{id}`
+- **Get Lift System by ID**: `GET /api/v1/lift-systems/{id}`
   - Returns a specific lift system by ID
   - Response (200 OK): Same as create response (includes `versionCount`)
   - Error (404 Not Found):
@@ -349,7 +365,7 @@ The backend will start on `http://localhost:8080`.
     }
     ```
 
-- **Update Lift System**: `PUT /api/lift-systems/{id}`
+- **Update Lift System**: `PUT /api/v1/lift-systems/{id}`
   - Updates lift system metadata (display name and description)
   - Request body:
     ```json
@@ -361,14 +377,14 @@ The backend will start on `http://localhost:8080`.
   - Response (200 OK): Updated lift system details
   - Note: System key cannot be changed after creation
 
-- **Delete Lift System**: `DELETE /api/lift-systems/{id}`
+- **Delete Lift System**: `DELETE /api/v1/lift-systems/{id}`
   - Deletes a lift system and all its versions (cascade delete)
   - Response (204 No Content): Success with no body
   - Error (404 Not Found): If lift system doesn't exist
 
 #### Version Management
 
-- **Create Version**: `POST /api/lift-systems/{systemId}/versions`
+- **Create Version**: `POST /api/v1/lift-systems/{systemId}/versions`
   - Creates a new version for a lift system
   - Optionally clones configuration from an existing version
   - Request body (with new config):
@@ -401,7 +417,7 @@ The backend will start on `http://localhost:8080`.
     ```
   - Version numbers auto-increment per lift system
 
-- **Update Version Config**: `PUT /api/lift-systems/{systemId}/versions/{versionNumber}`
+- **Update Version Config**: `PUT /api/v1/lift-systems/{systemId}/versions/{versionNumber}`
   - Updates the configuration JSON for a specific version
   - Request body:
     ```json
@@ -411,7 +427,7 @@ The backend will start on `http://localhost:8080`.
     ```
   - Response (200 OK): Updated version details
 
-- **List Versions**: `GET /api/lift-systems/{systemId}/versions`
+- **List Versions**: `GET /api/v1/lift-systems/{systemId}/versions`
   - Returns all versions for a lift system, ordered by version number descending
   - Response (200 OK):
     ```json
@@ -441,12 +457,12 @@ The backend will start on `http://localhost:8080`.
     ]
     ```
 
-- **Get Version**: `GET /api/lift-systems/{systemId}/versions/{versionNumber}`
+- **Get Version**: `GET /api/v1/lift-systems/{systemId}/versions/{versionNumber}`
   - Returns a specific version by version number
   - Response (200 OK): Version details
   - Error (404 Not Found): If version doesn't exist
 
-- **Publish Version**: `POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`
+- **Publish Version**: `POST /api/v1/lift-systems/{systemId}/versions/{versionNumber}/publish`
   - Publishes a version after validating its configuration
   - Automatically archives any previously published version for the same lift system
   - Ensures exactly one published version per lift system at any given time
@@ -461,7 +477,7 @@ The backend will start on `http://localhost:8080`.
 
 The backend includes a comprehensive validation framework for lift system configurations. All configurations are validated before being saved or published.
 
-- **Validate Configuration**: `POST /api/config/validate`
+- **Validate Configuration**: `POST /api/v1/config/validate`
   - Validates a configuration JSON without persisting it
   - Request body:
     ```json
@@ -507,7 +523,7 @@ The backend includes a comprehensive validation framework for lift system config
 
 Scenario payloads define passenger flow for UI-driven simulation runs. The scenario schema is separate from the batch `.scenario` files used by the CLI.
 
-- **Create Scenario**: `POST /api/scenarios`
+- **Create Scenario**: `POST /api/v1/scenarios`
   - Saves a scenario JSON payload after validation
   - Request body:
     ```json
@@ -547,18 +563,18 @@ Scenario payloads define passenger flow for UI-driven simulation runs. The scena
     }
     ```
 
-- **Update Scenario**: `PUT /api/scenarios/{id}`
+- **Update Scenario**: `PUT /api/v1/scenarios/{id}`
   - Updates an existing scenario payload after validation
   - Request body: same as create
   - Response (200 OK): Updated scenario details
 
-- **Get Scenario**: `GET /api/scenarios/{id}`
+- **Get Scenario**: `GET /api/v1/scenarios/{id}`
   - Returns a stored scenario by ID
   - Response (200 OK): Scenario details
 
 #### Scenario Validation
 
-- **Validate Scenario**: `POST /api/scenarios/validate`
+- **Validate Scenario**: `POST /api/v1/scenarios/validate`
   - Validates a scenario JSON payload without saving it
   - Request body:
     ```json
@@ -604,7 +620,7 @@ Scenario payloads define passenger flow for UI-driven simulation runs. The scena
 
 Simulation runs execute asynchronously using stored lift system configurations and UI scenarios.
 
-- **Start Simulation Run**: `POST /api/simulation-runs`
+- **Start Simulation Run**: `POST /api/v1/simulation-runs`
   - Creates a run record, writes input artefacts, and launches the simulation asynchronously.
   - Request body:
     ```json
@@ -633,7 +649,7 @@ Simulation runs execute asynchronously using stored lift system configurations a
     }
     ```
 
-- **Get Simulation Run**: `GET /api/simulation-runs/{id}`
+- **Get Simulation Run**: `GET /api/v1/simulation-runs/{id}`
   - Returns the current status, progress, and artefact location.
 
 Run artefacts are stored on disk using the configured `simulation.runs.artefacts-root` directory
@@ -879,9 +895,9 @@ All lift system configurations must conform to the following structure:
 **Automatic Validation:**
 
 Validation is automatically performed when:
-- Creating a new version (`POST /api/lift-systems/{systemId}/versions`)
-- Updating a version's configuration (`PUT /api/lift-systems/{systemId}/versions/{versionNumber}`)
-- Publishing a version (`POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`)
+- Creating a new version (`POST /api/v1/lift-systems/{systemId}/versions`)
+- Updating a version's configuration (`PUT /api/v1/lift-systems/{systemId}/versions/{versionNumber}`)
+- Publishing a version (`POST /api/v1/lift-systems/{systemId}/versions/{versionNumber}/publish`)
 
 If validation fails with errors, the operation will be rejected with a 400 Bad Request response containing detailed error information.
 
@@ -920,7 +936,7 @@ The Simulation Run APIs enable UI to start simulations, poll their status, and a
 
 ##### Create and Start Simulation Run
 
-**Endpoint:** `POST /api/simulation-runs`
+**Endpoint:** `POST /api/v1/simulation-runs`
 
 Creates a new simulation run, sets up the artefact directory, and immediately starts execution.
 
@@ -969,7 +985,7 @@ Creates a new simulation run, sets up the artefact directory, and immediately st
 
 ##### Get Simulation Run Status
 
-**Endpoint:** `GET /api/simulation-runs/{id}`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}`
 
 Retrieves the current status and details of a simulation run, including progress information.
 
@@ -1008,7 +1024,7 @@ Retrieves the current status and details of a simulation run, including progress
 
 ##### Cancel Simulation Run
 
-**Endpoint:** `POST /api/simulation-runs/{id}/cancel`
+**Endpoint:** `POST /api/v1/simulation-runs/{id}/cancel`
 
 Cancels a running simulation run and transitions it to a terminal `CANCELLED` state.
 
@@ -1043,7 +1059,7 @@ Cancels a running simulation run and transitions it to a terminal `CANCELLED` st
 
 ##### Get Simulation Results
 
-**Endpoint:** `GET /api/simulation-runs/{id}/results`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}/results`
 
 Retrieves the results of a simulation run. Response varies based on run status.
 
@@ -1116,7 +1132,7 @@ Retrieves the results of a simulation run. Response varies based on run status.
 
 ##### Get Simulation Logs
 
-**Endpoint:** `GET /api/simulation-runs/{id}/logs?tail=N`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}/logs?tail=N`
 
 Retrieves simulation logs with optional tail functionality.
 
@@ -1160,7 +1176,7 @@ curl http://localhost:8080/api/simulation-runs/1/logs?tail=100
 
 ##### List Simulation Artefacts
 
-**Endpoint:** `GET /api/simulation-runs/{id}/artefacts`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}/artefacts`
 
 Lists all artefacts (downloadable files) associated with a simulation run.
 
@@ -1210,7 +1226,7 @@ Lists all artefacts (downloadable files) associated with a simulation run.
 
 ##### Download Simulation Artefact
 
-**Endpoint:** `GET /api/simulation-runs/{id}/artefacts/{path}`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}/artefacts/{path}`
 
 Downloads a specific artefact file for a simulation run. The `{path}` value should match the
 `path` field returned by the artefact list endpoint.
@@ -1287,7 +1303,7 @@ The command-line interface remains **fully backward compatible** with previous v
 Run a simulation using a `.scenario` file:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   path/to/scenario.scenario
 ```
@@ -1301,12 +1317,12 @@ If no scenario file is provided, uses `demo.scenario` from the classpath.
 **Example:**
 ```bash
 # Run with a specific scenario file
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   my-test-scenario.scenario
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain
 ```
 
@@ -1345,7 +1361,7 @@ idle_timeout_ticks: 5
 Run a simulation using a JSON configuration file:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.runtime.LocalSimulationMain \
   --config=path/to/config.json \
   --ticks=100
@@ -1358,7 +1374,7 @@ java -cp target/lift-simulator-0.45.0.jar \
 
 **Example:**
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.runtime.LocalSimulationMain \
   --config=building-a.json \
   --ticks=1000
@@ -1369,7 +1385,7 @@ java -cp target/lift-simulator-0.45.0.jar \
 Run a quick demo simulation with built-in configuration:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.Main \
   --strategy=directional-scan
 ```
@@ -1643,7 +1659,7 @@ You can reproduce any UI-driven run using the CLI by downloading the generated i
 
 4. **Run via CLI**
    ```bash
-   java -cp target/lift-simulator-0.45.0.jar \
+   java -cp target/lift-simulator-0.46.0.jar \
      com.liftsimulator.scenario.ScenarioRunnerMain \
      run-42-reproduction.scenario
    ```
@@ -1688,7 +1704,7 @@ curl -X POST http://localhost:8080/api/batch/generate-input \
 **3. Run the scenario:**
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   run-42-reproduction.scenario
 ```
@@ -1780,7 +1796,7 @@ Where `run-123-inputs.json` contains:
 **2. Run via CLI:**
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   morning-rush-reproduction.scenario
 ```
@@ -2117,7 +2133,7 @@ seed must be a valid integer
 
 The backend provides dedicated runtime APIs for retrieving published configurations. These APIs are read-only and return only configurations with `PUBLISHED` status.
 
-- **Get Published Configuration**: `GET /api/runtime/systems/{systemKey}/config`
+- **Get Published Configuration**: `GET /api/v1/runtime/systems/{systemKey}/config`
   - Retrieves the currently published configuration for a lift system by system key
   - Returns the latest published version
   - Response (200 OK):
@@ -2141,7 +2157,7 @@ The backend provides dedicated runtime APIs for retrieving published configurati
     }
     ```
 
-- **Get Specific Published Version**: `GET /api/runtime/systems/{systemKey}/versions/{versionNumber}`
+- **Get Specific Published Version**: `GET /api/v1/runtime/systems/{systemKey}/versions/{versionNumber}`
   - Retrieves a specific version by system key and version number
   - Only returns the version if it is currently published
   - Response (200 OK): Same format as above
@@ -2157,7 +2173,7 @@ The backend provides dedicated runtime APIs for retrieving published configurati
     }
     ```
 
-- **Launch Local Simulator**: `POST /api/runtime/systems/{systemKey}/simulate`
+- **Launch Local Simulator**: `POST /api/v1/runtime/systems/{systemKey}/simulate`
   - Writes the published configuration to a temporary JSON file
   - Spawns a local simulator process using the configuration
   - Response (200 OK):
@@ -2195,7 +2211,7 @@ The backend provides dedicated runtime APIs for retrieving published configurati
 
 #### Health & Monitoring
 
-- **Custom Health Check**: `GET /api/health`
+- **Custom Health Check**: `GET /api/v1/health`
   - Returns custom health status with service name and timestamp
 - **Actuator Health**: `GET /actuator/health`
   - Returns detailed Spring Boot actuator health information
@@ -2509,7 +2525,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.45.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.46.0.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -2949,7 +2965,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.45.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.46.0.jar`.
 
 ## Running Tests
 
@@ -3003,7 +3019,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -3012,16 +3028,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -3035,7 +3051,7 @@ The demo runs a pre-configured scenario with several lift requests and displays 
 Use a published configuration JSON file to run a lightweight simulation:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 
 Optional flags:
@@ -3053,7 +3069,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -3062,13 +3078,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**

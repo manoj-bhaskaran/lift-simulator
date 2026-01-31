@@ -24,7 +24,7 @@ import java.util.List;
  * REST controller for managing scenarios.
  */
 @RestController
-@RequestMapping("/api/scenarios")
+@RequestMapping("/api/v1/scenarios")
 public class ScenarioController {
 
     private final ScenarioService scenarioService;

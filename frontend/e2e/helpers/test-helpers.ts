@@ -248,7 +248,7 @@ export async function waitForBackend(page: Page, timeoutMs: number = 10000): Pro
 
   while (Date.now() - startTime < timeoutMs) {
     try {
-      const response = await page.request.get('http://localhost:8080/api/health');
+      const response = await page.request.get('http://localhost:8080/api/v1/health');
       if (response.ok()) {
         return true;
       }
@@ -267,7 +267,7 @@ export async function waitForBackend(page: Page, timeoutMs: number = 10000): Pro
  */
 export async function isBackendAvailable(page: Page): Promise<boolean> {
   try {
-    const response = await page.request.get('http://localhost:8080/api/health');
+    const response = await page.request.get('http://localhost:8080/api/v1/health');
     return response.ok();
   } catch (error) {
     return false;

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
  * REST controller for validating lift system configurations.
  */
 @RestController
-@RequestMapping("/api/config")
+@RequestMapping("/api/v1/config")
 public class ConfigValidationController {
 
     private final ConfigValidationService configValidationService;

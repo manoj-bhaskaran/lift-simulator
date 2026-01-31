@@ -23,7 +23,7 @@ import java.util.List;
  * REST controller for managing lift systems.
  */
 @RestController
-@RequestMapping("/api/lift-systems")
+@RequestMapping("/api/v1/lift-systems")
 public class LiftSystemController {
 
     private final LiftSystemService liftSystemService;

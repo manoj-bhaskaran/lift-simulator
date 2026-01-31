@@ -57,7 +57,7 @@ test.describe('Health Check', () => {
     }
 
     // Step 4: Verify API endpoint directly
-    const response = await page.request.get('http://localhost:8080/api/health');
+    const response = await page.request.get('http://localhost:8080/api/v1/health');
 
     // Verify HTTP 200 response
     expect(response.ok()).toBe(true);
@@ -103,7 +103,7 @@ test.describe('Health Check', () => {
   });
 
   test('Health check API returns structured JSON', async ({ page }) => {
-    const response = await page.request.get('http://localhost:8080/api/health');
+    const response = await page.request.get('http://localhost:8080/api/v1/health');
 
     expect(response.ok()).toBe(true);
 

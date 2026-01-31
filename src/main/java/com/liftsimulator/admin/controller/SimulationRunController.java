@@ -36,7 +36,7 @@ import java.util.Map;
  * REST controller for managing simulation runs.
  */
 @RestController
-@RequestMapping("/api/simulation-runs")
+@RequestMapping("/api/v1/simulation-runs")
 public class SimulationRunController {
 
     private final SimulationRunService simulationRunService;
@@ -59,7 +59,7 @@ public class SimulationRunController {
 
     /**
      * Lists all simulation runs with optional filtering.
-     * Endpoint: GET /api/simulation-runs
+     * Endpoint: GET /api/v1/simulation-runs
      *
      * @param systemId optional filter by lift system ID
      * @param status optional filter by run status (CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED)
@@ -79,7 +79,7 @@ public class SimulationRunController {
 
     /**
      * Creates and starts a new simulation run.
-     * Endpoint: POST /api/simulation-runs
+     * Endpoint: POST /api/v1/simulation-runs
      *
      * @param request the creation request containing liftSystemId, versionId, scenarioId (optional),
      *                seed (optional)
@@ -101,7 +101,7 @@ public class SimulationRunController {
 
     /**
      * Retrieves the status and details of a simulation run.
-     * Endpoint: GET /api/simulation-runs/{id}
+     * Endpoint: GET /api/v1/simulation-runs/{id}
      *
      * @param id the run ID
      * @return the simulation run details including status, timestamps, and progress
@@ -115,7 +115,7 @@ public class SimulationRunController {
 
     /**
      * Cancels a running simulation run.
-     * Endpoint: POST /api/simulation-runs/{id}/cancel
+     * Endpoint: POST /api/v1/simulation-runs/{id}/cancel
      *
      * @param id the run ID
      * @return the updated simulation run details
@@ -129,7 +129,7 @@ public class SimulationRunController {
 
     /**
      * Retrieves the results of a simulation run.
-     * Endpoint: GET /api/simulation-runs/{id}/results
+     * Endpoint: GET /api/v1/simulation-runs/{id}/results
      *
      * Returns:
      * - 200 with structured results JSON when SUCCEEDED
@@ -174,7 +174,7 @@ public class SimulationRunController {
 
     /**
      * Retrieves the logs of a simulation run.
-     * Endpoint: GET /api/simulation-runs/{id}/logs?tail=N
+     * Endpoint: GET /api/v1/simulation-runs/{id}/logs?tail=N
      *
      * @param id the run ID
      * @param tail optional number of lines to retrieve from the end of the log (default: all lines)
@@ -206,7 +206,7 @@ public class SimulationRunController {
 
     /**
      * Lists all artefacts (downloadable files) associated with a simulation run.
-     * Endpoint: GET /api/simulation-runs/{id}/artefacts
+     * Endpoint: GET /api/v1/simulation-runs/{id}/artefacts
      *
      * @param id the run ID
      * @return list of artefact information including name, path, size, and mime type
@@ -226,7 +226,7 @@ public class SimulationRunController {
 
     /**
      * Downloads a specific artefact file associated with a simulation run.
-     * Endpoint: GET /api/simulation-runs/{id}/artefacts/{path}
+     * Endpoint: GET /api/v1/simulation-runs/{id}/artefacts/{path}
      *
      * @param id the run ID
      * @param path the artefact path relative to the run artefact directory

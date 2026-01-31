@@ -97,7 +97,7 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
                 4242L
         );
 
-        MvcResult createResult = mockMvc.perform(post("/api/simulation-runs")
+        MvcResult createResult = mockMvc.perform(post("/api/v1/simulation-runs")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -134,7 +134,7 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
 
         boolean completed = false;
         for (int i = 0; i < 20; i++) {
-            MvcResult pollResult = mockMvc.perform(get("/api/simulation-runs/" + runId))
+            MvcResult pollResult = mockMvc.perform(get("/api/v1/simulation-runs/" + runId))
                     .andExpect(status().isOk())
                     .andReturn();
             JsonNode pollJson = objectMapper.readTree(pollResult.getResponse().getContentAsString());
@@ -149,11 +149,11 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
 
         assertTrue(completed, "Run should reach SUCCEEDED status while polling");
 
-        mockMvc.perform(get("/api/simulation-runs/" + runId + "/results"))
+        mockMvc.perform(get("/api/v1/simulation-runs/" + runId + "/results"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCEEDED"))
                 .andExpect(jsonPath("$.results.runSummary.status").value("SUCCEEDED"))
                 .andExpect(jsonPath("$.results.kpis.passengersServed").value(1))
-                .andExpect(jsonPath("$.logsUrl").value("/api/simulation-runs/" + runId + "/logs"));
+                .andExpect(jsonPath("$.logsUrl").value("/api/v1/simulation-runs/" + runId + "/logs"));
     }
 }
