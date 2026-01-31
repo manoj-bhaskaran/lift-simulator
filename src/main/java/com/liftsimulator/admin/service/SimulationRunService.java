@@ -312,9 +312,8 @@ public class SimulationRunService {
     /**
      * Update the progress of a running simulation.
      * Uses REQUIRES_NEW propagation to ensure a fresh transaction is created,
-     * which is important when called from async threads. Uses saveAndFlush
-     * to ensure the update is immediately written to the database for
-     * visibility by other transactions (e.g., polling requests).
+     * which is important when called from async threads. Uses a targeted UPDATE
+     * query to avoid overwriting concurrent status changes (e.g., cancel/fail/succeed).
      *
      * @param id the run id
      * @param currentTick the current tick number
