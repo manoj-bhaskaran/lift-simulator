@@ -10,6 +10,8 @@ import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.ScenarioRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,9 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 @Transactional(readOnly = true)
 public class SimulationRunService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final SimulationRunRepository runRepository;
     private final LiftSystemRepository liftSystemRepository;
@@ -326,7 +331,11 @@ public class SimulationRunService {
         if (updated == 0) {
             throw new ResourceNotFoundException("Simulation run not found with id: " + id);
         }
-        return getRunById(id);
+        // Clear the persistence context to ensure fresh read from database
+        entityManager.clear();
+        // Retrieve the updated entity from database
+        SimulationRun run = getRunById(id);
+        return run;
     }
 
     /**
