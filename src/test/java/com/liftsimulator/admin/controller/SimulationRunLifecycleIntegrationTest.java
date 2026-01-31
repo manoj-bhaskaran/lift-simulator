@@ -30,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -40,6 +41,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @AutoConfigureMockMvc
 public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest {
+
+    // Test credentials from application-test.yml
+    private static final String TEST_ADMIN_USER = "testadmin";
+    private static final String TEST_ADMIN_PASSWORD = "testpassword";
 
     @TempDir
     static Path artefactsRoot;
@@ -98,6 +103,7 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
         );
 
         MvcResult createResult = mockMvc.perform(post("/api/simulation-runs")
+                        .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -134,7 +140,8 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
 
         boolean completed = false;
         for (int i = 0; i < 20; i++) {
-            MvcResult pollResult = mockMvc.perform(get("/api/simulation-runs/" + runId))
+            MvcResult pollResult = mockMvc.perform(get("/api/simulation-runs/" + runId)
+                            .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
                     .andExpect(status().isOk())
                     .andReturn();
             JsonNode pollJson = objectMapper.readTree(pollResult.getResponse().getContentAsString());
@@ -149,7 +156,8 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
 
         assertTrue(completed, "Run should reach SUCCEEDED status while polling");
 
-        mockMvc.perform(get("/api/simulation-runs/" + runId + "/results"))
+        mockMvc.perform(get("/api/simulation-runs/" + runId + "/results")
+                        .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCEEDED"))
                 .andExpect(jsonPath("$.results.runSummary.status").value("SUCCEEDED"))

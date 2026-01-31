@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.46.0] - 2026-01-31
+
+### Added
+- **Spring Security Baseline**: Introduced authentication for all admin and runtime APIs
+  - **HTTP Basic Authentication**: Admin APIs (`/api/**` except `/api/health`) require HTTP Basic authentication with environment-configured username and password
+  - **API Key Authentication**: Runtime APIs (`/api/runtime/**`) require API key authentication via `X-API-Key` header for machine-to-machine communication
+  - **Role-Based Access Control**: Admin users have `ADMIN` role; runtime API clients have `RUNTIME` role
+  - **Consistent Error Responses**: Unauthenticated requests return HTTP 401 with standard JSON error payload (`status`, `message`, `timestamp`)
+  - **Stateless Sessions**: No session cookies; each request must include credentials
+  - **CSRF Disabled**: Appropriate for stateless REST APIs
+- **Security Configuration**: Added `SecurityConfig` class with three security filter chains:
+  - Runtime API filter chain (Order 1) for API key authentication
+  - Admin API filter chain (Order 2) for HTTP Basic authentication
+  - Public filter chain (Order 3) for static assets and SPA routes
+- **API Key Filter**: Implemented `ApiKeyAuthenticationFilter` for validating `X-API-Key` header on runtime endpoints
+- **Custom Authentication Entry Point**: `CustomAuthenticationEntryPoint` returns JSON error responses matching application's standard error format
+- **Security Properties**: Added configurable security settings in `application.properties`:
+  - `security.admin.username` - Admin username (default: `admin`, override: `ADMIN_USERNAME` env var)
+  - `security.admin.password` - Admin password (required, override: `ADMIN_PASSWORD` env var)
+  - `security.api-key` - Runtime API key (required, override: `API_KEY` env var)
+- **Authentication Tests**: Added comprehensive test suite for security configuration:
+  - Health endpoint accessibility without authentication
+  - Admin API authentication requirements (valid/invalid credentials)
+  - Runtime API authentication requirements (valid/invalid API keys)
+  - Actuator endpoint accessibility
+  - Error response format verification
+- **Documentation**: Added Authentication section in README with:
+  - Configuration instructions for admin credentials and API keys
+  - Usage examples with curl
+  - Environment variable alternatives
+  - Security best practices
+
+### Changed
+- **Breaking: All admin APIs now require authentication**: Requests to `/api/**` endpoints (except `/api/health`) must include HTTP Basic credentials
+- **Breaking: All runtime APIs now require API key**: Requests to `/api/runtime/**` endpoints must include `X-API-Key` header
+- Updated all controller integration tests to use HTTP Basic authentication
+- Updated `GlobalExceptionHandlerValidationTest` to work with Spring Security
+
+### Security
+- All administrative API endpoints are now protected with HTTP Basic authentication
+- Runtime configuration endpoints are protected with API key authentication
+- Public endpoints (health, actuator, static assets) remain accessible without authentication
+
 ## [0.45.0] - 2026-02-01
 
 ### Added

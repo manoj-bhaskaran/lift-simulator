@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -36,6 +37,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 public class SimulationRunControllerTest extends LocalIntegrationTest {
+
+    // Test credentials from application-test.yml
+    private static final String TEST_ADMIN_USER = "testadmin";
+    private static final String TEST_ADMIN_PASSWORD = "testpassword";
 
     @Autowired
     private MockMvc mockMvc;
@@ -98,6 +103,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         );
 
         mockMvc.perform(post("/api/simulation-runs")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
@@ -120,6 +126,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         );
 
         mockMvc.perform(post("/api/simulation-runs")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isNotFound())
@@ -131,6 +138,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         String invalidRequest = "{}";
 
         mockMvc.perform(post("/api/simulation-runs")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidRequest))
             .andExpect(status().isBadRequest());
@@ -141,7 +149,8 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         SimulationRun run = new SimulationRun(testSystem, testVersion);
         run = runRepository.save(run);
 
-        mockMvc.perform(get("/api/simulation-runs/" + run.getId()))
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(run.getId()))
             .andExpect(jsonPath("$.liftSystemId").value(testSystem.getId()))
@@ -151,7 +160,8 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
 
     @Test
     public void testGetSimulationRun_NotFound() throws Exception {
-        mockMvc.perform(get("/api/simulation-runs/999"))
+        mockMvc.perform(get("/api/simulation-runs/999")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("Simulation run not found with id: 999"));
     }
@@ -162,7 +172,8 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         run.start();
         run = runRepository.save(run);
 
-        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results"))
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.runId").value(run.getId()))
             .andExpect(jsonPath("$.status").value("RUNNING"))
@@ -176,7 +187,8 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         run.fail("Test error message");
         run = runRepository.save(run);
 
-        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results"))
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.runId").value(run.getId()))
             .andExpect(jsonPath("$.status").value("FAILED"))
@@ -189,7 +201,8 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         SimulationRun run = new SimulationRun(testSystem, testVersion);
         run = runRepository.save(run);
 
-        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results"))
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.status").value("CREATED"));
     }
@@ -208,7 +221,8 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Path resultsFile = artefactDir.resolve("results.json");
         Files.writeString(resultsFile, "{\"totalPassengersServed\": 100, \"averageWaitTime\": 15.5}");
 
-        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results"))
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.runId").value(run.getId()))
             .andExpect(jsonPath("$.status").value("SUCCEEDED"))
@@ -230,7 +244,8 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Path artefactDir = Paths.get(run.getArtefactBasePath());
         Files.createDirectories(artefactDir);
 
-        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results"))
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.runId").value(run.getId()))
             .andExpect(jsonPath("$.status").value("SUCCEEDED"))
@@ -244,7 +259,8 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         SimulationRun run = new SimulationRun(testSystem, testVersion);
         run = runRepository.save(run);
 
-        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/logs"))
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/logs")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.error").value("Failed to read logs: Artefact base path is not set for run "
                     + run.getId()));
@@ -262,7 +278,8 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Path logFile = artefactDir.resolve("simulation.log");
         Files.writeString(logFile, "Line 1\nLine 2\nLine 3\n");
 
-        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/logs?tail=2"))
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/logs?tail=2")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.runId").value(run.getId().toString()))
             .andExpect(jsonPath("$.logs").value("Line 2\nLine 3"))
@@ -278,7 +295,8 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         // Create empty artefact directory
         Files.createDirectories(Paths.get(run.getArtefactBasePath()));
 
-        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/artefacts"))
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/artefacts")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$").isArray())
             .andExpect(jsonPath("$.length()").value(0));
@@ -296,7 +314,8 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Files.writeString(artefactDir.resolve("results.json"), "{\"test\": \"data\"}");
         Files.writeString(artefactDir.resolve("simulation.log"), "Log content");
 
-        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/artefacts"))
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/artefacts")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$").isArray())
             .andExpect(jsonPath("$.length()").value(2));
@@ -313,7 +332,8 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Path resultsFile = artefactDir.resolve("results.json");
         Files.writeString(resultsFile, "{\"ok\": true}");
 
-        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/artefacts/results.json"))
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/artefacts/results.json")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk())
             .andExpect(header().string("Content-Disposition", "attachment; filename=\"results.json\""))
             .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -329,7 +349,8 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Path artefactDir = Paths.get(run.getArtefactBasePath());
         Files.createDirectories(artefactDir);
 
-        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/artefacts/missing.json"))
+        mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/artefacts/missing.json")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("Artefact not found: missing.json"));
     }
