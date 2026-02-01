@@ -1,6 +1,6 @@
 # ADR-0022: Explicit CORS and CSRF Policy for Frontend Integration
 
-**Date**: 2026-02-15
+**Date**: 2026-02-01
 
 **Status**: Accepted
 
