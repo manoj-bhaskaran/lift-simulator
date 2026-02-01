@@ -81,6 +81,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - API key authentication for runtime configuration and simulation execution endpoints, including configurable header and environment-backed key support.
+- Explicit CORS configuration with configurable allowed origins, methods, headers, and credentials for frontend-backend interaction.
+- CSRF policy configuration with explicit defaults for stateless API usage.
+- Integration tests covering CORS preflight acceptance and rejection scenarios.
+
+### Security
+- Documented CORS and CSRF policies to ensure predictable cross-origin and request forgery behavior in production.
 
 ## [0.45.0] - 2026-02-01
 
