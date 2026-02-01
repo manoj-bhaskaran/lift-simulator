@@ -2252,6 +2252,101 @@ The backend is configured via `src/main/resources/application.properties`:
 - Logging level: `INFO` (root), `DEBUG` (com.liftsimulator package)
 - Actuator endpoints: health, info
 
+### Authentication
+
+The backend requires authentication for API access. Two authentication mechanisms are supported:
+
+#### Admin APIs (HTTP Basic Authentication)
+
+Admin APIs (`/api/**` except `/api/health`) require HTTP Basic authentication with username and password.
+
+**Configuration:**
+
+1. **Edit** `src/main/resources/application-dev.yml` and set your admin credentials:
+   ```yaml
+   security:
+     admin:
+       username: admin              # Default username
+       password: YOUR_SECURE_PASSWORD  # REQUIRED: Set a secure password
+   ```
+
+2. **Alternative: Environment Variables**
+   ```bash
+   export ADMIN_USERNAME=admin
+   export ADMIN_PASSWORD=your_secure_password
+   mvn spring-boot:run
+   ```
+
+**Usage with curl:**
+```bash
+# Access admin APIs with HTTP Basic authentication
+curl -u admin:your_password http://localhost:8080/api/lift-systems
+
+# Or using explicit Authorization header
+curl -H "Authorization: Basic $(echo -n 'admin:your_password' | base64)" \
+     http://localhost:8080/api/lift-systems
+```
+
+#### Runtime APIs (API Key Authentication)
+
+Runtime APIs (`/api/runtime/**`) require API key authentication via the `X-API-Key` header.
+
+**Configuration:**
+
+1. **Edit** `src/main/resources/application-dev.yml` and set your API key:
+   ```yaml
+   security:
+     api-key: YOUR_SECURE_API_KEY  # REQUIRED: Generate a secure random key
+   ```
+
+2. **Generate a secure API key:**
+   ```bash
+   # Generate a 32-byte random hex key
+   openssl rand -hex 32
+   ```
+
+3. **Alternative: Environment Variables**
+   ```bash
+   export API_KEY=your_secure_api_key
+   mvn spring-boot:run
+   ```
+
+**Usage with curl:**
+```bash
+# Access runtime APIs with API key
+curl -H "X-API-Key: your_api_key" \
+     http://localhost:8080/api/runtime/systems/my-system/config
+```
+
+#### Public Endpoints (No Authentication Required)
+
+The following endpoints do not require authentication:
+
+- `/api/health` - Application health check
+- `/actuator/health` - Spring Boot Actuator health
+- `/actuator/info` - Application information
+- Static assets and frontend routes
+
+#### Error Responses
+
+Unauthenticated requests return HTTP 401 with a consistent JSON error payload:
+
+```json
+{
+  "status": 401,
+  "message": "Authentication required",
+  "timestamp": "2026-01-31T12:00:00Z"
+}
+```
+
+#### Security Best Practices
+
+1. **Never commit credentials**: Keep `application-dev.yml` out of version control
+2. **Use strong passwords**: At least 16 characters with mixed case, numbers, and symbols
+3. **Rotate API keys**: Change API keys periodically, especially after team changes
+4. **Use environment variables in production**: Avoid storing secrets in files
+5. **Use HTTPS in production**: HTTP Basic credentials are only base64-encoded, not encrypted
+
 ### Logging
 
 The backend uses Logback for comprehensive logging with both console and file output.

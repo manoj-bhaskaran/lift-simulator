@@ -37,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Integration test for simulation run lifecycle (start -> poll -> results).
+ * Simulation run endpoints use API key authentication (not HTTP Basic).
  */
 @AutoConfigureMockMvc
 public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest {

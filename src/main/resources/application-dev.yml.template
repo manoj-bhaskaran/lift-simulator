@@ -71,3 +71,21 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.flywaydb: INFO
     com.zaxxer.hikari: INFO
+
+# Security Configuration
+# Override with environment variables: ADMIN_USERNAME, ADMIN_PASSWORD, API_KEY
+security:
+  admin:
+    # Admin username for HTTP Basic authentication
+    # Override with: ADMIN_USERNAME environment variable
+    username: ${ADMIN_USERNAME:admin}
+
+    # Admin password for HTTP Basic authentication
+    # REQUIRED: Replace 'CHANGE_ME' with a secure password
+    # Override with: ADMIN_PASSWORD environment variable
+    password: ${ADMIN_PASSWORD:CHANGE_ME}
+
+  # API key for runtime endpoint authentication (X-API-Key header)
+  # REQUIRED: Generate a secure random key (e.g., openssl rand -hex 32)
+  # Override with: API_KEY environment variable
+  api-key: ${API_KEY:CHANGE_ME}

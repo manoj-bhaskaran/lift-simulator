@@ -32,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Integration tests for SimulationRunController.
+ * Simulation run endpoints use API key authentication (not HTTP Basic).
  */
 @AutoConfigureMockMvc
 @Transactional

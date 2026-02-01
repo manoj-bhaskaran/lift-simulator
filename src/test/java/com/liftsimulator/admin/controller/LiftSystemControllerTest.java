@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -28,6 +29,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 public class LiftSystemControllerTest extends LocalIntegrationTest {
+
+    // Test credentials from application-test.yml
+    private static final String TEST_ADMIN_USER = "testadmin";
+    private static final String TEST_ADMIN_PASSWORD = "testpassword";
 
     @Autowired
     private MockMvc mockMvc;
@@ -52,6 +57,7 @@ public class LiftSystemControllerTest extends LocalIntegrationTest {
         );
 
         mockMvc.perform(post("/api/lift-systems")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
@@ -75,6 +81,7 @@ public class LiftSystemControllerTest extends LocalIntegrationTest {
         );
 
         mockMvc.perform(post("/api/lift-systems")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
@@ -90,6 +97,7 @@ public class LiftSystemControllerTest extends LocalIntegrationTest {
         );
 
         mockMvc.perform(post("/api/lift-systems")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
@@ -102,7 +110,8 @@ public class LiftSystemControllerTest extends LocalIntegrationTest {
         liftSystemRepository.save(new LiftSystem("system-1", "System 1", "Description 1"));
         liftSystemRepository.save(new LiftSystem("system-2", "System 2", "Description 2"));
 
-        mockMvc.perform(get("/api/lift-systems"))
+        mockMvc.perform(get("/api/lift-systems")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(2)))
             .andExpect(jsonPath("$[0].systemKey").exists())
@@ -114,7 +123,8 @@ public class LiftSystemControllerTest extends LocalIntegrationTest {
         LiftSystem system = new LiftSystem("test-system", "Test System", "Test Description");
         LiftSystem saved = liftSystemRepository.save(system);
 
-        mockMvc.perform(get("/api/lift-systems/{id}", saved.getId()))
+        mockMvc.perform(get("/api/lift-systems/{id}", saved.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(saved.getId()))
             .andExpect(jsonPath("$.systemKey").value("test-system"))
@@ -124,7 +134,8 @@ public class LiftSystemControllerTest extends LocalIntegrationTest {
 
     @Test
     public void testGetLiftSystemById_NotFound() throws Exception {
-        mockMvc.perform(get("/api/lift-systems/{id}", 999L))
+        mockMvc.perform(get("/api/lift-systems/{id}", 999L)
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("Lift system not found with id: 999"));
     }
@@ -140,6 +151,7 @@ public class LiftSystemControllerTest extends LocalIntegrationTest {
         );
 
         mockMvc.perform(put("/api/lift-systems/{id}", saved.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -157,6 +169,7 @@ public class LiftSystemControllerTest extends LocalIntegrationTest {
         );
 
         mockMvc.perform(put("/api/lift-systems/{id}", 999L)
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isNotFound())
@@ -168,17 +181,20 @@ public class LiftSystemControllerTest extends LocalIntegrationTest {
         LiftSystem system = new LiftSystem("test-system", "Test System", "Test Description");
         LiftSystem saved = liftSystemRepository.save(system);
 
-        mockMvc.perform(delete("/api/lift-systems/{id}", saved.getId()))
+        mockMvc.perform(delete("/api/lift-systems/{id}", saved.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isNoContent());
 
         // Verify deletion
-        mockMvc.perform(get("/api/lift-systems/{id}", saved.getId()))
+        mockMvc.perform(get("/api/lift-systems/{id}", saved.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isNotFound());
     }
 
     @Test
     public void testDeleteLiftSystem_NotFound() throws Exception {
-        mockMvc.perform(delete("/api/lift-systems/{id}", 999L))
+        mockMvc.perform(delete("/api/lift-systems/{id}", 999L)
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("Lift system not found with id: 999"));
     }
