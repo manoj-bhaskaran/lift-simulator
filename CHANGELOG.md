@@ -47,6 +47,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Usage examples with curl
   - Environment variable alternatives
   - Security best practices
+- **Role-Based Access Control (RBAC)**: Implemented granular authorization for admin operations
+  - **ADMIN role**: Full access to all operations (read and write)
+  - **VIEWER role**: Read-only access (GET requests only)
+  - **Authorization rules**: GET requests allowed for ADMIN and VIEWER; POST, PUT, DELETE, PATCH restricted to ADMIN
+  - **HTTP 403 responses**: Unauthorized access returns consistent JSON error payload (`status`, `message`, `timestamp`)
+  - **Multi-user configuration**: Support for configuring multiple users with different roles via `security.users` property
+  - **Backward compatibility**: Legacy single-admin configuration (`security.admin.*`) still supported
+  - **New classes**: `SecurityUsersProperties` for multi-user config, `CustomAccessDeniedHandler` for 403 responses
+  - **RBAC tests**: Added comprehensive tests for VIEWER restrictions and 403 scenarios
+  - **Documentation**: ADR-0021 (Role-Based Access Control) and README updated with RBAC section
 
 ### Changed
 - **Breaking: All API endpoints now use `/api/v1` prefix**: All API consumers must update their base URL from `/api` to `/api/v1`
@@ -64,6 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Runtime configuration and simulation run endpoints are protected with API key authentication
 - Public endpoints (health, actuator, static assets) remain accessible without authentication
 - **Startup validation**: Application fails to start if admin password is empty or not configured, preventing insecure deployments
+- **Role-based authorization**: Write operations (POST, PUT, DELETE, PATCH) restricted to ADMIN role; VIEWER role limited to read-only access
+- **403 Forbidden responses**: Authenticated users attempting unauthorized operations receive clear JSON error responses
 
 ## [0.46.0] - 2026-02-15
 

@@ -2352,6 +2352,71 @@ Unauthenticated requests return HTTP 401 with a consistent JSON error payload:
 }
 ```
 
+Unauthorized access (authenticated user lacking permission) returns HTTP 403 Forbidden:
+
+```json
+{
+  "status": 403,
+  "message": "Access denied",
+  "timestamp": "2026-02-01T12:00:00Z"
+}
+```
+
+#### Role-Based Access Control (RBAC)
+
+The Admin APIs support role-based access control with two roles:
+
+| Role | Description | Permissions |
+|------|-------------|-------------|
+| **ADMIN** | Full administrative access | Read and write all resources |
+| **VIEWER** | Read-only access | View configurations, scenarios, and results |
+
+**Authorization Rules:**
+
+| HTTP Method | Required Role | Examples |
+|-------------|---------------|----------|
+| GET | ADMIN or VIEWER | List systems, view scenarios, get results |
+| POST | ADMIN only | Create systems, create scenarios |
+| PUT | ADMIN only | Update configurations |
+| DELETE | ADMIN only | Delete systems, delete scenarios |
+| PATCH | ADMIN only | Partial updates |
+
+**Multi-User Configuration:**
+
+Configure multiple users with different roles in `application-dev.yml`:
+
+```yaml
+security:
+  users:
+    - username: admin
+      password: YOUR_ADMIN_PASSWORD
+      role: ADMIN
+    - username: viewer
+      password: YOUR_VIEWER_PASSWORD
+      role: VIEWER
+```
+
+Or using environment variables with the legacy single-admin configuration:
+
+```bash
+export ADMIN_USERNAME=admin
+export ADMIN_PASSWORD=your_secure_password
+```
+
+**Usage with curl:**
+
+```bash
+# Admin user can create resources
+curl -u admin:adminpass -X POST \
+     -H "Content-Type: application/json" \
+     -d '{"systemKey": "test", "displayName": "Test"}' \
+     http://localhost:8080/api/v1/lift-systems
+
+# Viewer user can read but not write
+curl -u viewer:viewerpass http://localhost:8080/api/v1/lift-systems  # OK (200)
+curl -u viewer:viewerpass -X POST ...  # Forbidden (403)
+```
+
 #### Security Best Practices
 
 1. **Never commit credentials**: Keep `application-dev.yml` out of version control
