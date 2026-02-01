@@ -38,3 +38,14 @@ api:
   auth:
     key: test-api-key
     header: X-API-Key
+
+# Security configuration for tests
+# Multi-user configuration with ADMIN and VIEWER roles for RBAC testing
+security:
+  users:
+    - username: testadmin
+      password: testpassword
+      role: ADMIN
+    - username: testviewer
+      password: viewerpassword
+      role: VIEWER

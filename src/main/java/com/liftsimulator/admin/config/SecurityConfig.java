@@ -17,10 +17,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Spring Security configuration for the Lift Simulator application.
@@ -29,11 +33,24 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
  * <ul>
  *   <li><strong>Admin APIs</strong> ({@code /api/v1/**} excluding runtime and simulation-runs):
  *       HTTP Basic authentication with environment-configured username and password.
- *       Role-based access control with ADMIN role.</li>
+ *       Role-based access control with ADMIN and VIEWER roles.</li>
  *   <li><strong>Runtime APIs</strong> ({@code /api/v1/runtime/**}): API key authentication via
  *       {@code X-API-Key} header for machine-to-machine communication.</li>
  *   <li><strong>Simulation Run APIs</strong> ({@code /api/v1/simulation-runs/**}): API key authentication
  *       via {@code X-API-Key} header for CLI tools and automation.</li>
+ * </ul>
+ *
+ * <p>Role-based access control (RBAC):
+ * <ul>
+ *   <li><strong>ADMIN</strong>: Full access to all operations (read and write)</li>
+ *   <li><strong>VIEWER</strong>: Read-only access (GET requests only)</li>
+ * </ul>
+ *
+ * <p>Authorization rules for Admin APIs:
+ * <ul>
+ *   <li>GET requests: Allowed for ADMIN and VIEWER roles</li>
+ *   <li>POST, PUT, DELETE, PATCH requests: Restricted to ADMIN role only</li>
+ *   <li>Unauthorized access returns HTTP 403 Forbidden</li>
  * </ul>
  *
  * <p>Public endpoints (no authentication required):
@@ -48,11 +65,14 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
  *   <li>Stateless session management (no session cookies)</li>
  *   <li>CSRF disabled (appropriate for stateless REST APIs)</li>
  *   <li>Custom error responses using {@link CustomAuthenticationEntryPoint}</li>
+ *   <li>Custom access denied handler using {@link CustomAccessDeniedHandler}</li>
  *   <li>WWW-Authenticate header for HTTP Basic challenges (RFC 7235)</li>
  * </ul>
  *
  * @see CustomAuthenticationEntryPoint
+ * @see CustomAccessDeniedHandler
  * @see ApiKeyAuthenticationFilter
+ * @see SecurityUsersProperties
  */
 @Configuration
 @EnableWebSecurity
@@ -68,6 +88,12 @@ public class SecurityConfig {
 
     @Value("${security.api-key:}")
     private String apiKey;
+
+    private final SecurityUsersProperties securityUsersProperties;
+
+    public SecurityConfig(SecurityUsersProperties securityUsersProperties) {
+        this.securityUsersProperties = securityUsersProperties;
+    }
 
     /**
      * Authentication entry point for Admin API endpoints.
@@ -85,6 +111,16 @@ public class SecurityConfig {
     @Bean
     public AuthenticationEntryPoint apiKeyAuthenticationEntryPoint() {
         return new CustomAuthenticationEntryPoint();
+    }
+
+    /**
+     * Access denied handler for authorization failures.
+     * Returns HTTP 403 with JSON error response when authenticated users
+     * attempt operations they are not authorized to perform.
+     */
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler() {
+        return new CustomAccessDeniedHandler();
     }
 
     /**
@@ -126,8 +162,15 @@ public class SecurityConfig {
 
     /**
      * Security filter chain for Admin API endpoints.
-     * Uses HTTP Basic authentication with ADMIN role requirement.
-     * Includes WWW-Authenticate header in 401 responses per RFC 7235.
+     * Uses HTTP Basic authentication with role-based access control.
+     *
+     * <p>Authorization rules:
+     * <ul>
+     *   <li>GET requests: Allowed for ADMIN and VIEWER roles</li>
+     *   <li>POST, PUT, DELETE, PATCH requests: Restricted to ADMIN role only</li>
+     * </ul>
+     *
+     * <p>Includes WWW-Authenticate header in 401 responses per RFC 7235.
      * Processed second (Order 2) after API key filter chain.
      */
     @Bean
@@ -138,11 +181,14 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exceptions -> exceptions
-                .authenticationEntryPoint(adminAuthenticationEntryPoint()))
+                .authenticationEntryPoint(adminAuthenticationEntryPoint())
+                .accessDeniedHandler(accessDeniedHandler()))
             .httpBasic(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/health").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/**").hasRole("ADMIN")
+                // Read operations allowed for both ADMIN and VIEWER roles
+                .requestMatchers(HttpMethod.GET, "/api/v1/**").hasAnyRole("ADMIN", "VIEWER")
+                // Write operations restricted to ADMIN role only
                 .requestMatchers(HttpMethod.POST, "/api/v1/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/v1/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/**").hasRole("ADMIN")
@@ -184,30 +230,71 @@ public class SecurityConfig {
     }
 
     /**
-     * In-memory user details service for admin authentication.
-     * Creates a single admin user with credentials from configuration.
+     * In-memory user details service for authentication.
      *
-     * <p>The admin user has the ADMIN role, which is required for all admin API operations.
+     * <p>Supports two configuration modes:
+     * <ol>
+     *   <li><strong>Multi-user mode</strong> (via {@code security.users}): Configure multiple users
+     *       with different roles (ADMIN or VIEWER) for local development.</li>
+     *   <li><strong>Legacy single-user mode</strong> (via {@code security.admin.*}): Single admin user
+     *       with ADMIN role for backward compatibility.</li>
+     * </ol>
      *
-     * <p>Fails startup if the admin password is not configured to prevent insecure deployments.
+     * <p>When {@code security.users} is configured, those users take precedence.
+     * Otherwise, falls back to the legacy single admin user configuration.
      *
-     * @return UserDetailsService with configured admin user
-     * @throws IllegalStateException if admin password is empty or not configured
+     * <p>Fails startup if no users are configured to prevent insecure deployments.
+     *
+     * @return UserDetailsService with configured users
+     * @throws IllegalStateException if no users are configured
+     * @see SecurityUsersProperties
      */
     @Bean
     public UserDetailsService userDetailsService() {
-        if (adminPassword == null || adminPassword.isBlank()) {
-            throw new IllegalStateException(
-                "Admin password must be configured. Set security.admin.password property " +
-                "or ADMIN_PASSWORD environment variable.");
+        List<UserDetails> users = new ArrayList<>();
+        PasswordEncoder encoder = passwordEncoder();
+
+        // Check for multi-user configuration first
+        List<SecurityUsersProperties.UserProperties> configuredUsers = securityUsersProperties.getUsers();
+        if (configuredUsers != null && !configuredUsers.isEmpty()) {
+            for (SecurityUsersProperties.UserProperties userProps : configuredUsers) {
+                if (userProps.getUsername() == null || userProps.getUsername().isBlank()) {
+                    throw new IllegalStateException("Username must be configured for each user in security.users");
+                }
+                if (userProps.getPassword() == null || userProps.getPassword().isBlank()) {
+                    throw new IllegalStateException(
+                        "Password must be configured for user: " + userProps.getUsername());
+                }
+                String role = userProps.getRole();
+                if (role == null || role.isBlank()) {
+                    role = "VIEWER"; // Default to least privilege
+                }
+                // Normalize role (remove ROLE_ prefix if present)
+                if (role.startsWith("ROLE_")) {
+                    role = role.substring(5);
+                }
+                UserDetails user = User.builder()
+                    .username(userProps.getUsername())
+                    .password(encoder.encode(userProps.getPassword()))
+                    .roles(role.toUpperCase())
+                    .build();
+                users.add(user);
+            }
+        } else {
+            // Fall back to legacy single admin user configuration
+            if (adminPassword == null || adminPassword.isBlank()) {
+                throw new IllegalStateException(
+                    "Admin password must be configured. Set security.admin.password property, " +
+                    "ADMIN_PASSWORD environment variable, or configure users via security.users.");
+            }
+            UserDetails admin = User.builder()
+                .username(adminUsername)
+                .password(encoder.encode(adminPassword))
+                .roles("ADMIN")
+                .build();
+            users.add(admin);
         }
 
-        UserDetails admin = User.builder()
-            .username(adminUsername)
-            .password(passwordEncoder().encode(adminPassword))
-            .roles("ADMIN")
-            .build();
-
-        return new InMemoryUserDetailsManager(admin);
+        return new InMemoryUserDetailsManager(users);
     }
 }

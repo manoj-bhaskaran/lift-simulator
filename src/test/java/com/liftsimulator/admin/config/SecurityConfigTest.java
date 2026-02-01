@@ -10,8 +10,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -19,6 +21,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Integration tests for Spring Security configuration.
  * Tests authentication and authorization for admin and runtime APIs.
+ *
+ * <p>Test coverage includes:
+ * <ul>
+ *   <li>Authentication (HTTP Basic, API Key)</li>
+ *   <li>Role-based access control (ADMIN vs VIEWER roles)</li>
+ *   <li>Authorization failures (HTTP 403 responses)</li>
+ *   <li>Error response format consistency</li>
+ * </ul>
  */
 @AutoConfigureMockMvc
 public class SecurityConfigTest extends LocalIntegrationTest {
@@ -29,7 +39,9 @@ public class SecurityConfigTest extends LocalIntegrationTest {
     // Test credentials from application-test.yml
     private static final String TEST_ADMIN_USER = "testadmin";
     private static final String TEST_ADMIN_PASSWORD = "testpassword";
-    private static final String TEST_API_KEY = "test-api-key-12345";
+    private static final String TEST_VIEWER_USER = "testviewer";
+    private static final String TEST_VIEWER_PASSWORD = "viewerpassword";
+    private static final String TEST_API_KEY = "test-api-key";
 
     // ========== Health Endpoint Tests ==========
 
@@ -84,6 +96,122 @@ public class SecurityConfigTest extends LocalIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(validSystemJson))
             .andExpect(status().isCreated());
+    }
+
+    // ========== Role-Based Access Control (RBAC) Tests ==========
+
+    @Test
+    void viewerRole_GetRequest_ReturnsOk() throws Exception {
+        // VIEWER role should be able to perform GET requests
+        mockMvc.perform(get("/api/v1/lift-systems")
+                .with(httpBasic(TEST_VIEWER_USER, TEST_VIEWER_PASSWORD)))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void viewerRole_PostRequest_Returns403() throws Exception {
+        // VIEWER role should NOT be able to perform POST requests
+        String validSystemJson = """
+            {
+                "systemKey": "test-viewer-system",
+                "displayName": "Test Viewer System",
+                "description": "A test system for viewer role tests"
+            }
+            """;
+
+        mockMvc.perform(post("/api/v1/lift-systems")
+                .with(httpBasic(TEST_VIEWER_USER, TEST_VIEWER_PASSWORD))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(validSystemJson))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.status", is(403)))
+            .andExpect(jsonPath("$.message", is("Access denied")))
+            .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void viewerRole_PutRequest_Returns403() throws Exception {
+        // VIEWER role should NOT be able to perform PUT requests
+        String updateJson = """
+            {
+                "displayName": "Updated Name",
+                "description": "Updated description"
+            }
+            """;
+
+        mockMvc.perform(put("/api/v1/lift-systems/999")
+                .with(httpBasic(TEST_VIEWER_USER, TEST_VIEWER_PASSWORD))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateJson))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.status", is(403)))
+            .andExpect(jsonPath("$.message", is("Access denied")));
+    }
+
+    @Test
+    void viewerRole_DeleteRequest_Returns403() throws Exception {
+        // VIEWER role should NOT be able to perform DELETE requests
+        mockMvc.perform(delete("/api/v1/lift-systems/999")
+                .with(httpBasic(TEST_VIEWER_USER, TEST_VIEWER_PASSWORD)))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.status", is(403)))
+            .andExpect(jsonPath("$.message", is("Access denied")));
+    }
+
+    @Test
+    void adminRole_GetRequest_ReturnsOk() throws Exception {
+        // ADMIN role should be able to perform GET requests
+        mockMvc.perform(get("/api/v1/lift-systems")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void adminRole_DeleteRequest_AllowedButNotFound() throws Exception {
+        // ADMIN role should be able to attempt DELETE (404 is expected for non-existent resource)
+        mockMvc.perform(delete("/api/v1/lift-systems/999")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void viewerRole_ScenarioPostRequest_Returns403() throws Exception {
+        // VIEWER cannot create scenarios
+        String scenarioJson = """
+            {
+                "name": "Test Scenario",
+                "description": "Test scenario for RBAC",
+                "scenario": {"passengers": []}
+            }
+            """;
+
+        mockMvc.perform(post("/api/v1/scenarios")
+                .with(httpBasic(TEST_VIEWER_USER, TEST_VIEWER_PASSWORD))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(scenarioJson))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.status", is(403)));
+    }
+
+    @Test
+    void viewerRole_ScenarioGetRequest_ReturnsOk() throws Exception {
+        // VIEWER can list scenarios
+        mockMvc.perform(get("/api/v1/scenarios")
+                .with(httpBasic(TEST_VIEWER_USER, TEST_VIEWER_PASSWORD)))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void forbiddenResponse_HasConsistentFormat() throws Exception {
+        // Verify 403 response format matches the error response structure
+        mockMvc.perform(post("/api/v1/lift-systems")
+                .with(httpBasic(TEST_VIEWER_USER, TEST_VIEWER_PASSWORD))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.status").isNumber())
+            .andExpect(jsonPath("$.message").isString())
+            .andExpect(jsonPath("$.timestamp").isString());
     }
 
     // ========== Runtime API Authentication Tests ==========
