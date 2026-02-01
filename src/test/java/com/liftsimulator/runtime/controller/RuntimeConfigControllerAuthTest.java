@@ -43,7 +43,7 @@ class RuntimeConfigControllerAuthTest {
 
     @Test
     void runtimeEndpointsRequireApiKey() throws Exception {
-        mockMvc.perform(get("/api/runtime/systems/test-system/config"))
+        mockMvc.perform(get("/api/v1/runtime/systems/test-system/config"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -57,7 +57,7 @@ class RuntimeConfigControllerAuthTest {
                         "{\"minFloor\":0,\"maxFloor\":10}",
                         OffsetDateTime.parse("2026-02-10T12:00:00Z")));
 
-        mockMvc.perform(get("/api/runtime/systems/test-system/config")
+        mockMvc.perform(get("/api/v1/runtime/systems/test-system/config")
                         .header(API_KEY_HEADER, API_KEY_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.systemKey").value("test-system"))
@@ -69,7 +69,7 @@ class RuntimeConfigControllerAuthTest {
         when(runtimeSimulationService.launchPublishedSimulation("test-system"))
                 .thenReturn(new SimulationLaunchResponse(true, "started", 42L));
 
-        mockMvc.perform(post("/api/runtime/systems/test-system/simulate")
+        mockMvc.perform(post("/api/v1/runtime/systems/test-system/simulate")
                         .header(API_KEY_HEADER, API_KEY_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))

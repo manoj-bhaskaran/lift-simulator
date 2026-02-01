@@ -35,7 +35,7 @@ public class SecurityConfigTest extends LocalIntegrationTest {
 
     @Test
     void healthEndpoint_NoAuth_ReturnsOk() throws Exception {
-        mockMvc.perform(get("/api/health"))
+        mockMvc.perform(get("/api/v1/health"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("UP"));
     }
@@ -44,7 +44,7 @@ public class SecurityConfigTest extends LocalIntegrationTest {
 
     @Test
     void adminApi_NoAuth_Returns401WithWwwAuthenticateHeader() throws Exception {
-        mockMvc.perform(get("/api/lift-systems"))
+        mockMvc.perform(get("/api/v1/lift-systems"))
             .andExpect(status().isUnauthorized())
             .andExpect(header().string("WWW-Authenticate", containsString("Basic realm=\"Lift Simulator Admin\"")))
             .andExpect(jsonPath("$.status", is(401)))
@@ -54,7 +54,7 @@ public class SecurityConfigTest extends LocalIntegrationTest {
 
     @Test
     void adminApi_InvalidCredentials_Returns401WithWwwAuthenticateHeader() throws Exception {
-        mockMvc.perform(get("/api/lift-systems")
+        mockMvc.perform(get("/api/v1/lift-systems")
                 .with(httpBasic("wronguser", "wrongpassword")))
             .andExpect(status().isUnauthorized())
             .andExpect(header().string("WWW-Authenticate", containsString("Basic realm=\"Lift Simulator Admin\"")))
@@ -64,7 +64,7 @@ public class SecurityConfigTest extends LocalIntegrationTest {
 
     @Test
     void adminApi_ValidCredentials_ReturnsOk() throws Exception {
-        mockMvc.perform(get("/api/lift-systems")
+        mockMvc.perform(get("/api/v1/lift-systems")
                 .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk());
     }
@@ -79,7 +79,7 @@ public class SecurityConfigTest extends LocalIntegrationTest {
             }
             """;
 
-        mockMvc.perform(post("/api/lift-systems")
+        mockMvc.perform(post("/api/v1/lift-systems")
                 .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(validSystemJson))
@@ -90,7 +90,7 @@ public class SecurityConfigTest extends LocalIntegrationTest {
 
     @Test
     void runtimeApi_NoApiKey_Returns401WithoutWwwAuthenticateHeader() throws Exception {
-        mockMvc.perform(get("/api/runtime/systems/test-system/config"))
+        mockMvc.perform(get("/api/v1/runtime/systems/test-system/config"))
             .andExpect(status().isUnauthorized())
             .andExpect(header().doesNotExist("WWW-Authenticate"))
             .andExpect(jsonPath("$.status", is(401)))
@@ -99,7 +99,7 @@ public class SecurityConfigTest extends LocalIntegrationTest {
 
     @Test
     void runtimeApi_InvalidApiKey_Returns401WithoutWwwAuthenticateHeader() throws Exception {
-        mockMvc.perform(get("/api/runtime/systems/test-system/config")
+        mockMvc.perform(get("/api/v1/runtime/systems/test-system/config")
                 .header("X-API-Key", "invalid-key"))
             .andExpect(status().isUnauthorized())
             .andExpect(header().doesNotExist("WWW-Authenticate"))
@@ -110,7 +110,7 @@ public class SecurityConfigTest extends LocalIntegrationTest {
     @Test
     void runtimeApi_ValidApiKey_ResourceNotFound_Returns404() throws Exception {
         // Valid API key but non-existent system
-        mockMvc.perform(get("/api/runtime/systems/nonexistent-system/config")
+        mockMvc.perform(get("/api/v1/runtime/systems/nonexistent-system/config")
                 .header("X-API-Key", TEST_API_KEY))
             .andExpect(status().isNotFound());
     }
@@ -118,7 +118,7 @@ public class SecurityConfigTest extends LocalIntegrationTest {
     @Test
     void runtimeApi_HttpBasicNotAccepted_Returns401() throws Exception {
         // Runtime API should not accept HTTP Basic auth
-        mockMvc.perform(get("/api/runtime/systems/test-system/config")
+        mockMvc.perform(get("/api/v1/runtime/systems/test-system/config")
                 .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isUnauthorized());
     }
@@ -141,7 +141,7 @@ public class SecurityConfigTest extends LocalIntegrationTest {
 
     @Test
     void unauthenticatedRequest_ReturnsConsistentErrorFormat() throws Exception {
-        mockMvc.perform(get("/api/lift-systems"))
+        mockMvc.perform(get("/api/v1/lift-systems"))
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.status").isNumber())
             .andExpect(jsonPath("$.message").isString())
@@ -153,7 +153,7 @@ public class SecurityConfigTest extends LocalIntegrationTest {
     @Test
     void adminApi_ApiKeyNotAccepted_Returns401() throws Exception {
         // Admin API should not accept API key auth
-        mockMvc.perform(get("/api/lift-systems")
+        mockMvc.perform(get("/api/v1/lift-systems")
                 .header("X-API-Key", TEST_API_KEY))
             .andExpect(status().isUnauthorized());
     }

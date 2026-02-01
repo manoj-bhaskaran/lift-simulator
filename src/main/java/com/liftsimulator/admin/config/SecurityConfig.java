@@ -27,18 +27,18 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
  *
  * <p>Configures authentication mechanisms:
  * <ul>
- *   <li><strong>Admin APIs</strong> ({@code /api/**} excluding runtime and simulation-runs):
+ *   <li><strong>Admin APIs</strong> ({@code /api/v1/**} excluding runtime and simulation-runs):
  *       HTTP Basic authentication with environment-configured username and password.
  *       Role-based access control with ADMIN role.</li>
- *   <li><strong>Runtime APIs</strong> ({@code /api/runtime/**}): API key authentication via
+ *   <li><strong>Runtime APIs</strong> ({@code /api/v1/runtime/**}): API key authentication via
  *       {@code X-API-Key} header for machine-to-machine communication.</li>
- *   <li><strong>Simulation Run APIs</strong> ({@code /api/simulation-runs/**}): API key authentication
+ *   <li><strong>Simulation Run APIs</strong> ({@code /api/v1/simulation-runs/**}): API key authentication
  *       via {@code X-API-Key} header for CLI tools and automation.</li>
  * </ul>
  *
  * <p>Public endpoints (no authentication required):
  * <ul>
- *   <li>{@code /api/health} - Application health check</li>
+ *   <li>{@code /api/v1/health} - Application health check</li>
  *   <li>{@code /actuator/**} - Spring Boot Actuator endpoints</li>
  *   <li>Static resources - Frontend assets</li>
  * </ul>
@@ -93,8 +93,8 @@ public class SecurityConfig {
      */
     private RequestMatcher apiKeyProtectedMatcher() {
         return new OrRequestMatcher(
-            new AntPathRequestMatcher("/api/runtime/**"),
-            new AntPathRequestMatcher("/api/simulation-runs/**")
+            new AntPathRequestMatcher("/api/v1/runtime/**"),
+            new AntPathRequestMatcher("/api/v1/simulation-runs/**")
         );
     }
 
@@ -134,19 +134,19 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain adminApiSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher("/api/**")
+            .securityMatcher("/api/v1/**")
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(adminAuthenticationEntryPoint()))
             .httpBasic(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/health").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PATCH, "/api/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/health").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/**").hasRole("ADMIN")
                 .anyRequest().authenticated());
 
         return http.build();

@@ -36,7 +36,7 @@ import java.util.Map;
  * REST controller for managing simulation runs.
  */
 @RestController
-@RequestMapping("/api/simulation-runs")
+@RequestMapping("/api/v1/simulation-runs")
 public class SimulationRunController {
 
     private final SimulationRunService simulationRunService;

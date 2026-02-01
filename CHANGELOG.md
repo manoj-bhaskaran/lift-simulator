@@ -10,9 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.46.0] - 2026-01-31
 
 ### Added
+- **URL-Based API Versioning**: Introduced `/api/v1` prefix for all REST endpoints to establish a stable API contract
+  - All endpoints now use versioned paths (e.g., `/api/v1/lift-systems`, `/api/v1/scenarios`, `/api/v1/runtime/systems/{key}/config`)
+  - Frontend updated to use versioned API base path (`/api/v1`)
+  - Vite development proxy configured for `/api/v1` endpoints
+  - Security filter chains updated to protect versioned endpoints
+  - All tests (backend and frontend E2E) updated to use versioned paths
+  - Versioning policy documented in ADR-0020 (URL-Based API Versioning)
+  - README updated with API versioning section and base URL documentation
 - **Spring Security Baseline**: Introduced authentication for all admin and runtime APIs
-  - **HTTP Basic Authentication**: Admin APIs (`/api/**` except `/api/health`) require HTTP Basic authentication with environment-configured username and password
-  - **API Key Authentication**: Runtime and Simulation APIs (`/api/runtime/**` and `/api/simulation-runs/**`) require API key authentication via `X-API-Key` header for machine-to-machine communication
+  - **HTTP Basic Authentication**: Admin APIs (`/api/v1/**` except `/api/v1/health`) require HTTP Basic authentication with environment-configured username and password
+  - **API Key Authentication**: Runtime and Simulation APIs (`/api/v1/runtime/**` and `/api/v1/simulation-runs/**`) require API key authentication via `X-API-Key` header for machine-to-machine communication
   - **Role-Based Access Control**: Admin users have `ADMIN` role; runtime API clients have `RUNTIME` role
   - **Consistent Error Responses**: Unauthenticated requests return HTTP 401 with standard JSON error payload (`status`, `message`, `timestamp`)
   - **Stateless Sessions**: No session cookies; each request must include credentials
@@ -41,8 +49,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Security best practices
 
 ### Changed
-- **Breaking: All admin APIs now require authentication**: Requests to `/api/**` endpoints (except `/api/health`, `/api/runtime/**`, and `/api/simulation-runs/**`) must include HTTP Basic credentials
-- **Breaking: All runtime and simulation APIs now require API key**: Requests to `/api/runtime/**` and `/api/simulation-runs/**` endpoints must include `X-API-Key` header
+- **Breaking: All API endpoints now use `/api/v1` prefix**: All API consumers must update their base URL from `/api` to `/api/v1`
+  - Frontend API client automatically uses new base URL
+  - Backend controllers updated with versioned request mappings
+  - Security configuration updated to protect versioned endpoints
+  - All tests updated to use versioned paths
+- **Breaking: All admin APIs now require authentication**: Requests to `/api/v1/**` endpoints (except `/api/v1/health`, `/api/v1/runtime/**`, and `/api/v1/simulation-runs/**`) must include HTTP Basic credentials
+- **Breaking: All runtime and simulation APIs now require API key**: Requests to `/api/v1/runtime/**` and `/api/v1/simulation-runs/**` endpoints must include `X-API-Key` header
 - Updated controller integration tests to use appropriate authentication (HTTP Basic for admin, API key for simulation)
 - Updated `GlobalExceptionHandlerValidationTest` to work with Spring Security
 
@@ -51,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Runtime configuration and simulation run endpoints are protected with API key authentication
 - Public endpoints (health, actuator, static assets) remain accessible without authentication
 - **Startup validation**: Application fails to start if admin password is empty or not configured, preventing insecure deployments
+
 ## [0.46.0] - 2026-02-15
 
 ### Added

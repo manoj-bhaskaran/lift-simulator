@@ -270,11 +270,24 @@ mvn -Pfrontend clean package
 java -jar target/lift-simulator-0.46.0.jar
 ```
 
-This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api`.
+This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api/v1`.
 
 ### Backend API
 
 The Spring Boot backend service (`Lift Config Service`) provides a RESTful API for managing lift simulator configurations.
+
+#### API Versioning
+
+All API endpoints are versioned using URL-based versioning with the `/api/v1` prefix. This ensures API stability and allows for future breaking changes without disrupting existing clients.
+
+**Current Version:** v1
+
+**Base URL:** `http://localhost:8080/api/v1`
+
+**Versioning Policy:**
+- Major version changes (v1 → v2) may introduce breaking changes
+- Within a major version, all changes are backward compatible
+- See [ADR-0020](docs/decisions/0020-url-based-api-versioning.md) for the complete versioning strategy
 
 #### Running the Backend
 
@@ -297,7 +310,7 @@ The backend will start on `http://localhost:8080`.
 
 #### Lift System Management
 
-- **Create Lift System**: `POST /api/lift-systems`
+- **Create Lift System**: `POST /api/v1/lift-systems`
   - Creates a new lift system configuration
   - Request body:
     ```json
@@ -320,7 +333,7 @@ The backend will start on `http://localhost:8080`.
     }
     ```
 
-- **List All Lift Systems**: `GET /api/lift-systems`
+- **List All Lift Systems**: `GET /api/v1/lift-systems`
   - Returns all lift systems
   - Response (200 OK):
     ```json
@@ -337,7 +350,7 @@ The backend will start on `http://localhost:8080`.
     ]
     ```
 
-- **Get Lift System by ID**: `GET /api/lift-systems/{id}`
+- **Get Lift System by ID**: `GET /api/v1/lift-systems/{id}`
   - Returns a specific lift system by ID
   - Response (200 OK): Same as create response (includes `versionCount`)
   - Error (404 Not Found):
@@ -349,7 +362,7 @@ The backend will start on `http://localhost:8080`.
     }
     ```
 
-- **Update Lift System**: `PUT /api/lift-systems/{id}`
+- **Update Lift System**: `PUT /api/v1/lift-systems/{id}`
   - Updates lift system metadata (display name and description)
   - Request body:
     ```json
@@ -361,14 +374,14 @@ The backend will start on `http://localhost:8080`.
   - Response (200 OK): Updated lift system details
   - Note: System key cannot be changed after creation
 
-- **Delete Lift System**: `DELETE /api/lift-systems/{id}`
+- **Delete Lift System**: `DELETE /api/v1/lift-systems/{id}`
   - Deletes a lift system and all its versions (cascade delete)
   - Response (204 No Content): Success with no body
   - Error (404 Not Found): If lift system doesn't exist
 
 #### Version Management
 
-- **Create Version**: `POST /api/lift-systems/{systemId}/versions`
+- **Create Version**: `POST /api/v1/lift-systems/{systemId}/versions`
   - Creates a new version for a lift system
   - Optionally clones configuration from an existing version
   - Request body (with new config):
@@ -401,7 +414,7 @@ The backend will start on `http://localhost:8080`.
     ```
   - Version numbers auto-increment per lift system
 
-- **Update Version Config**: `PUT /api/lift-systems/{systemId}/versions/{versionNumber}`
+- **Update Version Config**: `PUT /api/v1/lift-systems/{systemId}/versions/{versionNumber}`
   - Updates the configuration JSON for a specific version
   - Request body:
     ```json
@@ -411,7 +424,7 @@ The backend will start on `http://localhost:8080`.
     ```
   - Response (200 OK): Updated version details
 
-- **List Versions**: `GET /api/lift-systems/{systemId}/versions`
+- **List Versions**: `GET /api/v1/lift-systems/{systemId}/versions`
   - Returns all versions for a lift system, ordered by version number descending
   - Response (200 OK):
     ```json
@@ -441,12 +454,12 @@ The backend will start on `http://localhost:8080`.
     ]
     ```
 
-- **Get Version**: `GET /api/lift-systems/{systemId}/versions/{versionNumber}`
+- **Get Version**: `GET /api/v1/lift-systems/{systemId}/versions/{versionNumber}`
   - Returns a specific version by version number
   - Response (200 OK): Version details
   - Error (404 Not Found): If version doesn't exist
 
-- **Publish Version**: `POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`
+- **Publish Version**: `POST /api/v1/lift-systems/{systemId}/versions/{versionNumber}/publish`
   - Publishes a version after validating its configuration
   - Automatically archives any previously published version for the same lift system
   - Ensures exactly one published version per lift system at any given time
@@ -461,7 +474,7 @@ The backend will start on `http://localhost:8080`.
 
 The backend includes a comprehensive validation framework for lift system configurations. All configurations are validated before being saved or published.
 
-- **Validate Configuration**: `POST /api/config/validate`
+- **Validate Configuration**: `POST /api/v1/config/validate`
   - Validates a configuration JSON without persisting it
   - Request body:
     ```json
@@ -507,7 +520,7 @@ The backend includes a comprehensive validation framework for lift system config
 
 Scenario payloads define passenger flow for UI-driven simulation runs. The scenario schema is separate from the batch `.scenario` files used by the CLI.
 
-- **Create Scenario**: `POST /api/scenarios`
+- **Create Scenario**: `POST /api/v1/scenarios`
   - Saves a scenario JSON payload after validation
   - Request body:
     ```json
@@ -547,18 +560,18 @@ Scenario payloads define passenger flow for UI-driven simulation runs. The scena
     }
     ```
 
-- **Update Scenario**: `PUT /api/scenarios/{id}`
+- **Update Scenario**: `PUT /api/v1/scenarios/{id}`
   - Updates an existing scenario payload after validation
   - Request body: same as create
   - Response (200 OK): Updated scenario details
 
-- **Get Scenario**: `GET /api/scenarios/{id}`
+- **Get Scenario**: `GET /api/v1/scenarios/{id}`
   - Returns a stored scenario by ID
   - Response (200 OK): Scenario details
 
 #### Scenario Validation
 
-- **Validate Scenario**: `POST /api/scenarios/validate`
+- **Validate Scenario**: `POST /api/v1/scenarios/validate`
   - Validates a scenario JSON payload without saving it
   - Request body:
     ```json
@@ -604,7 +617,7 @@ Scenario payloads define passenger flow for UI-driven simulation runs. The scena
 
 Simulation runs execute asynchronously using stored lift system configurations and UI scenarios.
 
-- **Start Simulation Run**: `POST /api/simulation-runs`
+- **Start Simulation Run**: `POST /api/v1/simulation-runs`
   - Creates a run record, writes input artefacts, and launches the simulation asynchronously.
   - Request body:
     ```json
@@ -633,7 +646,7 @@ Simulation runs execute asynchronously using stored lift system configurations a
     }
     ```
 
-- **Get Simulation Run**: `GET /api/simulation-runs/{id}`
+- **Get Simulation Run**: `GET /api/v1/simulation-runs/{id}`
   - Returns the current status, progress, and artefact location.
 
 Run artefacts are stored on disk using the configured `simulation.runs.artefacts-root` directory
@@ -879,9 +892,9 @@ All lift system configurations must conform to the following structure:
 **Automatic Validation:**
 
 Validation is automatically performed when:
-- Creating a new version (`POST /api/lift-systems/{systemId}/versions`)
-- Updating a version's configuration (`PUT /api/lift-systems/{systemId}/versions/{versionNumber}`)
-- Publishing a version (`POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`)
+- Creating a new version (`POST /api/v1/lift-systems/{systemId}/versions`)
+- Updating a version's configuration (`PUT /api/v1/lift-systems/{systemId}/versions/{versionNumber}`)
+- Publishing a version (`POST /api/v1/lift-systems/{systemId}/versions/{versionNumber}/publish`)
 
 If validation fails with errors, the operation will be rejected with a 400 Bad Request response containing detailed error information.
 
@@ -953,7 +966,7 @@ The Simulation Run APIs enable UI to start simulations, poll their status, and a
 
 ##### Create and Start Simulation Run
 
-**Endpoint:** `POST /api/simulation-runs`
+**Endpoint:** `POST /api/v1/simulation-runs`
 
 Creates a new simulation run, sets up the artefact directory, and immediately starts execution.
 All simulation run endpoints require the configured API key header.
@@ -1003,7 +1016,7 @@ All simulation run endpoints require the configured API key header.
 
 ##### Get Simulation Run Status
 
-**Endpoint:** `GET /api/simulation-runs/{id}`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}`
 
 Retrieves the current status and details of a simulation run, including progress information.
 
@@ -1042,7 +1055,7 @@ Retrieves the current status and details of a simulation run, including progress
 
 ##### Cancel Simulation Run
 
-**Endpoint:** `POST /api/simulation-runs/{id}/cancel`
+**Endpoint:** `POST /api/v1/simulation-runs/{id}/cancel`
 
 Cancels a running simulation run and transitions it to a terminal `CANCELLED` state.
 
@@ -1077,7 +1090,7 @@ Cancels a running simulation run and transitions it to a terminal `CANCELLED` st
 
 ##### Get Simulation Results
 
-**Endpoint:** `GET /api/simulation-runs/{id}/results`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}/results`
 
 Retrieves the results of a simulation run. Response varies based on run status.
 
@@ -1150,7 +1163,7 @@ Retrieves the results of a simulation run. Response varies based on run status.
 
 ##### Get Simulation Logs
 
-**Endpoint:** `GET /api/simulation-runs/{id}/logs?tail=N`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}/logs?tail=N`
 
 Retrieves simulation logs with optional tail functionality.
 
@@ -1194,7 +1207,7 @@ curl http://localhost:8080/api/simulation-runs/1/logs?tail=100
 
 ##### List Simulation Artefacts
 
-**Endpoint:** `GET /api/simulation-runs/{id}/artefacts`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}/artefacts`
 
 Lists all artefacts (downloadable files) associated with a simulation run.
 
@@ -1244,7 +1257,7 @@ Lists all artefacts (downloadable files) associated with a simulation run.
 
 ##### Download Simulation Artefact
 
-**Endpoint:** `GET /api/simulation-runs/{id}/artefacts/{path}`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}/artefacts/{path}`
 
 Downloads a specific artefact file for a simulation run. The `{path}` value should match the
 `path` field returned by the artefact list endpoint.
@@ -2158,7 +2171,7 @@ curl -H "X-API-Key: replace-with-secure-key" \\
   http://localhost:8080/api/runtime/systems/building-a-lifts/config
 ```
 
-- **Get Published Configuration**: `GET /api/runtime/systems/{systemKey}/config`
+- **Get Published Configuration**: `GET /api/v1/runtime/systems/{systemKey}/config`
   - Retrieves the currently published configuration for a lift system by system key
   - Returns the latest published version
   - Response (200 OK):
@@ -2182,7 +2195,7 @@ curl -H "X-API-Key: replace-with-secure-key" \\
     }
     ```
 
-- **Get Specific Published Version**: `GET /api/runtime/systems/{systemKey}/versions/{versionNumber}`
+- **Get Specific Published Version**: `GET /api/v1/runtime/systems/{systemKey}/versions/{versionNumber}`
   - Retrieves a specific version by system key and version number
   - Only returns the version if it is currently published
   - Response (200 OK): Same format as above
@@ -2198,7 +2211,7 @@ curl -H "X-API-Key: replace-with-secure-key" \\
     }
     ```
 
-- **Launch Local Simulator**: `POST /api/runtime/systems/{systemKey}/simulate`
+- **Launch Local Simulator**: `POST /api/v1/runtime/systems/{systemKey}/simulate`
   - Writes the published configuration to a temporary JSON file
   - Spawns a local simulator process using the configuration
   - Response (200 OK):
@@ -2236,7 +2249,7 @@ curl -H "X-API-Key: replace-with-secure-key" \\
 
 #### Health & Monitoring
 
-- **Custom Health Check**: `GET /api/health`
+- **Custom Health Check**: `GET /api/v1/health`
   - Returns custom health status with service name and timestamp
 - **Actuator Health**: `GET /actuator/health`
   - Returns detailed Spring Boot actuator health information
