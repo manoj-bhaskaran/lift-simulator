@@ -2,7 +2,6 @@ package com.liftsimulator.admin.controller;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.liftsimulator.admin.config.CustomAuthenticationEntryPoint;
 import com.liftsimulator.admin.config.SecurityConfig;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
@@ -42,8 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @Import({
     GlobalExceptionHandlerValidationTest.TestControllerConfig.class,
-    SecurityConfig.class,
-    CustomAuthenticationEntryPoint.class
+    SecurityConfig.class
 })
 @WithMockUser(roles = "ADMIN")
 public class GlobalExceptionHandlerValidationTest {

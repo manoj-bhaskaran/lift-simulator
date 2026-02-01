@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -28,18 +27,39 @@ import java.time.OffsetDateTime;
  * }
  * </pre>
  *
+ * <p>For HTTP Basic authentication, the entry point also sets the {@code WWW-Authenticate}
+ * header to trigger browser authentication prompts per RFC 7235.
+ *
  * <p>This ensures that all API error responses (including authentication errors)
  * have a consistent structure for client applications to handle.
  *
  * @see com.liftsimulator.admin.controller.GlobalExceptionHandler.ErrorResponse
  */
-@Component
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomAuthenticationEntryPoint.class);
-    private final ObjectMapper objectMapper;
+    private static final String WWW_AUTHENTICATE_HEADER = "WWW-Authenticate";
 
+    private final ObjectMapper objectMapper;
+    private final String realm;
+
+    /**
+     * Creates an entry point without HTTP Basic authentication challenge.
+     * Suitable for API key or other non-Basic authentication mechanisms.
+     */
     public CustomAuthenticationEntryPoint() {
+        this(null);
+    }
+
+    /**
+     * Creates an entry point with HTTP Basic authentication challenge.
+     * When a realm is specified, the {@code WWW-Authenticate: Basic realm="..."} header
+     * is included in 401 responses to trigger browser authentication prompts.
+     *
+     * @param realm the realm name for HTTP Basic authentication, or null to omit the header
+     */
+    public CustomAuthenticationEntryPoint(String realm) {
+        this.realm = realm;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
     }
@@ -55,6 +75,11 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+        // Set WWW-Authenticate header for HTTP Basic authentication per RFC 7235
+        if (realm != null && !realm.isBlank()) {
+            response.setHeader(WWW_AUTHENTICATE_HEADER, "Basic realm=\"" + realm + "\"");
+        }
 
         ErrorResponse error = new ErrorResponse(
             HttpStatus.UNAUTHORIZED.value(),

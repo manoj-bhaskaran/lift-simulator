@@ -7,10 +7,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -41,19 +43,21 @@ public class SecurityConfigTest extends LocalIntegrationTest {
     // ========== Admin API Authentication Tests ==========
 
     @Test
-    void adminApi_NoAuth_Returns401() throws Exception {
+    void adminApi_NoAuth_Returns401WithWwwAuthenticateHeader() throws Exception {
         mockMvc.perform(get("/api/lift-systems"))
             .andExpect(status().isUnauthorized())
+            .andExpect(header().string("WWW-Authenticate", containsString("Basic realm=\"Lift Simulator Admin\"")))
             .andExpect(jsonPath("$.status", is(401)))
             .andExpect(jsonPath("$.message", is("Authentication required")))
             .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test
-    void adminApi_InvalidCredentials_Returns401() throws Exception {
+    void adminApi_InvalidCredentials_Returns401WithWwwAuthenticateHeader() throws Exception {
         mockMvc.perform(get("/api/lift-systems")
                 .with(httpBasic("wronguser", "wrongpassword")))
             .andExpect(status().isUnauthorized())
+            .andExpect(header().string("WWW-Authenticate", containsString("Basic realm=\"Lift Simulator Admin\"")))
             .andExpect(jsonPath("$.status", is(401)))
             .andExpect(jsonPath("$.message", is("Authentication required")));
     }
@@ -85,18 +89,20 @@ public class SecurityConfigTest extends LocalIntegrationTest {
     // ========== Runtime API Authentication Tests ==========
 
     @Test
-    void runtimeApi_NoApiKey_Returns401() throws Exception {
+    void runtimeApi_NoApiKey_Returns401WithoutWwwAuthenticateHeader() throws Exception {
         mockMvc.perform(get("/api/runtime/systems/test-system/config"))
             .andExpect(status().isUnauthorized())
+            .andExpect(header().doesNotExist("WWW-Authenticate"))
             .andExpect(jsonPath("$.status", is(401)))
             .andExpect(jsonPath("$.message", is("Authentication required")));
     }
 
     @Test
-    void runtimeApi_InvalidApiKey_Returns401() throws Exception {
+    void runtimeApi_InvalidApiKey_Returns401WithoutWwwAuthenticateHeader() throws Exception {
         mockMvc.perform(get("/api/runtime/systems/test-system/config")
                 .header("X-API-Key", "invalid-key"))
             .andExpect(status().isUnauthorized())
+            .andExpect(header().doesNotExist("WWW-Authenticate"))
             .andExpect(jsonPath("$.status", is(401)))
             .andExpect(jsonPath("$.message", is("Authentication required")));
     }

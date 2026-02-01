@@ -15,6 +15,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -41,6 +42,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  *   <li>Stateless session management (no session cookies)</li>
  *   <li>CSRF disabled (appropriate for stateless REST APIs)</li>
  *   <li>Custom error responses using {@link CustomAuthenticationEntryPoint}</li>
+ *   <li>WWW-Authenticate header for HTTP Basic challenges (RFC 7235)</li>
  * </ul>
  *
  * @see CustomAuthenticationEntryPoint
@@ -49,6 +51,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private static final String ADMIN_REALM = "Lift Simulator Admin";
 
     @Value("${security.admin.username:admin}")
     private String adminUsername;
@@ -59,10 +63,22 @@ public class SecurityConfig {
     @Value("${security.api-key:}")
     private String apiKey;
 
-    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+    /**
+     * Authentication entry point for Admin API endpoints.
+     * Includes WWW-Authenticate header for HTTP Basic authentication per RFC 7235.
+     */
+    @Bean
+    public AuthenticationEntryPoint adminAuthenticationEntryPoint() {
+        return new CustomAuthenticationEntryPoint(ADMIN_REALM);
+    }
 
-    public SecurityConfig(CustomAuthenticationEntryPoint authenticationEntryPoint) {
-        this.authenticationEntryPoint = authenticationEntryPoint;
+    /**
+     * Authentication entry point for Runtime API endpoints.
+     * Does not include WWW-Authenticate header (API key authentication).
+     */
+    @Bean
+    public AuthenticationEntryPoint runtimeAuthenticationEntryPoint() {
+        return new CustomAuthenticationEntryPoint();
     }
 
     /**
@@ -73,14 +89,16 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain runtimeApiSecurityFilterChain(HttpSecurity http) throws Exception {
+        AuthenticationEntryPoint entryPoint = runtimeAuthenticationEntryPoint();
+
         http
             .securityMatcher("/api/runtime/**")
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exceptions -> exceptions
-                .authenticationEntryPoint(authenticationEntryPoint))
+                .authenticationEntryPoint(entryPoint))
             .addFilterBefore(
-                new ApiKeyAuthenticationFilter(apiKey, authenticationEntryPoint),
+                new ApiKeyAuthenticationFilter(apiKey, entryPoint),
                 UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().authenticated());
@@ -91,6 +109,7 @@ public class SecurityConfig {
     /**
      * Security filter chain for Admin API endpoints.
      * Uses HTTP Basic authentication with ADMIN role requirement.
+     * Includes WWW-Authenticate header in 401 responses per RFC 7235.
      * Processed second (Order 2) after runtime filter chain.
      */
     @Bean
@@ -101,7 +120,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exceptions -> exceptions
-                .authenticationEntryPoint(authenticationEntryPoint))
+                .authenticationEntryPoint(adminAuthenticationEntryPoint()))
             .httpBasic(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/health").permitAll()
