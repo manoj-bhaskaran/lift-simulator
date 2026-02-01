@@ -21,7 +21,7 @@ import java.util.List;
  * REST controller for managing lift system versions.
  */
 @RestController
-@RequestMapping("/api/lift-systems/{systemId}/versions")
+@RequestMapping("/api/v1/lift-systems/{systemId}/versions")
 public class LiftSystemVersionController {
 
     private final LiftSystemVersionService versionService;
