@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.46.0] - 2026-02-15
+
+### Added
+- API key authentication for runtime configuration and simulation execution endpoints, including configurable header and environment-backed key support.
+
 ## [0.45.0] - 2026-02-01
 
 ### Added

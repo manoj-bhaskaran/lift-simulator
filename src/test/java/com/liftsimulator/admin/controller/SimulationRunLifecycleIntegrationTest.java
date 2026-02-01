@@ -41,6 +41,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest {
 
+    private static final String API_KEY_HEADER = "X-API-Key";
+    private static final String API_KEY_VALUE = "test-api-key";
+
     @TempDir
     static Path artefactsRoot;
 
@@ -98,6 +101,7 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
         );
 
         MvcResult createResult = mockMvc.perform(post("/api/simulation-runs")
+                        .header(API_KEY_HEADER, API_KEY_VALUE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -134,7 +138,8 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
 
         boolean completed = false;
         for (int i = 0; i < 20; i++) {
-            MvcResult pollResult = mockMvc.perform(get("/api/simulation-runs/" + runId))
+            MvcResult pollResult = mockMvc.perform(get("/api/simulation-runs/" + runId)
+                    .header(API_KEY_HEADER, API_KEY_VALUE))
                     .andExpect(status().isOk())
                     .andReturn();
             JsonNode pollJson = objectMapper.readTree(pollResult.getResponse().getContentAsString());
@@ -149,7 +154,8 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
 
         assertTrue(completed, "Run should reach SUCCEEDED status while polling");
 
-        mockMvc.perform(get("/api/simulation-runs/" + runId + "/results"))
+        mockMvc.perform(get("/api/simulation-runs/" + runId + "/results")
+                .header(API_KEY_HEADER, API_KEY_VALUE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCEEDED"))
                 .andExpect(jsonPath("$.results.runSummary.status").value("SUCCEEDED"))
