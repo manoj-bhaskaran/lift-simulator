@@ -34,9 +34,7 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
-# Security configuration for tests
-security:
-  admin:
-    username: testadmin
-    password: testpassword
-  api-key: test-api-key-12345
+api:
+  auth:
+    key: test-api-key
+    header: X-API-Key

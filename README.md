@@ -267,7 +267,7 @@ To package the React UI with the Spring Boot backend and serve everything from *
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.45.0.jar
+java -jar target/lift-simulator-0.46.0.jar
 ```
 
 This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api`.
@@ -288,7 +288,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.45.0.jar
+java -jar target/lift-simulator-0.46.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -839,7 +839,7 @@ All lift system configurations must conform to the following structure:
 }
 ```
 
-**Migration Guide (0.45.0 floor range update):**
+**Migration Guide (0.46.0 floor range update):**
 
 - Replace `floors` with explicit `minFloor` and `maxFloor`.
   - For existing configs, set `minFloor` to `0` and `maxFloor` to `floors - 1`.
@@ -902,6 +902,39 @@ When configuration validation fails:
 }
 ```
 
+#### API Key Authentication (Runtime & Simulation Execution)
+
+Runtime and simulation execution endpoints require an API key so they can be invoked from CLI tooling and automation.
+
+**Configuration:**
+- `api.auth.key` (required): API key value used for authentication
+- `api.auth.header` (optional, default: `X-API-Key`): Header name to read the key from
+
+You can configure the key via environment variables or `application.properties`:
+
+```properties
+api.auth.key=replace-with-secure-key
+api.auth.header=X-API-Key
+```
+
+```bash
+export API_AUTH_KEY="replace-with-secure-key"
+```
+
+**Example (Simulation Run):**
+```bash
+curl -H "X-API-Key: replace-with-secure-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{"liftSystemId":1,"versionId":2,"scenarioId":3,"seed":12345}' \\
+  http://localhost:8080/api/simulation-runs
+```
+
+**Example (Runtime Config):**
+```bash
+curl -H "X-API-Key: replace-with-secure-key" \\
+  http://localhost:8080/api/runtime/systems/{systemKey}/config
+```
+
 
 #### Simulation Run APIs
 
@@ -923,6 +956,7 @@ The Simulation Run APIs enable UI to start simulations, poll their status, and a
 **Endpoint:** `POST /api/simulation-runs`
 
 Creates a new simulation run, sets up the artefact directory, and immediately starts execution.
+All simulation run endpoints require the configured API key header.
 
 **Request Body:**
 ```json
@@ -1266,7 +1300,7 @@ This section documents how to run simulations using both the command-line interf
 The Lift Simulator supports two primary workflows:
 
 1. **CLI Workflow (Backward Compatible)**: Run simulations directly from the command line using scenario files
-2. **UI-Driven Workflow (New in v0.45.0)**: Run simulations through the web interface with Version + Scenario selection
+2. **UI-Driven Workflow (New in v0.46.0)**: Run simulations through the web interface with Version + Scenario selection
 
 Both workflows produce the same simulation results and use the same underlying simulation engine.
 
@@ -1287,7 +1321,7 @@ The command-line interface remains **fully backward compatible** with previous v
 Run a simulation using a `.scenario` file:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   path/to/scenario.scenario
 ```
@@ -1301,12 +1335,12 @@ If no scenario file is provided, uses `demo.scenario` from the classpath.
 **Example:**
 ```bash
 # Run with a specific scenario file
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   my-test-scenario.scenario
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain
 ```
 
@@ -1345,7 +1379,7 @@ idle_timeout_ticks: 5
 Run a simulation using a JSON configuration file:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.runtime.LocalSimulationMain \
   --config=path/to/config.json \
   --ticks=100
@@ -1358,7 +1392,7 @@ java -cp target/lift-simulator-0.45.0.jar \
 
 **Example:**
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.runtime.LocalSimulationMain \
   --config=building-a.json \
   --ticks=1000
@@ -1369,7 +1403,7 @@ java -cp target/lift-simulator-0.45.0.jar \
 Run a quick demo simulation with built-in configuration:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.Main \
   --strategy=directional-scan
 ```
@@ -1382,7 +1416,7 @@ java -cp target/lift-simulator-0.45.0.jar \
 
 ---
 
-##### UI-Driven Run Workflow (New in v0.45.0)
+##### UI-Driven Run Workflow (New in v0.46.0)
 
 The web UI provides a streamlined workflow for running simulations with managed configurations and scenarios.
 
@@ -1643,7 +1677,7 @@ You can reproduce any UI-driven run using the CLI by downloading the generated i
 
 4. **Run via CLI**
    ```bash
-   java -cp target/lift-simulator-0.45.0.jar \
+   java -cp target/lift-simulator-0.46.0.jar \
      com.liftsimulator.scenario.ScenarioRunnerMain \
      run-42-reproduction.scenario
    ```
@@ -1688,7 +1722,7 @@ curl -X POST http://localhost:8080/api/batch/generate-input \
 **3. Run the scenario:**
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   run-42-reproduction.scenario
 ```
@@ -1780,7 +1814,7 @@ Where `run-123-inputs.json` contains:
 **2. Run via CLI:**
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   morning-rush-reproduction.scenario
 ```
@@ -2116,6 +2150,13 @@ seed must be a valid integer
 #### Runtime Configuration API
 
 The backend provides dedicated runtime APIs for retrieving published configurations. These APIs are read-only and return only configurations with `PUBLISHED` status.
+Runtime endpoints require the configured API key header (default `X-API-Key`).
+
+Example:
+```bash
+curl -H "X-API-Key: replace-with-secure-key" \\
+  http://localhost:8080/api/runtime/systems/building-a-lifts/config
+```
 
 - **Get Published Configuration**: `GET /api/runtime/systems/{systemKey}/config`
   - Retrieves the currently published configuration for a lift system by system key
@@ -2604,7 +2645,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.45.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.46.0.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -2849,7 +2890,7 @@ dropdb lift_simulator_test
 
 ## Features
 
-The current version (v0.45.0) includes comprehensive lift simulation and configuration management capabilities:
+The current version (v0.46.0) includes comprehensive lift simulation and configuration management capabilities:
 
 ### Admin Backend & REST API
 
@@ -3044,7 +3085,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.45.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.46.0.jar`.
 
 ## Running Tests
 
@@ -3098,7 +3139,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -3107,16 +3148,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -3130,7 +3171,7 @@ The demo runs a pre-configured scenario with several lift requests and displays 
 Use a published configuration JSON file to run a lightweight simulation:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 
 Optional flags:
@@ -3148,7 +3189,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -3157,13 +3198,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**

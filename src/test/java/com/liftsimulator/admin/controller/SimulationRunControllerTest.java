@@ -38,8 +38,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 public class SimulationRunControllerTest extends LocalIntegrationTest {
 
-    // Test API key from application-test.yml
-    private static final String TEST_API_KEY = "test-api-key-12345";
+    private static final String API_KEY_HEADER = "X-API-Key";
+    private static final String API_KEY_VALUE = "test-api-key";
 
     @Autowired
     private MockMvc mockMvc;
@@ -102,7 +102,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         );
 
         mockMvc.perform(post("/api/simulation-runs")
-                .header("X-API-Key", TEST_API_KEY)
+                .header(API_KEY_HEADER, API_KEY_VALUE)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
@@ -125,7 +125,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         );
 
         mockMvc.perform(post("/api/simulation-runs")
-                .header("X-API-Key", TEST_API_KEY)
+                .header(API_KEY_HEADER, API_KEY_VALUE)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isNotFound())
@@ -137,7 +137,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         String invalidRequest = "{}";
 
         mockMvc.perform(post("/api/simulation-runs")
-                .header("X-API-Key", TEST_API_KEY)
+                .header(API_KEY_HEADER, API_KEY_VALUE)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidRequest))
             .andExpect(status().isBadRequest());
@@ -149,7 +149,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         run = runRepository.save(run);
 
         mockMvc.perform(get("/api/simulation-runs/" + run.getId())
-                .header("X-API-Key", TEST_API_KEY))
+                .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(run.getId()))
             .andExpect(jsonPath("$.liftSystemId").value(testSystem.getId()))
@@ -160,7 +160,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
     @Test
     public void testGetSimulationRun_NotFound() throws Exception {
         mockMvc.perform(get("/api/simulation-runs/999")
-                .header("X-API-Key", TEST_API_KEY))
+                .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("Simulation run not found with id: 999"));
     }
@@ -172,7 +172,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         run = runRepository.save(run);
 
         mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results")
-                .header("X-API-Key", TEST_API_KEY))
+                .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.runId").value(run.getId()))
             .andExpect(jsonPath("$.status").value("RUNNING"))
@@ -187,7 +187,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         run = runRepository.save(run);
 
         mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results")
-                .header("X-API-Key", TEST_API_KEY))
+                .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.runId").value(run.getId()))
             .andExpect(jsonPath("$.status").value("FAILED"))
@@ -201,7 +201,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         run = runRepository.save(run);
 
         mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results")
-                .header("X-API-Key", TEST_API_KEY))
+                .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.status").value("CREATED"));
     }
@@ -221,7 +221,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Files.writeString(resultsFile, "{\"totalPassengersServed\": 100, \"averageWaitTime\": 15.5}");
 
         mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results")
-                .header("X-API-Key", TEST_API_KEY))
+                .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.runId").value(run.getId()))
             .andExpect(jsonPath("$.status").value("SUCCEEDED"))
@@ -244,7 +244,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Files.createDirectories(artefactDir);
 
         mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/results")
-                .header("X-API-Key", TEST_API_KEY))
+                .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.runId").value(run.getId()))
             .andExpect(jsonPath("$.status").value("SUCCEEDED"))
@@ -259,7 +259,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         run = runRepository.save(run);
 
         mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/logs")
-                .header("X-API-Key", TEST_API_KEY))
+                .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.error").value("Failed to read logs: Artefact base path is not set for run "
                     + run.getId()));
@@ -278,7 +278,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Files.writeString(logFile, "Line 1\nLine 2\nLine 3\n");
 
         mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/logs?tail=2")
-                .header("X-API-Key", TEST_API_KEY))
+                .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.runId").value(run.getId().toString()))
             .andExpect(jsonPath("$.logs").value("Line 2\nLine 3"))
@@ -295,7 +295,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Files.createDirectories(Paths.get(run.getArtefactBasePath()));
 
         mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/artefacts")
-                .header("X-API-Key", TEST_API_KEY))
+                .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$").isArray())
             .andExpect(jsonPath("$.length()").value(0));
@@ -314,7 +314,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Files.writeString(artefactDir.resolve("simulation.log"), "Log content");
 
         mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/artefacts")
-                .header("X-API-Key", TEST_API_KEY))
+                .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$").isArray())
             .andExpect(jsonPath("$.length()").value(2));
@@ -332,7 +332,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Files.writeString(resultsFile, "{\"ok\": true}");
 
         mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/artefacts/results.json")
-                .header("X-API-Key", TEST_API_KEY))
+                .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isOk())
             .andExpect(header().string("Content-Disposition", "attachment; filename=\"results.json\""))
             .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -349,8 +349,21 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Files.createDirectories(artefactDir);
 
         mockMvc.perform(get("/api/simulation-runs/" + run.getId() + "/artefacts/missing.json")
-                .header("X-API-Key", TEST_API_KEY))
+                .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("Artefact not found: missing.json"));
+    }
+
+    @Test
+    public void testSimulationRunEndpoints_RequiresApiKey() throws Exception {
+        mockMvc.perform(get("/api/simulation-runs"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void testSimulationRunEndpoints_InvalidApiKey() throws Exception {
+        mockMvc.perform(get("/api/simulation-runs")
+                .header(API_KEY_HEADER, "invalid-key"))
+            .andExpect(status().isUnauthorized());
     }
 }

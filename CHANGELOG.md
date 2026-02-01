@@ -51,6 +51,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Runtime configuration and simulation run endpoints are protected with API key authentication
 - Public endpoints (health, actuator, static assets) remain accessible without authentication
 - **Startup validation**: Application fails to start if admin password is empty or not configured, preventing insecure deployments
+## [0.46.0] - 2026-02-15
+
+### Added
+- API key authentication for runtime configuration and simulation execution endpoints, including configurable header and environment-backed key support.
 
 ## [0.45.0] - 2026-02-01
 
