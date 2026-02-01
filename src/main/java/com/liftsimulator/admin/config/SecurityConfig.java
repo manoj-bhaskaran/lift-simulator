@@ -189,10 +189,19 @@ public class SecurityConfig {
      *
      * <p>The admin user has the ADMIN role, which is required for all admin API operations.
      *
+     * <p>Fails startup if the admin password is not configured to prevent insecure deployments.
+     *
      * @return UserDetailsService with configured admin user
+     * @throws IllegalStateException if admin password is empty or not configured
      */
     @Bean
     public UserDetailsService userDetailsService() {
+        if (adminPassword == null || adminPassword.isBlank()) {
+            throw new IllegalStateException(
+                "Admin password must be configured. Set security.admin.password property " +
+                "or ADMIN_PASSWORD environment variable.");
+        }
+
         UserDetails admin = User.builder()
             .username(adminUsername)
             .password(passwordEncoder().encode(adminPassword))
