@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.46.0] - 2026-01-31
+## [0.46.0] - 2026-02-01
 
 ### Added
 - **URL-Based API Versioning**: Introduced `/api/v1` prefix for all REST endpoints to establish a stable API contract
@@ -57,6 +57,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **New classes**: `SecurityUsersProperties` for multi-user config, `CustomAccessDeniedHandler` for 403 responses
   - **RBAC tests**: Added comprehensive tests for VIEWER restrictions and 403 scenarios
   - **Documentation**: ADR-0021 (Role-Based Access Control) and README updated with RBAC section
+- API key authentication for runtime configuration and simulation execution endpoints, including configurable header and environment-backed key support.
+- Explicit CORS configuration with configurable allowed origins, methods, headers, and credentials for frontend-backend interaction.
+- CSRF policy configuration with explicit defaults for stateless API usage.
+- Integration tests covering CORS preflight acceptance and rejection scenarios.
 
 ### Changed
 - **Breaking: All API endpoints now use `/api/v1` prefix**: All API consumers must update their base URL from `/api` to `/api/v1`
@@ -76,16 +80,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Startup validation**: Application fails to start if admin password is empty or not configured, preventing insecure deployments
 - **Role-based authorization**: Write operations (POST, PUT, DELETE, PATCH) restricted to ADMIN role; VIEWER role limited to read-only access
 - **403 Forbidden responses**: Authenticated users attempting unauthorized operations receive clear JSON error responses
-
-## [0.46.0] - 2026-02-15
-
-### Added
-- API key authentication for runtime configuration and simulation execution endpoints, including configurable header and environment-backed key support.
-- Explicit CORS configuration with configurable allowed origins, methods, headers, and credentials for frontend-backend interaction.
-- CSRF policy configuration with explicit defaults for stateless API usage.
-- Integration tests covering CORS preflight acceptance and rejection scenarios.
-
-### Security
 - Documented CORS and CSRF policies to ensure predictable cross-origin and request forgery behavior in production.
 
 ## [0.45.0] - 2026-02-01
