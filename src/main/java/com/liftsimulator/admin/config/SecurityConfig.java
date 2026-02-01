@@ -15,6 +15,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -22,6 +24,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,10 +68,12 @@ import java.util.List;
  * <p>Security features:
  * <ul>
  *   <li>Stateless session management (no session cookies)</li>
- *   <li>CSRF disabled (appropriate for stateless REST APIs)</li>
+ *   <li>CSRF policy configurable (disabled by default for stateless REST APIs)</li>
  *   <li>Custom error responses using {@link CustomAuthenticationEntryPoint}</li>
  *   <li>Custom access denied handler using {@link CustomAccessDeniedHandler}</li>
  *   <li>WWW-Authenticate header for HTTP Basic challenges (RFC 7235)</li>
+ *   <li>Explicit CORS policy for frontend-backend interaction</li>
+ *   <li>Explicit CSRF policy (disabled by default for stateless APIs)</li>
  * </ul>
  *
  * @see CustomAuthenticationEntryPoint
@@ -90,9 +97,15 @@ public class SecurityConfig {
     private String apiKey;
 
     private final SecurityUsersProperties securityUsersProperties;
+    private final CorsProperties corsProperties;
+    private final CsrfProperties csrfProperties;
 
-    public SecurityConfig(SecurityUsersProperties securityUsersProperties) {
+    public SecurityConfig(SecurityUsersProperties securityUsersProperties,
+                          CorsProperties corsProperties,
+                          CsrfProperties csrfProperties) {
         this.securityUsersProperties = securityUsersProperties;
+        this.corsProperties = corsProperties;
+        this.csrfProperties = csrfProperties;
     }
 
     /**
@@ -147,7 +160,8 @@ public class SecurityConfig {
 
         http
             .securityMatcher(apiKeyProtectedMatcher())
-            .csrf(csrf -> csrf.disable())
+            .cors(Customizer.withDefaults())
+            .csrf(csrf -> configureCsrf(csrf))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(entryPoint))
@@ -178,7 +192,8 @@ public class SecurityConfig {
     public SecurityFilterChain adminApiSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .securityMatcher("/api/v1/**")
-            .csrf(csrf -> csrf.disable())
+            .cors(Customizer.withDefaults())
+            .csrf(csrf -> configureCsrf(csrf))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(adminAuthenticationEntryPoint())
@@ -207,7 +222,8 @@ public class SecurityConfig {
     @Order(3)
     public SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
+            .cors(Customizer.withDefaults())
+            .csrf(csrf -> configureCsrf(csrf))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/**").permitAll()
@@ -218,6 +234,44 @@ public class SecurityConfig {
                 .anyRequest().permitAll());
 
         return http.build();
+    }
+
+    /**
+     * Configures CSRF based on the explicit security.csrf configuration.
+     */
+    private void configureCsrf(org.springframework.security.config.annotation.web.configurers.CsrfConfigurer<HttpSecurity> csrf) {
+        if (!csrfProperties.isEnabled()) {
+            csrf.disable();
+            return;
+        }
+
+        CookieCsrfTokenRepository tokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        RequestMatcher[] ignoredMatchers = csrfProperties.getIgnoredPaths().stream()
+            .map(AntPathRequestMatcher::new)
+            .toArray(RequestMatcher[]::new);
+
+        csrf.csrfTokenRepository(tokenRepository)
+            .csrfTokenRequestHandler(requestHandler)
+            .ignoringRequestMatchers(ignoredMatchers);
+    }
+
+    /**
+     * Explicit CORS configuration for API endpoints.
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
+        configuration.setAllowedMethods(corsProperties.getAllowedMethods());
+        configuration.setAllowedHeaders(corsProperties.getAllowedHeaders());
+        configuration.setExposedHeaders(corsProperties.getExposedHeaders());
+        configuration.setAllowCredentials(corsProperties.isAllowCredentials());
+        configuration.setMaxAge(corsProperties.getMaxAge());
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        return source;
     }
 
     /**

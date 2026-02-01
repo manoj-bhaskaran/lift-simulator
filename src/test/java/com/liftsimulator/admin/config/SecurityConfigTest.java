@@ -12,6 +12,7 @@ import static org.hamcrest.Matchers.is;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -50,6 +51,44 @@ public class SecurityConfigTest extends LocalIntegrationTest {
         mockMvc.perform(get("/api/v1/health"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("UP"));
+    }
+
+    // ========== CORS Tests ==========
+
+    @Test
+    void corsPreflight_AllowsConfiguredOrigin() throws Exception {
+        mockMvc.perform(options("/api/v1/lift-systems")
+                .header("Origin", "http://localhost:3000")
+                .header("Access-Control-Request-Method", "GET"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
+            .andExpect(header().string("Access-Control-Allow-Methods", containsString("GET")))
+            .andExpect(header().string("Access-Control-Allow-Headers", containsString("Authorization")));
+    }
+
+    @Test
+    void corsPreflight_RejectsUnknownOrigin() throws Exception {
+        mockMvc.perform(options("/api/v1/lift-systems")
+                .header("Origin", "https://invalid.example.com")
+                .header("Access-Control-Request-Method", "GET"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void csrfDisabled_AllowsStateChangingRequestWithoutToken() throws Exception {
+        String validSystemJson = """
+            {
+                "systemKey": "test-csrf-disabled-system",
+                "displayName": "Test CSRF Disabled System",
+                "description": "A test system to confirm CSRF policy"
+            }
+            """;
+
+        mockMvc.perform(post("/api/v1/lift-systems")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(validSystemJson))
+            .andExpect(status().isCreated());
     }
 
     // ========== Admin API Authentication Tests ==========

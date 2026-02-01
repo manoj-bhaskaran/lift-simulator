@@ -2271,7 +2271,7 @@ The backend requires authentication for API access. Two authentication mechanism
 
 #### Admin APIs (HTTP Basic Authentication)
 
-Admin APIs (`/api/**` except `/api/health`) require HTTP Basic authentication with username and password.
+Admin APIs (`/api/v1/**` except `/api/v1/health`) require HTTP Basic authentication with username and password.
 
 **Configuration:**
 
@@ -2293,16 +2293,16 @@ Admin APIs (`/api/**` except `/api/health`) require HTTP Basic authentication wi
 **Usage with curl:**
 ```bash
 # Access admin APIs with HTTP Basic authentication
-curl -u admin:your_password http://localhost:8080/api/lift-systems
+curl -u admin:your_password http://localhost:8080/api/v1/lift-systems
 
 # Or using explicit Authorization header
 curl -H "Authorization: Basic $(echo -n 'admin:your_password' | base64)" \
-     http://localhost:8080/api/lift-systems
+     http://localhost:8080/api/v1/lift-systems
 ```
 
 #### Runtime APIs (API Key Authentication)
 
-Runtime APIs (`/api/runtime/**`) require API key authentication via the `X-API-Key` header.
+Runtime APIs (`/api/v1/runtime/**`) require API key authentication via the `X-API-Key` header.
 
 **Configuration:**
 
@@ -2328,14 +2328,14 @@ Runtime APIs (`/api/runtime/**`) require API key authentication via the `X-API-K
 ```bash
 # Access runtime APIs with API key
 curl -H "X-API-Key: your_api_key" \
-     http://localhost:8080/api/runtime/systems/my-system/config
+     http://localhost:8080/api/v1/runtime/systems/my-system/config
 ```
 
 #### Public Endpoints (No Authentication Required)
 
 The following endpoints do not require authentication:
 
-- `/api/health` - Application health check
+- `/api/v1/health` - Application health check
 - `/actuator/health` - Spring Boot Actuator health
 - `/actuator/info` - Application information
 - Static assets and frontend routes
@@ -2402,6 +2402,34 @@ Or using environment variables with the legacy single-admin configuration:
 export ADMIN_USERNAME=admin
 export ADMIN_PASSWORD=your_secure_password
 ```
+
+#### CORS & CSRF Policy
+
+The backend defines explicit CORS and CSRF policies for predictable frontend behavior in production.
+
+**CORS Configuration:**
+
+```properties
+security.cors.allowed-origins=http://localhost:3000,http://127.0.0.1:3000
+security.cors.allowed-methods=GET,POST,PUT,DELETE,PATCH,OPTIONS
+security.cors.allowed-headers=Authorization,Content-Type,X-API-Key,X-Requested-With,Accept,Origin
+security.cors.exposed-headers=WWW-Authenticate
+security.cors.allow-credentials=true
+security.cors.max-age=3600
+```
+
+Set `CORS_ALLOWED_ORIGINS` in production to the exact domains hosting the frontend.
+
+**CSRF Configuration:**
+
+```properties
+security.csrf.enabled=false
+security.csrf.ignored-paths=/api/**,/actuator/**
+```
+
+CSRF protection is disabled by default because the backend APIs are stateless and use HTTP Basic or API key auth.
+If you enable CSRF for browser-based sessions, configure ignored paths for API endpoints and ensure the frontend
+reads the CSRF token from the cookie and echoes it in the `X-CSRF-TOKEN` header.
 
 **Usage with curl:**
 
@@ -3800,6 +3828,15 @@ See [docs/decisions](docs/decisions) for Architecture Decision Records (ADRs):
 - [ADR-0011: React Admin UI Scaffold](docs/decisions/0011-react-admin-ui-scaffold.md)
 - [ADR-0012: Database Backup and Restore Strategy](docs/decisions/0012-database-backup-restore-strategy.md)
 - [ADR-0013: Strict Schema Validation for Unknown Fields](docs/decisions/0013-strict-schema-validation-unknown-fields.md)
+- [ADR-0014: Playwright E2E Testing](docs/decisions/0014-playwright-e2e-testing.md)
+- [ADR-0015: Test Management Platform Evaluation](docs/decisions/0015-test-management-platform-evaluation.md)
+- [ADR-0016: Persistent Simulation Run Lifecycle](docs/decisions/0016-persistent-simulation-run-lifecycle.md)
+- [ADR-0017: Batch Input Generator Backwards Compatibility](docs/decisions/0017-batch-input-generator-backwards-compatibility.md)
+- [ADR-0018: API Key Authentication for Runtime Simulation](docs/decisions/0018-api-key-authentication-runtime-simulation.md)
+- [ADR-0019: Spring Security Baseline](docs/decisions/0019-spring-security-baseline.md)
+- [ADR-0020: URL-Based API Versioning](docs/decisions/0020-url-based-api-versioning.md)
+- [ADR-0021: Role-Based Access Control (RBAC)](docs/decisions/0021-role-based-access-control-rbac.md)
+- [ADR-0022: Explicit CORS and CSRF Policy](docs/decisions/0022-explicit-cors-csrf-policy.md)
 
 ## License
 
