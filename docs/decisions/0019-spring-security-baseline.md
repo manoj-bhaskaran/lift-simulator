@@ -1,4 +1,4 @@
-# ADR-0018: Spring Security Baseline for API Authentication
+# ADR-0019: Spring Security Baseline for API Authentication
 
 **Date**: 2026-01-31
 

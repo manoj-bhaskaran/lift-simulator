@@ -18,16 +18,22 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
  * Spring Security configuration for the Lift Simulator application.
  *
- * <p>Configures two authentication mechanisms:
+ * <p>Configures authentication mechanisms:
  * <ul>
- *   <li><strong>Admin APIs</strong> ({@code /api/**} excluding runtime): HTTP Basic authentication
- *       with environment-configured username and password. Role-based access control with ADMIN role.</li>
+ *   <li><strong>Admin APIs</strong> ({@code /api/**} excluding runtime and simulation-runs):
+ *       HTTP Basic authentication with environment-configured username and password.
+ *       Role-based access control with ADMIN role.</li>
  *   <li><strong>Runtime APIs</strong> ({@code /api/runtime/**}): API key authentication via
  *       {@code X-API-Key} header for machine-to-machine communication.</li>
+ *   <li><strong>Simulation Run APIs</strong> ({@code /api/simulation-runs/**}): API key authentication
+ *       via {@code X-API-Key} header for CLI tools and automation.</li>
  * </ul>
  *
  * <p>Public endpoints (no authentication required):
@@ -73,26 +79,38 @@ public class SecurityConfig {
     }
 
     /**
-     * Authentication entry point for Runtime API endpoints.
+     * Authentication entry point for API key protected endpoints.
      * Does not include WWW-Authenticate header (API key authentication).
      */
     @Bean
-    public AuthenticationEntryPoint runtimeAuthenticationEntryPoint() {
+    public AuthenticationEntryPoint apiKeyAuthenticationEntryPoint() {
         return new CustomAuthenticationEntryPoint();
     }
 
     /**
-     * Security filter chain for Runtime API endpoints.
+     * Request matcher for API key protected endpoints.
+     * Matches runtime configuration and simulation run APIs.
+     */
+    private RequestMatcher apiKeyProtectedMatcher() {
+        return new OrRequestMatcher(
+            new AntPathRequestMatcher("/api/runtime/**"),
+            new AntPathRequestMatcher("/api/simulation-runs/**")
+        );
+    }
+
+    /**
+     * Security filter chain for API key protected endpoints.
+     * Covers runtime configuration and simulation execution APIs.
      * Uses API key authentication via X-API-Key header.
-     * Processed first (Order 1) to handle runtime requests before admin filter chain.
+     * Processed first (Order 1) to handle these requests before admin filter chain.
      */
     @Bean
     @Order(1)
-    public SecurityFilterChain runtimeApiSecurityFilterChain(HttpSecurity http) throws Exception {
-        AuthenticationEntryPoint entryPoint = runtimeAuthenticationEntryPoint();
+    public SecurityFilterChain apiKeySecurityFilterChain(HttpSecurity http) throws Exception {
+        AuthenticationEntryPoint entryPoint = apiKeyAuthenticationEntryPoint();
 
         http
-            .securityMatcher("/api/runtime/**")
+            .securityMatcher(apiKeyProtectedMatcher())
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exceptions -> exceptions
@@ -110,7 +128,7 @@ public class SecurityConfig {
      * Security filter chain for Admin API endpoints.
      * Uses HTTP Basic authentication with ADMIN role requirement.
      * Includes WWW-Authenticate header in 401 responses per RFC 7235.
-     * Processed second (Order 2) after runtime filter chain.
+     * Processed second (Order 2) after API key filter chain.
      */
     @Bean
     @Order(2)
