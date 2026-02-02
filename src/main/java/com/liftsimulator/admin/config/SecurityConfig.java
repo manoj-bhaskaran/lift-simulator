@@ -201,6 +201,8 @@ public class SecurityConfig {
             .httpBasic(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/health").permitAll()
+                // OpenAPI/Swagger endpoints
+                .requestMatchers("/api/v1/api-docs/**", "/api/v1/swagger-ui/**", "/api/v1/swagger-ui.html").permitAll()
                 // Read operations allowed for both ADMIN and VIEWER roles
                 .requestMatchers(HttpMethod.GET, "/api/v1/**").hasAnyRole("ADMIN", "VIEWER")
                 // Write operations restricted to ADMIN role only
