@@ -289,6 +289,22 @@ All API endpoints are versioned using URL-based versioning with the `/api/v1` pr
 - Within a major version, all changes are backward compatible
 - See [ADR-0020](docs/decisions/0020-url-based-api-versioning.md) for the complete versioning strategy
 
+#### API Documentation
+
+Interactive API documentation is available via Swagger UI when the application is running:
+
+**Swagger UI:** `http://localhost:8080/api/v1/swagger-ui.html`
+
+**OpenAPI Specification:** `http://localhost:8080/api/v1/api-docs`
+
+The Swagger UI provides:
+- Complete API endpoint documentation with request/response schemas
+- Interactive "Try it out" functionality to test endpoints directly in the browser
+- Security scheme documentation (HTTP Basic Auth and API Key)
+- Example requests and responses for all endpoints
+
+**Note:** The Swagger UI is publicly accessible, but actual API endpoints require authentication (HTTP Basic for admin endpoints, API Key for runtime endpoints).
+
 #### Running the Backend
 
 Start the Spring Boot application:

@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.46.0] - 2026-02-01
 
 ### Added
+- **OpenAPI/Swagger Documentation**: Interactive API documentation for all backend endpoints
+  - SpringDoc OpenAPI dependency added for automatic spec generation
+  - Swagger UI accessible at `/api/v1/swagger-ui.html` for interactive endpoint testing
+  - OpenAPI specification available at `/api/v1/api-docs` in JSON format
+  - Security schemes documented (HTTP Basic Authentication and API Key authentication)
+  - API metadata configured with version, description, contact, and license information
+  - All controller endpoints annotated with OpenAPI tags and descriptions
+  - README updated with links to API documentation
 - **URL-Based API Versioning**: Introduced `/api/v1` prefix for all REST endpoints to establish a stable API contract
   - All endpoints now use versioned paths (e.g., `/api/v1/lift-systems`, `/api/v1/scenarios`, `/api/v1/runtime/systems/{key}/config`)
   - Frontend updated to use versioned API base path (`/api/v1`)
