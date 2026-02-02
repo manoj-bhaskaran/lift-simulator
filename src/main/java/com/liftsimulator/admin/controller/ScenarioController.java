@@ -6,6 +6,13 @@ import com.liftsimulator.admin.dto.ScenarioValidationResponse;
 import com.liftsimulator.admin.service.ScenarioService;
 import com.liftsimulator.admin.service.ScenarioValidationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +32,8 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/v1/scenarios")
+@Tag(name = "Scenarios", description = "Scenario management endpoints")
+@SecurityRequirement(name = "basicAuth")
 public class ScenarioController {
 
     private final ScenarioService scenarioService;
@@ -48,6 +57,13 @@ public class ScenarioController {
      * @param request scenario payload
      * @return created scenario response
      */
+    @Operation(
+        summary = "Create a new scenario",
+        description = "Creates a new scenario with the provided configuration"
+    )
+    @ApiResponse(responseCode = "201", description = "Scenario created successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid request payload")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - valid credentials required")
     @PostMapping
     public ResponseEntity<ScenarioResponse> createScenario(
         @Valid @RequestBody ScenarioRequest request
@@ -77,6 +93,12 @@ public class ScenarioController {
      *
      * @return list of scenario responses
      */
+    @Operation(
+        summary = "List all scenarios",
+        description = "Retrieves a list of all scenarios in the system"
+    )
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved scenarios list")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - valid credentials required")
     @GetMapping
     public ResponseEntity<List<ScenarioResponse>> getAllScenarios() {
         List<ScenarioResponse> responses = scenarioService.getAllScenarios();

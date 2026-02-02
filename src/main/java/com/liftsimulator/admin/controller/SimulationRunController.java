@@ -12,6 +12,11 @@ import com.liftsimulator.admin.service.ArtefactService;
 import com.liftsimulator.admin.service.SimulationRunExecutionService;
 import com.liftsimulator.admin.service.SimulationRunService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -37,6 +42,8 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/v1/simulation-runs")
+@Tag(name = "Simulation Runs", description = "Simulation run management and execution endpoints")
+@SecurityRequirement(name = "apiKey")
 public class SimulationRunController {
 
     private final SimulationRunService simulationRunService;
@@ -65,6 +72,12 @@ public class SimulationRunController {
      * @param status optional filter by run status (CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED)
      * @return list of simulation runs with their details
      */
+    @Operation(
+        summary = "List simulation runs",
+        description = "Retrieves all simulation runs with optional filtering by system ID or status"
+    )
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved simulation runs")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - valid API key required")
     @GetMapping
     public ResponseEntity<List<SimulationRunListResponse>> listSimulationRuns(
             @RequestParam(required = false) Long systemId,
