@@ -8,6 +8,7 @@ import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.ScenarioRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,6 +50,9 @@ public class SimulationRunServiceTest {
     @Mock
     private SimulationRunExecutionService executionService;
 
+    @Mock
+    private EntityManager entityManager;
+
     private SimulationRunService runService;
 
     private LiftSystem mockLiftSystem;
@@ -59,7 +63,7 @@ public class SimulationRunServiceTest {
     Path tempDir;
 
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws Exception {
         runService = new SimulationRunService(
                 runRepository,
                 liftSystemRepository,
@@ -68,6 +72,11 @@ public class SimulationRunServiceTest {
                 executionService,
                 tempDir.toString()
         );
+
+        // Inject EntityManager mock via reflection (it's normally injected by @PersistenceContext)
+        java.lang.reflect.Field entityManagerField = SimulationRunService.class.getDeclaredField("entityManager");
+        entityManagerField.setAccessible(true);
+        entityManagerField.set(runService, entityManager);
 
         mockLiftSystem = new LiftSystem();
         mockLiftSystem.setId(1L);
