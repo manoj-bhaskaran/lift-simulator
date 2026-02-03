@@ -42,6 +42,7 @@ api:
 # Security configuration for tests
 # Multi-user configuration with ADMIN and VIEWER roles for RBAC testing
 security:
+  api-key: test-api-key
   users:
     - username: testadmin
       password: testpassword

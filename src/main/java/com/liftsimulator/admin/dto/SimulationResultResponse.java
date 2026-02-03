@@ -25,7 +25,7 @@ public record SimulationResultResponse(
             "SUCCEEDED",
             results,
             null,
-            "/api/simulation-runs/" + runId + "/logs"
+            "/api/v1/simulation-runs/" + runId + "/logs"
         );
     }
 
@@ -42,7 +42,7 @@ public record SimulationResultResponse(
             "FAILED",
             null,
             errorMessage,
-            "/api/simulation-runs/" + runId + "/logs"
+            "/api/v1/simulation-runs/" + runId + "/logs"
         );
     }
 
@@ -76,7 +76,7 @@ public record SimulationResultResponse(
             "SUCCEEDED",
             null,
             errorMessage,
-            "/api/simulation-runs/" + runId + "/logs"
+            "/api/v1/simulation-runs/" + runId + "/logs"
         );
     }
 }

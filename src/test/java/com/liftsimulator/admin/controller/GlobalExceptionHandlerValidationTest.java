@@ -40,8 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = {GlobalExceptionHandler.class})
 @ActiveProfiles("test")
 @Import({
-    GlobalExceptionHandlerValidationTest.TestControllerConfig.class,
-    SecurityConfig.class
+    GlobalExceptionHandlerValidationTest.TestControllerConfig.class
 })
 @WithMockUser(roles = "ADMIN")
 public class GlobalExceptionHandlerValidationTest {
