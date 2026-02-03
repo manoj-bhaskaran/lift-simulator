@@ -37,12 +37,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * annotations (like @ScriptAssert or custom validators), but those scenarios are less common.
  * The GlobalExceptionHandler safely handles both FieldError and ObjectError types.
  */
-@WebMvcTest(controllers = {GlobalExceptionHandler.class})
+@WebMvcTest(controllers = {GlobalExceptionHandler.class}, excludeAutoConfiguration = {
+    org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
+})
 @ActiveProfiles("test")
 @Import({
     GlobalExceptionHandlerValidationTest.TestControllerConfig.class
 })
-@WithMockUser(roles = "ADMIN")
 public class GlobalExceptionHandlerValidationTest {
 
     @Autowired

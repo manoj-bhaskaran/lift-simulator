@@ -96,6 +96,9 @@ public class SecurityConfig {
     @Value("${security.api-key:}")
     private String apiKey;
 
+    @Value("${api.auth.header:X-API-Key}")
+    private String apiKeyHeader;
+
     private final SecurityUsersProperties securityUsersProperties;
     private final CorsProperties corsProperties;
     private final CsrfProperties csrfProperties;
@@ -150,7 +153,7 @@ public class SecurityConfig {
     /**
      * Security filter chain for API key protected endpoints.
      * Covers runtime configuration and simulation execution APIs.
-     * Uses API key authentication via X-API-Key header.
+     * Uses API key authentication via configurable header (api.auth.header, defaults to X-API-Key).
      * Processed first (Order 1) to handle these requests before admin filter chain.
      */
     @Bean
@@ -166,7 +169,7 @@ public class SecurityConfig {
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(entryPoint))
             .addFilterBefore(
-                new ApiKeyAuthenticationFilter(apiKey, entryPoint),
+                new ApiKeyAuthenticationFilter(apiKeyHeader, apiKey, entryPoint),
                 UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().authenticated());

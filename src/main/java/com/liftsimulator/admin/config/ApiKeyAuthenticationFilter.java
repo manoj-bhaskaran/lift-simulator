@@ -18,7 +18,8 @@ import java.util.Collections;
 /**
  * Authentication filter for API key-based authentication on runtime endpoints.
  *
- * <p>Validates the {@code X-API-Key} header against the configured API key.
+ * <p>Validates the API key header (configurable via {@code api.auth.header},
+ * defaults to {@code X-API-Key}) against the configured API key.
  * If valid, authenticates the request with a "RUNTIME" role. If invalid or
  * missing, delegates to the authentication entry point for error handling.
  *
@@ -35,18 +36,20 @@ import java.util.Collections;
 public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(ApiKeyAuthenticationFilter.class);
-    private static final String API_KEY_HEADER = "X-API-Key";
 
+    private final String apiKeyHeader;
     private final String expectedApiKey;
     private final AuthenticationEntryPoint authenticationEntryPoint;
 
     /**
      * Creates a new API key authentication filter.
      *
+     * @param apiKeyHeader the name of the header containing the API key
      * @param expectedApiKey the expected API key value
      * @param authenticationEntryPoint entry point for handling authentication failures
      */
-    public ApiKeyAuthenticationFilter(String expectedApiKey, AuthenticationEntryPoint authenticationEntryPoint) {
+    public ApiKeyAuthenticationFilter(String apiKeyHeader, String expectedApiKey, AuthenticationEntryPoint authenticationEntryPoint) {
+        this.apiKeyHeader = apiKeyHeader;
         this.expectedApiKey = expectedApiKey;
         this.authenticationEntryPoint = authenticationEntryPoint;
     }
@@ -57,7 +60,7 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        String providedApiKey = request.getHeader(API_KEY_HEADER);
+        String providedApiKey = request.getHeader(apiKeyHeader);
 
         // If API key is not configured (empty), reject all requests
         if (expectedApiKey == null || expectedApiKey.isBlank()) {
