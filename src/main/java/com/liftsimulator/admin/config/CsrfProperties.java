@@ -3,6 +3,7 @@ package com.liftsimulator.admin.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -33,10 +34,10 @@ public class CsrfProperties {
     }
 
     public List<String> getIgnoredPaths() {
-        return ignoredPaths;
+        return new ArrayList<>(ignoredPaths);
     }
 
     public void setIgnoredPaths(List<String> ignoredPaths) {
-        this.ignoredPaths = ignoredPaths;
+        this.ignoredPaths = ignoredPaths != null ? new ArrayList<>(ignoredPaths) : new ArrayList<>();
     }
 }

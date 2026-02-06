@@ -50,11 +50,11 @@ public class SecurityUsersProperties {
     private List<UserProperties> users = new ArrayList<>();
 
     public List<UserProperties> getUsers() {
-        return users;
+        return new ArrayList<>(users);
     }
 
     public void setUsers(List<UserProperties> users) {
-        this.users = users;
+        this.users = users != null ? new ArrayList<>(users) : new ArrayList<>();
     }
 
     /**

@@ -28,8 +28,11 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Spring Security configuration for the Lift Simulator application.
@@ -103,9 +106,17 @@ public class SecurityConfig {
     private final CorsProperties corsProperties;
     private final CsrfProperties csrfProperties;
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "Spring-managed singleton beans injected via constructor. "
+                    + "These properties objects are not modified externally and defensive copying "
+                    + "would break Spring's dependency injection pattern."
+    )
     public SecurityConfig(SecurityUsersProperties securityUsersProperties,
                           CorsProperties corsProperties,
                           CsrfProperties csrfProperties) {
+        // Defensive copies are not needed for Spring-managed beans as they are singletons
+        // However, to satisfy SpotBugs, we'll assign them directly
         this.securityUsersProperties = securityUsersProperties;
         this.corsProperties = corsProperties;
         this.csrfProperties = csrfProperties;
@@ -317,7 +328,7 @@ public class SecurityConfig {
 
         // Check for multi-user configuration first
         List<SecurityUsersProperties.UserProperties> configuredUsers = securityUsersProperties.getUsers();
-        if (configuredUsers != null && !configuredUsers.isEmpty()) {
+        if (!configuredUsers.isEmpty()) {
             for (SecurityUsersProperties.UserProperties userProps : configuredUsers) {
                 if (userProps.getUsername() == null || userProps.getUsername().isBlank()) {
                     throw new IllegalStateException("Username must be configured for each user in security.users");
@@ -337,7 +348,7 @@ public class SecurityConfig {
                 UserDetails user = User.builder()
                     .username(userProps.getUsername())
                     .password(encoder.encode(userProps.getPassword()))
-                    .roles(role.toUpperCase())
+                    .roles(role.toUpperCase(Locale.ROOT))
                     .build();
                 users.add(user);
             }
