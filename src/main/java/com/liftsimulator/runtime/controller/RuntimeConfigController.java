@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Provides read-only access to published configurations.
  */
 @RestController
-@RequestMapping("/api/runtime/systems")
+@RequestMapping("/api/v1/runtime/systems")
 public class RuntimeConfigController {
 
     private final RuntimeConfigService runtimeConfigService;

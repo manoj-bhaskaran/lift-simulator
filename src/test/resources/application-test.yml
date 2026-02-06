@@ -33,3 +33,45 @@ logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+api:
+  auth:
+    key: test-api-key
+    header: X-API-Key
+
+# Security configuration for tests
+# Multi-user configuration with ADMIN and VIEWER roles for RBAC testing
+security:
+  users:
+    - username: testadmin
+      password: testpassword
+      role: ADMIN
+    - username: testviewer
+      password: viewerpassword
+      role: VIEWER
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+    allowed-methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - PATCH
+      - OPTIONS
+    allowed-headers:
+      - Authorization
+      - Content-Type
+      - X-API-Key
+      - X-Requested-With
+      - Accept
+      - Origin
+    exposed-headers:
+      - WWW-Authenticate
+    allow-credentials: true
+    max-age: 3600
+  csrf:
+    enabled: false
+    ignored-paths:
+      - /api/**
+      - /actuator/**

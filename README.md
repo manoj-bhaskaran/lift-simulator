@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.45.0**
+Current version: **0.46.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
@@ -267,14 +267,43 @@ To package the React UI with the Spring Boot backend and serve everything from *
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.45.0.jar
+java -jar target/lift-simulator-0.46.0.jar
 ```
 
-This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api`.
+This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api/v1`.
 
 ### Backend API
 
 The Spring Boot backend service (`Lift Config Service`) provides a RESTful API for managing lift simulator configurations.
+
+#### API Versioning
+
+All API endpoints are versioned using URL-based versioning with the `/api/v1` prefix. This ensures API stability and allows for future breaking changes without disrupting existing clients.
+
+**Current Version:** v1
+
+**Base URL:** `http://localhost:8080/api/v1`
+
+**Versioning Policy:**
+- Major version changes (v1 → v2) may introduce breaking changes
+- Within a major version, all changes are backward compatible
+- See [ADR-0020](docs/decisions/0020-url-based-api-versioning.md) for the complete versioning strategy
+
+#### API Documentation
+
+Interactive API documentation is available via Swagger UI when the application is running:
+
+**Swagger UI:** `http://localhost:8080/api/v1/swagger-ui.html`
+
+**OpenAPI Specification:** `http://localhost:8080/api/v1/api-docs`
+
+The Swagger UI provides:
+- Complete API endpoint documentation with request/response schemas
+- Interactive "Try it out" functionality to test endpoints directly in the browser
+- Security scheme documentation (HTTP Basic Auth and API Key)
+- Example requests and responses for all endpoints
+
+**Note:** The Swagger UI is publicly accessible, but actual API endpoints require authentication (HTTP Basic for admin endpoints, API Key for runtime endpoints).
 
 #### Running the Backend
 
@@ -288,7 +317,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.45.0.jar
+java -jar target/lift-simulator-0.46.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -297,7 +326,7 @@ The backend will start on `http://localhost:8080`.
 
 #### Lift System Management
 
-- **Create Lift System**: `POST /api/lift-systems`
+- **Create Lift System**: `POST /api/v1/lift-systems`
   - Creates a new lift system configuration
   - Request body:
     ```json
@@ -320,7 +349,7 @@ The backend will start on `http://localhost:8080`.
     }
     ```
 
-- **List All Lift Systems**: `GET /api/lift-systems`
+- **List All Lift Systems**: `GET /api/v1/lift-systems`
   - Returns all lift systems
   - Response (200 OK):
     ```json
@@ -337,7 +366,7 @@ The backend will start on `http://localhost:8080`.
     ]
     ```
 
-- **Get Lift System by ID**: `GET /api/lift-systems/{id}`
+- **Get Lift System by ID**: `GET /api/v1/lift-systems/{id}`
   - Returns a specific lift system by ID
   - Response (200 OK): Same as create response (includes `versionCount`)
   - Error (404 Not Found):
@@ -349,7 +378,7 @@ The backend will start on `http://localhost:8080`.
     }
     ```
 
-- **Update Lift System**: `PUT /api/lift-systems/{id}`
+- **Update Lift System**: `PUT /api/v1/lift-systems/{id}`
   - Updates lift system metadata (display name and description)
   - Request body:
     ```json
@@ -361,14 +390,14 @@ The backend will start on `http://localhost:8080`.
   - Response (200 OK): Updated lift system details
   - Note: System key cannot be changed after creation
 
-- **Delete Lift System**: `DELETE /api/lift-systems/{id}`
+- **Delete Lift System**: `DELETE /api/v1/lift-systems/{id}`
   - Deletes a lift system and all its versions (cascade delete)
   - Response (204 No Content): Success with no body
   - Error (404 Not Found): If lift system doesn't exist
 
 #### Version Management
 
-- **Create Version**: `POST /api/lift-systems/{systemId}/versions`
+- **Create Version**: `POST /api/v1/lift-systems/{systemId}/versions`
   - Creates a new version for a lift system
   - Optionally clones configuration from an existing version
   - Request body (with new config):
@@ -401,7 +430,7 @@ The backend will start on `http://localhost:8080`.
     ```
   - Version numbers auto-increment per lift system
 
-- **Update Version Config**: `PUT /api/lift-systems/{systemId}/versions/{versionNumber}`
+- **Update Version Config**: `PUT /api/v1/lift-systems/{systemId}/versions/{versionNumber}`
   - Updates the configuration JSON for a specific version
   - Request body:
     ```json
@@ -411,7 +440,7 @@ The backend will start on `http://localhost:8080`.
     ```
   - Response (200 OK): Updated version details
 
-- **List Versions**: `GET /api/lift-systems/{systemId}/versions`
+- **List Versions**: `GET /api/v1/lift-systems/{systemId}/versions`
   - Returns all versions for a lift system, ordered by version number descending
   - Response (200 OK):
     ```json
@@ -441,12 +470,12 @@ The backend will start on `http://localhost:8080`.
     ]
     ```
 
-- **Get Version**: `GET /api/lift-systems/{systemId}/versions/{versionNumber}`
+- **Get Version**: `GET /api/v1/lift-systems/{systemId}/versions/{versionNumber}`
   - Returns a specific version by version number
   - Response (200 OK): Version details
   - Error (404 Not Found): If version doesn't exist
 
-- **Publish Version**: `POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`
+- **Publish Version**: `POST /api/v1/lift-systems/{systemId}/versions/{versionNumber}/publish`
   - Publishes a version after validating its configuration
   - Automatically archives any previously published version for the same lift system
   - Ensures exactly one published version per lift system at any given time
@@ -461,7 +490,7 @@ The backend will start on `http://localhost:8080`.
 
 The backend includes a comprehensive validation framework for lift system configurations. All configurations are validated before being saved or published.
 
-- **Validate Configuration**: `POST /api/config/validate`
+- **Validate Configuration**: `POST /api/v1/config/validate`
   - Validates a configuration JSON without persisting it
   - Request body:
     ```json
@@ -507,7 +536,7 @@ The backend includes a comprehensive validation framework for lift system config
 
 Scenario payloads define passenger flow for UI-driven simulation runs. The scenario schema is separate from the batch `.scenario` files used by the CLI.
 
-- **Create Scenario**: `POST /api/scenarios`
+- **Create Scenario**: `POST /api/v1/scenarios`
   - Saves a scenario JSON payload after validation
   - Request body:
     ```json
@@ -547,18 +576,18 @@ Scenario payloads define passenger flow for UI-driven simulation runs. The scena
     }
     ```
 
-- **Update Scenario**: `PUT /api/scenarios/{id}`
+- **Update Scenario**: `PUT /api/v1/scenarios/{id}`
   - Updates an existing scenario payload after validation
   - Request body: same as create
   - Response (200 OK): Updated scenario details
 
-- **Get Scenario**: `GET /api/scenarios/{id}`
+- **Get Scenario**: `GET /api/v1/scenarios/{id}`
   - Returns a stored scenario by ID
   - Response (200 OK): Scenario details
 
 #### Scenario Validation
 
-- **Validate Scenario**: `POST /api/scenarios/validate`
+- **Validate Scenario**: `POST /api/v1/scenarios/validate`
   - Validates a scenario JSON payload without saving it
   - Request body:
     ```json
@@ -604,7 +633,7 @@ Scenario payloads define passenger flow for UI-driven simulation runs. The scena
 
 Simulation runs execute asynchronously using stored lift system configurations and UI scenarios.
 
-- **Start Simulation Run**: `POST /api/simulation-runs`
+- **Start Simulation Run**: `POST /api/v1/simulation-runs`
   - Creates a run record, writes input artefacts, and launches the simulation asynchronously.
   - Request body:
     ```json
@@ -633,7 +662,7 @@ Simulation runs execute asynchronously using stored lift system configurations a
     }
     ```
 
-- **Get Simulation Run**: `GET /api/simulation-runs/{id}`
+- **Get Simulation Run**: `GET /api/v1/simulation-runs/{id}`
   - Returns the current status, progress, and artefact location.
 
 Run artefacts are stored on disk using the configured `simulation.runs.artefacts-root` directory
@@ -839,7 +868,7 @@ All lift system configurations must conform to the following structure:
 }
 ```
 
-**Migration Guide (0.45.0 floor range update):**
+**Migration Guide (0.46.0 floor range update):**
 
 - Replace `floors` with explicit `minFloor` and `maxFloor`.
   - For existing configs, set `minFloor` to `0` and `maxFloor` to `floors - 1`.
@@ -879,9 +908,9 @@ All lift system configurations must conform to the following structure:
 **Automatic Validation:**
 
 Validation is automatically performed when:
-- Creating a new version (`POST /api/lift-systems/{systemId}/versions`)
-- Updating a version's configuration (`PUT /api/lift-systems/{systemId}/versions/{versionNumber}`)
-- Publishing a version (`POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`)
+- Creating a new version (`POST /api/v1/lift-systems/{systemId}/versions`)
+- Updating a version's configuration (`PUT /api/v1/lift-systems/{systemId}/versions/{versionNumber}`)
+- Publishing a version (`POST /api/v1/lift-systems/{systemId}/versions/{versionNumber}/publish`)
 
 If validation fails with errors, the operation will be rejected with a 400 Bad Request response containing detailed error information.
 
@@ -902,6 +931,39 @@ When configuration validation fails:
 }
 ```
 
+#### API Key Authentication (Runtime & Simulation Execution)
+
+Runtime and simulation execution endpoints require an API key so they can be invoked from CLI tooling and automation.
+
+**Configuration:**
+- `api.auth.key` (required): API key value used for authentication
+- `api.auth.header` (optional, default: `X-API-Key`): Header name to read the key from
+
+You can configure the key via environment variables or `application.properties`:
+
+```properties
+api.auth.key=replace-with-secure-key
+api.auth.header=X-API-Key
+```
+
+```bash
+export API_AUTH_KEY="replace-with-secure-key"
+```
+
+**Example (Simulation Run):**
+```bash
+curl -H "X-API-Key: replace-with-secure-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{"liftSystemId":1,"versionId":2,"scenarioId":3,"seed":12345}' \\
+  http://localhost:8080/api/simulation-runs
+```
+
+**Example (Runtime Config):**
+```bash
+curl -H "X-API-Key: replace-with-secure-key" \\
+  http://localhost:8080/api/runtime/systems/{systemKey}/config
+```
+
 
 #### Simulation Run APIs
 
@@ -920,9 +982,10 @@ The Simulation Run APIs enable UI to start simulations, poll their status, and a
 
 ##### Create and Start Simulation Run
 
-**Endpoint:** `POST /api/simulation-runs`
+**Endpoint:** `POST /api/v1/simulation-runs`
 
 Creates a new simulation run, sets up the artefact directory, and immediately starts execution.
+All simulation run endpoints require the configured API key header.
 
 **Request Body:**
 ```json
@@ -969,7 +1032,7 @@ Creates a new simulation run, sets up the artefact directory, and immediately st
 
 ##### Get Simulation Run Status
 
-**Endpoint:** `GET /api/simulation-runs/{id}`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}`
 
 Retrieves the current status and details of a simulation run, including progress information.
 
@@ -1008,7 +1071,7 @@ Retrieves the current status and details of a simulation run, including progress
 
 ##### Cancel Simulation Run
 
-**Endpoint:** `POST /api/simulation-runs/{id}/cancel`
+**Endpoint:** `POST /api/v1/simulation-runs/{id}/cancel`
 
 Cancels a running simulation run and transitions it to a terminal `CANCELLED` state.
 
@@ -1043,7 +1106,7 @@ Cancels a running simulation run and transitions it to a terminal `CANCELLED` st
 
 ##### Get Simulation Results
 
-**Endpoint:** `GET /api/simulation-runs/{id}/results`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}/results`
 
 Retrieves the results of a simulation run. Response varies based on run status.
 
@@ -1116,7 +1179,7 @@ Retrieves the results of a simulation run. Response varies based on run status.
 
 ##### Get Simulation Logs
 
-**Endpoint:** `GET /api/simulation-runs/{id}/logs?tail=N`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}/logs?tail=N`
 
 Retrieves simulation logs with optional tail functionality.
 
@@ -1160,7 +1223,7 @@ curl http://localhost:8080/api/simulation-runs/1/logs?tail=100
 
 ##### List Simulation Artefacts
 
-**Endpoint:** `GET /api/simulation-runs/{id}/artefacts`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}/artefacts`
 
 Lists all artefacts (downloadable files) associated with a simulation run.
 
@@ -1210,7 +1273,7 @@ Lists all artefacts (downloadable files) associated with a simulation run.
 
 ##### Download Simulation Artefact
 
-**Endpoint:** `GET /api/simulation-runs/{id}/artefacts/{path}`
+**Endpoint:** `GET /api/v1/simulation-runs/{id}/artefacts/{path}`
 
 Downloads a specific artefact file for a simulation run. The `{path}` value should match the
 `path` field returned by the artefact list endpoint.
@@ -1266,7 +1329,7 @@ This section documents how to run simulations using both the command-line interf
 The Lift Simulator supports two primary workflows:
 
 1. **CLI Workflow (Backward Compatible)**: Run simulations directly from the command line using scenario files
-2. **UI-Driven Workflow (New in v0.45.0)**: Run simulations through the web interface with Version + Scenario selection
+2. **UI-Driven Workflow (New in v0.46.0)**: Run simulations through the web interface with Version + Scenario selection
 
 Both workflows produce the same simulation results and use the same underlying simulation engine.
 
@@ -1287,7 +1350,7 @@ The command-line interface remains **fully backward compatible** with previous v
 Run a simulation using a `.scenario` file:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   path/to/scenario.scenario
 ```
@@ -1301,12 +1364,12 @@ If no scenario file is provided, uses `demo.scenario` from the classpath.
 **Example:**
 ```bash
 # Run with a specific scenario file
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   my-test-scenario.scenario
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain
 ```
 
@@ -1345,7 +1408,7 @@ idle_timeout_ticks: 5
 Run a simulation using a JSON configuration file:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.runtime.LocalSimulationMain \
   --config=path/to/config.json \
   --ticks=100
@@ -1358,7 +1421,7 @@ java -cp target/lift-simulator-0.45.0.jar \
 
 **Example:**
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.runtime.LocalSimulationMain \
   --config=building-a.json \
   --ticks=1000
@@ -1369,7 +1432,7 @@ java -cp target/lift-simulator-0.45.0.jar \
 Run a quick demo simulation with built-in configuration:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.Main \
   --strategy=directional-scan
 ```
@@ -1382,7 +1445,7 @@ java -cp target/lift-simulator-0.45.0.jar \
 
 ---
 
-##### UI-Driven Run Workflow (New in v0.45.0)
+##### UI-Driven Run Workflow (New in v0.46.0)
 
 The web UI provides a streamlined workflow for running simulations with managed configurations and scenarios.
 
@@ -1643,7 +1706,7 @@ You can reproduce any UI-driven run using the CLI by downloading the generated i
 
 4. **Run via CLI**
    ```bash
-   java -cp target/lift-simulator-0.45.0.jar \
+   java -cp target/lift-simulator-0.46.0.jar \
      com.liftsimulator.scenario.ScenarioRunnerMain \
      run-42-reproduction.scenario
    ```
@@ -1688,7 +1751,7 @@ curl -X POST http://localhost:8080/api/batch/generate-input \
 **3. Run the scenario:**
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   run-42-reproduction.scenario
 ```
@@ -1780,7 +1843,7 @@ Where `run-123-inputs.json` contains:
 **2. Run via CLI:**
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar \
+java -cp target/lift-simulator-0.46.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   morning-rush-reproduction.scenario
 ```
@@ -2116,8 +2179,15 @@ seed must be a valid integer
 #### Runtime Configuration API
 
 The backend provides dedicated runtime APIs for retrieving published configurations. These APIs are read-only and return only configurations with `PUBLISHED` status.
+Runtime endpoints require the configured API key header (default `X-API-Key`).
 
-- **Get Published Configuration**: `GET /api/runtime/systems/{systemKey}/config`
+Example:
+```bash
+curl -H "X-API-Key: replace-with-secure-key" \\
+  http://localhost:8080/api/runtime/systems/building-a-lifts/config
+```
+
+- **Get Published Configuration**: `GET /api/v1/runtime/systems/{systemKey}/config`
   - Retrieves the currently published configuration for a lift system by system key
   - Returns the latest published version
   - Response (200 OK):
@@ -2141,7 +2211,7 @@ The backend provides dedicated runtime APIs for retrieving published configurati
     }
     ```
 
-- **Get Specific Published Version**: `GET /api/runtime/systems/{systemKey}/versions/{versionNumber}`
+- **Get Specific Published Version**: `GET /api/v1/runtime/systems/{systemKey}/versions/{versionNumber}`
   - Retrieves a specific version by system key and version number
   - Only returns the version if it is currently published
   - Response (200 OK): Same format as above
@@ -2157,7 +2227,7 @@ The backend provides dedicated runtime APIs for retrieving published configurati
     }
     ```
 
-- **Launch Local Simulator**: `POST /api/runtime/systems/{systemKey}/simulate`
+- **Launch Local Simulator**: `POST /api/v1/runtime/systems/{systemKey}/simulate`
   - Writes the published configuration to a temporary JSON file
   - Spawns a local simulator process using the configuration
   - Response (200 OK):
@@ -2195,7 +2265,7 @@ The backend provides dedicated runtime APIs for retrieving published configurati
 
 #### Health & Monitoring
 
-- **Custom Health Check**: `GET /api/health`
+- **Custom Health Check**: `GET /api/v1/health`
   - Returns custom health status with service name and timestamp
 - **Actuator Health**: `GET /actuator/health`
   - Returns detailed Spring Boot actuator health information
@@ -2210,6 +2280,194 @@ The backend is configured via `src/main/resources/application.properties`:
 - Active profile: `dev` (default)
 - Logging level: `INFO` (root), `DEBUG` (com.liftsimulator package)
 - Actuator endpoints: health, info
+
+### Authentication
+
+The backend requires authentication for API access. Two authentication mechanisms are supported:
+
+#### Admin APIs (HTTP Basic Authentication)
+
+Admin APIs (`/api/v1/**` except `/api/v1/health`) require HTTP Basic authentication with username and password.
+
+**Configuration:**
+
+1. **Edit** `src/main/resources/application-dev.yml` and set your admin credentials:
+   ```yaml
+   security:
+     admin:
+       username: admin              # Default username
+       password: YOUR_SECURE_PASSWORD  # REQUIRED: Set a secure password
+   ```
+
+2. **Alternative: Environment Variables**
+   ```bash
+   export ADMIN_USERNAME=admin
+   export ADMIN_PASSWORD=your_secure_password
+   mvn spring-boot:run
+   ```
+
+**Usage with curl:**
+```bash
+# Access admin APIs with HTTP Basic authentication
+curl -u admin:your_password http://localhost:8080/api/v1/lift-systems
+
+# Or using explicit Authorization header
+curl -H "Authorization: Basic $(echo -n 'admin:your_password' | base64)" \
+     http://localhost:8080/api/v1/lift-systems
+```
+
+#### Runtime APIs (API Key Authentication)
+
+Runtime APIs (`/api/v1/runtime/**`) require API key authentication via the `X-API-Key` header.
+
+**Configuration:**
+
+1. **Edit** `src/main/resources/application-dev.yml` and set your API key:
+   ```yaml
+   security:
+     api-key: YOUR_SECURE_API_KEY  # REQUIRED: Generate a secure random key
+   ```
+
+2. **Generate a secure API key:**
+   ```bash
+   # Generate a 32-byte random hex key
+   openssl rand -hex 32
+   ```
+
+3. **Alternative: Environment Variables**
+   ```bash
+   export API_KEY=your_secure_api_key
+   mvn spring-boot:run
+   ```
+
+**Usage with curl:**
+```bash
+# Access runtime APIs with API key
+curl -H "X-API-Key: your_api_key" \
+     http://localhost:8080/api/v1/runtime/systems/my-system/config
+```
+
+#### Public Endpoints (No Authentication Required)
+
+The following endpoints do not require authentication:
+
+- `/api/v1/health` - Application health check
+- `/actuator/health` - Spring Boot Actuator health
+- `/actuator/info` - Application information
+- Static assets and frontend routes
+
+#### Error Responses
+
+Unauthenticated requests return HTTP 401 with a consistent JSON error payload:
+
+```json
+{
+  "status": 401,
+  "message": "Authentication required",
+  "timestamp": "2026-01-31T12:00:00Z"
+}
+```
+
+Unauthorized access (authenticated user lacking permission) returns HTTP 403 Forbidden:
+
+```json
+{
+  "status": 403,
+  "message": "Access denied",
+  "timestamp": "2026-02-01T12:00:00Z"
+}
+```
+
+#### Role-Based Access Control (RBAC)
+
+The Admin APIs support role-based access control with two roles:
+
+| Role | Description | Permissions |
+|------|-------------|-------------|
+| **ADMIN** | Full administrative access | Read and write all resources |
+| **VIEWER** | Read-only access | View configurations, scenarios, and results |
+
+**Authorization Rules:**
+
+| HTTP Method | Required Role | Examples |
+|-------------|---------------|----------|
+| GET | ADMIN or VIEWER | List systems, view scenarios, get results |
+| POST | ADMIN only | Create systems, create scenarios |
+| PUT | ADMIN only | Update configurations |
+| DELETE | ADMIN only | Delete systems, delete scenarios |
+| PATCH | ADMIN only | Partial updates |
+
+**Multi-User Configuration:**
+
+Configure multiple users with different roles in `application-dev.yml`:
+
+```yaml
+security:
+  users:
+    - username: admin
+      password: YOUR_ADMIN_PASSWORD
+      role: ADMIN
+    - username: viewer
+      password: YOUR_VIEWER_PASSWORD
+      role: VIEWER
+```
+
+Or using environment variables with the legacy single-admin configuration:
+
+```bash
+export ADMIN_USERNAME=admin
+export ADMIN_PASSWORD=your_secure_password
+```
+
+#### CORS & CSRF Policy
+
+The backend defines explicit CORS and CSRF policies for predictable frontend behavior in production.
+
+**CORS Configuration:**
+
+```properties
+security.cors.allowed-origins=http://localhost:3000,http://127.0.0.1:3000
+security.cors.allowed-methods=GET,POST,PUT,DELETE,PATCH,OPTIONS
+security.cors.allowed-headers=Authorization,Content-Type,X-API-Key,X-Requested-With,Accept,Origin
+security.cors.exposed-headers=WWW-Authenticate
+security.cors.allow-credentials=true
+security.cors.max-age=3600
+```
+
+Set `CORS_ALLOWED_ORIGINS` in production to the exact domains hosting the frontend.
+
+**CSRF Configuration:**
+
+```properties
+security.csrf.enabled=false
+security.csrf.ignored-paths=/api/**,/actuator/**
+```
+
+CSRF protection is disabled by default because the backend APIs are stateless and use HTTP Basic or API key auth.
+If you enable CSRF for browser-based sessions, configure ignored paths for API endpoints and ensure the frontend
+reads the CSRF token from the cookie and echoes it in the `X-CSRF-TOKEN` header.
+
+**Usage with curl:**
+
+```bash
+# Admin user can create resources
+curl -u admin:adminpass -X POST \
+     -H "Content-Type: application/json" \
+     -d '{"systemKey": "test", "displayName": "Test"}' \
+     http://localhost:8080/api/v1/lift-systems
+
+# Viewer user can read but not write
+curl -u viewer:viewerpass http://localhost:8080/api/v1/lift-systems  # OK (200)
+curl -u viewer:viewerpass -X POST ...  # Forbidden (403)
+```
+
+#### Security Best Practices
+
+1. **Never commit credentials**: Keep `application-dev.yml` out of version control
+2. **Use strong passwords**: At least 16 characters with mixed case, numbers, and symbols
+3. **Rotate API keys**: Change API keys periodically, especially after team changes
+4. **Use environment variables in production**: Avoid storing secrets in files
+5. **Use HTTPS in production**: HTTP Basic credentials are only base64-encoded, not encrypted
 
 ### Logging
 
@@ -2509,7 +2767,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.45.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.46.0.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -2754,7 +3012,7 @@ dropdb lift_simulator_test
 
 ## Features
 
-The current version (v0.45.0) includes comprehensive lift simulation and configuration management capabilities:
+The current version (v0.46.0) includes comprehensive lift simulation and configuration management capabilities:
 
 ### Admin Backend & REST API
 
@@ -2949,7 +3207,7 @@ To build a JAR package:
 mvn clean package
 ```
 
-The packaged JAR will be in `target/lift-simulator-0.45.0.jar`.
+The packaged JAR will be in `target/lift-simulator-0.46.0.jar`.
 
 ## Running Tests
 
@@ -3003,7 +3261,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -3012,16 +3270,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -3035,7 +3293,7 @@ The demo runs a pre-configured scenario with several lift requests and displays 
 Use a published configuration JSON file to run a lightweight simulation:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 
 Optional flags:
@@ -3053,7 +3311,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -3062,13 +3320,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.45.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**
@@ -3586,6 +3844,15 @@ See [docs/decisions](docs/decisions) for Architecture Decision Records (ADRs):
 - [ADR-0011: React Admin UI Scaffold](docs/decisions/0011-react-admin-ui-scaffold.md)
 - [ADR-0012: Database Backup and Restore Strategy](docs/decisions/0012-database-backup-restore-strategy.md)
 - [ADR-0013: Strict Schema Validation for Unknown Fields](docs/decisions/0013-strict-schema-validation-unknown-fields.md)
+- [ADR-0014: Playwright E2E Testing](docs/decisions/0014-playwright-e2e-testing.md)
+- [ADR-0015: Test Management Platform Evaluation](docs/decisions/0015-test-management-platform-evaluation.md)
+- [ADR-0016: Persistent Simulation Run Lifecycle](docs/decisions/0016-persistent-simulation-run-lifecycle.md)
+- [ADR-0017: Batch Input Generator Backwards Compatibility](docs/decisions/0017-batch-input-generator-backwards-compatibility.md)
+- [ADR-0018: API Key Authentication for Runtime Simulation](docs/decisions/0018-api-key-authentication-runtime-simulation.md)
+- [ADR-0019: Spring Security Baseline](docs/decisions/0019-spring-security-baseline.md)
+- [ADR-0020: URL-Based API Versioning](docs/decisions/0020-url-based-api-versioning.md)
+- [ADR-0021: Role-Based Access Control (RBAC)](docs/decisions/0021-role-based-access-control-rbac.md)
+- [ADR-0022: Explicit CORS and CSRF Policy](docs/decisions/0022-explicit-cors-csrf-policy.md)
 
 ## License
 

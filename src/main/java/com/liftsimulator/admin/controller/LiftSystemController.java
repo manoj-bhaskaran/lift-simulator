@@ -5,6 +5,11 @@ import com.liftsimulator.admin.dto.LiftSystemResponse;
 import com.liftsimulator.admin.dto.UpdateLiftSystemRequest;
 import com.liftsimulator.admin.service.LiftSystemService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +28,9 @@ import java.util.List;
  * REST controller for managing lift systems.
  */
 @RestController
-@RequestMapping("/api/lift-systems")
+@RequestMapping("/api/v1/lift-systems")
+@Tag(name = "Lift Systems", description = "Lift system management endpoints")
+@SecurityRequirement(name = "basicAuth")
 public class LiftSystemController {
 
     private final LiftSystemService liftSystemService;
@@ -43,6 +50,13 @@ public class LiftSystemController {
      * @param request the creation request
      * @return the created lift system with 201 status
      */
+    @Operation(
+        summary = "Create a new lift system",
+        description = "Creates a new lift system with the provided configuration"
+    )
+    @ApiResponse(responseCode = "201", description = "Lift system created successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid request payload")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - valid credentials required")
     @PostMapping
     public ResponseEntity<LiftSystemResponse> createLiftSystem(
         @Valid @RequestBody CreateLiftSystemRequest request
@@ -56,6 +70,12 @@ public class LiftSystemController {
      *
      * @return list of all lift systems
      */
+    @Operation(
+        summary = "List all lift systems",
+        description = "Retrieves a list of all lift systems in the system"
+    )
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved lift systems list")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - valid credentials required")
     @GetMapping
     public ResponseEntity<List<LiftSystemResponse>> getAllLiftSystems() {
         List<LiftSystemResponse> systems = liftSystemService.getAllLiftSystems();

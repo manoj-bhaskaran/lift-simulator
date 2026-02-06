@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -29,6 +30,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
+
+    // Test credentials from application-test.yml
+    private static final String TEST_ADMIN_USER = "testadmin";
+    private static final String TEST_ADMIN_PASSWORD = "testpassword";
 
     @Autowired
     private MockMvc mockMvc;
@@ -100,7 +105,8 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
         String config = validConfig();
         CreateVersionRequest request = new CreateVersionRequest(config, null);
 
-        mockMvc.perform(post("/api/lift-systems/{systemId}/versions", testSystem.getId())
+        mockMvc.perform(post("/api/v1/lift-systems/{systemId}/versions", testSystem.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
@@ -121,7 +127,8 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
 
         CreateVersionRequest request = new CreateVersionRequest("{}", 1);
 
-        mockMvc.perform(post("/api/lift-systems/{systemId}/versions", testSystem.getId())
+        mockMvc.perform(post("/api/v1/lift-systems/{systemId}/versions", testSystem.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
@@ -132,7 +139,8 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
     public void testCreateVersion_CloneFromNonExistentVersion() throws Exception {
         CreateVersionRequest request = new CreateVersionRequest("{}", 999);
 
-        mockMvc.perform(post("/api/lift-systems/{systemId}/versions", testSystem.getId())
+        mockMvc.perform(post("/api/v1/lift-systems/{systemId}/versions", testSystem.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isNotFound())
@@ -144,7 +152,8 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
         String config = validConfig();
         CreateVersionRequest request = new CreateVersionRequest(config, null);
 
-        mockMvc.perform(post("/api/lift-systems/{systemId}/versions", 999L)
+        mockMvc.perform(post("/api/v1/lift-systems/{systemId}/versions", 999L)
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isNotFound())
@@ -158,7 +167,8 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
 
         CreateVersionRequest request = new CreateVersionRequest(validConfigWithRange(0, 14), null);
 
-        mockMvc.perform(post("/api/lift-systems/{systemId}/versions", testSystem.getId())
+        mockMvc.perform(post("/api/v1/lift-systems/{systemId}/versions", testSystem.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
@@ -169,7 +179,8 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
     public void testCreateVersion_ValidationError_EmptyConfig() throws Exception {
         CreateVersionRequest request = new CreateVersionRequest("", null);
 
-        mockMvc.perform(post("/api/lift-systems/{systemId}/versions", testSystem.getId())
+        mockMvc.perform(post("/api/v1/lift-systems/{systemId}/versions", testSystem.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
@@ -186,8 +197,9 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
         String updatedConfig = validConfigWithRange(0, 14);
         UpdateVersionConfigRequest request = new UpdateVersionConfigRequest(updatedConfig);
 
-        mockMvc.perform(put("/api/lift-systems/{systemId}/versions/{versionNumber}",
+        mockMvc.perform(put("/api/v1/lift-systems/{systemId}/versions/{versionNumber}",
                 testSystem.getId(), 1)
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -198,8 +210,9 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
     public void testUpdateVersionConfig_VersionNotFound() throws Exception {
         UpdateVersionConfigRequest request = new UpdateVersionConfigRequest(validConfigWithRange(0, 14));
 
-        mockMvc.perform(put("/api/lift-systems/{systemId}/versions/{versionNumber}",
+        mockMvc.perform(put("/api/v1/lift-systems/{systemId}/versions/{versionNumber}",
                 testSystem.getId(), 999)
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isNotFound())
@@ -212,8 +225,9 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
 
         UpdateVersionConfigRequest request = new UpdateVersionConfigRequest("");
 
-        mockMvc.perform(put("/api/lift-systems/{systemId}/versions/{versionNumber}",
+        mockMvc.perform(put("/api/v1/lift-systems/{systemId}/versions/{versionNumber}",
                 testSystem.getId(), 1)
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
@@ -227,7 +241,8 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
         versionRepository.save(new LiftSystemVersion(testSystem, 2, validConfigWithRange(0, 14)));
         versionRepository.save(new LiftSystemVersion(testSystem, 3, validConfigWithRange(0, 19)));
 
-        mockMvc.perform(get("/api/lift-systems/{systemId}/versions", testSystem.getId()))
+        mockMvc.perform(get("/api/v1/lift-systems/{systemId}/versions", testSystem.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(3)))
             .andExpect(jsonPath("$[0].versionNumber").value(3))
@@ -237,14 +252,16 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
 
     @Test
     public void testListVersions_EmptyList() throws Exception {
-        mockMvc.perform(get("/api/lift-systems/{systemId}/versions", testSystem.getId()))
+        mockMvc.perform(get("/api/v1/lift-systems/{systemId}/versions", testSystem.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(0)));
     }
 
     @Test
     public void testListVersions_NonExistentSystem() throws Exception {
-        mockMvc.perform(get("/api/lift-systems/{systemId}/versions", 999L))
+        mockMvc.perform(get("/api/v1/lift-systems/{systemId}/versions", 999L)
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("Lift system not found with id: 999"));
     }
@@ -255,8 +272,9 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
         LiftSystemVersion version = new LiftSystemVersion(testSystem, 1, config);
         versionRepository.save(version);
 
-        mockMvc.perform(get("/api/lift-systems/{systemId}/versions/{versionNumber}",
-                testSystem.getId(), 1))
+        mockMvc.perform(get("/api/v1/lift-systems/{systemId}/versions/{versionNumber}",
+                testSystem.getId(), 1)
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").exists())
             .andExpect(jsonPath("$.liftSystemId").value(testSystem.getId()))
@@ -267,8 +285,9 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
 
     @Test
     public void testGetVersion_NotFound() throws Exception {
-        mockMvc.perform(get("/api/lift-systems/{systemId}/versions/{versionNumber}",
-                testSystem.getId(), 999))
+        mockMvc.perform(get("/api/v1/lift-systems/{systemId}/versions/{versionNumber}",
+                testSystem.getId(), 999)
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("Version 999 not found for lift system " + testSystem.getId()));
     }
@@ -276,27 +295,31 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
     @Test
     public void testVersionWorkflow_CreateMultipleVersionsAndRetrieve() throws Exception {
         CreateVersionRequest request1 = new CreateVersionRequest(validConfig(), null);
-        mockMvc.perform(post("/api/lift-systems/{systemId}/versions", testSystem.getId())
+        mockMvc.perform(post("/api/v1/lift-systems/{systemId}/versions", testSystem.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request1)))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.versionNumber").value(1));
 
         CreateVersionRequest request2 = new CreateVersionRequest("{}", 1);
-        mockMvc.perform(post("/api/lift-systems/{systemId}/versions", testSystem.getId())
+        mockMvc.perform(post("/api/v1/lift-systems/{systemId}/versions", testSystem.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request2)))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.versionNumber").value(2));
 
         UpdateVersionConfigRequest updateRequest = new UpdateVersionConfigRequest(validConfigWithRange(0, 19));
-        mockMvc.perform(put("/api/lift-systems/{systemId}/versions/{versionNumber}",
+        mockMvc.perform(put("/api/v1/lift-systems/{systemId}/versions/{versionNumber}",
                 testSystem.getId(), 2)
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(updateRequest)))
             .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/lift-systems/{systemId}/versions", testSystem.getId()))
+        mockMvc.perform(get("/api/v1/lift-systems/{systemId}/versions", testSystem.getId())
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(2)));
     }

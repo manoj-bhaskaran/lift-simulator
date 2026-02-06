@@ -7,6 +7,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.46.0] - 2026-02-01
+
+### Added
+- **OpenAPI/Swagger Documentation**: Interactive API documentation for all backend endpoints
+  - SpringDoc OpenAPI dependency added for automatic spec generation
+  - Swagger UI accessible at `/api/v1/swagger-ui.html` for interactive endpoint testing
+  - OpenAPI specification available at `/api/v1/api-docs` in JSON format
+  - Security schemes documented (HTTP Basic Authentication and API Key authentication)
+  - API metadata configured with version, description, contact, and license information
+  - All controller endpoints annotated with OpenAPI tags and descriptions
+  - README updated with links to API documentation
+- **URL-Based API Versioning**: Introduced `/api/v1` prefix for all REST endpoints to establish a stable API contract
+  - All endpoints now use versioned paths (e.g., `/api/v1/lift-systems`, `/api/v1/scenarios`, `/api/v1/runtime/systems/{key}/config`)
+  - Frontend updated to use versioned API base path (`/api/v1`)
+  - Vite development proxy configured for `/api/v1` endpoints
+  - Security filter chains updated to protect versioned endpoints
+  - All tests (backend and frontend E2E) updated to use versioned paths
+  - Versioning policy documented in ADR-0020 (URL-Based API Versioning)
+  - README updated with API versioning section and base URL documentation
+- **Spring Security Baseline**: Introduced authentication for all admin and runtime APIs
+  - **HTTP Basic Authentication**: Admin APIs (`/api/v1/**` except `/api/v1/health`) require HTTP Basic authentication with environment-configured username and password
+  - **API Key Authentication**: Runtime and Simulation APIs (`/api/v1/runtime/**` and `/api/v1/simulation-runs/**`) require API key authentication via `X-API-Key` header for machine-to-machine communication
+  - **Role-Based Access Control**: Admin users have `ADMIN` role; runtime API clients have `RUNTIME` role
+  - **Consistent Error Responses**: Unauthenticated requests return HTTP 401 with standard JSON error payload (`status`, `message`, `timestamp`)
+  - **Stateless Sessions**: No session cookies; each request must include credentials
+  - **CSRF Disabled**: Appropriate for stateless REST APIs
+  - **WWW-Authenticate Header**: HTTP Basic 401 responses include `WWW-Authenticate: Basic realm="Lift Simulator Admin"` per RFC 7235
+- **Security Configuration**: Added `SecurityConfig` class with three security filter chains:
+  - Runtime/Simulation API filter chain (Order 1) for API key authentication
+  - Admin API filter chain (Order 2) for HTTP Basic authentication
+  - Public filter chain (Order 3) for static assets and SPA routes
+- **API Key Filter**: Implemented `ApiKeyAuthenticationFilter` for validating `X-API-Key` header on runtime and simulation-run endpoints
+- **Custom Authentication Entry Point**: `CustomAuthenticationEntryPoint` returns JSON error responses matching application's standard error format
+- **Security Properties**: Added configurable security settings in `application.properties`:
+  - `security.admin.username` - Admin username (default: `admin`, override: `ADMIN_USERNAME` env var)
+  - `security.admin.password` - Admin password (required, override: `ADMIN_PASSWORD` env var)
+  - `security.api-key` - Runtime API key (required, override: `API_KEY` env var)
+- **Authentication Tests**: Added comprehensive test suite for security configuration:
+  - Health endpoint accessibility without authentication
+  - Admin API authentication requirements (valid/invalid credentials)
+  - Runtime API authentication requirements (valid/invalid API keys)
+  - Actuator endpoint accessibility
+  - Error response format verification
+- **Documentation**: Added Authentication section in README with:
+  - Configuration instructions for admin credentials and API keys
+  - Usage examples with curl
+  - Environment variable alternatives
+  - Security best practices
+- **Role-Based Access Control (RBAC)**: Implemented granular authorization for admin operations
+  - **ADMIN role**: Full access to all operations (read and write)
+  - **VIEWER role**: Read-only access (GET requests only)
+  - **Authorization rules**: GET requests allowed for ADMIN and VIEWER; POST, PUT, DELETE, PATCH restricted to ADMIN
+  - **HTTP 403 responses**: Unauthorized access returns consistent JSON error payload (`status`, `message`, `timestamp`)
+  - **Multi-user configuration**: Support for configuring multiple users with different roles via `security.users` property
+  - **Backward compatibility**: Legacy single-admin configuration (`security.admin.*`) still supported
+  - **New classes**: `SecurityUsersProperties` for multi-user config, `CustomAccessDeniedHandler` for 403 responses
+  - **RBAC tests**: Added comprehensive tests for VIEWER restrictions and 403 scenarios
+  - **Documentation**: ADR-0021 (Role-Based Access Control) and README updated with RBAC section
+- API key authentication for runtime configuration and simulation execution endpoints, including configurable header and environment-backed key support.
+- Explicit CORS configuration with configurable allowed origins, methods, headers, and credentials for frontend-backend interaction.
+- CSRF policy configuration with explicit defaults for stateless API usage.
+- Integration tests covering CORS preflight acceptance and rejection scenarios.
+
+### Changed
+- **Breaking: All API endpoints now use `/api/v1` prefix**: All API consumers must update their base URL from `/api` to `/api/v1`
+  - Frontend API client automatically uses new base URL
+  - Backend controllers updated with versioned request mappings
+  - Security configuration updated to protect versioned endpoints
+  - All tests updated to use versioned paths
+- **Breaking: All admin APIs now require authentication**: Requests to `/api/v1/**` endpoints (except `/api/v1/health`, `/api/v1/runtime/**`, and `/api/v1/simulation-runs/**`) must include HTTP Basic credentials
+- **Breaking: All runtime and simulation APIs now require API key**: Requests to `/api/v1/runtime/**` and `/api/v1/simulation-runs/**` endpoints must include `X-API-Key` header
+- Updated controller integration tests to use appropriate authentication (HTTP Basic for admin, API key for simulation)
+- Updated `GlobalExceptionHandlerValidationTest` to work with Spring Security
+
+### Security
+- All administrative API endpoints are now protected with HTTP Basic authentication
+- Runtime configuration and simulation run endpoints are protected with API key authentication
+- Public endpoints (health, actuator, static assets) remain accessible without authentication
+- **Startup validation**: Application fails to start if admin password is empty or not configured, preventing insecure deployments
+- **Role-based authorization**: Write operations (POST, PUT, DELETE, PATCH) restricted to ADMIN role; VIEWER role limited to read-only access
+- **403 Forbidden responses**: Authenticated users attempting unauthorized operations receive clear JSON error responses
+- Documented CORS and CSRF policies to ensure predictable cross-origin and request forgery behavior in production.
+
 ## [0.45.0] - 2026-02-01
 
 ### Added

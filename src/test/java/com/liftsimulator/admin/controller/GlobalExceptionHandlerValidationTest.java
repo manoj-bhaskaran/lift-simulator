@@ -2,6 +2,7 @@ package com.liftsimulator.admin.controller;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liftsimulator.admin.config.SecurityConfig;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
@@ -14,13 +15,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasKey;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -36,9 +37,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * annotations (like @ScriptAssert or custom validators), but those scenarios are less common.
  * The GlobalExceptionHandler safely handles both FieldError and ObjectError types.
  */
-@WebMvcTest(controllers = {GlobalExceptionHandler.class})
+@WebMvcTest(controllers = {GlobalExceptionHandler.class}, excludeAutoConfiguration = {
+    org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
+})
 @ActiveProfiles("test")
-@Import(GlobalExceptionHandlerValidationTest.TestControllerConfig.class)
+@Import({
+    GlobalExceptionHandlerValidationTest.TestControllerConfig.class
+})
 public class GlobalExceptionHandlerValidationTest {
 
     @Autowired
@@ -131,21 +136,21 @@ public class GlobalExceptionHandlerValidationTest {
     @RestController
     public static class ValidationTestController {
 
-        @PostMapping("/api/test/field-validation")
+        @PostMapping("/api/v1/test/field-validation")
         public ResponseEntity<String> testFieldValidation(
             @Valid @RequestBody FieldValidationRequest request
         ) {
             return ResponseEntity.ok("Valid");
         }
 
-        @PostMapping("/api/test/object-validation")
+        @PostMapping("/api/v1/test/object-validation")
         public ResponseEntity<String> testObjectValidation(
             @Valid @RequestBody ObjectValidationRequest request
         ) {
             return ResponseEntity.ok("Valid");
         }
 
-        @PostMapping("/api/test/mixed-validation")
+        @PostMapping("/api/v1/test/mixed-validation")
         public ResponseEntity<String> testMixedValidation(
             @Valid @RequestBody MixedValidationRequest request
         ) {
@@ -160,7 +165,7 @@ public class GlobalExceptionHandlerValidationTest {
             "test@example.com"
         );
 
-        mockMvc.perform(post("/api/test/field-validation")
+        mockMvc.perform(post("/api/v1/test/field-validation")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
@@ -178,7 +183,7 @@ public class GlobalExceptionHandlerValidationTest {
             ""     // Empty email (violates @NotBlank)
         );
 
-        mockMvc.perform(post("/api/test/field-validation")
+        mockMvc.perform(post("/api/v1/test/field-validation")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
@@ -197,7 +202,7 @@ public class GlobalExceptionHandlerValidationTest {
             "john@example.com"
         );
 
-        mockMvc.perform(post("/api/test/field-validation")
+        mockMvc.perform(post("/api/v1/test/field-validation")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk());
@@ -211,7 +216,7 @@ public class GlobalExceptionHandlerValidationTest {
             "password456"  // Passwords don't match
         );
 
-        mockMvc.perform(post("/api/test/object-validation")
+        mockMvc.perform(post("/api/v1/test/object-validation")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
@@ -231,7 +236,7 @@ public class GlobalExceptionHandlerValidationTest {
             "password123"  // Passwords match
         );
 
-        mockMvc.perform(post("/api/test/object-validation")
+        mockMvc.perform(post("/api/v1/test/object-validation")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk());
@@ -244,7 +249,7 @@ public class GlobalExceptionHandlerValidationTest {
             "2024-01-01"  // Valid end date
         );
 
-        mockMvc.perform(post("/api/test/mixed-validation")
+        mockMvc.perform(post("/api/v1/test/mixed-validation")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
@@ -262,7 +267,7 @@ public class GlobalExceptionHandlerValidationTest {
             "2024-01-01"   // End date before start date (violates cross-field constraint)
         );
 
-        mockMvc.perform(post("/api/test/mixed-validation")
+        mockMvc.perform(post("/api/v1/test/mixed-validation")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
@@ -281,7 +286,7 @@ public class GlobalExceptionHandlerValidationTest {
             "2024-12-31"
         );
 
-        mockMvc.perform(post("/api/test/mixed-validation")
+        mockMvc.perform(post("/api/v1/test/mixed-validation")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk());
@@ -295,7 +300,7 @@ public class GlobalExceptionHandlerValidationTest {
             "different"  // Passwords don't match (cross-field constraint error)
         );
 
-        mockMvc.perform(post("/api/test/object-validation")
+        mockMvc.perform(post("/api/v1/test/object-validation")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())

@@ -71,3 +71,55 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.flywaydb: INFO
     com.zaxxer.hikari: INFO
+
+# API Authentication (runtime/simulation execution)
+# API key for runtime endpoint authentication (X-API-Key header)
+# REQUIRED: Generate a secure random key (e.g., openssl rand -hex 32)
+# Override with: API_KEY environment variable
+api:
+  auth:
+    key: ${API_KEY:CHANGE_ME}
+    header: X-API-Key
+
+# Security Configuration
+# Override with environment variables: ADMIN_USERNAME, ADMIN_PASSWORD
+security:
+  admin:
+    # Admin username for HTTP Basic authentication
+    # Override with: ADMIN_USERNAME environment variable
+    username: ${ADMIN_USERNAME:admin}
+
+    # Admin password for HTTP Basic authentication
+    # REQUIRED: Replace 'CHANGE_ME' with a secure password
+    # Override with: ADMIN_PASSWORD environment variable
+    password: ${ADMIN_PASSWORD:CHANGE_ME}
+
+  # CORS configuration for frontend-backend interaction
+  cors:
+    # Comma-separated list of allowed origins (override with CORS_ALLOWED_ORIGINS)
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
+    allowed-methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - PATCH
+      - OPTIONS
+    allowed-headers:
+      - Authorization
+      - Content-Type
+      - X-API-Key
+      - X-Requested-With
+      - Accept
+      - Origin
+    exposed-headers:
+      - WWW-Authenticate
+    allow-credentials: true
+    max-age: 3600
+
+  # CSRF policy (disabled by default for stateless APIs)
+  csrf:
+    enabled: false
+    ignored-paths:
+      - /api/**
+      - /actuator/**
