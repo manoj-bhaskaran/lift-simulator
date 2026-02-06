@@ -72,8 +72,17 @@ logging:
     org.flywaydb: INFO
     com.zaxxer.hikari: INFO
 
+# API Authentication (runtime/simulation execution)
+# API key for runtime endpoint authentication (X-API-Key header)
+# REQUIRED: Generate a secure random key (e.g., openssl rand -hex 32)
+# Override with: API_KEY environment variable
+api:
+  auth:
+    key: ${API_KEY:CHANGE_ME}
+    header: X-API-Key
+
 # Security Configuration
-# Override with environment variables: ADMIN_USERNAME, ADMIN_PASSWORD, API_KEY
+# Override with environment variables: ADMIN_USERNAME, ADMIN_PASSWORD
 security:
   admin:
     # Admin username for HTTP Basic authentication
@@ -84,11 +93,6 @@ security:
     # REQUIRED: Replace 'CHANGE_ME' with a secure password
     # Override with: ADMIN_PASSWORD environment variable
     password: ${ADMIN_PASSWORD:CHANGE_ME}
-
-  # API key for runtime endpoint authentication (X-API-Key header)
-  # REQUIRED: Generate a secure random key (e.g., openssl rand -hex 32)
-  # Override with: API_KEY environment variable
-  api-key: ${API_KEY:CHANGE_ME}
 
   # CORS configuration for frontend-backend interaction
   cors:

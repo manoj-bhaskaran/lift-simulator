@@ -93,7 +93,7 @@ public class SecurityConfig {
     @Value("${security.admin.password:}")
     private String adminPassword;
 
-    @Value("${security.api-key:}")
+    @Value("${api.auth.key:}")
     private String apiKey;
 
     @Value("${api.auth.header:X-API-Key}")
