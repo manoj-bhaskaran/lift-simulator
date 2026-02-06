@@ -59,7 +59,8 @@ public class SecurityConfigTest extends LocalIntegrationTest {
     void corsPreflight_AllowsConfiguredOrigin() throws Exception {
         mockMvc.perform(options("/api/v1/lift-systems")
                 .header("Origin", "http://localhost:3000")
-                .header("Access-Control-Request-Method", "GET"))
+                .header("Access-Control-Request-Method", "GET")
+                .header("Access-Control-Request-Headers", "Authorization"))
             .andExpect(status().isOk())
             .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
             .andExpect(header().string("Access-Control-Allow-Methods", containsString("GET")))

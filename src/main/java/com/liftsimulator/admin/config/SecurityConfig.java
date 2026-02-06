@@ -201,7 +201,9 @@ public class SecurityConfig {
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(adminAuthenticationEntryPoint())
                 .accessDeniedHandler(accessDeniedHandler()))
-            .httpBasic(Customizer.withDefaults())
+            .httpBasic(httpBasic -> httpBasic
+                .realmName("Lift Simulator Admin")
+                .authenticationEntryPoint(adminAuthenticationEntryPoint()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/health").permitAll()
                 // OpenAPI/Swagger endpoints
