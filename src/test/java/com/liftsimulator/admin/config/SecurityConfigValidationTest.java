@@ -21,7 +21,7 @@ public class SecurityConfigValidationTest {
             .withPropertyValues(
                 "security.admin.username=admin",
                 "security.admin.password=",
-                "security.api-key=test-key"
+                "api.auth.key=test-key"
             )
             .run(context -> {
                 assertThat(context).hasFailed();
@@ -39,7 +39,7 @@ public class SecurityConfigValidationTest {
             .withPropertyValues(
                 "security.admin.username=admin",
                 "security.admin.password=   ",
-                "security.api-key=test-key"
+                "api.auth.key=test-key"
             )
             .run(context -> {
                 assertThat(context).hasFailed();
@@ -56,7 +56,7 @@ public class SecurityConfigValidationTest {
         contextRunner
             .withPropertyValues(
                 "security.admin.username=admin",
-                "security.api-key=test-key"
+                "api.auth.key=test-key"
                 // security.admin.password not set - defaults to empty
             )
             .run(context -> {
@@ -75,7 +75,7 @@ public class SecurityConfigValidationTest {
             .withPropertyValues(
                 "security.admin.username=admin",
                 "security.admin.password=securepassword123",
-                "security.api-key=test-key"
+                "api.auth.key=test-key"
             )
             .run(context -> {
                 assertThat(context).hasNotFailed();
