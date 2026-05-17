@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Condensed the historical foundation notes for the pre-release baseline into a shorter summary for readability.
+
+
 ## [0.46.0] - 2026-02-01
 
 ### Added
@@ -2140,27 +2144,15 @@ For developers updating from v0.21.0:
 ## [0.1.0] - 2026-01-06
 
 ### Added
-- Initial tick-based simulation engine
-- `SimulationEngine` class for advancing time in discrete ticks
-- `LiftState` immutable domain model (floor, direction, door state)
-- `Action` enum for lift actions (MOVE_UP, MOVE_DOWN, OPEN_DOOR, CLOSE_DOOR, IDLE)
-- `LiftController` interface for pluggable controller strategies
-- `NaiveLiftController` implementation (services nearest request first)
-- `SimpleLiftController` alternative basic implementation
-- Support for `CarCall` (requests from inside the lift)
-- Support for `HallCall` (requests from a floor with direction)
-- `Direction` enum (UP, DOWN, IDLE)
-- `DoorState` enum (OPEN, CLOSED)
-- Console-based demo in `Main.java`
-- Unit tests for `SimulationEngine` and `NaiveLiftController`
-- Maven build configuration with Java 17 and JUnit 5
-- Basic project documentation (README, CHANGELOG, ADR-0001)
-- EditorConfig file for consistent code formatting across IDEs and platforms
+- Initial simulator foundation release with the tick-based core engine and immutable `LiftState` model.
+- Core simulation contracts and strategies: `LiftController`, `NaiveLiftController`, and `SimpleLiftController`.
+- Initial request/action primitives: `Action`, `Direction`, `DoorState`, plus support for `CarCall` and `HallCall`.
+- Developer baseline: console demo (`Main.java`), unit tests, Maven/Java 17 + JUnit 5 build setup, and starter docs (README, CHANGELOG, ADR-0001).
 
 ### Design Decisions
-- Chose tick-based simulation for predictable, testable time advancement
-- Immutable state objects to avoid bugs from shared mutable state
-- Separated controller logic from simulation engine for flexibility
+- Chose tick-based simulation for predictable, testable time advancement.
+- Used immutable state objects to reduce shared-mutable-state defects.
+- Separated controller logic from the simulation engine for extensibility.
 
 [0.9.1]: https://github.com/manoj-bhaskaran/lift-simulator/compare/v0.9.0...v0.9.1
 [0.6.0]: https://github.com/manoj-bhaskaran/lift-simulator/compare/v0.5.0...v0.6.0

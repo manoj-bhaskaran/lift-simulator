@@ -6,7 +6,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 Current version: **0.46.0**
 
-This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.
+This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history, including a condensed summary of the pre-release foundation milestones.
 
 ## What is this?
 
