@@ -161,25 +161,33 @@ export async function createLiftSystem(
   // The app navigates to the new system detail page after a successful create.
   await page.locator('.modal-content').waitFor({ state: 'hidden' });
   await page.waitForURL(new RegExp(`/systems/${createdSystem.id}$`), { timeout: 5000 });
-  await expect(page.locator('text=' + systemData.systemKey)).toBeVisible({ timeout: 5000 });
+  // The system key is shown in the detail header; scope to it so the assertion
+  // does not collide with the copy rendered in the System Information grid.
+  await expect(page.locator('.detail-header .system-key')).toHaveText(systemData.systemKey, { timeout: 5000 });
 }
 
 /**
- * Helper function to delete a lift system via UI
+ * Helper function to delete a lift system via UI.
+ * Deletion is only available from the system detail page, so this opens the
+ * detail view first, then confirms the deletion in the modal.
  */
 export async function deleteLiftSystem(page: Page, systemKey: string): Promise<void> {
   await page.goto('/systems');
   await page.waitForLoadState('domcontentloaded');
 
-  // Find the system card by system key and click delete
+  // Open the detail page for the system (the list cards have no delete action).
   const systemCard = page.locator('.system-card').filter({ hasText: systemKey });
-  await systemCard.locator('button:has-text("Delete")').click();
+  await systemCard.locator('button:has-text("View Details")').click();
+  await page.waitForURL(/\/systems\/[^/]+$/);
 
-  // Confirm deletion in modal
-  await page.locator('.modal-content button:has-text("Delete")').click();
+  // Trigger deletion and confirm in the modal.
+  await page.locator('button:has-text("Delete System")').click();
+  const confirmModal = page.locator('.modal-content').filter({ hasText: /delete/i });
+  await confirmModal.waitFor({ state: 'visible' });
+  await confirmModal.locator('button:has-text("Delete")').click();
 
-  // Wait for modal to close
-  await page.locator('.modal-content').waitFor({ state: 'hidden' });
+  // The app navigates back to the systems list after a successful delete.
+  await page.waitForURL('**/systems');
 }
 
 /**
@@ -304,6 +312,11 @@ export async function cleanupSystemIfExists(page: Page, systemKey: string): Prom
     await page.goto('/systems');
     await page.waitForLoadState('domcontentloaded');
 
+    // Wait for the list to finish loading before checking for the card; the
+    // systems are fetched asynchronously, so a raw count() immediately after
+    // navigation can race the "Loading..." state and miss an existing system.
+    await page.locator('.systems-grid, .empty-state').first().waitFor({ state: 'visible', timeout: 5000 });
+
     const systemCard = page.locator('.system-card').filter({ hasText: systemKey });
     const count = await systemCard.count();
 
@@ -313,6 +326,30 @@ export async function cleanupSystemIfExists(page: Page, systemKey: string): Prom
   } catch (error) {
     // System doesn't exist or couldn't be deleted, which is fine for cleanup
     console.log(`Cleanup: Could not delete system ${systemKey}:`, error);
+  }
+}
+
+/**
+ * Deletes any scenarios attached to a system's versions via the API.
+ *
+ * A lift system cannot be deleted while scenarios reference its versions (the
+ * backend returns HTTP 409), so tests that create scenarios must remove them
+ * before the system can be cleaned up.
+ */
+export async function deleteScenariosForSystem(page: Page, systemKey: string): Promise<void> {
+  try {
+    const response = await page.request.get('http://localhost:8080/api/v1/scenarios');
+    if (!response.ok()) {
+      return;
+    }
+    const scenarios = await response.json();
+    for (const scenario of scenarios) {
+      if (scenario?.versionInfo?.systemKey === systemKey) {
+        await page.request.delete(`http://localhost:8080/api/v1/scenarios/${scenario.id}`);
+      }
+    }
+  } catch (error) {
+    console.log(`Cleanup: Could not delete scenarios for system ${systemKey}:`, error);
   }
 }
 
