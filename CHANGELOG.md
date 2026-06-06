@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **NPE prevention in scenario execution**: Added null check for `scenario.durationTicks()` in
+  `SimulationRunExecutionService.runSimulation()`. The method now fails cleanly with a clear
+  error message if the scenario has a null duration, preventing NullPointerException during
+  unboxing to primitive int.
+- **Removed dead code**: Eliminated duplicate `SimulationRunService.getAllRuns()` method which
+  was superseded by the more efficient `getAllRunsWithDetails()` that eagerly loads related
+  entities (lift system, version, scenario).
 - **Unified artefact path configuration**: Removed the duplicate `simulation.runs.artefacts-root`
   config key from `SimulationRunExecutionService`. All artefact storage now uses the single
   `simulation.artefacts.base-path` property (default: `./simulation-runs`) that was already

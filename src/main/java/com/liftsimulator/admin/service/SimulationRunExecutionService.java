@@ -164,9 +164,18 @@ public class SimulationRunExecutionService {
             ScenarioDefinitionDTO scenario = objectMapper.readerFor(ScenarioDefinitionDTO.class)
                 .readValue(scenarioNode);
 
+            if (scenario.durationTicks() == null) {
+                log(logWriter, "Scenario has null durationTicks");
+                SimulationRun runAtCheck = runService.getRunById(request.runId());
+                boolean runAlreadyStarted = runAtCheck.getStatus() == SimulationRun.RunStatus.RUNNING;
+                failRunWithMessage(request.runId(), logWriter, "Scenario must have a valid durationTicks value.", runAlreadyStarted);
+                writeResults(request.runId(), runDir, null, null, null, "FAILED", "Scenario must have a valid durationTicks value.");
+                return;
+            }
+
             runService.configureRun(
                 request.runId(),
-                scenario.durationTicks() != null ? scenario.durationTicks().longValue() : null,
+                scenario.durationTicks().longValue(),
                 scenario.seed() != null ? scenario.seed().longValue() : null,
                 null
             );

@@ -163,20 +163,6 @@ public class SimulationRunServiceTest {
     }
 
     @Test
-    public void testGetAllRuns() {
-        SimulationRun run1 = new SimulationRun();
-        SimulationRun run2 = new SimulationRun();
-        List<SimulationRun> runs = Arrays.asList(run1, run2);
-
-        when(runRepository.findAll()).thenReturn(runs);
-
-        List<SimulationRun> result = runService.getAllRuns();
-
-        assertEquals(2, result.size());
-        verify(runRepository).findAll();
-    }
-
-    @Test
     public void testGetRunById_Success() {
         when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
 
@@ -424,5 +410,20 @@ public class SimulationRunServiceTest {
 
         assertEquals("Simulation run not found with id: 999", exception.getMessage());
         verify(runRepository).existsById(999L);
+    }
+
+    @Test
+    public void testConfigureRun_WithNullDurationTicks() {
+        mockRun.setTotalTicks(null);
+        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SimulationRun result = runService.configureRun(1L, null, 12345L, "/path/to/artefacts");
+
+        assertNotNull(result);
+        // Verify that the run can be configured even with null durationTicks
+        // The null check occurs during execution, not configuration
+        verify(runRepository).findById(1L);
+        verify(runRepository).save(any(SimulationRun.class));
     }
 }
