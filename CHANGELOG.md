@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Refactored
+- **Decoupled simulation run execution wiring**: Removed the lazy circular dependency between `SimulationRunService` and `SimulationRunExecutionService`; the execution service now updates run lifecycle state and progress through `SimulationRunRepository` directly.
 - **Extract RunMetrics to `metrics` sub-package**: Decomposed `SimulationRunExecutionService`
   by moving `RunMetrics`, `FloorMetrics`, and `RequestLifecycle` inner classes into a new
   `com.liftsimulator.admin.service.metrics` package. The execution service is reduced from

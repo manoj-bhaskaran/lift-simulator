@@ -2749,7 +2749,7 @@ The backend includes JPA entities and Spring Data repositories for database acce
   - Run status enum: CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED
   - Relationships: Many-to-one with LiftSystem, LiftSystemVersion, and Scenario
   - Status transition methods: `start()`, `succeed()`, `fail()`, `cancel()`
-  - Progress tracking via `updateProgress(Long tick)`
+  - Progress tracking via repository-backed current tick updates
 
 #### Repositories
 
@@ -2772,6 +2772,8 @@ The backend includes JPA entities and Spring Data repositories for database acce
   - Standard CRUD operations via `JpaRepository`
 
 - **SimulationRunRepository** (`com.liftsimulator.admin.repository.SimulationRunRepository`)
+  - Persists simulation run lifecycle changes for both API orchestration and asynchronous execution, avoiding service-to-service circular dependencies
+  - Update run progress directly: `updateCurrentTick(Long id, Long currentTick)`
   - Find runs by lift system: `findByLiftSystemIdOrderByCreatedAtDesc(Long liftSystemId)`
   - Find runs by version: `findByVersionIdOrderByCreatedAtDesc(Long versionId)`
   - Find runs by scenario: `findByScenarioIdOrderByCreatedAtDesc(Long scenarioId)`
