@@ -18,6 +18,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -60,10 +61,19 @@ public class SimulationRunDirectoryIntegrationTest extends LocalIntegrationTest 
             "\"idleParkingMode\": \"PARK_TO_HOME_FLOOR\"}";
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         runRepository.deleteAll();
         versionRepository.deleteAll();
         liftSystemRepository.deleteAll();
+
+        // Remove any run directories left by a previous test so each test starts clean
+        try (var entries = Files.newDirectoryStream(artefactsRoot)) {
+            for (Path entry : entries) {
+                Files.walk(entry)
+                        .sorted(Comparator.reverseOrder())
+                        .forEach(p -> { try { Files.delete(p); } catch (IOException ignored) { } });
+            }
+        }
 
         testSystem = liftSystemRepository.save(new LiftSystem("dir-test-system", "Dir Test System", ""));
         testVersion = new LiftSystemVersion(testSystem, 1, VALID_CONFIG);
