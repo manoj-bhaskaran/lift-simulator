@@ -169,15 +169,6 @@ public class SimulationRunService {
     }
 
     /**
-     * Get all simulation runs.
-     *
-     * @return list of all runs
-     */
-    public List<SimulationRun> getAllRuns() {
-        return runRepository.findAll();
-    }
-
-    /**
      * Get all simulation runs with their related entities (lift system, version, scenario).
      *
      * @return list of all runs with details, ordered by creation date descending
