@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Unified artefact path configuration**: Removed the duplicate `simulation.runs.artefacts-root`
+  config key from `SimulationRunExecutionService`. All artefact storage now uses the single
+  `simulation.artefacts.base-path` property (default: `./simulation-runs`) that was already
+  present in `application.properties`.
+- **Directory orphaning eliminated**: `SimulationRunExecutionService.executeRun()` no longer
+  creates a second run directory and overwrites the persisted path. The execution service now
+  reads `artefactBasePath` from the run entity (set once by `SimulationRunService`) and writes
+  all artefacts to that directory.
+- Added `simulation.artefacts.base-path` to `application-dev.yml.template` so developers have
+  an explicit reference for the configuration key.
+- Updated README to document `simulation.artefacts.base-path` as the single configuration key
+  for artefact storage.
+- Added integration tests (`SimulationRunDirectoryIntegrationTest`) verifying that exactly one
+  artefact directory is created per run and that it matches the persisted `artefactBasePath`.
+
 ## [0.47.0] - 2026-06-06
 
 ### Security

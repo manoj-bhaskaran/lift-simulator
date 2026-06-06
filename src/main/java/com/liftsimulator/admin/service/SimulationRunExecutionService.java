@@ -38,7 +38,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,7 +60,6 @@ public class SimulationRunExecutionService {
     private final ScenarioValidationService scenarioValidationService;
     private final ObjectMapper objectMapper;
     private final ExecutorService executor;
-    private final Path artefactsRoot;
     private final Map<Long, Future<?>> runningTasks = new ConcurrentHashMap<>();
     private final Map<Long, CancellationToken> cancellationTokens = new ConcurrentHashMap<>();
 
@@ -73,34 +71,12 @@ public class SimulationRunExecutionService {
             SimulationRunService runService,
             ConfigValidationService configValidationService,
             ScenarioValidationService scenarioValidationService,
-            ObjectMapper objectMapper,
-            @Value("${simulation.runs.artefacts-root:run-artefacts}") String artefactsRoot) {
+            ObjectMapper objectMapper) {
         this.runService = runService;
         this.configValidationService = configValidationService;
         this.scenarioValidationService = scenarioValidationService;
         this.objectMapper = objectMapper;
         this.executor = Executors.newCachedThreadPool(new SimulationRunnerThreadFactory());
-        this.artefactsRoot = Paths.get(artefactsRoot);
-    }
-
-    /**
-     * Creates a simulation run and executes it asynchronously.
-     *
-     * @param liftSystemId the lift system id
-     * @param versionId the version id
-     * @param scenarioId the scenario id (optional)
-     * @return the created simulation run (CREATED)
-     */
-    @Transactional
-    public SimulationRun startAsyncRun(Long liftSystemId, Long versionId, Long scenarioId) {
-        SimulationRun run = runService.createRun(liftSystemId, versionId, scenarioId);
-
-        String configJson = run.getVersion().getConfig();
-        String scenarioJson = run.getScenario() != null ? run.getScenario().getScenarioJson() : null;
-
-        RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, scenarioJson);
-        submitExecution(request);
-        return run;
     }
 
     /**
@@ -134,24 +110,30 @@ public class SimulationRunExecutionService {
     }
 
     private void executeRun(RunExecutionRequest request) {
-        Path runDir = buildRunDirectory(request.runId());
-        Path logPath = runDir.resolve(LOG_FILE_NAME);
-        boolean started = false;
         CancellationToken cancelToken = cancellationTokens.computeIfAbsent(request.runId(), id -> new CancellationToken());
+        boolean started = false;
 
+        SimulationRun runEntity;
         try {
-            Files.createDirectories(runDir);
-            runService.configureRun(request.runId(), null, null, runDir.toAbsolutePath().toString());
+            runEntity = runService.getRunById(request.runId());
         } catch (Exception ex) {
-            logger.error("Failed to create run artefact directory for run {}", request.runId(), ex);
-            failRunWithMessage(request.runId(),
-                "Failed to initialize run artefacts: " + safeMessage(ex),
-                false);
+            logger.error("Failed to load run {} for execution", request.runId(), ex);
             return;
         }
 
+        String artefactPath = runEntity.getArtefactBasePath();
+        if (artefactPath == null || artefactPath.isBlank()) {
+            logger.error("Run {} has no artefact path configured; cannot execute", request.runId());
+            failRunWithMessage(request.runId(), "Artefact path not configured for run.", false);
+            return;
+        }
+
+        Path runDir = Paths.get(artefactPath);
+        Path logPath = runDir.resolve(LOG_FILE_NAME);
+        logger.info("Run {} using artefact directory: {}", request.runId(), runDir);
+
         try (BufferedWriter logWriter = Files.newBufferedWriter(logPath, StandardCharsets.UTF_8)) {
-            log(logWriter, "Run directory initialized at " + runDir.toAbsolutePath());
+            log(logWriter, "Run directory: " + runDir.toAbsolutePath());
             writeInputFiles(request, runDir, logWriter);
 
             if (request.scenarioJson() == null) {
@@ -186,7 +168,7 @@ public class SimulationRunExecutionService {
                 request.runId(),
                 scenario.durationTicks() != null ? scenario.durationTicks().longValue() : null,
                 scenario.seed() != null ? scenario.seed().longValue() : null,
-                runDir.toAbsolutePath().toString()
+                null
             );
 
             // Start the run if not already started (it may have been started by createAndStartRun)
@@ -422,10 +404,6 @@ public class SimulationRunExecutionService {
 
         objectMapper.writerWithDefaultPrettyPrinter()
             .writeValue(runDir.resolve(RESULTS_FILE_NAME).toFile(), results);
-    }
-
-    private Path buildRunDirectory(Long runId) {
-        return artefactsRoot.resolve("run-" + runId);
     }
 
     private void log(BufferedWriter writer, String message) throws IOException {

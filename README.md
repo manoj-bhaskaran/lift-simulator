@@ -658,15 +658,15 @@ Simulation runs execute asynchronously using stored lift system configurations a
       "currentTick": 0,
       "seed": null,
       "errorMessage": null,
-      "artefactBasePath": "run-artefacts/run-42"
+      "artefactBasePath": "./simulation-runs/run-42"
     }
     ```
 
 - **Get Simulation Run**: `GET /api/v1/simulation-runs/{id}`
   - Returns the current status, progress, and artefact location.
 
-Run artefacts are stored on disk using the configured `simulation.runs.artefacts-root` directory
-(defaults to `run-artefacts/`). Each run folder contains:
+Run artefacts are stored on disk using the configured `simulation.artefacts.base-path` property
+(defaults to `./simulation-runs`). Each run folder is created at `{base-path}/run-{id}/` and contains:
 
 - `config.json` - exact configuration payload used
 - `scenario.json` - scenario payload for passenger flows
