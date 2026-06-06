@@ -61,7 +61,7 @@ test.describe('Configuration Validator', () => {
     await expect(errorResult).toBeVisible();
 
     // Check for error messages (e.g., "maximum floor must be greater than minimum floor")
-    await expect(page.locator('text=/error|invalid|fail/i')).toBeVisible();
+    await expect(errorResult).toContainText(/error|invalid|fail/i);
   });
 
   test('Validator shows warnings distinctly from errors', async ({ page }) => {

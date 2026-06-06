@@ -34,8 +34,9 @@ test.describe('Health Check', () => {
     expect(statusText).toMatch(/OK|UP|HEALTHY/i);
 
     // Verify timestamp is shown
-    const lastChecked = page.locator('.last-checked, text=/last checked|timestamp/i');
-    await expect(lastChecked.first()).toBeVisible();
+    const lastChecked = page.locator('.last-checked');
+    await expect(lastChecked).toBeVisible();
+    await expect(lastChecked).toContainText(/last checked/i);
 
     // Step 3: Refresh status (if button exists)
     const refreshButton = page.locator('button:has-text("Refresh")');

@@ -46,8 +46,8 @@ test.describe('Dashboard Metrics', () => {
     await expect(page.locator('h2:has-text("Dashboard")')).toBeVisible();
 
     // Verify metrics tiles are visible
-    await expect(page.locator('text=/Number of.*Lift System/i')).toBeVisible();
-    await expect(page.locator('text=/Number of.*Version/i')).toBeVisible();
+    await expect(page.locator('.stat-item').filter({ hasText: /Lift Systems/i })).toBeVisible();
+    await expect(page.locator('.stat-item').filter({ hasText: /Configuration Versions/i })).toBeVisible();
 
     // Step 2: Note initial counts
     const initialMetrics = await getDashboardMetrics(page);
@@ -156,16 +156,11 @@ test.describe('Dashboard Metrics', () => {
       testSystems.splice(index, 1);
     }
 
-    // Refresh dashboard
-    await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1000);
-
-    // Get metrics after deletion
-    const metricsAfter = await getDashboardMetrics(page);
-
-    // Systems count should decrease by 1
-    expect(metricsAfter.systems).toBe(metricsBefore.systems - 1);
+    // Systems count should decrease by 1 once the dashboard refreshes after deletion
+    await expect.poll(async () => {
+      const metricsAfter = await getDashboardMetrics(page);
+      return metricsAfter.systems;
+    }).toBe(metricsBefore.systems - 1);
   });
 
   test('Dashboard is accessible from navigation', async ({ page }) => {

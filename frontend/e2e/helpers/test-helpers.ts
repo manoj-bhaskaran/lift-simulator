@@ -146,14 +146,19 @@ export async function createLiftSystem(
   await page.locator('#displayName').fill(systemData.displayName);
   await page.locator('#description').fill(systemData.description);
 
-  // Submit the form
-  await page.locator('.modal-content button:has-text("Create")').click();
+  // Submit the form and wait for the backend create response
+  const [createResponse] = await Promise.all([
+    page.waitForResponse((response) =>
+      response.url().includes('/api/v1/lift-systems') &&
+      response.request().method() === 'POST'
+    ),
+    page.locator('.modal-content button:has-text("Create")').click(),
+  ]);
+  expect(createResponse.ok()).toBeTruthy();
 
-  // Wait for modal to close
+  // Wait for modal to close and the new card to appear
   await page.locator('.modal-content').waitFor({ state: 'hidden' });
-
-  // Wait for success message or system card to appear
-  await page.waitForTimeout(500); // Small delay for UI update
+  await expect(page.locator('.system-card').filter({ hasText: systemData.systemKey })).toBeVisible({ timeout: 5000 });
 }
 
 /**

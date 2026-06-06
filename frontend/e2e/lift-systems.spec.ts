@@ -67,8 +67,15 @@ test.describe('Lift Systems Management', () => {
     await expect(page.locator('#displayName')).toHaveValue(systemData.displayName);
     await expect(page.locator('#description')).toHaveValue(systemData.description);
 
-    // Step 4: Click Create button
-    await page.locator('.modal-content button:has-text("Create")').click();
+    // Step 4: Click Create button and wait for backend success
+    const [createResponse] = await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes('/api/v1/lift-systems') &&
+        response.request().method() === 'POST'
+      ),
+      page.locator('.modal-content button:has-text("Create")').click(),
+    ]);
+    expect(createResponse.ok()).toBeTruthy();
 
     // Wait for modal to close
     await expect(page.locator('.modal-content')).toBeHidden({ timeout: 5000 });

@@ -57,7 +57,7 @@ test.describe('Configuration Version Management', () => {
 
     // Verify inline form opens with version number shown
     await expect(page.locator('.create-version-form')).toBeVisible();
-    await expect(page.locator('.create-version-form').locator('text=/Version/i')).toBeVisible();
+    await expect(page.locator('.create-version-form h4')).toHaveText(/Version 1/i);
 
     // Step 2: Paste valid configuration JSON
     const validConfig = VALID_CONFIGS.basicOffice;
