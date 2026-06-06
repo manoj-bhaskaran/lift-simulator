@@ -9,6 +9,7 @@ import com.liftsimulator.admin.dto.PassengerFlowDTO;
 import com.liftsimulator.admin.dto.ScenarioDefinitionDTO;
 import com.liftsimulator.admin.dto.ScenarioValidationResponse;
 import com.liftsimulator.admin.entity.SimulationRun;
+import com.liftsimulator.admin.repository.SimulationRunRepository;
 import com.liftsimulator.admin.service.metrics.RunMetrics;
 import com.liftsimulator.domain.Direction;
 import com.liftsimulator.domain.LiftRequest;
@@ -53,7 +54,7 @@ public class SimulationRunExecutionService {
     private static final String LOG_FILE_NAME = "run.log";
     private static final String RESULTS_FILE_NAME = "results.json";
 
-    private final SimulationRunService runService;
+    private final SimulationRunRepository runRepository;
     private final ConfigValidationService configValidationService;
     private final ScenarioValidationService scenarioValidationService;
     private final ObjectMapper objectMapper;
@@ -66,11 +67,11 @@ public class SimulationRunExecutionService {
         justification = "Injected dependencies and configuration managed by Spring."
     )
     public SimulationRunExecutionService(
-            SimulationRunService runService,
+            SimulationRunRepository runRepository,
             ConfigValidationService configValidationService,
             ScenarioValidationService scenarioValidationService,
             ObjectMapper objectMapper) {
-        this.runService = runService;
+        this.runRepository = runRepository;
         this.configValidationService = configValidationService;
         this.scenarioValidationService = scenarioValidationService;
         this.objectMapper = objectMapper;
@@ -85,7 +86,7 @@ public class SimulationRunExecutionService {
      */
     @Transactional
     public void submitRunForExecution(Long runId) {
-        SimulationRun run = runService.getRunById(runId);
+        SimulationRun run = getRunById(runId);
         String configJson = run.getVersion().getConfig();
         String scenarioJson = run.getScenario() != null ? run.getScenario().getScenarioJson() : null;
 
@@ -101,7 +102,7 @@ public class SimulationRunExecutionService {
      */
     @Transactional
     public SimulationRun cancelRun(Long runId) {
-        SimulationRun run = runService.cancelRun(runId);
+        SimulationRun run = cancelRunStatus(runId);
         CancellationToken token = cancellationTokens.computeIfAbsent(runId, id -> new CancellationToken());
         token.cancel();
         return run;
@@ -113,7 +114,7 @@ public class SimulationRunExecutionService {
 
         SimulationRun runEntity;
         try {
-            runEntity = runService.getRunById(request.runId());
+            runEntity = getRunById(request.runId());
         } catch (Exception ex) {
             logger.error("Failed to load run {} for execution", request.runId(), ex);
             return;
@@ -164,14 +165,14 @@ public class SimulationRunExecutionService {
 
             if (scenario.durationTicks() == null) {
                 log(logWriter, "Scenario has null durationTicks");
-                SimulationRun runAtCheck = runService.getRunById(request.runId());
+                SimulationRun runAtCheck = getRunById(request.runId());
                 boolean runAlreadyStarted = runAtCheck.getStatus() == SimulationRun.RunStatus.RUNNING;
                 failRunWithMessage(request.runId(), logWriter, "Scenario must have a valid durationTicks value.", runAlreadyStarted);
                 writeResults(request.runId(), runDir, null, null, null, "FAILED", "Scenario must have a valid durationTicks value.");
                 return;
             }
 
-            runService.configureRun(
+            configureRun(
                 request.runId(),
                 scenario.durationTicks().longValue(),
                 scenario.seed() != null ? scenario.seed().longValue() : null,
@@ -179,7 +180,7 @@ public class SimulationRunExecutionService {
             );
 
             // Start the run if not already started (it may have been started by createAndStartRun)
-            SimulationRun currentRun = runService.getRunById(request.runId());
+            SimulationRun currentRun = getRunById(request.runId());
             if (currentRun.getStatus() == SimulationRun.RunStatus.CANCELLED || cancelToken.isCancelled()) {
                 log(logWriter, "Run cancelled before start for run " + request.runId());
                 cancelRunSafely(request.runId(), logWriter, "Run cancelled before start.");
@@ -187,19 +188,19 @@ public class SimulationRunExecutionService {
                 return;
             }
             if (currentRun.getStatus() != SimulationRun.RunStatus.RUNNING) {
-                runService.startRun(request.runId());
+                startRun(request.runId());
             }
             started = true;
             log(logWriter, "Simulation started for run " + request.runId());
 
             RunMetrics metrics = runSimulation(request.runId(), config, scenario, logWriter, cancelToken);
 
-            if (cancelToken.isCancelled() || runService.getRunById(request.runId()).getStatus() == SimulationRun.RunStatus.CANCELLED) {
+            if (cancelToken.isCancelled() || getRunById(request.runId()).getStatus() == SimulationRun.RunStatus.CANCELLED) {
                 log(logWriter, "Run cancelled for run " + request.runId());
                 writeResults(request.runId(), runDir, config, scenario, metrics, "CANCELLED", "Run cancelled.");
                 return;
             }
-            runService.succeedRun(request.runId());
+            succeedRun(request.runId());
             log(logWriter, "Simulation succeeded for run " + request.runId());
             writeResults(request.runId(), runDir, config, scenario, metrics, "SUCCEEDED", null);
         } catch (RunCancelledException ex) {
@@ -287,11 +288,11 @@ public class SimulationRunExecutionService {
 
             long progressTick = tick + 1L;
             if (tick % PROGRESS_UPDATE_INTERVAL == 0) {
-                runService.updateProgress(runId, progressTick);
+                updateProgress(runId, progressTick);
             }
         }
 
-        runService.updateProgress(runId, (long) scenario.durationTicks());
+        updateProgress(runId, (long) scenario.durationTicks());
         log(logWriter, "Simulation completed at tick " + engine.getCurrentTick());
         metrics.recordTerminalRequests(engine.getCurrentTick());
         return metrics;
@@ -308,6 +309,58 @@ public class SimulationRunExecutionService {
             flowsByTick.computeIfAbsent(tick, key -> new ArrayList<>()).add(flow);
         }
         return flowsByTick;
+    }
+
+    private SimulationRun getRunById(Long runId) {
+        return runRepository.findById(runId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Simulation run not found with id: " + runId));
+    }
+
+    private SimulationRun configureRun(Long runId, Long totalTicks, Long seed, String artefactBasePath) {
+        SimulationRun run = getRunById(runId);
+        if (totalTicks != null) {
+            run.setTotalTicks(totalTicks);
+        }
+        if (seed != null) {
+            run.setSeed(seed);
+        }
+        if (artefactBasePath != null) {
+            run.setArtefactBasePath(artefactBasePath);
+        }
+        return runRepository.save(run);
+    }
+
+    private SimulationRun startRun(Long runId) {
+        SimulationRun run = getRunById(runId);
+        run.start();
+        return runRepository.save(run);
+    }
+
+    private SimulationRun succeedRun(Long runId) {
+        SimulationRun run = getRunById(runId);
+        run.succeed();
+        return runRepository.save(run);
+    }
+
+    private SimulationRun failRun(Long runId, String message) {
+        SimulationRun run = getRunById(runId);
+        run.fail(message);
+        return runRepository.save(run);
+    }
+
+    private SimulationRun cancelRunStatus(Long runId) {
+        SimulationRun run = getRunById(runId);
+        run.cancel();
+        return runRepository.save(run);
+    }
+
+    private SimulationRun updateProgress(Long runId, Long currentTick) {
+        int updated = runRepository.updateCurrentTick(runId, currentTick);
+        if (updated == 0) {
+            throw new ResourceNotFoundException("Simulation run not found with id: " + runId);
+        }
+        return getRunById(runId);
     }
 
     private void writeInputFiles(RunExecutionRequest request, Path runDir, BufferedWriter logWriter) throws IOException {
@@ -337,9 +390,9 @@ public class SimulationRunExecutionService {
     private void failRunWithMessage(Long runId, String message, boolean started) {
         try {
             if (!started) {
-                runService.startRun(runId);
+                startRun(runId);
             }
-            runService.failRun(runId, message);
+            failRun(runId, message);
         } catch (Exception ex) {
             logger.error("Failed to mark run {} as failed", runId, ex);
         }
@@ -361,11 +414,11 @@ public class SimulationRunExecutionService {
 
     private void cancelRunSafely(Long runId, String message) {
         try {
-            SimulationRun run = runService.getRunById(runId);
+            SimulationRun run = getRunById(runId);
             if (run.getStatus() == SimulationRun.RunStatus.CANCELLED) {
                 return;
             }
-            runService.cancelRun(runId);
+            cancelRunStatus(runId);
         } catch (Exception ex) {
             logger.error("Failed to mark run {} as cancelled", runId, ex);
         }
@@ -396,7 +449,7 @@ public class SimulationRunExecutionService {
             runSummary.put("ticks", metrics.totalTicks());
         }
         try {
-            SimulationRun run = runService.getRunById(runId);
+            SimulationRun run = getRunById(runId);
             runSummary.put("liftSystemId", run.getLiftSystem().getId());
             runSummary.put("versionId", run.getVersion().getId());
         } catch (Exception ex) {

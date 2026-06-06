@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -149,6 +151,7 @@ public interface SimulationRunRepository extends JpaRepository<SimulationRun, Lo
      * @param currentTick the current tick
      * @return number of rows updated
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE SimulationRun r SET r.currentTick = :currentTick WHERE r.id = :id")
     int updateCurrentTick(@Param("id") Long id, @Param("currentTick") Long currentTick);

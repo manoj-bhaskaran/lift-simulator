@@ -13,7 +13,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,7 +50,7 @@ public class SimulationRunService {
             LiftSystemRepository liftSystemRepository,
             LiftSystemVersionRepository versionRepository,
             ScenarioRepository scenarioRepository,
-            @Lazy SimulationRunExecutionService executionService,
+            SimulationRunExecutionService executionService,
             @Value("${simulation.artefacts.base-path:./simulation-runs}") String artefactsBasePath) {
         this.runRepository = runRepository;
         this.liftSystemRepository = liftSystemRepository;
