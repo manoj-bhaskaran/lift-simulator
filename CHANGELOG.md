@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Refactored
+- **Extract RunMetrics to `metrics` sub-package**: Decomposed `SimulationRunExecutionService`
+  by moving `RunMetrics`, `FloorMetrics`, and `RequestLifecycle` inner classes into a new
+  `com.liftsimulator.admin.service.metrics` package. The execution service is reduced from
+  ~711 lines to ~450 lines and the metrics classes are now independently testable. No public
+  API or behaviour changes.
+
+### Added
+- **Unit tests for RunMetrics**: Added `RunMetricsTest` covering KPI computation (completed/
+  cancelled counts, average and max wait ticks, utilisation), per-floor passenger flows and
+  lift visits, per-lift config output, and idempotency of `recordTerminalRequests`.
+
 ### Fixed
 - **NPE prevention in scenario execution**: Added null check for `scenario.durationTicks()` in
   `SimulationRunExecutionService.runSimulation()`. The method now fails cleanly with a clear
