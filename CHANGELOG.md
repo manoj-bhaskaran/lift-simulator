@@ -7,13 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.47.0] - 2026-06-06
+
 ### Security
+- **API Key Validation at Startup**: Application now throws `IllegalStateException` during startup if `api.auth.key` is not configured, preventing misconfiguration from being masked by silent request rejection
+- **Secure API Key Comparison**: API key validation now uses SHA-256 hashing with constant-time comparison instead of plaintext equality checks, preventing timing attacks and credential leakage
 - **Frontend dependencies**: Updated vite from 7.2.4 to 7.2.9, axios from 1.13.5 to 1.18.1, and react-router-dom from 7.12.0 to 7.14.2 to resolve multiple security vulnerabilities including arbitrary file read, prototype pollution, SSRF, credential leakage, and XSS issues
 - **Backend dependencies**: Updated PostgreSQL driver from 42.7.3 to 42.7.11 to address unbounded PBKDF2 iterations vulnerability (CVE GHSA-98qh-xjc8-98pq)
 
 ### Changed
 - Condensed the historical foundation notes for the pre-release baseline into a shorter summary for readability.
-
 
 ## [0.46.0] - 2026-02-01
 

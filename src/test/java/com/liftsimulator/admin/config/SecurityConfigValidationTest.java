@@ -90,4 +90,73 @@ public class SecurityConfigValidationTest {
                 assertThat(context).hasBean("userDetailsService");
             });
     }
+
+    @Test
+    void startupFails_WhenApiKeyIsEmpty() {
+        contextRunner
+            .withPropertyValues(
+                "security.admin.username=admin",
+                "security.admin.password=securepassword123",
+                "api.auth.key="
+            )
+            .run(context -> {
+                assertThat(context).hasFailed();
+                assertThat(context.getStartupFailure())
+                    .isInstanceOf(BeanCreationException.class)
+                    .rootCause()
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("API key must be configured")
+                    .hasMessageContaining("API_KEY environment variable");
+            });
+    }
+
+    @Test
+    void startupFails_WhenApiKeyIsBlank() {
+        contextRunner
+            .withPropertyValues(
+                "security.admin.username=admin",
+                "security.admin.password=securepassword123",
+                "api.auth.key=   "
+            )
+            .run(context -> {
+                assertThat(context).hasFailed();
+                assertThat(context.getStartupFailure())
+                    .isInstanceOf(BeanCreationException.class)
+                    .rootCause()
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("API key must be configured");
+            });
+    }
+
+    @Test
+    void startupFails_WhenApiKeyNotSet() {
+        contextRunner
+            .withPropertyValues(
+                "security.admin.username=admin",
+                "security.admin.password=securepassword123"
+                // api.auth.key not set - defaults to empty
+            )
+            .run(context -> {
+                assertThat(context).hasFailed();
+                assertThat(context.getStartupFailure())
+                    .isInstanceOf(BeanCreationException.class)
+                    .rootCause()
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("API key must be configured");
+            });
+    }
+
+    @Test
+    void startupSucceeds_WhenApiKeyIsConfigured() {
+        contextRunner
+            .withPropertyValues(
+                "security.admin.username=admin",
+                "security.admin.password=securepassword123",
+                "api.auth.key=secure-api-key-1234567890abcdef"
+            )
+            .run(context -> {
+                assertThat(context).hasNotFailed();
+                assertThat(context).hasBean("userDetailsService");
+            });
+    }
 }

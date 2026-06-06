@@ -74,8 +74,17 @@ logging:
 
 # API Authentication (runtime/simulation execution)
 # API key for runtime endpoint authentication (X-API-Key header)
-# REQUIRED: Generate a secure random key (e.g., openssl rand -hex 32)
-# Override with: API_KEY environment variable
+#
+# REQUIRED: Generate a secure random key
+# Generate with one of these commands:
+#   openssl rand -base64 32
+#   python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+#
+# Set via environment variable: API_KEY=<your-generated-key>
+# Or replace CHANGE_ME below with your generated key
+#
+# SECURITY NOTE: API keys are compared using SHA-256 hashing with constant-time
+# comparison to prevent timing attacks and credential leakage.
 api:
   auth:
     key: ${API_KEY:CHANGE_ME}

@@ -1,7 +1,7 @@
 {
   "name": "lift-simulator-admin",
   "private": true,
-  "version": "0.45.1",
+  "version": "0.47.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

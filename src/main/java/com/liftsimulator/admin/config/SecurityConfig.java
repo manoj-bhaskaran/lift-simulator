@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.config;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -101,6 +102,19 @@ public class SecurityConfig {
 
     @Value("${api.auth.header:X-API-Key}")
     private String apiKeyHeader;
+
+    /**
+     * Initialize API key validation at startup.
+     * Ensures API key is configured before the application starts serving requests.
+     */
+    @PostConstruct
+    public void validateApiKey() {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException(
+                "API key must be configured. Set api.auth.key property or API_KEY environment variable. " +
+                "Example: export API_KEY=$(openssl rand -base64 32)");
+        }
+    }
 
     private final SecurityUsersProperties securityUsersProperties;
     private final CorsProperties corsProperties;
