@@ -166,7 +166,9 @@ public class SimulationRunExecutionService {
 
             if (scenario.durationTicks() == null) {
                 log(logWriter, "Scenario has null durationTicks");
-                failRunWithMessage(request.runId(), logWriter, "Scenario must have a valid durationTicks value.", false);
+                SimulationRun runAtCheck = runService.getRunById(request.runId());
+                boolean runAlreadyStarted = runAtCheck.getStatus() == SimulationRun.RunStatus.RUNNING;
+                failRunWithMessage(request.runId(), logWriter, "Scenario must have a valid durationTicks value.", runAlreadyStarted);
                 writeResults(request.runId(), runDir, null, null, null, "FAILED", "Scenario must have a valid durationTicks value.");
                 return;
             }
