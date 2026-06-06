@@ -3278,7 +3278,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 E2E_ADMIN_USERNAME=admin E2E_ADMIN_PASSWORD=local-admin-password E2E_API_KEY=local-api-key npm test
 ```
 
-In CI, the `e2e-playwright` job provisions PostgreSQL, packages and starts the backend, waits for `/api/v1/health`, runs `npm test` in `frontend/`, and uploads Playwright HTML reports plus failure artifacts.
+In CI, the `e2e-playwright` job provisions PostgreSQL, packages and starts the backend, waits for `/api/v1/health`, runs `npm test` in `frontend/`, injects test-only auth through Playwright and the Vite dev proxy, and uploads Playwright HTML reports plus failure artifacts.
 
 ## Quality Checks
 

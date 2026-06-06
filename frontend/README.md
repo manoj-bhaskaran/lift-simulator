@@ -172,7 +172,7 @@ Playwright is configured in `playwright.config.ts` with:
 - **Base URL**: http://localhost:3000
 - **API URL**: `/api/v1` by default, proxied by Vite to `http://localhost:8080/api/v1`
 - **Backend Health URL**: Feature tests check `http://localhost:8080/api/v1/health` before executing
-- **E2E Auth Headers**: Playwright injects optional `E2E_ADMIN_USERNAME`/`E2E_ADMIN_PASSWORD` Basic auth and `E2E_API_KEY` headers at browser-context level; these values are never read by app code or bundled by Vite
+- **E2E Auth Headers**: Playwright injects optional `E2E_ADMIN_USERNAME`/`E2E_ADMIN_PASSWORD` Basic auth and `E2E_API_KEY` headers at browser-context level, and the Vite dev proxy mirrors those headers for `/api/v1` requests; these values are never read by app code or bundled by Vite
 - **Web Server**: Automatically starts `npm run dev` before tests
 - **Test Directory**: `e2e/`
 - **Retries on CI**: 2 retries to handle flaky tests
@@ -445,7 +445,7 @@ If `VITE_API_BASE_URL` is left unset, the app will continue to use `/api/v1`, wh
 
 ### Playwright E2E Environment Variables
 
-The Playwright configuration can inject backend authentication headers for local and CI E2E runs without exposing credentials through Vite's client-side environment variables:
+The Playwright configuration and Vite dev proxy can inject backend authentication headers for local and CI E2E runs without exposing credentials through Vite's client-side environment variables:
 
 | Variable | Description | Default |
 | --- | --- | --- |
