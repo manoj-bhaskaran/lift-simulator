@@ -4,8 +4,8 @@ import {
   createLiftSystem,
   navigateToSystemDetail,
   createConfigVersion,
-  getVersionStatus,
-  publishVersion,
+  openCreateVersionForm,
+  fillAndValidateVersionConfig,
   cleanupSystemIfExists,
   isBackendAvailable,
   VALID_CONFIGS,
@@ -53,11 +53,11 @@ test.describe('Configuration Version Management', () => {
     await navigateToSystemDetail(page, testSystemKey);
 
     // Step 1: Click Create New Version button
-    await page.locator('button:has-text("Create New Version")').click();
+    await openCreateVersionForm(page);
 
-    // Verify modal opens with version number shown
-    await expect(page.locator('.modal-content')).toBeVisible();
-    await expect(page.locator('.modal-content').locator('text=/Version/i')).toBeVisible();
+    // Verify inline form opens with version number shown
+    await expect(page.locator('.create-version-form')).toBeVisible();
+    await expect(page.locator('.create-version-form h4')).toHaveText(/Version 1/i);
 
     // Step 2: Paste valid configuration JSON
     const validConfig = VALID_CONFIGS.basicOffice;
@@ -67,11 +67,13 @@ test.describe('Configuration Version Management', () => {
     const configValue = await page.locator('#config').inputValue();
     expect(configValue).toContain('"minFloor"');
 
-    // Step 3: Click Create button
-    await page.locator('.modal-content button:has-text("Create")').click();
+    // Step 3: Validate and click Create Version button
+    await page.locator('.create-version-form button:has-text("Validate")').click();
+    await expect(page.locator('.validation-success-banner')).toBeVisible({ timeout: 5000 });
+    await page.locator('.create-version-form button:has-text("Create Version")').click();
 
-    // Wait for modal to close
-    await expect(page.locator('.modal-content')).toBeHidden({ timeout: 5000 });
+    // Wait for inline form to close
+    await expect(page.locator('.create-version-form')).toBeHidden({ timeout: 5000 });
 
     // Step 4: Verify version appears with status DRAFT
     await page.waitForTimeout(1000); // Wait for UI to update
@@ -89,31 +91,23 @@ test.describe('Configuration Version Management', () => {
     await navigateToSystemDetail(page, testSystemKey);
 
     // Step 1: Click Create New Version button
-    await page.locator('button:has-text("Create New Version")').click();
-    await expect(page.locator('.modal-content')).toBeVisible();
+    await openCreateVersionForm(page);
 
     // Step 2: Paste invalid configuration JSON
     const invalidConfig = INVALID_CONFIGS.invalidExample;
     await page.locator('#config').fill(JSON.stringify(invalidConfig, null, 2));
 
-    // Step 3: Click Create button
-    await page.locator('.modal-content button:has-text("Create")').click();
-
-    // Wait for validation response
-    await page.waitForTimeout(1500);
+    // Step 3: Validate configuration
+    await page.locator('.create-version-form button:has-text("Validate")').click();
 
     // Verify validation fails and errors are displayed
-    // Modal should either stay open with errors or show error message
-    const modalStillVisible = await page.locator('.modal-content').isVisible();
-    expect(modalStillVisible).toBe(true);
+    await expect(page.locator('.validation-error-banner')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.validation-error-banner')).toContainText(/error|invalid|has errors/i);
+    await expect(page.locator('.create-version-form button:has-text("Create Version")')).toBeDisabled();
 
-    // Look for error indicators in the modal
-    const hasError = await page.locator('.modal-content').locator('text=/error|invalid|fail/i').isVisible();
-    expect(hasError).toBe(true);
-
-    // Close the modal
-    await page.locator('.modal-content .close-button').click();
-    await expect(page.locator('.modal-content')).toBeHidden();
+    // Close the form
+    await page.locator('.create-version-form button:has-text("Cancel")').click();
+    await expect(page.locator('.create-version-form')).toBeHidden();
 
     // Step 4: Verify no new version was created
     await page.waitForTimeout(500);
@@ -129,28 +123,27 @@ test.describe('Configuration Version Management', () => {
     await navigateToSystemDetail(page, testSystemKey);
 
     // First attempt with invalid config (to show the fix workflow)
-    await page.locator('button:has-text("Create New Version")').click();
-    await expect(page.locator('.modal-content')).toBeVisible();
+    await openCreateVersionForm(page);
 
     // Try invalid config first
     await page.locator('#config').fill(JSON.stringify(INVALID_CONFIGS.tooFewFloors, null, 2));
-    await page.locator('.modal-content button:has-text("Create")').click();
-    await page.waitForTimeout(1500);
+    await page.locator('.create-version-form button:has-text("Validate")').click();
 
-    // Should fail - modal stays open
-    let modalVisible = await page.locator('.modal-content').isVisible();
-    expect(modalVisible).toBe(true);
+    // Should fail - form stays open and Create Version stays disabled
+    await expect(page.locator('.create-version-form')).toBeVisible();
+    await expect(page.locator('.validation-error-banner')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.create-version-form button:has-text("Create Version")')).toBeDisabled();
 
     // Step 1: Now paste corrected configuration JSON
     const validConfig = VALID_CONFIGS.basicOffice;
     await page.locator('#config').clear();
-    await page.locator('#config').fill(JSON.stringify(validConfig, null, 2));
+    await fillAndValidateVersionConfig(page, validConfig);
 
-    // Step 2: Click Create button
-    await page.locator('.modal-content button:has-text("Create")').click();
+    // Step 2: Click Create Version button
+    await page.locator('.create-version-form button:has-text("Create Version")').click();
 
-    // Wait for modal to close
-    await expect(page.locator('.modal-content')).toBeHidden({ timeout: 5000 });
+    // Wait for inline form to close
+    await expect(page.locator('.create-version-form')).toBeHidden({ timeout: 5000 });
 
     // Step 3: Verify version is created with status DRAFT
     await page.waitForTimeout(1000);
