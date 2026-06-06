@@ -298,12 +298,12 @@ test.describe('Scenario Management', () => {
     await page.waitForTimeout(1000);
 
     // Should show error message about invalid JSON
-    const alertModal = page.locator('.modal');
+    const alertModal = page.locator('.modal-content.alert-modal');
     await expect(alertModal).toBeVisible({ timeout: 3000 });
-    await expect(page.locator('text=/Invalid JSON format/i')).toBeVisible();
+    await expect(alertModal).toContainText(/Invalid JSON format/i);
 
     // Close the alert
-    await page.locator('.modal button').click();
+    await alertModal.locator('button:has-text("OK")').click();
 
     // Try to save - should also show error
     await page.locator('button:has-text("Create Scenario")').click();

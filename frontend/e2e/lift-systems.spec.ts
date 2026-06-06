@@ -76,15 +76,16 @@ test.describe('Lift Systems Management', () => {
       page.locator('.modal-content button:has-text("Create")').click(),
     ]);
     expect(createResponse.ok()).toBeTruthy();
+    const createdSystem = await createResponse.json();
 
-    // Wait for modal to close
+    // Wait for modal to close and the app to navigate to the created detail page
     await expect(page.locator('.modal-content')).toBeHidden({ timeout: 5000 });
+    await page.waitForURL(new RegExp(`/systems/${createdSystem.id}$`), { timeout: 5000 });
 
-    // Verify system appears in the list with correct details
-    const systemCard = page.locator('.system-card').filter({ hasText: systemData.systemKey });
-    await expect(systemCard).toBeVisible({ timeout: 5000 });
-    await expect(systemCard.locator('text=' + systemData.displayName)).toBeVisible();
-    await expect(systemCard.locator('text=' + systemData.description)).toBeVisible();
+    // Verify system detail page shows correct metadata
+    await expect(page.locator('text=' + systemData.displayName)).toBeVisible();
+    await expect(page.locator('text=' + systemData.systemKey)).toBeVisible();
+    await expect(page.locator('text=' + systemData.description)).toBeVisible();
   });
 
   test('TC_0004: View Lift System Details', async ({ page }) => {

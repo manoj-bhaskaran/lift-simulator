@@ -156,9 +156,12 @@ export async function createLiftSystem(
   ]);
   expect(createResponse.ok()).toBeTruthy();
 
-  // Wait for modal to close and the new card to appear
+  const createdSystem = await createResponse.json();
+
+  // The app navigates to the new system detail page after a successful create.
   await page.locator('.modal-content').waitFor({ state: 'hidden' });
-  await expect(page.locator('.system-card').filter({ hasText: systemData.systemKey })).toBeVisible({ timeout: 5000 });
+  await page.waitForURL(new RegExp(`/systems/${createdSystem.id}$`), { timeout: 5000 });
+  await expect(page.locator('text=' + systemData.systemKey)).toBeVisible({ timeout: 5000 });
 }
 
 /**
