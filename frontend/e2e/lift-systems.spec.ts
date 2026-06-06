@@ -82,9 +82,11 @@ test.describe('Lift Systems Management', () => {
     await expect(page.locator('.modal-content')).toBeHidden({ timeout: 5000 });
     await page.waitForURL(new RegExp(`/systems/${createdSystem.id}$`), { timeout: 5000 });
 
-    // Verify system detail page shows correct metadata
-    await expect(page.locator('text=' + systemData.displayName)).toBeVisible();
-    await expect(page.locator('text=' + systemData.systemKey)).toBeVisible();
+    // Verify system detail page shows correct metadata. The display name and
+    // system key each appear in both the header and the information grid, so
+    // scope these assertions to the header to avoid strict-mode collisions.
+    await expect(page.locator('.detail-header h2')).toHaveText(systemData.displayName);
+    await expect(page.locator('.detail-header .system-key')).toHaveText(systemData.systemKey);
     await expect(page.locator('text=' + systemData.description)).toBeVisible();
   });
 
@@ -109,13 +111,14 @@ test.describe('Lift Systems Management', () => {
     // Wait for navigation to detail page
     await page.waitForURL(/\/systems\/[^/]+$/);
 
-    // Step 3: Verify metadata fields are displayed correctly
-    await expect(page.locator('text=' + systemData.displayName)).toBeVisible();
-    await expect(page.locator('text=' + systemData.systemKey)).toBeVisible();
+    // Step 3: Verify metadata fields are displayed correctly. Scope the name
+    // and key to the header so they don't collide with the information grid.
+    await expect(page.locator('.detail-header h2')).toHaveText(systemData.displayName);
+    await expect(page.locator('.detail-header .system-key')).toHaveText(systemData.systemKey);
     await expect(page.locator('text=' + systemData.description)).toBeVisible();
 
     // Step 4: Verify versions section and Create New Version button
-    await expect(page.locator('text=/Version|Configurations/i')).toBeVisible();
+    await expect(page.locator('#versions h3')).toContainText(/Version/i);
     await expect(page.locator('button:has-text("Create New Version")')).toBeVisible();
   });
 
@@ -128,45 +131,33 @@ test.describe('Lift Systems Management', () => {
     testSystemKey = systemData.systemKey;
     await createLiftSystem(page, systemData);
 
-    // Step 1: Navigate to Lift Systems list
+    // Step 1: Open the system detail page (deletion lives on the detail view)
     await page.goto('/systems');
     await page.waitForLoadState('domcontentloaded');
 
-    // Find the system card
+    // Find the system card and open its details
     const systemCard = page.locator('.system-card').filter({ hasText: systemData.systemKey });
     await expect(systemCard).toBeVisible();
+    await systemCard.locator('button:has-text("View Details")').click();
+    await page.waitForURL(/\/systems\/[^/]+$/);
 
-    // Click Delete button
-    await systemCard.locator('button:has-text("Delete")').click();
+    // Click Delete System
+    await page.locator('button:has-text("Delete System")').click();
 
     // Step 2: Verify confirmation modal appears
-    await expect(page.locator('.modal-content')).toBeVisible();
-    await expect(page.locator('.modal-content').locator('text=/confirm|delete/i')).toBeVisible();
+    const confirmModal = page.locator('.modal-content').filter({ hasText: /delete/i });
+    await expect(confirmModal).toBeVisible();
 
     // Confirm deletion
-    await page.locator('.modal-content button:has-text("Delete")').click();
+    await confirmModal.locator('button:has-text("Delete")').click();
 
-    // Wait for modal to close
-    await expect(page.locator('.modal-content')).toBeHidden({ timeout: 5000 });
+    // The app navigates back to the systems list after a successful delete
+    await page.waitForURL('**/systems');
 
-    // Step 3: Verify system is removed from list
-    await page.waitForTimeout(1000); // Wait for UI to update
-    await expect(systemCard).toBeHidden();
-
-    // Step 4: Attempt to navigate to the system detail page directly
-    // Extract system ID from the card before deletion or construct URL
-    const systemsPage = await page.goto('/systems');
-    await page.waitForLoadState('domcontentloaded');
-
-    // Search for the deleted system
+    // Step 3: Verify the system (and its cascaded versions) are removed from the list
     const searchInput = page.locator('input[aria-label="Search lift systems"]');
-    if (await searchInput.isVisible()) {
-      await searchInput.fill(systemData.systemKey);
-      await page.waitForTimeout(500);
-
-      // Verify no results
-      await expect(page.locator('.system-card').filter({ hasText: systemData.systemKey })).toBeHidden();
-    }
+    await searchInput.fill(systemData.systemKey);
+    await expect(page.locator('.system-card').filter({ hasText: systemData.systemKey })).toHaveCount(0);
 
     // Mark for cleanup as null since we already deleted it
     testSystemKey = '';
@@ -221,11 +212,9 @@ test.describe('Lift Systems Management', () => {
 
     await page.locator('.modal-content button:has-text("Create")').click();
 
-    // Wait a bit for server response
-    await page.waitForTimeout(1000);
-
-    // Verify error is shown (modal stays open or error message appears)
-    const modalStillVisible = await page.locator('.modal-content').isVisible();
-    expect(modalStillVisible).toBe(true);
+    // The duplicate key is rejected by the backend: an error alert is shown and
+    // the create modal stays open so the user can correct the input.
+    await expect(page.locator('.modal-content.alert-modal')).toBeVisible();
+    await expect(page.locator('.modal-content').filter({ hasText: 'Create New Lift System' })).toBeVisible();
   });
 });

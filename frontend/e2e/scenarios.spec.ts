@@ -5,6 +5,7 @@ import {
   createConfigVersion,
   publishVersion,
   cleanupSystemIfExists,
+  deleteScenariosForSystem,
   isBackendAvailable,
   VALID_CONFIGS
 } from './helpers/test-helpers';
@@ -43,8 +44,11 @@ test.describe('Scenario Management', () => {
   });
 
   test.afterEach(async ({ page }) => {
-    // Cleanup: delete the test system
+    // Cleanup: scenarios must be removed before the system, otherwise the
+    // backend rejects the system deletion (HTTP 409) because scenarios still
+    // reference its versions.
     if (testSystemKey) {
+      await deleteScenariosForSystem(page, testSystemKey);
       await cleanupSystemIfExists(page, testSystemKey);
     }
   });
@@ -75,17 +79,17 @@ test.describe('Scenario Management', () => {
     // Set duration
     await page.locator('#durationTicks').fill('200');
 
-    // Add passenger flow
-    const addFlowButton = page.locator('button:has-text("Add Passenger Flow")');
-    if (await addFlowButton.isVisible()) {
-      await addFlowButton.click();
+    // Add passenger flow using the inline flow editor
+    await page.locator('button:has-text("Add Passenger Flow")').click();
 
-      // Fill in flow details
-      await page.locator('input[placeholder*="Start Tick"]').first().fill('0');
-      await page.locator('input[placeholder*="Origin"]').first().fill('0');
-      await page.locator('input[placeholder*="Destination"]').first().fill('5');
-      await page.locator('input[placeholder*="Passengers"]').first().fill('3');
-    }
+    const addFlowForm = page.locator('.add-flow-form');
+    await expect(addFlowForm).toBeVisible();
+    await addFlowForm.locator('#startTick').fill('0');
+    await addFlowForm.locator('#originFloor').fill('0');
+    await addFlowForm.locator('#destinationFloor').fill('5');
+    await addFlowForm.locator('#passengers').fill('3');
+    await addFlowForm.locator('button:has-text("Save")').click();
+    await expect(addFlowForm).toBeHidden();
 
     // Submit the form
     await page.locator('button:has-text("Create Scenario")').click();
@@ -147,12 +151,12 @@ test.describe('Scenario Management', () => {
     await page.waitForTimeout(2000);
 
     // Verify validation succeeded (alert modal should show success)
-    const alertModal = page.locator('.modal');
+    const alertModal = page.locator('.modal-content.alert-modal');
     await expect(alertModal).toBeVisible({ timeout: 3000 });
-    await expect(page.locator('text=Scenario is valid!')).toBeVisible();
+    await expect(alertModal).toContainText('Scenario is valid!');
 
     // Close the alert
-    await page.locator('.modal button:has-text("OK")').click();
+    await alertModal.locator('button:has-text("OK")').click();
     await expect(alertModal).toBeHidden();
 
     // Click Create Scenario button to save
@@ -166,29 +170,25 @@ test.describe('Scenario Management', () => {
     await expect(page.locator('text=Advanced JSON Test Scenario')).toBeVisible();
 
     // Navigate to edit the scenario to verify it was saved correctly
-    const scenarioRow = page.locator('tr, .scenario-card').filter({ hasText: 'Advanced JSON Test Scenario' });
-    const editButton = scenarioRow.locator('button:has-text("Edit"), a:has-text("Edit")');
-    
-    if (await editButton.isVisible()) {
-      await editButton.click();
-      await page.waitForURL(/\/scenarios\/\d+\/edit/);
+    const scenarioRow = page.locator('.scenario-card').filter({ hasText: 'Advanced JSON Test Scenario' });
+    await scenarioRow.locator('button:has-text("Edit")').click();
+    await page.waitForURL(/\/scenarios\/\d+\/edit/);
 
-      // Switch to Advanced JSON Mode to verify the saved data
-      const advancedJsonButton = page.locator('button:has-text("Switch to Advanced JSON Mode")');
-      if (await advancedJsonButton.isVisible()) {
-        await advancedJsonButton.click();
-      }
+    // Wait for the edit form to finish loading the scenario before interacting.
+    await expect(page.locator('#scenarioName')).toHaveValue('Advanced JSON Test Scenario');
 
-      // Verify the JSON matches what we saved
-      const savedJson = await page.locator('.json-editor').inputValue();
-      const parsedJson = JSON.parse(savedJson);
+    // Switch to Advanced JSON Mode to verify the saved data
+    await page.locator('button:has-text("Switch to Advanced JSON Mode")').click();
+    const savedEditor = page.locator('.json-editor');
+    await expect(savedEditor).toBeVisible();
 
-      expect(parsedJson.durationTicks).toBe(250);
-      expect(parsedJson.passengerFlows).toHaveLength(3);
-      expect(parsedJson.passengerFlows[0].originFloor).toBe(0);
-      expect(parsedJson.passengerFlows[0].destinationFloor).toBe(5);
-      expect(parsedJson.seed).toBe(42);
-    }
+    // Verify the JSON matches what we saved
+    const parsedJson = JSON.parse(await savedEditor.inputValue());
+    expect(parsedJson.durationTicks).toBe(250);
+    expect(parsedJson.passengerFlows).toHaveLength(3);
+    expect(parsedJson.passengerFlows[0].originFloor).toBe(0);
+    expect(parsedJson.passengerFlows[0].destinationFloor).toBe(5);
+    expect(parsedJson.seed).toBe(42);
   });
 
   test('TC_SCENARIO_003: Edit existing scenario using Advanced JSON Mode', async ({ page }) => {
@@ -203,6 +203,17 @@ test.describe('Scenario Management', () => {
     await page.waitForTimeout(500);
     await page.locator('#liftSystemVersion').selectOption({ index: 1 });
     await page.locator('#durationTicks').fill('100');
+
+    // A scenario requires at least one passenger flow, so add one before saving.
+    await page.locator('button:has-text("Add Passenger Flow")').click();
+    const addFlowForm = page.locator('.add-flow-form');
+    await expect(addFlowForm).toBeVisible();
+    await addFlowForm.locator('#startTick').fill('0');
+    await addFlowForm.locator('#originFloor').fill('0');
+    await addFlowForm.locator('#destinationFloor').fill('5');
+    await addFlowForm.locator('#passengers').fill('2');
+    await addFlowForm.locator('button:has-text("Save")').click();
+    await expect(addFlowForm).toBeHidden();
 
     await page.locator('button:has-text("Create Scenario")').click();
     await page.waitForURL(/\/scenarios$/);
@@ -238,9 +249,9 @@ test.describe('Scenario Management', () => {
     await page.waitForTimeout(2000);
 
     // Close validation success alert
-    const alertModal = page.locator('.modal');
+    const alertModal = page.locator('.modal-content.alert-modal');
     if (await alertModal.isVisible()) {
-      await page.locator('.modal button:has-text("OK")').click();
+      await alertModal.locator('button:has-text("OK")').click();
     }
 
     // Update the scenario
@@ -251,20 +262,20 @@ test.describe('Scenario Management', () => {
 
     // Go back to edit and verify changes were saved
     await page.waitForTimeout(1000);
-    const updatedScenarioRow = page.locator('tr, .scenario-card').filter({ hasText: 'Scenario To Edit' });
-    const editButton2 = updatedScenarioRow.locator('button:has-text("Edit"), a:has-text("Edit")');
-    await editButton2.click();
+    const updatedScenarioRow = page.locator('.scenario-card').filter({ hasText: 'Scenario To Edit' });
+    await updatedScenarioRow.locator('button:has-text("Edit")').click();
     await page.waitForURL(/\/scenarios\/\d+\/edit/);
 
+    // Wait for the edit form to finish loading the scenario before interacting.
+    await expect(page.locator('#scenarioName')).toHaveValue('Scenario To Edit');
+
     // Switch to Advanced JSON Mode
-    const advancedJsonButton = page.locator('button:has-text("Switch to Advanced JSON Mode")');
-    if (await advancedJsonButton.isVisible()) {
-      await advancedJsonButton.click();
-    }
+    await page.locator('button:has-text("Switch to Advanced JSON Mode")').click();
+    const verifyEditor = page.locator('.json-editor');
+    await expect(verifyEditor).toBeVisible();
 
     // Verify the updated values
-    const savedJson = await page.locator('.json-editor').inputValue();
-    const parsedJson = JSON.parse(savedJson);
+    const parsedJson = JSON.parse(await verifyEditor.inputValue());
 
     expect(parsedJson.durationTicks).toBe(300);
     expect(parsedJson.passengerFlows).toHaveLength(2);
