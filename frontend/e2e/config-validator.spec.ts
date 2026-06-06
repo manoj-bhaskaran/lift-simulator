@@ -42,8 +42,8 @@ test.describe('Configuration Validator', () => {
     const successResult = page.locator('.result-success');
     await expect(successResult).toBeVisible();
 
-    // Check for validation success text
-    await expect(page.locator('text=/valid|success|passed/i')).toBeVisible();
+    // Check for validation success text inside the visible result card.
+    await expect(successResult).toContainText(/valid|success|passed/i);
 
     // Step 2: Paste invalid config and validate
     const invalidConfig = INVALID_CONFIGS.invalidExample;
@@ -102,9 +102,10 @@ test.describe('Configuration Validator', () => {
     await page.locator('button:has-text("Validate Configuration")').click();
     await page.waitForTimeout(1500);
 
-    // Should show error (either JSON parse error or validation error)
-    const errorIndicator = page.locator('.result-error, .error-message, text=/error|invalid/i');
-    await expect(errorIndicator.first()).toBeVisible();
+    // Should show error (either JSON parse error or validation error).
+    const errorIndicator = page.locator('.result-error, .error-message').first();
+    await expect(errorIndicator).toBeVisible();
+    await expect(errorIndicator).toContainText(/error|invalid/i);
   });
 
   test('Validator handles boundary values correctly', async ({ page }) => {

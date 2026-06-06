@@ -195,9 +195,9 @@ jobs:
       working-directory: frontend
       run: npm test
       env:
-        VITE_ADMIN_USERNAME: admin
-        VITE_ADMIN_PASSWORD: e2e-admin-password
-        VITE_API_KEY: e2e-api-key
+        E2E_ADMIN_USERNAME: admin
+        E2E_ADMIN_PASSWORD: e2e-admin-password
+        E2E_API_KEY: e2e-api-key
 
     - name: Upload Playwright HTML report
       uses: actions/upload-artifact@v4

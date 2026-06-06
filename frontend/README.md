@@ -80,15 +80,12 @@ The application will start on **http://localhost:3000**
 
 ### 3. Start Backend Service
 
-Make sure the Spring Boot backend is running on port 8080. The authenticated admin and simulation APIs require credentials even during E2E runs, so export matching values for the backend and Vite dev server:
+Make sure the Spring Boot backend is running on port 8080. The authenticated admin and simulation APIs require credentials even during E2E runs, so export backend credentials before starting Spring Boot. The matching browser-test credentials are injected by Playwright at test time, not by the application bundle:
 
 ```bash
 export ADMIN_USERNAME=admin
 export ADMIN_PASSWORD=local-admin-password
 export API_KEY=local-api-key
-export VITE_ADMIN_USERNAME=$ADMIN_USERNAME
-export VITE_ADMIN_PASSWORD=$ADMIN_PASSWORD
-export VITE_API_KEY=$API_KEY
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
@@ -135,12 +132,12 @@ This downloads Chromium, Firefox, and WebKit browsers. You only need to do this 
 
 #### Running Tests
 
-Run all tests (headless mode) after the backend is running with matching credentials:
+Run all tests (headless mode) after the backend is running with matching Playwright-only credentials:
 
 ```bash
-export VITE_ADMIN_USERNAME=admin
-export VITE_ADMIN_PASSWORD=local-admin-password
-export VITE_API_KEY=local-api-key
+export E2E_ADMIN_USERNAME=admin
+export E2E_ADMIN_PASSWORD=local-admin-password
+export E2E_API_KEY=local-api-key
 npm test
 ```
 
@@ -175,6 +172,7 @@ Playwright is configured in `playwright.config.ts` with:
 - **Base URL**: http://localhost:3000
 - **API URL**: `/api/v1` by default, proxied by Vite to `http://localhost:8080/api/v1`
 - **Backend Health URL**: Feature tests check `http://localhost:8080/api/v1/health` before executing
+- **E2E Auth Headers**: Playwright injects optional `E2E_ADMIN_USERNAME`/`E2E_ADMIN_PASSWORD` Basic auth and `E2E_API_KEY` headers at browser-context level; these values are never read by app code or bundled by Vite
 - **Web Server**: Automatically starts `npm run dev` before tests
 - **Test Directory**: `e2e/`
 - **Retries on CI**: 2 retries to handle flaky tests
@@ -315,7 +313,7 @@ From `frontend/` (with the backend already running for the E2E step):
 npm ci
 npm run lint
 npm run build
-VITE_ADMIN_USERNAME=admin VITE_ADMIN_PASSWORD=local-admin-password VITE_API_KEY=local-api-key npm test
+E2E_ADMIN_USERNAME=admin E2E_ADMIN_PASSWORD=local-admin-password E2E_API_KEY=local-api-key npm test
 ```
 
 ### Deployment Automation
@@ -435,21 +433,27 @@ The API client can be configured at build time via Vite environment variables:
 | --- | --- | --- |
 | `VITE_API_BASE_URL` | Base URL for API requests (e.g., `https://api.example.com/api/v1`) | `/api/v1` |
 | `VITE_API_TIMEOUT_MS` | Axios request timeout in milliseconds | `10000` |
-| `VITE_ADMIN_USERNAME` | Optional admin username for HTTP Basic auth in local/CI E2E runs | unset |
-| `VITE_ADMIN_PASSWORD` | Optional admin password for HTTP Basic auth in local/CI E2E runs | unset |
-| `VITE_API_KEY` | Optional runtime/simulation API key sent as `X-API-Key` in local/CI E2E runs | unset |
 
 Example `.env` file:
 
 ```bash
 VITE_API_BASE_URL=http://localhost:8080/api/v1
 VITE_API_TIMEOUT_MS=15000
-VITE_ADMIN_USERNAME=admin
-VITE_ADMIN_PASSWORD=local-admin-password
-VITE_API_KEY=local-api-key
 ```
 
 If `VITE_API_BASE_URL` is left unset, the app will continue to use `/api/v1`, which works with the Vite proxy in local development.
+
+### Playwright E2E Environment Variables
+
+The Playwright configuration can inject backend authentication headers for local and CI E2E runs without exposing credentials through Vite's client-side environment variables:
+
+| Variable | Description | Default |
+| --- | --- | --- |
+| `E2E_ADMIN_USERNAME` | Optional admin username used to build a Basic auth header for Playwright browser requests | unset |
+| `E2E_ADMIN_PASSWORD` | Optional admin password used to build a Basic auth header for Playwright browser requests | unset |
+| `E2E_API_KEY` | Optional runtime/simulation API key sent as `X-API-Key` by Playwright browser requests | unset |
+
+Do not use `VITE_*` variables for E2E secrets. Vite exposes `VITE_*` values to browser bundles by design.
 
 ### Proxy Setup
 

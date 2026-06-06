@@ -1,5 +1,24 @@
 import { defineConfig, devices } from '@playwright/test';
 
+function buildE2EHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  const adminUsername = process.env.E2E_ADMIN_USERNAME?.trim();
+  const adminPassword = process.env.E2E_ADMIN_PASSWORD?.trim();
+  const apiKey = process.env.E2E_API_KEY?.trim();
+
+  if (adminUsername && adminPassword) {
+    headers.Authorization = `Basic ${Buffer.from(`${adminUsername}:${adminPassword}`).toString('base64')}`;
+  }
+
+  if (apiKey) {
+    headers['X-API-Key'] = apiKey;
+  }
+
+  return headers;
+}
+
+const e2eHeaders = buildE2EHeaders();
+
 /**
  * Playwright configuration for Lift Simulator UI automation tests
  * See https://playwright.dev/docs/test-configuration
@@ -29,6 +48,9 @@ export default defineConfig({
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:3000',
+
+    /* Test-only backend credentials; injected by Playwright, not bundled into app code. */
+    extraHTTPHeaders: e2eHeaders,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',

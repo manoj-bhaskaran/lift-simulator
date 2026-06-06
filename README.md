@@ -3263,7 +3263,7 @@ with golden files under `src/test/resources/batch-input`.
 
 Playwright E2E tests live under `frontend/e2e` and run against the React dev server on port 3000. Feature tests require a live backend on port 8080; the tests check `http://localhost:8080/api/v1/health` before exercising lift systems, scenarios, simulator runs, and configuration validation.
 
-For local E2E runs, start the backend with credentials in one terminal and then run the frontend tests with matching Vite variables in another terminal:
+For local E2E runs, start the backend with credentials in one terminal and then run the frontend tests with matching Playwright-only variables in another terminal:
 
 ```bash
 # Terminal 1: repository root
@@ -3275,7 +3275,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 ```bash
 # Terminal 2: frontend/
-VITE_ADMIN_USERNAME=admin VITE_ADMIN_PASSWORD=local-admin-password VITE_API_KEY=local-api-key npm test
+E2E_ADMIN_USERNAME=admin E2E_ADMIN_PASSWORD=local-admin-password E2E_API_KEY=local-api-key npm test
 ```
 
 In CI, the `e2e-playwright` job provisions PostgreSQL, packages and starts the backend, waits for `/api/v1/health`, runs `npm test` in `frontend/`, and uploads Playwright HTML reports plus failure artifacts.
