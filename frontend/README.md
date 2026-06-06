@@ -80,13 +80,19 @@ The application will start on **http://localhost:3000**
 
 ### 3. Start Backend Service
 
-Make sure the Spring Boot backend is running on port 8080. From the project root:
+Make sure the Spring Boot backend is running on port 8080. The authenticated admin and simulation APIs require credentials even during E2E runs, so export matching values for the backend and Vite dev server:
 
 ```bash
+export ADMIN_USERNAME=admin
+export ADMIN_PASSWORD=local-admin-password
+export API_KEY=local-api-key
+export VITE_ADMIN_USERNAME=$ADMIN_USERNAME
+export VITE_ADMIN_PASSWORD=$ADMIN_PASSWORD
+export VITE_API_KEY=$API_KEY
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-Or use your IDE to run the main application class.
+Or use your IDE to run the main application class with the same backend environment variables.
 
 ## Available Scripts
 
@@ -129,9 +135,12 @@ This downloads Chromium, Firefox, and WebKit browsers. You only need to do this 
 
 #### Running Tests
 
-Run all tests (headless mode):
+Run all tests (headless mode) after the backend is running with matching credentials:
 
 ```bash
+export VITE_ADMIN_USERNAME=admin
+export VITE_ADMIN_PASSWORD=local-admin-password
+export VITE_API_KEY=local-api-key
 npm test
 ```
 
@@ -164,13 +173,15 @@ npm run test:report
 Playwright is configured in `playwright.config.ts` with:
 
 - **Base URL**: http://localhost:3000
+- **API URL**: `/api/v1` by default, proxied by Vite to `http://localhost:8080/api/v1`
+- **Backend Health URL**: Feature tests check `http://localhost:8080/api/v1/health` before executing
 - **Web Server**: Automatically starts `npm run dev` before tests
 - **Test Directory**: `e2e/`
 - **Retries on CI**: 2 retries to handle flaky tests
 - **Artifacts**: Screenshots and videos on failure, traces on retry
 - **Browsers**: Chromium (default), with Firefox and WebKit commented out
 
-The configuration automatically starts the dev server before running tests and shuts it down afterward. You don't need to start the server manually.
+The configuration automatically starts the frontend dev server before running tests and shuts it down afterward. Start the backend separately first so feature tests run instead of being skipped.
 
 #### CI Integration
 
@@ -198,10 +209,12 @@ If tests fail, additional artifacts are uploaded:
 These are available in the `playwright-test-artifacts` artifact in the same location.
 
 **CI Behavior:**
+- The dedicated `e2e-playwright` job depends on successful backend and frontend jobs
+- CI provisions PostgreSQL, packages the Spring Boot JAR, starts the backend on port 8080, and waits for `/api/v1/health` before running Playwright
 - Test failures will fail the CI workflow and block PR merges
 - Tests run with 2 retries on CI to handle transient issues
 - Only Chromium browser is tested in CI (for speed and reliability)
-- Web server automatically starts on port 3000 before tests begin
+- The Playwright web server automatically starts the frontend on port 3000 before tests begin
 
 #### Test Structure & Naming
 
@@ -277,7 +290,12 @@ The repository uses **GitHub Actions** with the workflow defined in `.github/wor
   - `npm ci`
   - `npm run lint`
   - `npm run build`
-  - `npm test` (placeholder until tests are added)
+- **Playwright E2E with backend**
+  - Provision PostgreSQL
+  - Package and start the Spring Boot backend
+  - Wait for `/api/v1/health`
+  - Run `npm test` in `frontend/` against the live backend
+  - Upload the Playwright HTML report and failure artifacts
 
 ### Run CI Checks Locally
 
@@ -291,13 +309,13 @@ mvn -q spotbugs:check
 mvn -q package -DskipTests
 ```
 
-From `frontend/`:
+From `frontend/` (with the backend already running for the E2E step):
 
 ```bash
 npm ci
 npm run lint
 npm run build
-npm test
+VITE_ADMIN_USERNAME=admin VITE_ADMIN_PASSWORD=local-admin-password VITE_API_KEY=local-api-key npm test
 ```
 
 ### Deployment Automation
@@ -336,7 +354,7 @@ This command:
 
 **Access the application:**
 - Frontend: http://localhost:8080
-- API: http://localhost:8080/api
+- API: http://localhost:8080/api/v1
 - Actuator: http://localhost:8080/actuator
 
 ### Alternative Deployment: Standalone Static Hosting
@@ -415,17 +433,23 @@ The API client can be configured at build time via Vite environment variables:
 
 | Variable | Description | Default |
 | --- | --- | --- |
-| `VITE_API_BASE_URL` | Base URL for API requests (e.g., `https://api.example.com/api`) | `/api` |
+| `VITE_API_BASE_URL` | Base URL for API requests (e.g., `https://api.example.com/api/v1`) | `/api/v1` |
 | `VITE_API_TIMEOUT_MS` | Axios request timeout in milliseconds | `10000` |
+| `VITE_ADMIN_USERNAME` | Optional admin username for HTTP Basic auth in local/CI E2E runs | unset |
+| `VITE_ADMIN_PASSWORD` | Optional admin password for HTTP Basic auth in local/CI E2E runs | unset |
+| `VITE_API_KEY` | Optional runtime/simulation API key sent as `X-API-Key` in local/CI E2E runs | unset |
 
 Example `.env` file:
 
 ```bash
-VITE_API_BASE_URL=http://localhost:8080/api
+VITE_API_BASE_URL=http://localhost:8080/api/v1
 VITE_API_TIMEOUT_MS=15000
+VITE_ADMIN_USERNAME=admin
+VITE_ADMIN_PASSWORD=local-admin-password
+VITE_API_KEY=local-api-key
 ```
 
-If `VITE_API_BASE_URL` is left unset, the app will continue to use `/api`, which works with the Vite proxy in local development.
+If `VITE_API_BASE_URL` is left unset, the app will continue to use `/api/v1`, which works with the Vite proxy in local development.
 
 ### Proxy Setup
 
@@ -499,24 +523,24 @@ frontend/
 The frontend integrates with these backend endpoints:
 
 ### Admin APIs
-- `GET /api/lift-systems` - List all systems
-- `POST /api/lift-systems` - Create system
-- `GET /api/lift-systems/{id}` - Get system details
-- `PUT /api/lift-systems/{id}` - Update system
-- `DELETE /api/lift-systems/{id}` - Delete system
-- `GET /api/lift-systems/{systemId}/versions` - List versions
-- `POST /api/lift-systems/{systemId}/versions` - Create version
-- `PUT /api/lift-systems/{systemId}/versions/{versionNumber}` - Update version
-- `POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish` - Publish version
+- `GET /api/v1/lift-systems` - List all systems
+- `POST /api/v1/lift-systems` - Create system
+- `GET /api/v1/lift-systems/{id}` - Get system details
+- `PUT /api/v1/lift-systems/{id}` - Update system
+- `DELETE /api/v1/lift-systems/{id}` - Delete system
+- `GET /api/v1/lift-systems/{systemId}/versions` - List versions
+- `POST /api/v1/lift-systems/{systemId}/versions` - Create version
+- `PUT /api/v1/lift-systems/{systemId}/versions/{versionNumber}` - Update version
+- `POST /api/v1/lift-systems/{systemId}/versions/{versionNumber}/publish` - Publish version
 
 ### Runtime APIs
-- `POST /api/runtime/systems/{systemKey}/simulate` - Launch simulator using published configuration
+- `POST /api/v1/runtime/systems/{systemKey}/simulate` - Launch simulator using published configuration
 
 ### Validation API
-- `POST /api/config/validate` - Validate configuration
+- `POST /api/v1/config/validate` - Validate configuration
 
 ### Health API
-- `GET /api/health` - Health check
+- `GET /api/v1/health` - Health check
 
 ## Troubleshooting
 
@@ -524,7 +548,7 @@ The frontend integrates with these backend endpoints:
 
 If you see errors about failed API calls:
 
-1. Verify backend is running: `curl http://localhost:8080/api/health`
+1. Verify backend is running: `curl http://localhost:8080/api/v1/health`
 2. Check backend logs for errors
 3. Ensure PostgreSQL database is running and accessible
 

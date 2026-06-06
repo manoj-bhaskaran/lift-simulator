@@ -173,7 +173,7 @@ Use these as starting points or reference examples.
 - Check port 3000 isn't already in use
 
 **Can't connect to backend from frontend:**
-- Verify backend is running at http://localhost:8080/api/health
+- Verify backend is running at http://localhost:8080/api/v1/health
 - Check browser console for CORS errors
 - Vite dev proxy should handle this automatically
 
@@ -3175,6 +3175,7 @@ The current version (v0.46.0) includes comprehensive lift simulation and configu
 - **Unit Tests**: Extensive unit tests for controllers, services, and domain logic
 - **Integration Tests**: Full Spring context testing for REST APIs and repositories
 - **Scenario Tests**: Realistic multi-request routing scenarios for both controller strategies
+- **Playwright E2E Tests**: Browser smoke and feature tests for lift systems, scenarios, simulator flows, health checks, and configuration validation run against a live backend in CI
 - **Code Quality Tools**: Checkstyle, SpotBugs, OWASP Dependency Check
 
 ### Developer Tools
@@ -3257,6 +3258,27 @@ The test suite includes integration coverage for the scenario system using fixtu
 `src/test/resources/scenarios`.
 It also exercises simulation run lifecycle polling and batch input generator contracts
 with golden files under `src/test/resources/batch-input`.
+
+### Frontend E2E Tests
+
+Playwright E2E tests live under `frontend/e2e` and run against the React dev server on port 3000. Feature tests require a live backend on port 8080; the tests check `http://localhost:8080/api/v1/health` before exercising lift systems, scenarios, simulator runs, and configuration validation.
+
+For local E2E runs, start the backend with credentials in one terminal and then run the frontend tests with matching Vite variables in another terminal:
+
+```bash
+# Terminal 1: repository root
+export ADMIN_USERNAME=admin
+export ADMIN_PASSWORD=local-admin-password
+export API_KEY=local-api-key
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+```bash
+# Terminal 2: frontend/
+VITE_ADMIN_USERNAME=admin VITE_ADMIN_PASSWORD=local-admin-password VITE_API_KEY=local-api-key npm test
+```
+
+In CI, the `e2e-playwright` job provisions PostgreSQL, packages and starts the backend, waits for `/api/v1/health`, runs `npm test` in `frontend/`, and uploads Playwright HTML reports plus failure artifacts.
 
 ## Quality Checks
 
