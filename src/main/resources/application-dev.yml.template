@@ -72,6 +72,13 @@ logging:
     org.flywaydb: INFO
     com.zaxxer.hikari: INFO
 
+# Simulation Configuration
+# Directory where simulation run artefacts (logs, results, config snapshots) are stored.
+# Each run creates a subdirectory: {base-path}/run-{id}/
+simulation:
+  artefacts:
+    base-path: ${SIMULATION_ARTEFACTS_PATH:./simulation-runs}
+
 # API Authentication (runtime/simulation execution)
 # API key for runtime endpoint authentication (X-API-Key header)
 #
