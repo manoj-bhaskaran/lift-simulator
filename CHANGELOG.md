@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   API or behaviour changes.
 
 ### Added
+- **Testcontainers-backed integration tests**: Integration and repository tests now provision a
+  throwaway `postgres:15-alpine` instance on demand via Testcontainers, so `mvn test` runs without
+  a pre-existing PostgreSQL database (a running Docker daemon is the only prerequisite). A single
+  container is shared across the suite via a globally-registered Spring `ContextCustomizerFactory`,
+  covering both `@SpringBootTest` and `@DataJpaTest` slices.
+- **Flyway migrations exercised by tests**: The test profile now runs the real `db/migration`
+  scripts at startup and Hibernate runs in `validate` mode (instead of `ddl-auto: update`), so
+  migration bugs and entity/schema drift are caught by the test suite.
+- **Migration verification test**: Added `FlywayMigrationIntegrationTest`, which asserts the Flyway
+  schema history is populated, all migrations succeeded, and migrated tables exist.
 - **Unit tests for RunMetrics**: Added `RunMetricsTest` covering KPI computation (completed/
   cancelled counts, average and max wait ticks, utilisation), per-floor passenger flows and
   lift visits, per-lift config output, and idempotency of `recordTerminalRequests`.

@@ -2821,13 +2821,19 @@ The verification runner is located at `com.liftsimulator.admin.runner.JpaVerific
 Integration tests for the repositories are available:
 - `LiftSystemRepositoryTest`: Tests CRUD operations, queries, and updates
 - `LiftSystemVersionRepositoryTest`: Tests version operations, JSONB mapping, and relationships
+- `FlywayMigrationIntegrationTest`: Verifies that Flyway migrations are executed at startup
 
 **Test Database Configuration:**
-- Tests use **H2 in-memory database** with PostgreSQL compatibility mode
-- The H2 test database initializes the `lift_simulator` schema automatically for integration tests
-- No external database required for running tests
-- Schema is automatically created via JPA's `ddl-auto: create-drop`
-- Flyway is disabled for tests (schema created from JPA entities)
+- Integration tests run against a **real PostgreSQL** instance provisioned on demand by
+  [Testcontainers](https://java.testcontainers.org/) — **no pre-existing database is required**.
+- The only prerequisite is a running **Docker** daemon (Testcontainers starts and tears down a
+  `postgres:15-alpine` container automatically). A single container is shared across the suite to
+  keep startup fast.
+- **Flyway migrations run during test startup**, so migration bugs are caught by the test suite.
+- Hibernate runs in **`validate`** mode (not `ddl-auto: update`), so the entity mappings are
+  checked against the migrated schema and any drift fails the build.
+- In CI, where the workflow provides a PostgreSQL service container via `SPRING_DATASOURCE_URL`,
+  Testcontainers stands aside and that database is used instead.
 
 Run the tests:
 ```bash
@@ -3241,6 +3247,11 @@ Run the test suite with Maven:
 ```bash
 mvn test
 ```
+
+> **No local PostgreSQL needed.** Integration tests provision a throwaway PostgreSQL container via
+> [Testcontainers](https://java.testcontainers.org/) and run the real Flyway migrations against it.
+> The only requirement is a running **Docker** daemon. (CI continues to use its PostgreSQL service
+> container — see `.github/workflows/ci.yml`.)
 
 The test suite includes integration coverage for the scenario system using fixtures in
 `src/test/resources/scenarios`.
