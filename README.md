@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.46.0**
+Current version: **0.47.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history, including a condensed summary of the pre-release foundation milestones.
 
@@ -935,33 +935,56 @@ When configuration validation fails:
 
 Runtime and simulation execution endpoints require an API key so they can be invoked from CLI tooling and automation.
 
+**Security Requirements:**
+- **Startup Validation**: The application requires `api.auth.key` to be configured and non-empty. If missing or blank, the application will fail to start with a clear error message.
+- **Secure Comparison**: API keys are compared using SHA-256 hashing with constant-time comparison to prevent timing attacks and credential leakage.
+
 **Configuration:**
-- `api.auth.key` (required): API key value used for authentication
+- `api.auth.key` (required): API key value used for authentication. Must be non-empty and provided via environment variable or property file.
 - `api.auth.header` (optional, default: `X-API-Key`): Header name to read the key from
 
-You can configure the key via environment variables or `application.properties`:
+**Setting Up API Key:**
 
-```properties
-api.auth.key=replace-with-secure-key
-api.auth.header=X-API-Key
-```
+Generate a secure random API key:
 
 ```bash
-export API_AUTH_KEY="replace-with-secure-key"
+# Using OpenSSL (recommended for 32 bytes of entropy)
+openssl rand -base64 32
+
+# Using /dev/urandom on Unix-like systems
+head -c 32 /dev/urandom | base64
+
+# Using Python
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Configure via environment variable:
+
+```bash
+export API_KEY="<your-generated-api-key>"
+```
+
+Or in `application-dev.yml`:
+
+```yaml
+api:
+  auth:
+    key: <your-generated-api-key>
+    header: X-API-Key
 ```
 
 **Example (Simulation Run):**
 ```bash
-curl -H "X-API-Key: replace-with-secure-key" \\
+curl -H "X-API-Key: <your-api-key>" \\
   -H "Content-Type: application/json" \\
   -d '{"liftSystemId":1,"versionId":2,"scenarioId":3,"seed":12345}' \\
-  http://localhost:8080/api/simulation-runs
+  http://localhost:8080/api/v1/simulation-runs
 ```
 
 **Example (Runtime Config):**
 ```bash
-curl -H "X-API-Key: replace-with-secure-key" \\
-  http://localhost:8080/api/runtime/systems/{systemKey}/config
+curl -H "X-API-Key: <your-api-key>" \\
+  http://localhost:8080/api/v1/runtime/systems/{systemKey}/config
 ```
 
 

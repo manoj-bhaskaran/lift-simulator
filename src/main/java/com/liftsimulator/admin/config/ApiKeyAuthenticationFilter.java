@@ -13,6 +13,9 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 
 /**
@@ -79,7 +82,7 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (!expectedApiKey.equals(providedApiKey)) {
+        if (!secureCompareApiKeys(expectedApiKey, providedApiKey)) {
             logger.warn("Invalid API key provided for request {}", request.getRequestURI());
             authenticationEntryPoint.commence(request, response,
                 new InvalidApiKeyException("Invalid API key"));
@@ -96,6 +99,38 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 
         logger.debug("API key authentication successful for request {}", request.getRequestURI());
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Securely compares two API keys using SHA-256 hashing to prevent timing attacks.
+     * Uses hash comparison rather than direct equality to prevent credential leakage
+     * through timing analysis.
+     */
+    private boolean secureCompareApiKeys(String expected, String provided) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] expectedHash = digest.digest(expected.getBytes(StandardCharsets.UTF_8));
+            byte[] providedHash = digest.digest(provided.getBytes(StandardCharsets.UTF_8));
+            return constantTimeEquals(expectedHash, providedHash);
+        } catch (NoSuchAlgorithmException e) {
+            logger.error("SHA-256 algorithm not available", e);
+            throw new IllegalStateException("SHA-256 algorithm not available", e);
+        }
+    }
+
+    /**
+     * Compares two byte arrays in constant time to prevent timing attacks.
+     * This method takes the same time regardless of where the arrays differ.
+     */
+    private boolean constantTimeEquals(byte[] a, byte[] b) {
+        if (a.length != b.length) {
+            return false;
+        }
+        int result = 0;
+        for (int i = 0; i < a.length; i++) {
+            result |= a[i] ^ b[i];
+        }
+        return result == 0;
     }
 
     /**
