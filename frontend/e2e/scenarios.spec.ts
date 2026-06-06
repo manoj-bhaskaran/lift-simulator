@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import {
   generateSystemData,
   createLiftSystem,
+  createConfigVersion,
+  publishVersion,
   cleanupSystemIfExists,
   isBackendAvailable,
   VALID_CONFIGS
@@ -19,7 +21,7 @@ import {
 
 test.describe('Scenario Management', () => {
   let testSystemKey: string;
-  let systemId: number;
+  let testSystemDisplayName: string;
 
   test.beforeEach(async ({ page }) => {
     // Check if backend is available
@@ -29,40 +31,15 @@ test.describe('Scenario Management', () => {
     }
 
     // Create a test system and version for scenario tests
-    const systemData = generateSystemData({
-      displayName: 'Scenario Test Building'
-    });
+    const systemData = generateSystemData();
     testSystemKey = systemData.systemKey;
+    testSystemDisplayName = systemData.displayName;
     await createLiftSystem(page, systemData);
 
-    // Get the system ID from the UI
-    await page.goto('/systems');
-    await page.waitForLoadState('domcontentloaded');
-    const systemCard = page.locator('.system-card').filter({ hasText: testSystemKey });
-    await systemCard.locator('button:has-text("View Details")').click();
-    await page.waitForURL(/\/systems\/([^/]+)$/);
-
-    // Extract system ID from URL
-    const url = page.url();
-    const match = url.match(/\/systems\/([^/]+)$/);
-    if (match) {
-      systemId = parseInt(match[1], 10);
-    }
-
-    // Create a version for the system
-    await page.locator('button:has-text("Create New Version")').click();
-    await page.locator('.modal-content').waitFor({ state: 'visible' });
-    await page.locator('#config').fill(JSON.stringify(VALID_CONFIGS.basicOffice, null, 2));
-    await page.locator('.modal-content button:has-text("Create")').click();
-    await page.locator('.modal-content').waitFor({ state: 'hidden' });
-    await page.waitForTimeout(1000);
-
-    // Publish the version so it can be used in scenarios
-    const versionCard = page.locator('.version-card').filter({ hasText: 'Version 1' });
-    await versionCard.locator('button:has-text("Publish")').click();
-    await page.locator('.modal-content button:has-text("Publish")').click();
-    await page.locator('.modal-content').waitFor({ state: 'hidden' });
-    await page.waitForTimeout(1000);
+    // Create and publish a version for the system so it can be used in scenarios.
+    await createConfigVersion(page, testSystemKey, VALID_CONFIGS.basicOffice);
+    await publishVersion(page, 1);
+    await expect(page.locator('.version-card').filter({ hasText: 'Version 1' }).locator('.status-badge')).toHaveText(/PUBLISHED/i);
   });
 
   test.afterEach(async ({ page }) => {
@@ -87,7 +64,7 @@ test.describe('Scenario Management', () => {
     await page.locator('#scenarioName').fill('Test Morning Rush Scenario');
 
     // Select lift system
-    await page.locator('#liftSystem').selectOption({ index: 1 }); // Select first available system
+    await page.locator('#liftSystem').selectOption({ label: testSystemDisplayName });
 
     // Wait a bit for versions to load
     await page.waitForTimeout(500);
@@ -136,7 +113,7 @@ test.describe('Scenario Management', () => {
     await page.locator('#scenarioName').fill('Advanced JSON Test Scenario');
 
     // Select lift system
-    await page.locator('#liftSystem').selectOption({ index: 1 });
+    await page.locator('#liftSystem').selectOption({ label: testSystemDisplayName });
     await page.waitForTimeout(500);
 
     // Select version
@@ -222,7 +199,7 @@ test.describe('Scenario Management', () => {
     await page.waitForURL(/\/scenarios\/new/);
 
     await page.locator('#scenarioName').fill('Scenario To Edit');
-    await page.locator('#liftSystem').selectOption({ index: 1 });
+    await page.locator('#liftSystem').selectOption({ label: testSystemDisplayName });
     await page.waitForTimeout(500);
     await page.locator('#liftSystemVersion').selectOption({ index: 1 });
     await page.locator('#durationTicks').fill('100');
@@ -303,7 +280,7 @@ test.describe('Scenario Management', () => {
 
     // Fill required fields
     await page.locator('#scenarioName').fill('Invalid JSON Test');
-    await page.locator('#liftSystem').selectOption({ index: 1 });
+    await page.locator('#liftSystem').selectOption({ label: testSystemDisplayName });
     await page.waitForTimeout(500);
     await page.locator('#liftSystemVersion').selectOption({ index: 1 });
 

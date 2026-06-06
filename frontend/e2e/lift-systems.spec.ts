@@ -38,7 +38,6 @@ test.describe('Lift Systems Management', () => {
   test('TC_0003: Create New Lift System', async ({ page }) => {
     // Generate unique test data
     const systemData = generateSystemData({
-      systemKey: 'test-building-a',
       displayName: 'Test Building A',
       description: 'UAT test for building A lift system'
     });
@@ -115,7 +114,6 @@ test.describe('Lift Systems Management', () => {
   test('TC_0013: Delete Lift System and Cascade Delete Versions', async ({ page }) => {
     // Precondition: Create a test system
     const systemData = generateSystemData({
-      systemKey: 'test-delete-cascade',
       displayName: 'Test Delete Cascade System',
       description: 'System for testing cascade deletion'
     });

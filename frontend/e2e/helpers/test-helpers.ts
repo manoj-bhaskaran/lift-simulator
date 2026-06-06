@@ -190,6 +190,26 @@ export async function navigateToSystemDetail(page: Page, systemKey: string): Pro
 }
 
 /**
+ * Helper function to open the inline create-version form.
+ */
+export async function openCreateVersionForm(page: Page): Promise<void> {
+  await page.locator('button:has-text("Create New Version")').click();
+  await expect(page.locator('.create-version-form')).toBeVisible();
+}
+
+/**
+ * Helper function to fill and validate the inline create-version form.
+ */
+export async function fillAndValidateVersionConfig(
+  page: Page,
+  config: object
+): Promise<void> {
+  await page.locator('#config').fill(JSON.stringify(config, null, 2));
+  await page.locator('.create-version-form button:has-text("Validate")').click();
+  await expect(page.locator('.validation-success-banner')).toBeVisible({ timeout: 5000 });
+}
+
+/**
  * Helper function to create a configuration version
  */
 export async function createConfigVersion(
@@ -200,20 +220,14 @@ export async function createConfigVersion(
   // Navigate to system detail page
   await navigateToSystemDetail(page, systemKey);
 
-  // Click Create New Version button
-  await page.locator('button:has-text("Create New Version")').click();
-
-  // Wait for modal
-  await page.locator('.modal-content').waitFor({ state: 'visible' });
-
-  // Fill in configuration JSON
-  await page.locator('#config').fill(JSON.stringify(config, null, 2));
+  await openCreateVersionForm(page);
+  await fillAndValidateVersionConfig(page, config);
 
   // Submit
-  await page.locator('.modal-content button:has-text("Create")').click();
+  await page.locator('.create-version-form button:has-text("Create Version")').click();
 
-  // Wait for modal to close
-  await page.locator('.modal-content').waitFor({ state: 'hidden' });
+  // Wait for the inline form to close and the versions list to refresh
+  await expect(page.locator('.create-version-form')).toBeHidden({ timeout: 5000 });
 }
 
 /**

@@ -80,10 +80,9 @@ test.describe('Health Check', () => {
     const statusBadge = page.locator('.status-badge');
     await expect(statusBadge).toBeVisible();
 
-    // Details card should show some information
-    const detailsCard = page.locator('.card');
-    const hasDetails = await detailsCard.count();
-    expect(hasDetails).toBeGreaterThan(0);
+    // The current custom health payload always exposes at least the status badge.
+    // Additional detail cards are rendered only when the backend includes message/details fields.
+    await expect(statusBadge).toContainText(/OK|UP|HEALTHY/i);
   });
 
   test('Health check handles backend failure gracefully', async ({ page }) => {
@@ -98,8 +97,8 @@ test.describe('Health Check', () => {
 
     // Even if backend is down, UI should show status (possibly "DOWN" or "ERROR")
     // The key is that the page doesn't crash
-    const statusBadge = page.locator('.status-badge, .error-card, text=/status|health/i');
-    await expect(statusBadge.first()).toBeVisible();
+    const statusOrError = page.locator('.status-badge, .error-card').first();
+    await expect(statusOrError).toBeVisible();
   });
 
   test('Health check API returns structured JSON', async ({ page }) => {
