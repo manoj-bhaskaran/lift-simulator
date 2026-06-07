@@ -307,7 +307,7 @@ The Swagger UI provides:
 - Security scheme documentation (HTTP Basic Auth and API Key)
 - Example requests and responses for all endpoints
 
-**Note:** The Swagger UI and OpenAPI JSON are publicly accessible by default to preserve local development behavior, but actual API endpoints require authentication (HTTP Basic for admin endpoints, API Key for runtime endpoints). Set `security.openapi.public-access=false` (or `SECURITY_OPENAPI_PUBLIC_ACCESS=false`) to require admin HTTP Basic authentication for Swagger/OpenAPI endpoints.
+**Note:** The Swagger UI and OpenAPI JSON are publicly accessible by default to preserve local development behavior, but actual API endpoints require authentication (HTTP Basic for admin endpoints, API Key for runtime endpoints). Set `security.openapi.public-access=false` (or `SECURITY_OPENAPI_PUBLIC_ACCESS=false`) to require ADMIN-role HTTP Basic authentication for Swagger/OpenAPI endpoints.
 
 #### Running the Backend
 
@@ -2319,7 +2319,7 @@ The backend is configured via YAML files under `src/main/resources/`:
 
 No profile is activated by the checked-in base configuration. Development and production launches must set `SPRING_PROFILES_ACTIVE` explicitly, for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for local development or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.48.0.jar` for production. This prevents a development profile from masking production configuration mistakes.
 
-OpenAPI/Swagger access is controlled by `security.openapi.public-access` (environment variable: `SECURITY_OPENAPI_PUBLIC_ACCESS`). The default is `true` to preserve current behavior; set it to `false` when documentation endpoints should require admin authentication.
+OpenAPI/Swagger access is controlled by `security.openapi.public-access` (environment variable: `SECURITY_OPENAPI_PUBLIC_ACCESS`). The default is `true` to preserve current behavior; set it to `false` when documentation endpoints should require ADMIN-role authentication.
 
 ### Authentication
 

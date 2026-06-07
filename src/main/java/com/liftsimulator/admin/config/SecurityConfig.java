@@ -92,6 +92,11 @@ import java.util.Locale;
 public class SecurityConfig {
 
     private static final String ADMIN_REALM = "Lift Simulator Admin";
+    private static final String[] OPEN_API_MATCHERS = {
+        "/api/v1/api-docs/**",
+        "/api/v1/swagger-ui/**",
+        "/api/v1/swagger-ui.html"
+    };
 
     @Value("${security.admin.username:admin}")
     private String adminUsername;
@@ -237,11 +242,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> {
                 auth.requestMatchers("/api/v1/health").permitAll();
                 if (openApiPublicAccess) {
-                    auth.requestMatchers(
-                        "/api/v1/api-docs/**",
-                        "/api/v1/swagger-ui/**",
-                        "/api/v1/swagger-ui.html"
-                    ).permitAll();
+                    auth.requestMatchers(OPEN_API_MATCHERS).permitAll();
+                } else {
+                    auth.requestMatchers(OPEN_API_MATCHERS).hasRole("ADMIN");
                 }
                 auth
                     // Read operations allowed for both ADMIN and VIEWER roles
