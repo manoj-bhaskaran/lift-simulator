@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.49.1] - 2026-06-07
+
+### Changed
+- **REST API reference extraction**: Moved the detailed REST API reference, batch input generator notes, simulation run workflow documentation, runtime configuration API, and health endpoint reference out of `README.md` into `docs/API.md`; the README now keeps a concise API summary with links to the dedicated reference and Swagger UI.
+- **Patch version bump**: Updated repository package metadata and documentation from 0.48.0 to 0.49.1 so package versions sort after the latest documented 0.49.0 release.
+
 ## [0.49.0] - 2026-06-07
 
 ### Added
