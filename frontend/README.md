@@ -1,6 +1,6 @@
 # Lift Simulator Admin UI
 
-![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
+![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.19.0%20%7C%7C%20%3E%3D22.12.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 [![CI](https://github.com/manoj-bhaskaran/lift-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/manoj-bhaskaran/lift-simulator/actions/workflows/ci.yml)
 ![React](https://img.shields.io/badge/React-19.x-61DAFB?logo=react)
@@ -25,12 +25,12 @@ The footer displays the current UI version by reading the `version` field from `
 
 ## Tech Stack
 
-This project uses the following core dependencies (version ranges as specified in `package.json`):
+This project requires Node.js `^20.19.0 || >=22.12.0` for Vite 7 compatibility and uses the following core dependencies (version ranges as specified in `package.json`):
 
 - **React ^19.2.0** - UI library
-- **Vite ^7.2.4** - Build tool and dev server
-- **React Router ^7.12.0** - Client-side routing
-- **Axios ^1.13.2** - HTTP client for API calls
+- **Vite ^7.3.5** - Build tool and dev server
+- **React Router ^7.17.0** - Client-side routing
+- **Axios ^1.17.0** - HTTP client for API calls
 
 > **Note:** The caret (^) prefix allows npm to install compatible minor and patch updates. For example, `^19.2.0` allows versions `>=19.2.0` and `<20.0.0`. Run `npm list` to see the exact installed versions.
 
@@ -59,7 +59,7 @@ Shared interfaces include `LiftSystem`, `Version`, and `ValidationResult`.
 
 ## Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 20.19+ (or 22.12+) and npm
 - Backend service running on `http://localhost:8080`
 
 ## Local Development Setup

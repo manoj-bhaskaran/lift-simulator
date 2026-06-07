@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lift visits, per-lift config output, and idempotency of `recordTerminalRequests`.
 
 ### Fixed
+- **CI deployable JAR packaging**: GitHub Actions backend and E2E packaging steps now activate the Maven `frontend` profile, log profile activation, install a Vite-compatible Node.js 20.19.0 runtime, verify the produced Spring Boot JAR contains React assets under `BOOT-INF/classes/static/`, and confirm the packaged app serves the React root page during E2E startup.
 - **NPE prevention in scenario execution**: Added null check for `scenario.durationTicks()` in
   `SimulationRunExecutionService.runSimulation()`. The method now fails cleanly with a clear
   error message if the scenario has a null duration, preventing NullPointerException during
