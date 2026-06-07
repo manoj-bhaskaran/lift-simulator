@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.49.0] - 2026-06-07
+
+### Added
+- **Frontend unit test suite**: Configured Vitest with jsdom and `@testing-library/react` for component and utility unit tests. Added 54 unit tests across `Modal`, `AlertModal`, `ConfirmModal`, `Layout` components and `errorHandlers`/`statusUtils` utilities covering happy paths and error cases. CI frontend job now runs `npm run test:unit` before the build step.
+
 ## [0.48.0] - 2026-06-07
 
 ### Added
