@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Backend dependency refresh**: Bumped the backend maintenance version to 0.47.1, upgraded Spring Boot from 3.2.1 to 3.4.13, added the Spring Boot-managed Flyway PostgreSQL database module required by the newer Flyway baseline, and verified the PostgreSQL JDBC driver remains on the latest 42.7.11 release.
 - **CI Playwright E2E coverage**: Moved frontend Playwright execution into a dedicated `e2e-playwright` GitHub Actions job that provisions PostgreSQL, packages and starts the Spring Boot backend, waits for `/api/v1/health`, and runs the browser suite against the live API. The job publishes the Playwright HTML report and failure artifacts, including backend logs, so feature-test failures are visible in CI.
 - **Playwright-only E2E auth configuration**: Added optional Playwright environment variables for admin Basic auth and runtime API-key headers so local and CI E2E runs can exercise authenticated backend endpoints without exposing credentials in browser bundles.
 - **Backend-backed E2E stabilization**: Updated Playwright tests and helpers to use the inline Create Version validation flow, unique retry-safe system data, scoped assertions, backend response waits, route-aware system creation waits, current alert modal selectors, the current health-check UI payload, and Vite dev-proxy auth header injection so the new CI E2E job exercises the live backend reliably.
@@ -36,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lift visits, per-lift config output, and idempotency of `recordTerminalRequests`.
 
 ### Fixed
+- **Hibernate 6.6 cascade delete tests**: Cleared managed child entities before repository cascade-delete assertions so tests rely on the PostgreSQL `ON DELETE CASCADE` constraints without Hibernate transient-reference flush errors.
 - **CI deployable JAR packaging**: GitHub Actions backend and E2E packaging steps now activate the Maven `frontend` profile, log profile activation, install a Vite-compatible Node.js 20.19.0 runtime, verify the produced Spring Boot JAR contains React assets under `BOOT-INF/classes/static/`, and confirm the packaged app serves the React root page during E2E startup.
 - **NPE prevention in scenario execution**: Added null check for `scenario.durationTicks()` in
   `SimulationRunExecutionService.runSimulation()`. The method now fails cleanly with a clear

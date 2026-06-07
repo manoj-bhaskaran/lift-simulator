@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.47.0**
+Current version: **0.47.1**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history, including a condensed summary of the pre-release foundation milestones.
 
@@ -3200,6 +3200,12 @@ Future iterations will add multi-lift systems, coordination algorithms, request 
 - Java 17 or later
 - Maven 3.6 or later
 
+## Backend Dependency Baseline
+
+- Spring Boot: 3.4.13
+- PostgreSQL JDBC driver: 42.7.11
+- Flyway PostgreSQL database module: managed by Spring Boot dependency management
+
 ## Development Setup
 
 This project includes an `.editorconfig` file to maintain consistent code formatting across different editors and IDEs. Most modern editors support EditorConfig either natively or through plugins:
@@ -3245,10 +3251,10 @@ To build a deployable Spring Boot JAR that also serves the React admin UI from `
 mvn -Pfrontend clean package
 ```
 
-The frontend profile installs Node.js 20.19.0 for compatibility with Vite 7, runs `npm ci`, builds the Vite bundle, copies the generated files into `target/classes/static/`, and packages them under `BOOT-INF/classes/static/` in `target/lift-simulator-0.47.0.jar`. The CI backend and E2E packaging jobs use this profile so downloaded CI JAR artifacts include the frontend assets. You can verify the packaged UI with:
+The frontend profile installs Node.js 20.19.0 for compatibility with Vite 7, runs `npm ci`, builds the Vite bundle, copies the generated files into `target/classes/static/`, and packages them under `BOOT-INF/classes/static/` in `target/lift-simulator-0.47.1.jar`. The CI backend and E2E packaging jobs use this profile so downloaded CI JAR artifacts include the frontend assets. You can verify the packaged UI with:
 
 ```bash
-jar tf target/lift-simulator-0.47.0.jar | grep '^BOOT-INF/classes/static/'
+jar tf target/lift-simulator-0.47.1.jar | grep '^BOOT-INF/classes/static/'
 ```
 
 ## Running Tests

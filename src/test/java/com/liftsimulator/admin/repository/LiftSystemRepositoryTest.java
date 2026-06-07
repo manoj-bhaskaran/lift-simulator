@@ -194,6 +194,10 @@ public class LiftSystemRepositoryTest {
         assertTrue(liftSystemVersionRepository.existsById(version2Id));
         assertTrue(liftSystemVersionRepository.existsById(version3Id));
 
+        // Clear the persistence context before deleting so Hibernate does not retain
+        // managed child versions while the database-level ON DELETE CASCADE removes them.
+        entityManager.clear();
+
         // Delete the lift system
         liftSystemRepository.deleteById(systemId);
         entityManager.flush();
