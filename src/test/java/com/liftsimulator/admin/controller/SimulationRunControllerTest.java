@@ -366,4 +366,60 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
                 .header(API_KEY_HEADER, "invalid-key"))
             .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    public void testListSimulationRuns_Pagination_PageSizeAndTotals() throws Exception {
+        // Create 50 runs
+        for (int i = 0; i < 50; i++) {
+            SimulationRun run = new SimulationRun(testSystem, testVersion);
+            runRepository.save(run);
+        }
+
+        // Page 0, size 20 => 20 items, 3 total pages, 50 total elements
+        mockMvc.perform(get("/api/v1/simulation-runs?page=0&size=20&sort=createdAt,desc")
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content").isArray())
+            .andExpect(jsonPath("$.content.length()").value(20))
+            .andExpect(jsonPath("$.totalElements").value(50))
+            .andExpect(jsonPath("$.totalPages").value(3))
+            .andExpect(jsonPath("$.number").value(0))
+            .andExpect(jsonPath("$.size").value(20));
+
+        // Page 2, size 20 => 10 items (50 - 2*20 = 10)
+        mockMvc.perform(get("/api/v1/simulation-runs?page=2&size=20&sort=createdAt,desc")
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content").isArray())
+            .andExpect(jsonPath("$.content.length()").value(10))
+            .andExpect(jsonPath("$.totalElements").value(50))
+            .andExpect(jsonPath("$.number").value(2));
+    }
+
+    @Test
+    public void testListSimulationRuns_Pagination_DefaultsToFirstPage() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            SimulationRun run = new SimulationRun(testSystem, testVersion);
+            runRepository.save(run);
+        }
+
+        // No pagination params => defaults to page 0, size 20
+        mockMvc.perform(get("/api/v1/simulation-runs")
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content").isArray())
+            .andExpect(jsonPath("$.content.length()").value(5))
+            .andExpect(jsonPath("$.totalElements").value(5))
+            .andExpect(jsonPath("$.number").value(0))
+            .andExpect(jsonPath("$.size").value(20));
+    }
+
+    @Test
+    public void testListSimulationRuns_Pagination_MaxSizeEnforced() throws Exception {
+        // Requesting size=200 should be capped at 100
+        mockMvc.perform(get("/api/v1/simulation-runs?page=0&size=200")
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.size").value(100));
+    }
 }

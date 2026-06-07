@@ -36,6 +36,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 
 /**
  * REST controller for managing simulation runs.
@@ -65,28 +69,30 @@ public class SimulationRunController {
     }
 
     /**
-     * Lists all simulation runs with optional filtering.
-     * Endpoint: GET /api/simulation-runs
+     * Lists simulation runs with optional filtering and pagination.
+     * Endpoint: GET /api/v1/simulation-runs
      *
      * @param systemId optional filter by lift system ID
      * @param status optional filter by run status (CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED)
-     * @return list of simulation runs with their details
+     * @param pageable pagination parameters: page (0-based), size (default 20, max 100), sort
+     * @return paginated simulation runs with totalElements and totalPages metadata
      */
     @Operation(
         summary = "List simulation runs",
-        description = "Retrieves all simulation runs with optional filtering by system ID or status"
+        description = "Retrieves simulation runs with optional filtering by system ID or status. "
+            + "Supports pagination via ?page=0&size=20&sort=createdAt,desc. "
+            + "Default page size is 20; maximum is 100."
     )
     @ApiResponse(responseCode = "200", description = "Successfully retrieved simulation runs")
     @ApiResponse(responseCode = "401", description = "Unauthorized - valid API key required")
     @GetMapping
-    public ResponseEntity<List<SimulationRunListResponse>> listSimulationRuns(
+    public ResponseEntity<Page<SimulationRunListResponse>> listSimulationRuns(
             @RequestParam(required = false) Long systemId,
-            @RequestParam(required = false) RunStatus status
+            @RequestParam(required = false) RunStatus status,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        List<SimulationRun> runs = simulationRunService.getRunsWithDetails(systemId, status);
-        List<SimulationRunListResponse> responses = runs.stream()
-                .map(SimulationRunListResponse::fromEntity)
-                .toList();
+        Page<SimulationRun> page = simulationRunService.getPagedRunsWithDetails(systemId, status, pageable);
+        Page<SimulationRunListResponse> responses = page.map(SimulationRunListResponse::fromEntity);
         return ResponseEntity.ok(responses);
     }
 
