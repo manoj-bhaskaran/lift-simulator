@@ -3204,6 +3204,7 @@ Future iterations will add multi-lift systems, coordination algorithms, request 
 
 - Spring Boot: 3.4.13
 - PostgreSQL JDBC driver: 42.7.11
+- Flyway PostgreSQL database module: managed by Spring Boot dependency management
 
 ## Development Setup
 
