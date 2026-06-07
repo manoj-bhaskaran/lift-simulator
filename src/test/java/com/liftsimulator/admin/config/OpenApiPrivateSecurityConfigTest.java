@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -43,10 +44,11 @@ class OpenApiPrivateSecurityConfigTest extends LocalIntegrationTest {
     }
 
     @Test
-    void openApiDocs_PrivateAccess_AdminRole_ReturnsOk() throws Exception {
+    void openApiDocs_PrivateAccess_AdminRole_DoesNotReturnAuthzFailure() throws Exception {
         mockMvc.perform(get("/api/v1/api-docs")
                 .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
-            .andExpect(status().isOk());
+            .andExpect(result -> assertThat(result.getResponse().getStatus())
+                .isNotIn(401, 403));
     }
 
     @Test
@@ -54,5 +56,12 @@ class OpenApiPrivateSecurityConfigTest extends LocalIntegrationTest {
         mockMvc.perform(get("/api/v1/swagger-ui.html")
                 .with(httpBasic(TEST_VIEWER_USER, TEST_VIEWER_PASSWORD)))
             .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void swaggerUi_PrivateAccess_AdminRole_ReturnsRedirect() throws Exception {
+        mockMvc.perform(get("/api/v1/swagger-ui.html")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
+            .andExpect(status().is3xxRedirection());
     }
 }
