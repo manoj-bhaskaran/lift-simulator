@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.49.2] - 2026-06-07
+
+### Changed
+- **Changelog maintenance**: Condensed historical entries from 0.30.0 through 0.46.0 by removing boilerplate implementation, benefit, documentation, and notes sub-sections while preserving user-facing changes and breaking-change summaries.
+- **Patch version bump**: Updated repository package metadata and README version references from 0.49.1 to 0.49.2.
+
 ## [0.49.1] - 2026-06-07
 
 ### Changed
@@ -98,195 +104,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.46.0] - 2026-02-01
 
 ### Added
-- **OpenAPI/Swagger Documentation**: Interactive API documentation for all backend endpoints
-  - SpringDoc OpenAPI dependency added for automatic spec generation
-  - Swagger UI accessible at `/api/v1/swagger-ui.html` for interactive endpoint testing
-  - OpenAPI specification available at `/api/v1/api-docs` in JSON format
-  - Security schemes documented (HTTP Basic Authentication and API Key authentication)
-  - API metadata configured with version, description, contact, and license information
-  - All controller endpoints annotated with OpenAPI tags and descriptions
-  - README updated with links to API documentation
-- **URL-Based API Versioning**: Introduced `/api/v1` prefix for all REST endpoints to establish a stable API contract
-  - All endpoints now use versioned paths (e.g., `/api/v1/lift-systems`, `/api/v1/scenarios`, `/api/v1/runtime/systems/{key}/config`)
-  - Frontend updated to use versioned API base path (`/api/v1`)
-  - Vite development proxy configured for `/api/v1` endpoints
-  - Security filter chains updated to protect versioned endpoints
-  - All tests (backend and frontend E2E) updated to use versioned paths
-  - Versioning policy documented in ADR-0020 (URL-Based API Versioning)
-  - README updated with API versioning section and base URL documentation
-- **Spring Security Baseline**: Introduced authentication for all admin and runtime APIs
-  - **HTTP Basic Authentication**: Admin APIs (`/api/v1/**` except `/api/v1/health`) require HTTP Basic authentication with environment-configured username and password
-  - **API Key Authentication**: Runtime and Simulation APIs (`/api/v1/runtime/**` and `/api/v1/simulation-runs/**`) require API key authentication via `X-API-Key` header for machine-to-machine communication
-  - **Role-Based Access Control**: Admin users have `ADMIN` role; runtime API clients have `RUNTIME` role
-  - **Consistent Error Responses**: Unauthenticated requests return HTTP 401 with standard JSON error payload (`status`, `message`, `timestamp`)
-  - **Stateless Sessions**: No session cookies; each request must include credentials
-  - **CSRF Disabled**: Appropriate for stateless REST APIs
-  - **WWW-Authenticate Header**: HTTP Basic 401 responses include `WWW-Authenticate: Basic realm="Lift Simulator Admin"` per RFC 7235
-- **Security Configuration**: Added `SecurityConfig` class with three security filter chains:
-  - Runtime/Simulation API filter chain (Order 1) for API key authentication
-  - Admin API filter chain (Order 2) for HTTP Basic authentication
-  - Public filter chain (Order 3) for static assets and SPA routes
-- **API Key Filter**: Implemented `ApiKeyAuthenticationFilter` for validating `X-API-Key` header on runtime and simulation-run endpoints
-- **Custom Authentication Entry Point**: `CustomAuthenticationEntryPoint` returns JSON error responses matching application's standard error format
-- **Security Properties**: Added configurable security settings in `application.properties`:
-  - `security.admin.username` - Admin username (default: `admin`, override: `ADMIN_USERNAME` env var)
-  - `security.admin.password` - Admin password (required, override: `ADMIN_PASSWORD` env var)
-  - `security.api-key` - Runtime API key (required, override: `API_KEY` env var)
-- **Authentication Tests**: Added comprehensive test suite for security configuration:
-  - Health endpoint accessibility without authentication
-  - Admin API authentication requirements (valid/invalid credentials)
-  - Runtime API authentication requirements (valid/invalid API keys)
-  - Actuator endpoint accessibility
-  - Error response format verification
-- **Documentation**: Added Authentication section in README with:
-  - Configuration instructions for admin credentials and API keys
-  - Usage examples with curl
-  - Environment variable alternatives
-  - Security best practices
-- **Role-Based Access Control (RBAC)**: Implemented granular authorization for admin operations
-  - **ADMIN role**: Full access to all operations (read and write)
-  - **VIEWER role**: Read-only access (GET requests only)
-  - **Authorization rules**: GET requests allowed for ADMIN and VIEWER; POST, PUT, DELETE, PATCH restricted to ADMIN
-  - **HTTP 403 responses**: Unauthorized access returns consistent JSON error payload (`status`, `message`, `timestamp`)
-  - **Multi-user configuration**: Support for configuring multiple users with different roles via `security.users` property
-  - **Backward compatibility**: Legacy single-admin configuration (`security.admin.*`) still supported
-  - **New classes**: `SecurityUsersProperties` for multi-user config, `CustomAccessDeniedHandler` for 403 responses
-  - **RBAC tests**: Added comprehensive tests for VIEWER restrictions and 403 scenarios
-  - **Documentation**: ADR-0021 (Role-Based Access Control) and README updated with RBAC section
-- API key authentication for runtime configuration and simulation execution endpoints, including configurable header and environment-backed key support.
-- Explicit CORS configuration with configurable allowed origins, methods, headers, and credentials for frontend-backend interaction.
-- CSRF policy configuration with explicit defaults for stateless API usage.
-- Integration tests covering CORS preflight acceptance and rejection scenarios.
+- **OpenAPI/Swagger Documentation**: Added interactive Swagger UI at `/api/v1/swagger-ui.html` and OpenAPI JSON at `/api/v1/api-docs`, documenting authentication schemes and backend API metadata.
+- **URL-Based API Versioning**: Introduced the `/api/v1` prefix for REST endpoints, frontend API calls, Vite proxying, security rules, tests, and API versioning documentation.
+- **Spring Security Baseline**: Added HTTP Basic authentication for admin APIs, API-key authentication for runtime and simulation APIs, role-based access control, consistent 401/403 JSON errors, stateless sessions, CORS/CSRF policy configuration, and authentication test coverage.
 
 ### Changed
-- **Breaking: All API endpoints now use `/api/v1` prefix**: All API consumers must update their base URL from `/api` to `/api/v1`
-  - Frontend API client automatically uses new base URL
-  - Backend controllers updated with versioned request mappings
-  - Security configuration updated to protect versioned endpoints
-  - All tests updated to use versioned paths
-- **Breaking: All admin APIs now require authentication**: Requests to `/api/v1/**` endpoints (except `/api/v1/health`, `/api/v1/runtime/**`, and `/api/v1/simulation-runs/**`) must include HTTP Basic credentials
-- **Breaking: All runtime and simulation APIs now require API key**: Requests to `/api/v1/runtime/**` and `/api/v1/simulation-runs/**` endpoints must include `X-API-Key` header
-- Updated controller integration tests to use appropriate authentication (HTTP Basic for admin, API key for simulation)
-- Updated `GlobalExceptionHandlerValidationTest` to work with Spring Security
+- **Breaking: All API endpoints now use `/api/v1` prefix**: API consumers must update base URLs from `/api` to `/api/v1`; runtime and simulation endpoints are protected by API-key authentication and admin endpoints require HTTP Basic credentials.
+- Version bumped from 0.45.0 to 0.46.0.
 
 ### Security
-- All administrative API endpoints are now protected with HTTP Basic authentication
-- Runtime configuration and simulation run endpoints are protected with API key authentication
-- Public endpoints (health, actuator, static assets) remain accessible without authentication
-- **Startup validation**: Application fails to start if admin password is empty or not configured, preventing insecure deployments
-- **Role-based authorization**: Write operations (POST, PUT, DELETE, PATCH) restricted to ADMIN role; VIEWER role limited to read-only access
-- **403 Forbidden responses**: Authenticated users attempting unauthorized operations receive clear JSON error responses
-- Documented CORS and CSRF policies to ensure predictable cross-origin and request forgery behavior in production.
+- Added startup validation for required API keys, constant-time hashed API-key comparison, configurable CORS/CSRF defaults, and dependency updates for frontend and backend vulnerabilities.
 
 ## [0.45.0] - 2026-02-01
 
 ### Added
-- **Scenario Builder UI**: Complete UI for creating and managing passenger flow scenarios
-  - **Scenarios List Page**: Browse, search, and manage all saved scenarios
-  - **Scenario Form**: Create and edit scenarios with intuitive form-based or JSON editor modes
-  - **Template-Based Quick Start**: Pre-configured templates (Morning Rush, Evening Rush, Inter-Floor Traffic)
-  - **Passenger Flow Builder**: Visual component for building passenger flows with drag-and-drop reordering
-  - **Server-Side Validation**: Real-time validation with detailed error and warning feedback
-  - **Advanced JSON Mode**: Toggle between form mode and direct JSON editing
-  - **Random Seed Support**: Optional seed field for reproducible simulations
-  - Added navigation link in main menu for easy access
-  - Full CRUD operations (create, read, update, delete) with confirmation modals
-- **Simulator Run UI**: End-to-end UI flow for executing simulation runs
-  - Added Simulator landing page for lift system + published version selection before run setup
-  - Run setup supports optional seed entry for reproducibility
-  - Polling-based run status with elapsed time, progress, and terminal state handling
-  - Results rendering with KPI cards, per-lift and per-floor tables, artefact downloads, and CLI reproduction guidance
-  - **Run Simulator button**: Added discoverable "Run Simulator" button next to each published version that launches the run workflow with preselected system and version
-- **Simulation Runs History**: Persistent access to past simulation run results
-  - **Runs List Page**: View history of all simulation runs with status, system, version, and scenario information
-  - **Filtering**: Filter runs by lift system and status (SUCCEEDED, FAILED, RUNNING, CREATED, CANCELLED)
-  - **Run Detail Page**: View full results, KPIs, per-lift and per-floor metrics, and downloadable artefacts for any past run
-  - **Navigation Integration**: Added "Runs" link in main navigation and "View All Runs" button in Simulator
-  - **Backend API**: New `GET /api/simulation-runs` endpoint with optional `systemId` and `status` query parameters
-  - Results persist after navigation away from the simulator, addressing UAT feedback
-- **Backend Scenario Enhancements**:
-  - Added `name` field to Scenario entity for better identification
-  - Implemented `GET /api/scenarios` endpoint to list all scenarios
-  - Implemented `DELETE /api/scenarios/{id}` endpoint to delete scenarios
-  - Updated `ScenarioRequest` and `ScenarioResponse` DTOs to include name field
-  - Database migration (V4) to add name column to scenario table
-- **Scenario management API**:
-  -  Validation endpoints for UI-driven passenger-flow scenarios
-  -  JSON schema validation and storage support.
-- **Simulation Run APIs**: Comprehensive API endpoints for simulation execution and monitoring
-  - **POST /api/simulation-runs**: Create and start simulation runs with liftSystemId, versionId, optional scenarioId and seed
-  - **GET /api/simulation-runs/{id}**: Retrieve run status, timestamps (created/started/ended), progress (currentTick/totalTicks), and error messages
-  - **POST /api/simulation-runs/{id}/cancel**: Cancel in-progress simulation runs and transition to CANCELLED
-  - **GET /api/simulation-runs/{id}/results**: Access structured results JSON (200 for SUCCEEDED, 409 for RUNNING, 400 for CREATED/CANCELLED)
-  - **GET /api/simulation-runs/{id}/logs?tail=N**: Stream simulation logs with optional tail parameter (default: all lines, max: 10,000)
-  - **GET /api/simulation-runs/{id}/artefacts**: List downloadable artefacts with name, path, size, and MIME type
-  - Implemented `SimulationRunController` with comprehensive error handling and status-based responses
-  - Created `ArtefactService` with path traversal prevention and secure file access controls
-  - Enhanced `SimulationRunService` with `createAndStartRun()` method for atomic run creation and execution
-  - Added DTOs: `CreateSimulationRunRequest`, `SimulationRunResponse`, `SimulationResultResponse`, `ArtefactInfo`
-  - Configurable artefacts storage via `simulation.artefacts.base-path` property (default: ./simulation-runs)
-  - Automatic artefact directory creation with structure: `{base-path}/run-{id}/`
-  - Added comprehensive integration tests covering all endpoints and edge cases
-  - Security: Prevents path traversal attacks in artefact access with normalized path validation
-- **Simulation Run Domain Model**: Introduced persistent run lifecycle for simulation execution tracking
-  - Created `simulation_scenario` table to store reusable test scenarios with JSON configuration
-  - Created `simulation_run` table to track individual simulation executions with lifecycle status
-  - Added `RunStatus` enum with states: CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED
-  - Established referential integrity with existing `lift_system` and `lift_system_version` tables
-  - Implemented JPA entities: `SimulationScenario` and `SimulationRun` with proper relationships
-  - Created repositories: `SimulationScenarioRepository` and `SimulationRunRepository` with custom queries
-  - Implemented service layer: `SimulationScenarioService` and `SimulationRunService` with status transition methods
-  - Added comprehensive unit and integration tests for all new components
-  - Database migration (V3) maintains backward compatibility with existing schema
-  - Documented architectural decision in ADR-0016
-- **Asynchronous Simulation Runner**:
-  - Added backend service and API to launch simulation runs asynchronously using stored configs and scenarios
-  - Persisted run artefacts (inputs, logs, results placeholder) under a configurable artefact root
-- **Structured simulation results output**:
-  - Generate `results.json` with run summary, KPI metrics, per-lift status counts, and per-floor aggregates
-  - Results are additive and do not change existing CLI outputs
-  - Per-floor lift visit counts reflect floor changes (arrivals)
-- **Batch Input Generator**: Backwards-compatible wrapper for scenario-to-CLI conversion
-  - Implemented `BatchInputGenerator` service to generate `.scenario` files from stored configurations
-  - Converts lift system version configuration and scenario JSON to legacy batch input format
-  - Generates `hall_call` events from passenger flows with automatic direction calculation
-  - Ensures exact format compliance with `ScenarioParser` for CLI simulator compatibility
-  - Stores generated files in run-specific artifact directories under `artefactBasePath`
-  - Added `generateBatchInputFile()` method to `SimulationRunService` for programmatic access
-  - Validates floor ranges and tick constraints during generation
-  - Provides unique passenger aliases (p1, p2, p3...) and proper event ordering
-  - Added comprehensive test suite including golden-file tests and format validation
-  - Documented in README with usage examples and API reference
-- **Testing**: Added run lifecycle integration coverage, golden-file contract checks for batch input generation,
-  and a CLI compatibility test for the demo scenario.
-- **E2E Testing - Scenario Management**: Added comprehensive Playwright E2E test suite for scenario creation and editing
-  - TC_SCENARIO_001: Create scenario using form mode
-  - TC_SCENARIO_002: Create scenario using Advanced JSON Mode with validation and save
-  - TC_SCENARIO_003: Edit existing scenario using Advanced JSON Mode
-  - TC_SCENARIO_004: Validate invalid JSON shows proper error messages
+- **Scenario Builder UI**: Added scenario list, form/JSON editors, templates, passenger-flow builder, server-side validation, random seed support, navigation, and CRUD flows.
+- **Simulator Run UI**: Added lift system/version run setup, reproducible seed input, polling status, results rendering, artefact downloads, CLI reproduction guidance, and published-version launch links.
+- **Simulation Runs History**: Added a persistent runs list/detail experience with filtering, historical result review, navigation integration, and backend list support.
+- **Scenario and simulation APIs**: Added scenario naming/list/delete support, scenario validation/storage, asynchronous simulation-run lifecycle APIs, artefact handling, structured results output, and batch-input generation for CLI compatibility.
+- **Testing**: Added run lifecycle, batch-input golden-file, CLI compatibility, and Scenario Builder Playwright coverage.
 
 ### Fixed
-- **Run Simulator Artefacts**: Added a dedicated artefact download endpoint with secure path validation and improved UI error feedback when downloads fail.
-- Ensure simulation run progress ticks persist during execution so the UI progress bar and tick counter advance while runs are active.
-- **Run Simulator**: Fixed scenario dropdown to only show scenarios belonging to the selected Lift System Version. Previously, all scenarios were shown regardless of version compatibility, leading to backend validation errors when incompatible scenarios were selected. The dropdown now filters scenarios by `liftSystemVersionId` and automatically clears the selection when switching to a version that doesn't have the currently selected scenario. Added helpful messages when no version is selected or no scenarios are available for the selected version.
-- **Scenario Builder - Advanced JSON Mode**: Fixed critical bug where updates made in Advanced JSON Mode were not persisted after clicking "Validate" then "Update Scenario". The form state was not synchronized with the JSON text editor, causing old values to be sent to the backend. Now `buildScenarioJson()` correctly parses the JSON text when in Advanced JSON Mode, and both validate and save operations sync the parsed JSON back to form state for consistency.
-- **Scenario Builder**: Add clear selection styling for quick start templates on the Create Scenario screen.
-- **Scenario Builder**: Align the random seed checkbox with its label text on the Create Scenario screen.
-- **Scenario Builder**: Prevent blank page regression when navigating to the Create New Scenario screen.
-- Return a conflict response with guidance when deleting lift systems that still have scenarios tied to their versions.
-- Update the frontend footer to report the current application version (0.45.0) from the admin UI package metadata.
-- Avoid SpotBugs EI_EXPOSE_REP2 warnings in admin services by using defensive ObjectMapper copies and lazy execution service injection.
-- Handle unexpected IO failures when validating scenario payloads in the admin service.
-- Validate scenario floor ranges and start ticks when generating batch scenario content in memory.
-- Initialize the H2 test schema for Spring Boot integration tests to prevent application context startup failures.
-- Fix H2 JSON compatibility in @SpringBootTest integration tests by implementing custom `JsonStringConverter` AttributeConverter with validation to replace Hibernate 6's `@JdbcTypeCode(SqlTypes.JSON)` annotation, which is only supported for Oracle and PostgreSQL databases. The converter validates JSON format at write time to prevent malformed JSON from being persisted (particularly for SimulationScenario entities where service-layer validation may be bypassed), ensuring errors are caught early rather than failing at simulation execution time.
-- **Simulator Run UI**: Only apply preselected system/version from query params once so user selections are not overridden.
-- **Simulator Landing**: Ignore stale version fetch responses when switching between systems quickly.
-- **Simulator Landing**: Clear version options when loading versions fails to prevent mismatched selections.
-- Add database-level ON DELETE CASCADE constraint to SimulationRun foreign keys (lift_system_id and version_id) via Hibernate's @OnDelete annotation. This ensures SimulationRun records are automatically deleted when their parent LiftSystem or LiftSystemVersion is deleted, matching the existing database schema and preventing constraint violations.
-- Align the "Use Random Seed (for reproducibility)" checkbox with its label on the Create Scenario screen.
-- Align README schema/entity references to the `scenario` table after legacy `simulation_scenario` removal.
-- **Run Simulator**: Fixed UI hang when clicking Start Run multiple times before a previous run completes. The Start Run button is now disabled while a run is in progress (RUNNING or CREATED status), preventing duplicate run requests and state conflicts. Button text changes to "Run in Progress" and a hint message guides users to wait for completion or cancel the current run before starting a new one.
+- Improved run artefact downloads, progress persistence, scenario filtering, Advanced JSON Mode persistence, template selection styling, random seed checkbox alignment, Create Scenario navigation, linked-data delete conflicts, frontend version display, SpotBugs warnings, scenario validation failures, H2 test compatibility, simulator preselection behavior, stale version responses, cascade deletion, README schema references, and Start Run double-click handling.
 
 ## [0.44.0] - 2026-01-20
 
@@ -299,87 +138,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.43.0] - 2026-01-19
 
 ### Added
-- **Playwright UI Automation Framework**: Introduced Playwright as the E2E testing framework for the frontend
-  - Installed @playwright/test with TypeScript support
-  - Created `playwright.config.ts` with optimal CI/local development settings
-  - Configured base URL (http://localhost:3000) and automatic web server startup
-  - Set up reasonable timeouts (10s actions, 30s navigation) and retries (2 on CI)
-  - Enabled test artifacts: screenshots on failure, videos on failure, traces on retry
-  - Created `e2e/` directory for test organization
-  - Added comprehensive smoke test suite (`e2e/smoke.spec.ts`) covering:
-    - Application loads and displays dashboard
-    - Navigation to Lift Systems page
-    - Health check page accessibility
-    - Configuration validator page accessibility
-    - Footer version information display
-  - Added Playwright scripts to package.json:
-    - `npm test` - Run tests in headless mode
-    - `npm run test:headed` - Run tests with browser UI visible
-    - `npm run test:ui` - Interactive UI mode for debugging
-    - `npm run test:debug` - Debug mode with step-by-step execution
-    - `npm run test:report` - View HTML test report
-  - Updated `.gitignore` to exclude Playwright artifacts (test-results/, playwright-report/, playwright/.cache/)
-  - Documented setup and usage in frontend/README.md with complete instructions
-  - Created ADR-0014 documenting the decision to adopt Playwright
-  - Integrated Playwright tests into CI pipeline:
-    - Automatic Chromium browser installation with dependencies
-    - Playwright webServer auto-starts frontend on port 3000 during test execution
-    - HTML test report uploaded as GitHub Actions artifact (available for 30 days)
-    - Test artifacts (screenshots, videos, traces) uploaded on test failures
-    - Test failures properly fail the CI workflow to block PR merges
-    - Test reports accessible via GitHub Actions "Artifacts" section in workflow runs
-- **Automated UI Test Suite**: Converted 10 manual test cases to automated Playwright tests
-  - **Test Helpers and Fixtures** (`e2e/helpers/test-helpers.ts`):
-    - Comprehensive test data generators and helper functions
-    - Configuration fixtures for valid and invalid scenarios
-    - Reusable functions for common operations (create system, create version, publish version)
-    - Backend availability checks and cleanup utilities
-    - Dashboard metrics aggregation helpers
-  - **Lift Systems CRUD Tests** (`e2e/lift-systems.spec.ts`) - 5 automated tests:
-    - TC_0003: Create New Lift System with validation
-    - TC_0004: View Lift System Details with metadata verification
-    - TC_0013: Delete Lift System and cascade delete versions
-    - Create system with invalid key validation
-    - Create system with duplicate key error handling
-  - **Configuration Version Lifecycle Tests** (`e2e/configuration-versions.spec.ts`) - 6 automated tests:
-    - TC_0005: Create Valid Configuration Version (Draft)
-    - TC_0006: Reject Invalid Configuration Version
-    - TC_0007: Create Valid Configuration After Fix
-    - TC_0008: Edit Draft Version and Save
-    - TC_0009: Publish Version and Auto-Archive Previous
-    - Cannot edit published version (read-only mode)
-  - **Configuration Validator Tests** (`e2e/config-validator.spec.ts`) - 6 automated tests:
-    - TC_0011: Validate Configuration Using Validator Tool
-    - Validator shows warnings distinctly from errors
-    - Validator handles malformed JSON gracefully
-    - Validator handles boundary values correctly
-    - Validator accepts different controller strategies
-  - **Health Check Tests** (`e2e/health-check.spec.ts`) - 4 automated tests:
-    - TC_0012: Health Check UI and API
-    - Health check page shows service information
-    - Health check handles backend failure gracefully
-    - Health check API returns structured JSON
-  - **Dashboard Tests** (`e2e/dashboard.spec.ts`) - 4 automated tests:
-    - TC_0017: Dashboard Aggregate Counts Validation
-    - Dashboard displays quick actions
-    - Dashboard metrics update after system deletion
-    - Dashboard is accessible from navigation
-  - **Total**: 25 automated test cases covering critical user flows
-  - **Test Coverage**: All tests follow best practices with:
-    - Clear test descriptions mapping to manual test case IDs
-    - Stable selectors using class names, IDs, and text content
-    - Proper assertions with meaningful error messages
-    - Backend availability checks with automatic test skipping
-    - Cleanup logic to prevent test data pollution
-    - Resilience to backend unavailability (smoke tests)
-  - **Test Organization**:
-    - Tests grouped by feature area (Lift Systems, Versions, Validator, Health, Dashboard)
-    - Reusable helpers reduce code duplication
-    - Configuration fixtures loaded from backend scenario files
-    - Clear mapping between manual test cases and automated tests
+- **Playwright UI Automation Framework**: Added Playwright configuration, smoke tests, E2E scripts, CI artifact handling, and documentation for frontend browser testing.
+- **Automated UI Test Suite**: Converted critical lift-system, configuration-version, validator, health-check, and dashboard flows into reusable Playwright tests with fixtures and cleanup helpers.
 
 ### Fixed
-- **Lift Systems Navigation Test**: Corrected smoke test to use `/systems` route instead of `/lift-systems` to match actual routing in App.jsx
+- Corrected the lift-systems navigation smoke test route to match the actual React routing.
 
 ## [0.42.0] - 2026-01-19
 
@@ -484,145 +247,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.41.0] - 2026-01-17
 
 ### Added
-- **Persistent File-Based Logging**: Backend logs are now persisted to files in the `logs/` directory
-  - **Logback Configuration**: Created comprehensive `logback-spring.xml` for centralized logging management
-  - **Console and File Output**: Logs are written to both console (for development) and files (for debugging)
-  - **Rolling File Appenders**: Automatic log rotation to prevent unbounded disk usage
-    - Main application log: `logs/application.log` (rotated daily and at 10MB, max 30 days, 1GB total)
-    - Error-only log: `logs/application-error.log` (rotated daily and at 10MB, max 90 days, 500MB total)
-    - Archive format: `logs/application-YYYY-MM-DD.N.log`
-  - **Full Stack Traces**: All exceptions logged with complete stack traces using `%ex{full}` pattern
-  - **Profile-Specific Configuration**: Different logging levels for dev and prod profiles
-    - Dev profile: DEBUG level for application code, verbose SQL logging
-    - Prod profile: INFO level for application code, reduced database logging noise
-  - **Structured Log Patterns**: Timestamp, thread, level, logger, message, and full exception details
-  - **Logs Directory**: Created `logs/` directory with `.gitkeep` to ensure it exists in version control
-    - Log files are gitignored (already in .gitignore as `*.log`)
-- **Improved Debugging Capability**: Stack traces from API failures (e.g., `/api/health`) can now be retrieved from log files
-- **Audit Trail**: All backend runtime errors are now persistently recorded for post-mortem analysis
-- **Local Configuration Overrides**: Implemented `application-local.properties` pattern for git-conflict-free customization
-  - **Created** `application-local.properties.template` with examples for common overrides
-  - **Added** `application-local.properties` to `.gitignore` (local-only, not tracked)
-  - **Use Cases**:
-    - Custom log file paths (avoid git pull conflicts with `application.properties`)
-    - Different server ports to avoid local conflicts
-    - Alternative database connection settings
-    - Any local-only configuration overrides
-  - **Activation**: `SPRING_PROFILES_ACTIVE=dev,local mvn spring-boot:run`
-  - **Spring Boot Support**: Leverages built-in profile-specific property files
-  - **Documentation**: Added comprehensive README sections on local overrides
+- **Frontend E2E Testing Infrastructure**: Added Playwright-based browser tests, E2E scripts, CI workflow integration, trace/video/screenshot artifacts, and documentation for running the suite locally and in CI.
 
 ### Security
-- **Configuration Template Pattern**: Implemented template-based configuration for database credentials
-  - **Created** `application-dev.yml.template` with placeholders for sensitive values
-  - **Removed** `application-dev.yml` from version control (added to `.gitignore`)
-  - **Environment Variable Support**: Database credentials can be overridden via environment variables:
-    - `DB_URL`: Database connection URL
-    - `DB_USERNAME`: Database username
-    - `DB_PASSWORD`: Database password
-  - **Developer Workflow**: Developers copy template to `application-dev.yml` and customize locally
-  - **Security Best Practice**: Credentials never committed to version control
-  - **Documentation**: Updated README with detailed setup instructions for configuration file
+- Restricted Playwright browser binaries and generated artifacts from source control.
 
 ### Changed
-- Version bumped from 0.40.0 to 0.41.0
-- Frontend package version updated to 0.41.0
-- **Logging Configuration**: Updated `application.properties` to specify log file location
-  - Removed pattern definitions (now managed by logback-spring.xml)
-  - Added `logging.file.name=logs/application.log`
-  - Added `logging.file.path=logs`
-  - Preserved log level settings (INFO for root, DEBUG for com.liftsimulator)
-- **Logback Configuration**: Application now uses Spring Boot's Logback integration via logback-spring.xml
-  - Replaces pattern-only configuration in application.properties
-  - Provides better control over appenders, rotation, and formatting
-  - Supports profile-specific logging behavior
-- **Database Configuration**: `application-dev.yml` is now a local-only file (not tracked in git)
-  - Template file `application-dev.yml.template` provides reference configuration
-  - Follows Spring Boot best practices for credential management
-  - Enables different credentials per developer without git conflicts
-- **Configuration Override Strategy**: Introduced multiple layers for configuration customization
-  - **Defaults**: `application.properties` (version controlled, safe defaults)
-  - **Profile-specific**: `application-dev.yml` (local-only, for database credentials)
-  - **Local overrides**: `application-local.properties` (local-only, for paths/ports/etc.)
-  - **Environment variables**: Highest priority, for CI/CD and Docker deployments
-  - **Priority order**: Environment vars > local profile > dev profile > application.properties
+- Version bumped from 0.40.0 to 0.41.0.
+- Frontend package version updated to 0.41.0.
+- README now documents the E2E testing workflow.
 
 ### Fixed
-- **Console Buffer Overflow**: Backend logs no longer overflow console buffer during `mvn spring-boot:run`
-- **Lost Stack Traces**: Exception stack traces are now fully preserved in log files
-- **Debugging Blocker**: Root cause analysis is now possible for backend failures via persistent logs
-
-### Technical Details
-- **Logback Components**:
-  - CONSOLE appender: Writes to stdout with thread and logger information
-  - FILE appender: Writes all logs to rotating files with full exception details
-  - ERROR_FILE appender: Dedicated error log for quick issue identification
-- **Rotation Strategy**:
-  - Size-based: Files rotate when reaching 10MB
-  - Time-based: Daily rollover at midnight
-  - Retention: 30 days for main log, 90 days for error log
-  - Total cap: 1GB for main log, 500MB for error log
-- **Log Patterns**:
-  - Console: `%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n`
-  - File: `%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n%ex{full}`
-- **Logger Levels** (inherited from existing configuration):
-  - Root: INFO
-  - com.liftsimulator: DEBUG
-  - org.hibernate.SQL: DEBUG (dev), WARN (prod)
-  - org.hibernate.type.descriptor.sql.BasicBinder: TRACE (dev), WARN (prod)
-  - org.flywaydb: INFO
-  - com.zaxxer.hikari: INFO
-  - Spring Framework: INFO
-
-### Benefits
-- **Effective Debugging**: Developers can retrieve stack traces after console overflow
-- **UAT Unblocked**: Active defects can now be diagnosed using persistent logs
-- **Production Readiness**: Audit trail of runtime errors exists for compliance and debugging
-- **Developer Productivity**: No longer blocked by lost console output
-- **Disk Space Management**: Automatic rotation prevents disk exhaustion
-- **Quick Error Access**: Separate error log allows rapid identification of failures
+- Covered navigation and admin UI workflows with browser-level regression tests.
 
 ## [0.40.0] - 2026-01-17
 
 ### Added
-- **Comprehensive Logging to GlobalExceptionHandler**: Added SLF4J-based logging for all exception handlers
-  - **SLF4J Logger Integration**: Added `org.slf4j.Logger` and `org.slf4j.LoggerFactory` imports
-  - **ERROR-level Logging**: Generic exception handler (`handleGenericException`) logs unexpected errors with full stack traces
-    - Logs exception message and complete stack trace for debugging production issues
-    - Critical for troubleshooting unexpected 500 errors
-  - **WARN-level Logging**: Malformed JSON request handler (`handleHttpMessageNotReadable`)
-    - Logs malformed JSON requests with specific details for unknown properties
-    - Distinguishes between unknown property errors and other malformation issues
-  - **INFO-level Logging**: Business exception handlers log expected operational errors
-    - `handleResourceNotFound`: Logs 404 resource not found errors
-    - `handleIllegalArgument`: Logs 400 bad request errors
-    - `handleIllegalState`: Logs 409 conflict errors
-    - `handleConfigValidationError`: Logs configuration validation failures
-  - **DEBUG-level Logging**: Validation error handler (`handleValidationErrors`)
-    - Logs validation failures with field count and field names
-    - Suitable for verbose validation debugging without overwhelming logs
-  - **Benefits**:
-    - Enables debugging of production issues with full stack traces
-    - Provides audit trail of all exceptions
-    - Supports monitoring and alerting based on log levels
-    - Maintains security best practice (logs internally, hides from clients)
-    - Improves system observability for operations teams
+- **Centralized Frontend Logging**: Added structured logging utilities with levels, timestamps, optional context, and environment-aware output for API calls, validation, user actions, and component lifecycle events.
 
 ### Changed
-- Version bumped from 0.39.1 to 0.40.0
-- Frontend package version updated to 0.40.0
-- Enhanced JavaDoc for `GlobalExceptionHandler` class to document logging capabilities
-
-### Technical Details
-- Uses SLF4J API with Logback implementation (included in `spring-boot-starter-web`)
-- No additional dependencies required
-- Logging levels follow industry best practices:
-  - ERROR: Unexpected errors requiring immediate investigation
-  - WARN: Malformed requests that may indicate client issues
-  - INFO: Expected business errors and operational events
-  - DEBUG: Verbose validation details for development/debugging
-- Stack traces included only for ERROR-level logs to balance detail with log volume
-- All log messages use parameterized logging (SLF4J `{}` placeholders) for performance
+- Version bumped from 0.39.0 to 0.40.0.
+- Frontend package version updated to 0.40.0.
+- README and frontend documentation now describe logging usage and configuration.
 
 ## [0.39.1] - 2026-01-19
 
@@ -641,56 +287,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.39.0] - 2026-01-18
 
 ### Added
-- **Comprehensive JSDoc Documentation**: Added JSDoc comments to all React components and utility functions
-  - **Component Documentation**: All components now have detailed JSDoc with:
-    - Component descriptions and feature lists
-    - Complete props documentation with types and descriptions
-    - Parameter and return type annotations
-    - Usage examples where appropriate
-  - **Documented Components**:
-    - Modal components: AlertModal, ConfirmModal, CreateSystemModal, Modal
-    - Layout components: Layout, VersionActions
-    - Page components: ConfigEditor, LiftSystemDetail, LiftSystems
-  - **Utility Functions**: errorHandlers.js and statusUtils.js now have full JSDoc
-  - **Benefits**:
-    - Better IDE autocomplete and type hints
-    - Improved developer onboarding experience
-    - Inline documentation for component APIs
-    - Enhanced code maintainability
-- **Professional README Badges**: Added visual badges to frontend README
-  - Node.js version requirement (>=18.0.0)
-  - MIT License badge
-  - React version (19.x) with logo
-  - Vite version (7.x) with logo
-- **Maintenance Documentation**: Added comprehensive dependency management section
-  - Interactive dependency update workflow using npm-check-updates
-  - Best practices for reviewing and applying updates
-  - Version synchronization guidelines
-  - Security audit recommendations
+- **Comprehensive JSDoc Documentation**: Documented React components and shared utilities for better IDE assistance and developer onboarding.
+- **Professional README Badges**: Added frontend README badges for Node.js, license, React, and Vite.
+- **Maintenance Documentation**: Added dependency update, version synchronization, and security audit guidance.
 
 ### Changed
-- **Frontend README Improvements**: Significantly improved documentation accuracy and organization
-  - **Version Documentation Fix**: Tech stack versions now show caret ranges (e.g., ^19.2.0) matching package.json
-    - Added explanatory note about semantic versioning ranges
-    - Prevents confusion about exact vs. compatible versions
-    - Documents how to check installed versions with `npm list`
-  - **Deployment Reorganization**: Restructured deployment documentation with clear hierarchy
-    - **Primary Deployment**: Spring Boot integration (recommended) with benefits listed
-    - **Alternative Deployment**: Standalone static hosting with use cases
-    - Moved deployment section earlier in README for better discoverability
-    - Added clear benefits and trade-offs for each approach
-    - Included CORS configuration notes for standalone deployment
-  - **Improved Structure**: Better information architecture throughout
-    - Added deployment decision guidance
-    - Enhanced troubleshooting section placement
-    - Consolidated production build documentation
-- Version bumped from 0.38.1 to 0.39.0
-- Frontend package version updated to 0.39.0
-
-### Fixed
-- **Version Documentation Mismatch**: Resolved inconsistency between README (exact versions) and package.json (caret ranges)
-- **Deployment Model Ambiguity**: Clarified which deployment approach is recommended for which use case
-- **Missing Maintenance Guidance**: Addressed gap in dependency update process documentation
+- Improved frontend README accuracy and organization by documenting semantic version ranges, deployment options, troubleshooting placement, and production build guidance.
+- Fixed version documentation mismatches, clarified deployment recommendations, and added missing maintenance guidance.
+- Version bumped from 0.38.1 to 0.39.0.
+- Frontend package version updated to 0.39.0.
 
 ## [0.38.1] - 2026-01-18
 
@@ -706,72 +311,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.38.0] - 2026-01-17
 
 ### Added
-- **Version List Pagination and Sorting**: Enhanced version list management with comprehensive filtering, sorting, and pagination
-  - **Pagination Controls**:
-    - Configurable items per page (10/20/50/100 selectable via dropdown)
-    - Page navigation buttons (first, previous, next, last)
-    - Page number buttons with active page highlighting
-    - Pagination info showing current range and total count (e.g., "Showing 1-10 of 25 versions")
-    - Smart page number display (shows up to 5 page numbers centered around current page)
-    - Pagination controls only displayed when needed (more than one page)
-  - **Sorting Options**:
-    - Sort by version number (ascending/descending)
-    - Sort by creation date (newest first/oldest first)
-    - Sort by status (Published → Draft → Archived, or reverse)
-    - Context-aware sort order labels (e.g., "Newest First" vs "Oldest First" for date sorting)
-  - **Filtering and Search**:
-    - Filter versions by status (All/Published/Draft/Archived)
-    - Search by version number with real-time filtering
-    - Combined filtering (status filter + search work together)
-    - Empty state message when no versions match filters
-  - **UI Enhancements**:
-    - Clean controls panel with organized filter/sort/search inputs
-    - Responsive grid layout for controls (stacks on mobile)
-    - Focus states and visual feedback on all controls
-    - Version count display shows filtered count and total (e.g., "Versions (5 of 25)")
-    - Automatic reset to page 1 when filters or sorting changes
-  - **Styling**:
-    - Professional control panel with light background and subtle borders
-    - Consistent input styling with focus indicators
-    - Pagination buttons with hover effects and disabled states
-    - Active page number highlighted with primary color
-    - Responsive design with mobile breakpoints
-    - Accessible form labels and ARIA-friendly markup
+- **In-App UI Feedback Modals**: Replaced blocking browser alert/confirm dialogs with accessible `ConfirmModal` and `AlertModal` components, including focus management, keyboard support, ARIA attributes, type-based styling, and non-blocking UI behavior.
 
 ### Changed
-- Version bumped from 0.37.0 to 0.38.0
-- Frontend package version updated to 0.38.0
-- LiftSystemDetail page now displays paginated version lists instead of showing all versions
-- Version list header now shows filtered count vs total count
-
-### Technical Details
-- **State Management**: React hooks manage pagination, sorting, and filtering state
-  - `currentPage`, `itemsPerPage`, `sortBy`, `sortOrder`, `statusFilter`, `versionSearch`
-  - Automatic page reset when filters change via `useEffect` dependency tracking
-- **Data Processing Pipeline**:
-  1. Filter by status (if not "ALL")
-  2. Filter by version number search
-  3. Sort by selected field and order
-  4. Paginate results based on current page and items per page
-- **Pagination Logic**:
-  - Total pages calculated from filtered results
-  - Start/end indices computed for array slicing
-  - Page navigation validates bounds before updating state
-  - Smart page number rendering shows context around current page
-- **CSS Architecture**:
-  - `.versions-controls` - Container for all filter/sort controls
-  - `.pagination-controls` - Container for pagination UI
-  - `.pagination-buttons` - Flexbox layout for page navigation
-  - `.page-number.active` - Active page indicator styling
-  - Mobile-responsive with column stacking below 768px
-- **Performance**: Client-side filtering/sorting/pagination for optimal UX with typical dataset sizes
-
-### User Experience Improvements
-- Better performance when lift systems have many versions
-- Easier to find specific versions using search and filters
-- More organized display with logical sorting options
-- Professional pagination interface matching modern web standards
-- Responsive design works seamlessly on mobile devices
+- Updated ConfigEditor, LiftSystems, and LiftSystemDetail to use the new modal components for confirmations and error messages.
+- Version bumped from 0.35.2 to 0.36.0.
+- Frontend package version updated to 0.36.0.
 
 ## [0.37.0] - 2026-01-16
 
@@ -825,33 +370,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.36.0] - 2026-01-16
 
 ### Added
-- **In-App UI Feedback Modals**: Replaced blocking browser alert/confirm dialogs with accessible modal components
-  - Created `ConfirmModal` component for confirmation dialogs (publish, delete operations)
-  - Created `AlertModal` component for error/notification messages
-  - Both modals feature comprehensive accessibility:
-    - Automatic focus management (auto-focus on primary action button)
-    - Keyboard navigation support (ESC to close, Enter for confirm/dismiss, Tab trapping)
-    - Proper ARIA attributes (role, aria-modal, aria-labelledby, aria-label)
-    - Focus trap in ConfirmModal to keep keyboard navigation within modal
-  - Modal styling follows existing design system with consistent colors and spacing
-  - Visual feedback with color-coded icons for different alert types (error, warning, success, info)
+- **Comprehensive Responsive Design**: Added mobile-first responsive styling across admin UI pages, forms, modals, tables, JSON editors, and navigation.
+- **Mobile Navigation**: Added a hamburger menu and touch-friendly navigation for smaller screens.
 
 ### Changed
-- **ConfigEditor**: Replaced `window.confirm()` with ConfirmModal for publish confirmation
-- **LiftSystems**: Replaced `window.alert()` with AlertModal for create system errors
-- **LiftSystemDetail**: Replaced all alert/confirm dialogs with modal components
-  - Publish version confirmation uses ConfirmModal
-  - Delete system confirmation uses ConfirmModal with danger styling
-  - All error messages (create version, publish version, delete system) use AlertModal
-- Version bumped from 0.35.2 to 0.36.0
-- Frontend package version updated to 0.36.0
-
-### Technical Details
-- **ConfirmModal**: Customizable title, message, button text, and styles; ESC/Tab/click-outside handling
-- **AlertModal**: Type-based styling (error/warning/success/info); ESC/Enter dismissal; auto-focus on OK button
-- Both components use React hooks (useEffect, useRef) for lifecycle management
-- Accessible role attributes ("dialog" for ConfirmModal, "alertdialog" for AlertModal)
-- Non-blocking UI integration with consistent visual design across browsers
+- Version bumped from 0.35.0 to 0.36.0.
+- Frontend package version updated to 0.36.0.
+- README now documents responsive design capabilities.
 
 ## [0.35.2] - 2026-02-12
 
@@ -871,41 +396,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.35.0] - 2026-01-16
 
 ### Added
-- **Strict Configuration Schema Validation**: Enhanced config validation to reject unknown JSON fields
-  - Created `JacksonConfiguration` to configure ObjectMapper with `FAIL_ON_UNKNOWN_PROPERTIES`
-  - Unknown properties in configuration JSON now trigger validation errors instead of being silently ignored
-  - Helps catch typos and unexpected fields in configuration payloads (e.g., "floor" instead of "floors")
-  - Enhanced `ConfigValidationService` to provide specific error messages for unknown properties
-  - Applied strict validation to both Spring-managed ObjectMapper and CLI LocalSimulationMain
-- **Comprehensive Test Coverage**: Added 5 new tests for unknown field rejection scenarios
-  - `testValidate_UnknownFieldRejected()` - Validates rejection of unknown fields
-  - `testValidate_TypoInFieldNameRejected()` - Catches typos in field names
-  - `testValidate_MultipleUnknownFieldsRejected()` - Handles multiple unknown fields
-  - `testValidate_UnknownFieldWithValidData()` - Ensures unknown fields cause rejection even with valid data
-  - Tests verify clear error messages with field names for debugging
+- **Strict Configuration Schema Validation**: Rejects unknown JSON fields across REST validation and CLI entry points, producing clear field-specific errors for typos and unsupported configuration data.
+- **Comprehensive Test Coverage**: Added unknown-field rejection tests covering single, typo, multiple, and otherwise-valid payload scenarios.
 
 ### Changed
-- Version bumped from 0.34.2 to 0.35.0
-- `ConfigValidationService` now catches `UnrecognizedPropertyException` separately for clearer error messages
-- Test suite updated to configure ObjectMapper with `FAIL_ON_UNKNOWN_PROPERTIES` matching production settings
-- `LocalSimulationMain` CLI tool now enforces same strict validation as REST API
-
-### Documentation
-- Added ADR-0013 documenting decision to reject unknown fields vs. ignore/log alternatives
-
-### Technical Details
-- Uses Jackson `DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES` for schema enforcement
-- ObjectMapper configured via `Jackson2ObjectMapperBuilderCustomizer` (preserves Spring Boot Jackson modules)
-- Unknown property errors include field name and clear message: "Unknown property 'fieldName' is not allowed in configuration schema"
-- Validation occurs at JSON deserialization time before any business logic validation
-- Added `HttpMessageNotReadableException` handler in `GlobalExceptionHandler` for REST request validation
-- Consistent validation behavior across all entry points (REST API, validation endpoint, CLI)
-
-### Benefits
-- **Prevents Configuration Errors**: Catches typos like "floor" instead of "floors" at validation time
-- **API Safety**: Ensures clients only use documented configuration fields
-- **Clear Feedback**: Detailed error messages help developers identify and fix issues quickly
-- **Security**: Prevents injection of unexpected data through unknown fields
+- Version bumped from 0.34.2 to 0.35.0.
+- `ConfigValidationService`, production/test ObjectMapper configuration, and `LocalSimulationMain` now enforce strict schema validation consistently.
 
 ## [0.34.2] - 2026-02-10
 
@@ -959,68 +455,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.33.4] - 2026-01-13
 
 ### Added
-- **Database Backup and Restore Documentation**: Comprehensive documentation for protecting configuration data
-  - Manual ad-hoc backup procedure using `pg_dump` with **cross-platform support**
-    - Linux/macOS bash commands with date formatting
-    - Windows Command Prompt commands with date/time variables
-    - Windows PowerShell commands with Get-Date cmdlet
-  - Automated scheduled backup integration via external PowerShell script (My-Scripts repository)
-  - Standard and clean restore procedures using `psql` for **all platforms**
-    - Linux/macOS restore commands with sudo
-    - Windows restore commands (no sudo required)
-  - Backup verification commands for **all platforms**
-    - Linux/macOS: ls, head commands
-    - Windows Command Prompt: dir, more, findstr commands
-    - Windows PowerShell: Get-ChildItem, Get-Content cmdlets
-  - Periodic restore testing procedures for **all platforms**
-  - Reference to external automation infrastructure (Windows Task Scheduler + My-Scripts repository)
-  - Database Backup and Restore section added to README with platform-specific commands
-  - Architecture Decision Record (ADR-0012) documenting backup/restore strategy
-    - Rationale for using native PostgreSQL tools (pg_dump/pg_restore)
-    - Comparison with alternatives (WAL archiving, application-level export, cloud services, third-party tools)
-    - Integration points with external automation repository
-    - Backup file naming conventions and storage locations
-    - Restore verification checklist
-    - Platform-specific commands for Linux/macOS and Windows
-    - Future considerations for enhanced backup features
+- **Database Backup and Restore Documentation**: Added cross-platform PostgreSQL backup, restore, verification, and periodic restore-testing guidance to README.
+- **ADR-0012**: Documented backup/restore strategy, tooling choices, automation integration, alternatives, and operational considerations.
 
 ### Changed
-- Version bumped from 0.33.3 to 0.33.4
-- README Database Setup section now includes comprehensive backup and restore procedures for all platforms
-- ADR-0012 includes cross-platform commands (Linux/macOS, Windows Command Prompt, Windows PowerShell)
-- ADR list updated to include ADR-0012
-
-### Documentation
-- Added Database Backup and Restore subsection to README (lines 634-803)
-  - **Cross-platform manual backup commands** with timestamp-based filenames
-    - Linux/macOS: bash with $(date) syntax
-    - Windows CMD: %date% and %time% variables
-    - Windows PowerShell: Get-Date cmdlet
-  - When to use manual backups (before migrations, updates, risky operations)
-  - Automated backup schedule and script location details
-  - **Cross-platform restore procedures** for existing and new installations
-    - Linux/macOS: sudo -u postgres psql commands
-    - Windows: psql -U postgres commands (no sudo)
-  - **Cross-platform backup verification** commands and periodic restore testing
-    - Linux/macOS: ls, head, createdb, dropdb
-    - Windows CMD: dir, more, findstr, createdb, dropdb
-    - Windows PowerShell: Get-ChildItem, Get-Content, createdb, dropdb
-  - Important notes on online backups and recovery mechanisms
-- Added ADR-0012 to Architecture Decisions section in README
-- Comprehensive ADR-0012 documenting backup/restore architectural decisions
-  - Context: Need for data protection and disaster recovery
-  - Decision: Use pg_dump/pg_restore with external automation
-  - **Platform-specific implementation examples** for Linux/macOS and Windows
-  - Consequences: Positive (data protection, portability), Negative (setup complexity, external dependency)
-  - Alternatives considered: WAL archiving, app-level export, cloud services, third-party tools
-  - Implementation notes: Script structure, Task Scheduler config, restore verification
-  - References to My-Scripts repository for automation setup
-
-### Notes
-- This is a documentation-only release; no code changes or new features
-- Backup automation is handled externally via My-Scripts repository (PowerShell script for Windows)
-- All commands provided for **Linux/macOS and Windows platforms**
-- Paths and schedules shown are local examples; implementations may vary
+- Version bumped from 0.33.3 to 0.33.4.
 
 ## [0.33.3] - 2026-02-01
 
@@ -1066,132 +505,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.31.0] - 2026-01-12
 
 ### Added
-- **Configuration Editor UI**: Full-featured JSON editor for editing lift system version configurations
-  - Dedicated configuration editor page at `/systems/:systemId/versions/:versionNumber/edit`
-  - JSON textarea with monospace font for editing configuration
-  - **Save Draft** functionality to persist changes without publishing
-    - Updates version configuration via PUT endpoint
-    - Shows last saved timestamp
-    - Visual indicator for unsaved changes
-  - **Validate** button to check configuration for errors
-    - Real-time validation using backend API
-    - Displays detailed error messages with field names
-    - Shows warnings for suboptimal configurations
-    - Color-coded validation results (green for valid, red for errors)
-  - **Publish** action with validation enforcement
-    - Only enabled when configuration is valid and saved
-    - Requires validation to pass before publishing
-    - Confirmation dialog before publishing
-    - Automatic navigation back to system detail view after publish
-  - Status badge showing current version status (DRAFT, PUBLISHED, ARCHIVED)
-  - Read-only mode for published and archived versions (view only)
-  - Split-pane layout with editor on left and validation results on right
-  - Breadcrumb navigation back to system detail view
-  - "Edit Config" button added to version cards in system detail view
-    - Appears for DRAFT versions alongside Publish button
-    - "View Config" button for published/archived versions
-  - Responsive design with mobile support
-- **ConfigEditor Component**: New React component for configuration editing
-  - `ConfigEditor.jsx` - Main editor component with state management
-  - `ConfigEditor.css` - Comprehensive styling for editor UI
-- **Enhanced Version Actions**: Updated version card UI in system detail view
-  - Version action buttons grouped together
-  - Clear visual separation between draft and published version actions
-  - Consistent button styling with proper spacing
+- **Configuration Editor UI**: Added a JSON editor page for lift system versions with save draft, validate, publish, status, read-only, breadcrumb, validation-result, and responsive layout support.
+- **ConfigEditor Component**: Added the React component and styling for configuration editing.
+- **Enhanced Version Actions**: Added edit/view configuration actions to version cards and grouped version controls more clearly.
 
 ### Changed
-- Version bumped from 0.30.0 to 0.31.0
-- Updated README with Configuration Editor feature documentation
-  - Added Configuration Editor to Features list
-  - Expanded React Admin UI features section with detailed editor capabilities
-- Enhanced routing configuration in `App.jsx`
-  - Added `/systems/:systemId/versions/:versionNumber/edit` route
-  - Imported ConfigEditor component
-- Updated `LiftSystemDetail.jsx` component
-  - Added "Edit Config" and "View Config" buttons to version cards
-  - Improved version action layout with grouped buttons
-
-### Technical Details
-- **Component Architecture**:
-  - Uses React hooks (useState, useEffect) for state management
-  - Parallel API calls with `Promise.all` for efficient data loading
-  - Real-time validation state tracking
-  - Unsaved changes detection via comparison with original config
-- **User Experience**:
-  - Disabled states for buttons when actions are not allowed
-  - Tooltips on disabled Publish button explaining why it's disabled
-  - Loading states for all async operations (saving, validating, publishing)
-  - Error banners for operation failures with clear messages
-  - Info banners for non-DRAFT versions indicating read-only mode
-- **Styling**:
-  - Color-coded validation messages (errors in red, warnings in yellow)
-  - Consistent button colors (blue for primary, gray for secondary, green for publish)
-  - Responsive grid layout that stacks on smaller screens
-  - Monospace textarea with syntax-friendly styling
-
-### Notes
-- Only DRAFT versions can be edited; published and archived versions are view-only
-- Configuration must be saved before validation results enable publishing
-- Publishing requires valid configuration (no errors, warnings are allowed)
-- Form-based configuration wizard remains a future enhancement opportunity
+- Version bumped from 0.30.0 to 0.31.0.
+- README now documents the Configuration Editor feature.
+- Routing and `LiftSystemDetail` now expose configuration edit and view flows.
 
 ## [0.30.0] - 2026-01-12
 
 ### Added
-- **Lift System List and Detail Views**: Complete CRUD interface for managing lift systems
-  - Enhanced list view with working "View Details" and "Create New System" buttons
-  - Create System modal with form validation
-    - Validates system key pattern (alphanumeric, hyphens, underscores)
-    - Validates display name and description length constraints
-    - Real-time error feedback and help text
-  - Detail view page for individual lift systems
-    - Full system metadata display (display name, system key, description, timestamps)
-    - Delete system functionality with confirmation dialog
-    - Breadcrumb navigation back to list view
-  - Version management interface in detail view
-    - List all versions with status badges (DRAFT, PUBLISHED, ARCHIVED)
-    - Create new versions with JSON configuration input
-    - Publish draft versions with validation
-    - Expandable configuration view for each version
-    - Automatic archiving of previous published version when publishing
-  - Seamless navigation between list and detail views
-  - Responsive design with mobile support
-- **Create System Modal Component**: Reusable modal for creating new lift systems
-  - Client-side validation matching backend constraints
-  - Form state management with error handling
-  - Accessible modal overlay with click-outside-to-close
-- **Routing**: Added `/systems/:id` route for detail view
-- **UI Components**: Enhanced components with navigation handlers
-  - `CreateSystemModal.jsx` - Form-based system creation modal
-  - `LiftSystemDetail.jsx` - Comprehensive detail page with version management
-  - Updated `LiftSystems.jsx` with working navigation and create functionality
-  - Updated `App.jsx` with new routing configuration
+- **Lift System List and Detail Views**: Added CRUD-oriented lift-system management with create form validation, detail pages, delete confirmation, breadcrumbs, version management, publish/archive behavior, expandable configuration display, navigation, and responsive layout.
+- **Create System Modal Component**: Added a reusable accessible modal for creating lift systems with client-side validation and error handling.
+- **Routing and UI Components**: Added `/systems/:id` routing and updated lift-system React components to support detail navigation and creation flows.
 
 ### Changed
-- Version bumped from 0.29.0 to 0.30.0
-- Updated README with new features documentation
-  - Enhanced Frontend Admin UI features section
-  - Added Version Management capabilities
-  - Updated feature descriptions to reflect full CRUD functionality
-- Lift Systems page now fully functional with navigation to detail views
-- Both "View Details" and "Manage Versions" buttons navigate to detail page
-
-### Technical Details
-- **Components**:
-  - Modal component uses React Portal pattern for proper overlay rendering
-  - Detail view uses `useParams` hook for route parameter extraction
-  - Parallel API calls with `Promise.all` for efficient data fetching
-- **Styling**:
-  - Modal with backdrop overlay and responsive design
-  - Status badges with color coding (green for PUBLISHED, yellow for DRAFT, gray for ARCHIVED)
-  - Expandable `<details>` elements for configuration display
-  - Consistent button styling and hover states
-- **User Experience**:
-  - Confirmation dialogs for destructive actions (delete, publish)
-  - Loading states during async operations
-  - Error messages with user-friendly feedback
-  - Empty states for new systems with no versions
-  - Automatic navigation to newly created system
+- Version bumped from 0.29.0 to 0.30.0.
+- README now documents lift-system CRUD and version-management capabilities.
+- Lift Systems page actions now navigate to the detail view.
 
 ## [0.29.0] - 2026-01-12
 
@@ -1233,7 +566,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated main README with frontend setup instructions and overview
 - Added frontend section to Admin Interface documentation
 
-### Technical Details
+### Changed
 - **Tech Stack**:
   - React 19.2.0 with functional components and hooks
   - Vite 7.2.4 for fast development and optimized builds
@@ -1254,7 +587,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Configuration Validation API
   - Health Check API
 
-### Documentation
+### Changed
 - Added `frontend/README.md` with comprehensive setup guide
 - Updated main `README.md` with frontend overview and quick start
 - Documented local development workflow
@@ -1287,12 +620,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Publish workflow is transactional - if archiving or publishing fails, entire operation rolls back
 - Updated service layer tests to verify archiving behavior
 
-### Documentation
+### Changed
 - Updated README with Runtime API documentation and usage examples
 - Added ADR-0010 to Architecture Decisions section
 - Updated version references from 0.27.0 to 0.28.0
 
-### Technical Details
+### Changed
 - Publish operation uses `@Transactional` to ensure atomicity
 - Previously published versions are found via `findByLiftSystemIdAndIsPublishedTrue()`
 - Each published version's `archive()` method sets status to ARCHIVED
@@ -1367,7 +700,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Version creation and updates now fail with 400 Bad Request if configuration is invalid
 - Global exception handler expanded to handle validation and state exceptions
 
-### Documentation
+### Changed
 - Updated README with Configuration Validation section
   - Documented validation endpoint and request/response format
   - Added configuration structure table with all required fields
@@ -1378,7 +711,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added publish endpoint documentation to Version Management section
 - Added ADR-0009 for Configuration Validation Framework design decisions
 
-### Technical Details
+### Changed
 - Uses Jakarta Bean Validation (JSR-380) for structural validation
 - Custom domain validation logic in `ConfigValidationService`
 - Validation errors block operations, warnings are informational only
@@ -1414,7 +747,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - REST API now provides full version lifecycle management for lift system configurations
 - Version numbers automatically increment starting from 1 for each lift system
 
-### Documentation
+### Changed
 - Updated README with Version Management API documentation
 - Added API endpoint examples with request/response payloads for all versioning operations
 - Documented version cloning functionality and auto-increment behavior
@@ -1462,7 +795,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `@SuppressFBWarnings` to `LiftSystemController` constructor for Spring DI false positive
   - All medium-severity EI_EXPOSE_REP warnings resolved
 
-### Documentation
+### Changed
 - Updated README with Lift System CRUD API documentation
 - API endpoint examples with request/response payloads
 - Error response format documentation
@@ -1505,7 +838,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Bump project version to 0.24.0 to reflect new JPA persistence layer
 
-### Documentation
+### Changed
 - Updated README with comprehensive JPA entities and repositories documentation
 - Added JPA verification instructions and examples
 - Documented JSONB field mapping approach
@@ -1627,7 +960,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README updated with database setup instructions and new version references
 - Build artifact name updated to `lift-simulator-0.22.0.jar`
 
-### Technical Details
+### Changed
 - **Dependencies added**:
   - `spring-boot-starter-data-jpa` - JPA and Hibernate ORM
   - `postgresql` (runtime scope) - PostgreSQL JDBC driver
@@ -1654,7 +987,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clear separation between base configuration and profile-specific settings
 - Migration-first approach ensures consistent schema across environments
 
-### Migration Notes
+### Changed
 For developers updating from v0.21.0:
 1. Install PostgreSQL 12 or later
 2. Create database and user as documented in README
@@ -1688,7 +1021,7 @@ For developers updating from v0.21.0:
 - Project description updated to reflect Spring Boot backend integration
 - Version bumped from 0.20.0 to 0.21.0
 
-### Technical Details
+### Changed
 - Uses Spring Boot 3.2.1 (requires Java 17+)
 - Spring Boot Web Starter for RESTful API capabilities
 - Spring Boot Actuator for health monitoring and metrics
@@ -1729,7 +1062,7 @@ For developers updating from v0.21.0:
 - Test suite now provides comprehensive coverage of realistic multi-request routing scenarios
 - Both controller strategies protected against behavioral regressions through scenario tests
 
-### Technical Details
+### Changed
 - ScenarioHarness tracks last moving direction to accurately log service events
 - Tests use realistic timing: 1 tick/floor travel, 2 ticks door transition, 3 ticks door dwell
 - Maximum tick limits prevent infinite loops while allowing sufficient time for complex scenarios
@@ -1766,7 +1099,7 @@ For developers updating from v0.21.0:
 - README updated with comprehensive DirectionalScanLiftController documentation
 - README demo configuration section updated to show controller selection examples
 
-### Technical Details
+### Changed
 - DirectionalScanLiftController was implemented in v0.16.0 but not integrated with the main application
 - This release completes the integration, making the controller usable in the demo application
 - Regression testing confirms NaiveLiftController (nearest-request) continues to work unchanged
@@ -1842,7 +1175,7 @@ For developers updating from v0.21.0:
 - `Main.java` updated to use `ControllerFactory` with explicit `NEAREST_REQUEST_ROUTING` strategy
 - `demo.scenario` updated to include explicit controller strategy configuration
 
-### Design Decisions
+### Changed
 - Enum-based strategy selection provides type safety and compile-time validation
 - Factory pattern centralizes controller instantiation logic
 - Default strategy preserves backward compatibility (NEAREST_REQUEST_ROUTING)
@@ -2018,7 +1351,7 @@ For developers updating from v0.21.0:
 - Lifts in OUT_OF_SERVICE state cannot move, open doors, or accept new requests
 - Demo simulation extended to 50 ticks to show complete out-of-service workflow
 
-### Design Decisions
+### Changed
 - Taking lift out of service immediately cancels all unserviced requests for safety
 - **Graceful shutdown sequence**: If moving, lift completes movement to next floor; doors then open to allow passenger exit, then close, before transitioning to OUT_OF_SERVICE
 - Ensures passenger safety by allowing exit before going offline
@@ -2051,7 +1384,7 @@ For developers updating from v0.21.0:
 - Integration tests for cancellation scenarios (while moving, multiple requests same floor)
 - Lifecycle tests verifying CANCELLED terminal state behavior
 
-### Design Decisions
+### Changed
 - Cancelled requests transition to CANCELLED state before removal, maintaining lifecycle integrity
 - Cancellation is idempotent - calling multiple times on same request ID is safe
 - Cancelled requests are immediately removed from queue to prevent processing
@@ -2075,7 +1408,7 @@ For developers updating from v0.21.0:
 - `SimulationEngine` tracks elapsed ticks during door closing to enforce reopen window
 - Door reopening logic in `startAction()` checks elapsed time against configured window
 
-### Design Decisions
+### Changed
 - Reopen window measured in simulation ticks for consistency with other timing parameters
 - Window applies only during DOORS_CLOSING state, not after doors fully close
 - Zero-tick window disables reopening entirely (doors cannot be interrupted once closing starts)
@@ -2101,7 +1434,7 @@ For developers updating from v0.21.0:
 - Backward compatibility maintained: `addCarCall()` and `addHallCall()` methods still work
 - Demo output now displays request lifecycle status with compact "Requests" column showing counts by state (Q:n, A:n, S:n)
 
-### Design Decisions
+### Changed
 - Every request must end in either COMPLETED or CANCELLED state (terminal states)
 - Invalid state transitions throw `IllegalStateException`
 - Self-transitions are prevented
@@ -2233,7 +1566,7 @@ For developers updating from v0.21.0:
 - Initial request/action primitives: `Action`, `Direction`, `DoorState`, plus support for `CarCall` and `HallCall`.
 - Developer baseline: console demo (`Main.java`), unit tests, Maven/Java 17 + JUnit 5 build setup, and starter docs (README, CHANGELOG, ADR-0001).
 
-### Design Decisions
+### Changed
 - Chose tick-based simulation for predictable, testable time advancement.
 - Used immutable state objects to reduce shared-mutable-state defects.
 - Separated controller logic from the simulation engine for extensibility.
