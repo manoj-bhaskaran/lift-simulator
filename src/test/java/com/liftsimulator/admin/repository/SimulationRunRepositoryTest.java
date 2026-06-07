@@ -319,7 +319,13 @@ public class SimulationRunRepositoryTest {
         Long runId = run.getId();
         assertTrue(runRepository.existsById(runId));
 
-        entityManager.remove(liftSystem);
+        // Clear the persistence context before deleting so Hibernate does not retain
+        // the managed run while the database-level ON DELETE CASCADE removes it.
+        Long liftSystemId = liftSystem.getId();
+        entityManager.clear();
+
+        LiftSystem persistedLiftSystem = entityManager.find(LiftSystem.class, liftSystemId);
+        entityManager.remove(persistedLiftSystem);
         entityManager.flush();
 
         assertFalse(runRepository.existsById(runId));
@@ -338,8 +344,14 @@ public class SimulationRunRepositoryTest {
         assertTrue(runRepository.existsById(run1Id));
         assertTrue(runRepository.existsById(run2Id));
 
+        // Clear the persistence context before deleting so Hibernate does not retain
+        // managed runs while the database-level ON DELETE CASCADE removes them.
+        Long versionId = version.getId();
+        entityManager.clear();
+
         // Delete the version - runs should cascade delete
-        entityManager.remove(version);
+        LiftSystemVersion persistedVersion = entityManager.find(LiftSystemVersion.class, versionId);
+        entityManager.remove(persistedVersion);
         entityManager.flush();
 
         assertFalse(runRepository.existsById(run1Id));
