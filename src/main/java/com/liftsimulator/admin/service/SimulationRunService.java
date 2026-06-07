@@ -23,6 +23,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 /**
  * Service for managing simulation runs.
@@ -167,6 +171,12 @@ public class SimulationRunService {
         return runDir.toAbsolutePath().toString();
     }
 
+    /** Maximum allowed page size to prevent excessively large result sets. */
+    public static final int MAX_PAGE_SIZE = 100;
+
+    /** Default page size when not specified by the caller. */
+    public static final int DEFAULT_PAGE_SIZE = 20;
+
     /**
      * Get all simulation runs with their related entities (lift system, version, scenario).
      *
@@ -194,6 +204,43 @@ public class SimulationRunService {
         } else {
             return runRepository.findAllWithDetails();
         }
+    }
+
+    /**
+     * Get a page of runs with optional filtering by lift system ID and status.
+     * Enforces a maximum page size of {@value #MAX_PAGE_SIZE}. Requests with a larger
+     * page size are silently capped. Defaults to sorting by {@code createdAt} descending
+     * when the caller does not supply an explicit sort.
+     *
+     * @param liftSystemId optional lift system ID filter
+     * @param status optional status filter
+     * @param pageable pagination and sorting parameters supplied by the caller
+     * @return page of matching runs with details
+     */
+    public Page<SimulationRun> getPagedRunsWithDetails(Long liftSystemId, RunStatus status, Pageable pageable) {
+        Pageable effective = capPageSize(pageable);
+        if (liftSystemId != null && status != null) {
+            return runRepository.findByLiftSystemIdAndStatusWithDetails(liftSystemId, status, effective);
+        } else if (liftSystemId != null) {
+            return runRepository.findByLiftSystemIdWithDetails(liftSystemId, effective);
+        } else if (status != null) {
+            return runRepository.findByStatusWithDetails(status, effective);
+        } else {
+            return runRepository.findAllWithDetails(effective);
+        }
+    }
+
+    /**
+     * Returns a {@link Pageable} that is identical to the input but with the page size
+     * capped at {@value #MAX_PAGE_SIZE}. Falls back to default sort (createdAt DESC)
+     * when the caller provides no sort criteria.
+     */
+    private Pageable capPageSize(Pageable pageable) {
+        Sort sort = pageable.getSort().isSorted()
+                ? pageable.getSort()
+                : Sort.by(Sort.Direction.DESC, "createdAt");
+        int size = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
+        return PageRequest.of(pageable.getPageNumber(), size, sort);
     }
 
     /**

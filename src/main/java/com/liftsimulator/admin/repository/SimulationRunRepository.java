@@ -2,6 +2,8 @@ package com.liftsimulator.admin.repository;
 
 import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.entity.SimulationRun.RunStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -74,6 +76,69 @@ public interface SimulationRunRepository extends JpaRepository<SimulationRun, Lo
     List<SimulationRun> findByLiftSystemIdAndStatusWithDetails(
             @Param("liftSystemId") Long liftSystemId,
             @Param("status") RunStatus status);
+
+    /**
+     * Find all runs with their relationships eagerly loaded, with pagination support.
+     *
+     * @param pageable pagination and sorting parameters
+     * @return page of runs
+     */
+    @Query(value = "SELECT r FROM SimulationRun r "
+            + "LEFT JOIN FETCH r.liftSystem "
+            + "LEFT JOIN FETCH r.version "
+            + "LEFT JOIN FETCH r.scenario",
+           countQuery = "SELECT count(r) FROM SimulationRun r")
+    Page<SimulationRun> findAllWithDetails(Pageable pageable);
+
+    /**
+     * Find all runs for a specific lift system with relationships eagerly loaded, with pagination.
+     *
+     * @param liftSystemId the lift system id
+     * @param pageable pagination and sorting parameters
+     * @return page of runs
+     */
+    @Query(value = "SELECT r FROM SimulationRun r "
+            + "LEFT JOIN FETCH r.liftSystem "
+            + "LEFT JOIN FETCH r.version "
+            + "LEFT JOIN FETCH r.scenario "
+            + "WHERE r.liftSystem.id = :liftSystemId",
+           countQuery = "SELECT count(r) FROM SimulationRun r WHERE r.liftSystem.id = :liftSystemId")
+    Page<SimulationRun> findByLiftSystemIdWithDetails(@Param("liftSystemId") Long liftSystemId, Pageable pageable);
+
+    /**
+     * Find all runs with a specific status with relationships eagerly loaded, with pagination.
+     *
+     * @param status the run status
+     * @param pageable pagination and sorting parameters
+     * @return page of runs
+     */
+    @Query(value = "SELECT r FROM SimulationRun r "
+            + "LEFT JOIN FETCH r.liftSystem "
+            + "LEFT JOIN FETCH r.version "
+            + "LEFT JOIN FETCH r.scenario "
+            + "WHERE r.status = :status",
+           countQuery = "SELECT count(r) FROM SimulationRun r WHERE r.status = :status")
+    Page<SimulationRun> findByStatusWithDetails(@Param("status") RunStatus status, Pageable pageable);
+
+    /**
+     * Find all runs for a specific lift system with a specific status, with pagination.
+     *
+     * @param liftSystemId the lift system id
+     * @param status the run status
+     * @param pageable pagination and sorting parameters
+     * @return page of runs
+     */
+    @Query(value = "SELECT r FROM SimulationRun r "
+            + "LEFT JOIN FETCH r.liftSystem "
+            + "LEFT JOIN FETCH r.version "
+            + "LEFT JOIN FETCH r.scenario "
+            + "WHERE r.liftSystem.id = :liftSystemId AND r.status = :status",
+           countQuery = "SELECT count(r) FROM SimulationRun r "
+            + "WHERE r.liftSystem.id = :liftSystemId AND r.status = :status")
+    Page<SimulationRun> findByLiftSystemIdAndStatusWithDetails(
+            @Param("liftSystemId") Long liftSystemId,
+            @Param("status") RunStatus status,
+            Pageable pageable);
 
     /**
      * Find all runs for a specific lift system.

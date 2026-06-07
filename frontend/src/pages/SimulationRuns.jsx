@@ -27,6 +27,9 @@ function SimulationRuns() {
   const [systems, setSystems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   const [selectedSystemId, setSelectedSystemId] = useState(
     searchParams.get('systemId') || ''
@@ -48,12 +51,12 @@ function SimulationRuns() {
   }, []);
 
   const loadRuns = useCallback(
-    async (isPolling = false) => {
+    async (isPolling = false, page = currentPage) => {
       try {
         if (!isPolling) {
           setLoading(true);
         }
-        const params = {};
+        const params = { page };
         if (selectedSystemId) {
           params.systemId = selectedSystemId;
         }
@@ -61,7 +64,11 @@ function SimulationRuns() {
           params.status = selectedStatus;
         }
         const response = await simulationRunsApi.listRuns(params);
-        setRuns(response.data);
+        const pageData = response.data;
+        setRuns(pageData.content);
+        setTotalPages(pageData.totalPages);
+        setTotalElements(pageData.totalElements);
+        setCurrentPage(pageData.number);
         setError(null);
       } catch (err) {
         handleApiError(err, setError, 'Failed to load simulation runs');
@@ -71,7 +78,7 @@ function SimulationRuns() {
         }
       }
     },
-    [selectedSystemId, selectedStatus]
+    [selectedSystemId, selectedStatus, currentPage]
   );
 
   useEffect(() => {
@@ -169,16 +176,23 @@ function SimulationRuns() {
   };
 
   const handleSystemChange = (event) => {
+    setCurrentPage(0);
     setSelectedSystemId(event.target.value);
   };
 
   const handleStatusChange = (event) => {
+    setCurrentPage(0);
     setSelectedStatus(event.target.value);
   };
 
   const handleClearFilters = () => {
+    setCurrentPage(0);
     setSelectedSystemId('');
     setSelectedStatus('ALL');
+  };
+
+  const handlePageChange = (newPage) => {
+    loadRuns(false, newPage);
   };
 
   const hasFilters = selectedSystemId || (selectedStatus && selectedStatus !== 'ALL');
@@ -257,6 +271,11 @@ function SimulationRuns() {
         </div>
       ) : (
         <div className="runs-table-container">
+          {totalElements > 0 && (
+            <p className="pagination-summary">
+              Showing {currentPage * 20 + 1}–{Math.min((currentPage + 1) * 20, totalElements)} of {totalElements} runs
+            </p>
+          )}
           <table className="runs-table">
             <thead>
               <tr>
@@ -316,6 +335,27 @@ function SimulationRuns() {
               ))}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <div className="pagination-controls">
+              <button
+                className="btn-secondary"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 0}
+              >
+                ← Previous
+              </button>
+              <span className="pagination-info">
+                Page {currentPage + 1} of {totalPages}
+              </span>
+              <button
+                className="btn-secondary"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages - 1}
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
