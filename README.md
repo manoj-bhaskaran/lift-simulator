@@ -25,7 +25,7 @@ The simulation is text-based and designed for clarity over visual appeal.
 ### Prerequisites
 
 - **Java 17+** - [Download from Oracle](https://www.oracle.com/java/technologies/downloads/) or use OpenJDK
-- **Node.js 18+** and npm - [Download from nodejs.org](https://nodejs.org/)
+- **Node.js 20.19+ or 22.12+** and npm - [Download from nodejs.org](https://nodejs.org/)
 - **PostgreSQL 12+** - [Download from postgresql.org](https://www.postgresql.org/download/)
 - **Maven 3.6+** - Usually bundled with Java IDEs, or [download separately](https://maven.apache.org/download.cgi)
 
@@ -168,7 +168,7 @@ Use these as starting points or reference examples.
 - Verify `target/classes/static/index.html` exists after building the frontend bundle
 
 **Frontend won't start:**
-- Verify Node.js version: `node --version` (should be 18+)
+- Verify Node.js version: `node --version` (should be 20.19+ or 22.12+)
 - Delete `node_modules` and reinstall: `rm -rf node_modules && npm install`
 - Check port 3000 isn't already in use
 
@@ -3245,7 +3245,7 @@ To build a deployable Spring Boot JAR that also serves the React admin UI from `
 mvn -Pfrontend clean package
 ```
 
-The frontend profile runs `npm ci`, builds the Vite bundle, copies the generated files into `target/classes/static/`, and packages them under `BOOT-INF/classes/static/` in `target/lift-simulator-0.47.0.jar`. The CI backend and E2E packaging jobs use this profile so downloaded CI JAR artifacts include the frontend assets. You can verify the packaged UI with:
+The frontend profile installs Node.js 20.19.0 for compatibility with Vite 7, runs `npm ci`, builds the Vite bundle, copies the generated files into `target/classes/static/`, and packages them under `BOOT-INF/classes/static/` in `target/lift-simulator-0.47.0.jar`. The CI backend and E2E packaging jobs use this profile so downloaded CI JAR artifacts include the frontend assets. You can verify the packaged UI with:
 
 ```bash
 jar tf target/lift-simulator-0.47.0.jar | grep '^BOOT-INF/classes/static/'
