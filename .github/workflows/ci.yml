@@ -71,8 +71,18 @@ jobs:
     - name: Run static analysis
       run: mvn -q spotbugs:check
 
-    - name: Package
-      run: mvn -q package -DskipTests
+    - name: Package deployable JAR with frontend profile
+      run: |
+        echo "Activating Maven frontend profile: mvn -Pfrontend package -DskipTests"
+        mvn -q -Pfrontend package -DskipTests
+
+    - name: Verify packaged frontend assets
+      run: |
+        JAR_FILE=$(find target -maxdepth 1 -name 'lift-simulator-*.jar' ! -name '*.original' | head -n 1)
+        test -n "$JAR_FILE"
+        echo "Verifying frontend assets in $JAR_FILE"
+        jar tf "$JAR_FILE" | grep '^BOOT-INF/classes/static/index.html$'
+        jar tf "$JAR_FILE" | grep '^BOOT-INF/classes/static/assets/'
 
   frontend:
     runs-on: ubuntu-latest
@@ -146,8 +156,18 @@ jobs:
       working-directory: frontend
       run: npx playwright install --with-deps chromium
 
-    - name: Package backend for E2E
-      run: mvn -q package -DskipTests
+    - name: Package deployable JAR for E2E with frontend profile
+      run: |
+        echo "Activating Maven frontend profile: mvn -Pfrontend package -DskipTests"
+        mvn -q -Pfrontend package -DskipTests
+
+    - name: Verify E2E packaged frontend assets
+      run: |
+        JAR_FILE=$(find target -maxdepth 1 -name 'lift-simulator-*.jar' ! -name '*.original' | head -n 1)
+        test -n "$JAR_FILE"
+        echo "Verifying frontend assets in $JAR_FILE"
+        jar tf "$JAR_FILE" | grep '^BOOT-INF/classes/static/index.html$'
+        jar tf "$JAR_FILE" | grep '^BOOT-INF/classes/static/assets/'
 
     - name: Create E2E database schema
       run: |
@@ -169,11 +189,12 @@ jobs:
         echo $! > backend-e2e.pid
 
         for i in {1..60}; do
-          if curl --fail --silent http://localhost:8080/api/v1/health > /dev/null; then
-            echo "Backend is ready for Playwright E2E tests."
+          if curl --fail --silent http://localhost:8080/api/v1/health > /dev/null \
+              && curl --fail --silent http://localhost:8080/ | grep '<div id="root">' > /dev/null; then
+            echo "Backend health check and packaged React UI are ready for Playwright E2E tests."
             exit 0
           fi
-          echo "Waiting for backend... ($i/60)"
+          echo "Waiting for backend health and packaged frontend UI... ($i/60)"
           sleep 2
         done
 
