@@ -98,6 +98,20 @@ class RunMetricsTest {
     }
 
     @Test
+    void cachedKpisAreInvalidatedWhenMetricsChange() {
+        metrics.recordLiftState(new LiftState(1, LiftStatus.IDLE));
+        ObjectNode initialKpis = metrics.toKpisNode(objectMapper);
+        assertEquals(1L, initialKpis.get("idleTicks").asLong());
+
+        metrics.recordLiftState(new LiftState(1, LiftStatus.MOVING_UP));
+        ObjectNode updatedKpis = metrics.toKpisNode(objectMapper);
+
+        assertEquals(1L, updatedKpis.get("idleTicks").asLong());
+        assertEquals(1L, updatedKpis.get("movingTicks").asLong());
+        assertEquals(0.5, updatedKpis.get("utilisation").asDouble(), 1e-9);
+    }
+
+    @Test
     void recordActiveRequestsDoesNotDuplicateKnownRequests() {
         LiftRequest req = LiftRequest.hallCall(1, Direction.UP);
         metrics.recordRequestCreation(req, 0L);

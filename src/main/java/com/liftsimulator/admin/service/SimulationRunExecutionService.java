@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -299,11 +300,11 @@ public class SimulationRunExecutionService {
     }
 
     private Map<Integer, List<PassengerFlowDTO>> groupFlowsByTick(ScenarioDefinitionDTO scenario) {
-        Map<Integer, List<PassengerFlowDTO>> flowsByTick = new HashMap<>();
-        if (scenario.passengerFlows() == null) {
-            return flowsByTick;
+        if (scenario.passengerFlows() == null || scenario.passengerFlows().isEmpty()) {
+            return Collections.emptyMap();
         }
 
+        Map<Integer, List<PassengerFlowDTO>> flowsByTick = new HashMap<>(scenario.passengerFlows().size());
         for (PassengerFlowDTO flow : scenario.passengerFlows()) {
             int tick = flow.startTick() != null ? flow.startTick() : 0;
             flowsByTick.computeIfAbsent(tick, key -> new ArrayList<>()).add(flow);

@@ -14,8 +14,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -259,15 +261,19 @@ public class ArtefactService {
      * @throws IOException if file reading fails
      */
     private String readLastNLines(Path path, int n) throws IOException {
-        List<String> lines = new ArrayList<>();
+        if (n == 0) {
+            return "";
+        }
+
+        Deque<String> lines = new ArrayDeque<>(n);
 
         try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             String line;
             while ((line = reader.readLine()) != null) {
-                lines.add(line);
-                if (lines.size() > n) {
-                    lines.remove(0); // Remove oldest line to maintain size
+                if (lines.size() == n) {
+                    lines.removeFirst();
                 }
+                lines.addLast(line);
             }
         }
 

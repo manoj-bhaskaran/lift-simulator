@@ -1210,6 +1210,7 @@ Retrieves simulation logs with optional tail functionality.
 - `tail` (optional): Number of lines to retrieve from end of log
   - Default: All lines
   - Maximum: 10,000 lines
+  - Large tails are buffered with fixed-size deque storage, so reading the last lines of large logs uses bounded memory and linear time.
 
 **Response (200 OK):**
 ```json

@@ -23,6 +23,7 @@ public final class RunMetrics {
     private final int maxFloor;
     private long totalTicks;
     private Integer lastRecordedFloor;
+    private CachedKpis cachedKpis;
 
     public RunMetrics(int minFloor, int maxFloor) {
         this.minFloor = minFloor;
@@ -30,6 +31,7 @@ public final class RunMetrics {
     }
 
     public void recordPassengerFlow(PassengerFlowDTO flow, int passengers) {
+        invalidateCachedKpis();
         if (flow.originFloor() != null) {
             floorMetrics.computeIfAbsent(flow.originFloor(), FloorMetrics::new)
                 .addOrigins(passengers);
@@ -41,6 +43,7 @@ public final class RunMetrics {
     }
 
     public void recordLiftState(LiftState state) {
+        invalidateCachedKpis();
         statusCounts.merge(state.getStatus(), 1L, Long::sum);
         if (lastRecordedFloor == null || lastRecordedFloor != state.getFloor()) {
             floorMetrics.computeIfAbsent(state.getFloor(), FloorMetrics::new)
@@ -51,7 +54,10 @@ public final class RunMetrics {
     }
 
     public void recordRequestCreation(LiftRequest request, long tick) {
-        lifecycles.computeIfAbsent(request.getId(), id -> new RequestLifecycle(request, tick));
+        if (!lifecycles.containsKey(request.getId())) {
+            lifecycles.put(request.getId(), new RequestLifecycle(request, tick));
+            invalidateCachedKpis();
+        }
     }
 
     public void recordActiveRequests(Set<LiftRequest> requests, long tick) {
@@ -61,11 +67,16 @@ public final class RunMetrics {
     }
 
     public void recordTerminalRequests(long tick) {
+        boolean changed = false;
         for (RequestLifecycle lifecycle : lifecycles.values()) {
             if (lifecycle.terminalTick() != null || !lifecycle.request().isTerminal()) {
                 continue;
             }
             lifecycle.markTerminal(tick, lifecycle.request().getState());
+            changed = true;
+        }
+        if (changed) {
+            invalidateCachedKpis();
         }
     }
 
@@ -74,42 +85,17 @@ public final class RunMetrics {
     }
 
     public ObjectNode toKpisNode(ObjectMapper objectMapper) {
+        CachedKpis kpiValues = getCachedKpis();
         ObjectNode kpis = objectMapper.createObjectNode();
-        long completed = lifecycles.values().stream()
-            .filter(lifecycle -> lifecycle.terminalState() == RequestState.COMPLETED)
-            .count();
-        long cancelled = lifecycles.values().stream()
-            .filter(lifecycle -> lifecycle.terminalState() == RequestState.CANCELLED)
-            .count();
-        long maxWait = lifecycles.values().stream()
-            .filter(lifecycle -> lifecycle.terminalState() == RequestState.COMPLETED)
-            .mapToLong(RequestLifecycle::waitTicks)
-            .max()
-            .orElse(0L);
-        double avgWait = lifecycles.values().stream()
-            .filter(lifecycle -> lifecycle.terminalState() == RequestState.COMPLETED)
-            .mapToLong(RequestLifecycle::waitTicks)
-            .average()
-            .orElse(0.0);
-
-        long idleTicks = statusCounts.getOrDefault(LiftStatus.IDLE, 0L)
-            + statusCounts.getOrDefault(LiftStatus.OUT_OF_SERVICE, 0L);
-        long movingTicks = statusCounts.getOrDefault(LiftStatus.MOVING_UP, 0L)
-            + statusCounts.getOrDefault(LiftStatus.MOVING_DOWN, 0L);
-        long doorTicks = statusCounts.getOrDefault(LiftStatus.DOORS_OPENING, 0L)
-            + statusCounts.getOrDefault(LiftStatus.DOORS_OPEN, 0L)
-            + statusCounts.getOrDefault(LiftStatus.DOORS_CLOSING, 0L);
-        double utilisation = totalTicks == 0 ? 0.0 : (double) (movingTicks + doorTicks) / (double) totalTicks;
-
-        kpis.put("requestsTotal", lifecycles.size());
-        kpis.put("passengersServed", completed);
-        kpis.put("passengersCancelled", cancelled);
-        kpis.put("avgWaitTicks", avgWait);
-        kpis.put("maxWaitTicks", maxWait);
-        kpis.put("idleTicks", idleTicks);
-        kpis.put("movingTicks", movingTicks);
-        kpis.put("doorTicks", doorTicks);
-        kpis.put("utilisation", utilisation);
+        kpis.put("requestsTotal", kpiValues.requestsTotal());
+        kpis.put("passengersServed", kpiValues.passengersServed());
+        kpis.put("passengersCancelled", kpiValues.passengersCancelled());
+        kpis.put("avgWaitTicks", kpiValues.avgWaitTicks());
+        kpis.put("maxWaitTicks", kpiValues.maxWaitTicks());
+        kpis.put("idleTicks", kpiValues.idleTicks());
+        kpis.put("movingTicks", kpiValues.movingTicks());
+        kpis.put("doorTicks", kpiValues.doorTicks());
+        kpis.put("utilisation", kpiValues.utilisation());
         return kpis;
     }
 
@@ -133,6 +119,42 @@ public final class RunMetrics {
         }
         lift.set("statusCounts", statusNode);
 
+        CachedKpis kpiValues = getCachedKpis();
+        lift.put("totalTicks", totalTicks);
+        lift.put("idleTicks", kpiValues.idleTicks());
+        lift.put("movingTicks", kpiValues.movingTicks());
+        lift.put("doorTicks", kpiValues.doorTicks());
+        lift.put("utilisation", kpiValues.utilisation());
+
+        lifts.add(lift);
+        return lifts;
+    }
+
+    private CachedKpis getCachedKpis() {
+        if (cachedKpis == null) {
+            cachedKpis = computeKpis();
+        }
+        return cachedKpis;
+    }
+
+    private CachedKpis computeKpis() {
+        long completed = 0L;
+        long cancelled = 0L;
+        long maxWait = 0L;
+        long totalWait = 0L;
+
+        for (RequestLifecycle lifecycle : lifecycles.values()) {
+            if (lifecycle.terminalState() == RequestState.COMPLETED) {
+                completed++;
+                long waitTicks = lifecycle.waitTicks();
+                totalWait += waitTicks;
+                maxWait = Math.max(maxWait, waitTicks);
+            } else if (lifecycle.terminalState() == RequestState.CANCELLED) {
+                cancelled++;
+            }
+        }
+
+        double avgWait = completed == 0L ? 0.0 : (double) totalWait / (double) completed;
         long idleTicks = statusCounts.getOrDefault(LiftStatus.IDLE, 0L)
             + statusCounts.getOrDefault(LiftStatus.OUT_OF_SERVICE, 0L);
         long movingTicks = statusCounts.getOrDefault(LiftStatus.MOVING_UP, 0L)
@@ -142,14 +164,34 @@ public final class RunMetrics {
             + statusCounts.getOrDefault(LiftStatus.DOORS_CLOSING, 0L);
         double utilisation = totalTicks == 0 ? 0.0 : (double) (movingTicks + doorTicks) / (double) totalTicks;
 
-        lift.put("totalTicks", totalTicks);
-        lift.put("idleTicks", idleTicks);
-        lift.put("movingTicks", movingTicks);
-        lift.put("doorTicks", doorTicks);
-        lift.put("utilisation", utilisation);
+        return new CachedKpis(
+            lifecycles.size(),
+            completed,
+            cancelled,
+            avgWait,
+            maxWait,
+            idleTicks,
+            movingTicks,
+            doorTicks,
+            utilisation
+        );
+    }
 
-        lifts.add(lift);
-        return lifts;
+    private void invalidateCachedKpis() {
+        cachedKpis = null;
+    }
+
+    private record CachedKpis(
+        int requestsTotal,
+        long passengersServed,
+        long passengersCancelled,
+        double avgWaitTicks,
+        long maxWaitTicks,
+        long idleTicks,
+        long movingTicks,
+        long doorTicks,
+        double utilisation
+    ) {
     }
 
     public ArrayNode toPerFloorNode(ObjectMapper objectMapper) {
