@@ -204,3 +204,21 @@
     min-width: 100%;
   }
 }
+
+.simulation-runs .pagination-summary {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.simulation-runs .pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.simulation-runs .pagination-info {
+  font-size: 0.875rem;
+  color: #555;
+}
