@@ -31,7 +31,7 @@ spring:
   flyway:
     # Run the real V1..Vn migrations during test startup so migration bugs
     # are caught by the test suite. Schema settings are inherited from the
-    # base application.properties (schemas/default-schema/create-schemas).
+    # base application.yml (schemas/default-schema/create-schemas).
     enabled: true
     locations: classpath:db/migration
     schemas:
@@ -85,3 +85,5 @@ security:
     ignored-paths:
       - /api/**
       - /actuator/**
+  openapi:
+    public-access: true

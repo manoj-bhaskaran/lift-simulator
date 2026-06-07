@@ -9,7 +9,7 @@ target/
 
 # Configuration files with credentials or local overrides (use .template files instead)
 src/main/resources/application-dev.yml
-src/main/resources/application-local.properties
+src/main/resources/application-local.yml
 
 # BlueJ files
 *.ctxt

@@ -139,3 +139,9 @@ security:
     ignored-paths:
       - /api/**
       - /actuator/**
+
+  # OpenAPI / Swagger access policy. Keep true to preserve development convenience;
+  # set SECURITY_OPENAPI_PUBLIC_ACCESS=false (or public-access: false) when docs
+  # should require admin HTTP Basic authentication.
+  openapi:
+    public-access: ${SECURITY_OPENAPI_PUBLIC_ACCESS:true}

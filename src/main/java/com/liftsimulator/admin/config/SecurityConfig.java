@@ -65,6 +65,8 @@ import java.util.Locale;
  * <p>Public endpoints (no authentication required):
  * <ul>
  *   <li>{@code /api/v1/health} - Application health check</li>
+ *   <li>{@code /api/v1/api-docs/**} and Swagger UI when {@code security.openapi.public-access}
+ *       is enabled (default)</li>
  *   <li>{@code /actuator/**} - Spring Boot Actuator endpoints</li>
  *   <li>Static resources - Frontend assets</li>
  * </ul>
@@ -102,6 +104,9 @@ public class SecurityConfig {
 
     @Value("${api.auth.header:X-API-Key}")
     private String apiKeyHeader;
+
+    @Value("${security.openapi.public-access:true}")
+    private boolean openApiPublicAccess;
 
     /**
      * Initialize API key validation at startup.
@@ -229,18 +234,25 @@ public class SecurityConfig {
             .httpBasic(httpBasic -> httpBasic
                 .realmName("Lift Simulator Admin")
                 .authenticationEntryPoint(adminAuthenticationEntryPoint()))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/health").permitAll()
-                // OpenAPI/Swagger endpoints
-                .requestMatchers("/api/v1/api-docs/**", "/api/v1/swagger-ui/**", "/api/v1/swagger-ui.html").permitAll()
-                // Read operations allowed for both ADMIN and VIEWER roles
-                .requestMatchers(HttpMethod.GET, "/api/v1/**").hasAnyRole("ADMIN", "VIEWER")
-                // Write operations restricted to ADMIN role only
-                .requestMatchers(HttpMethod.POST, "/api/v1/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/v1/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/v1/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PATCH, "/api/v1/**").hasRole("ADMIN")
-                .anyRequest().authenticated());
+            .authorizeHttpRequests(auth -> {
+                auth.requestMatchers("/api/v1/health").permitAll();
+                if (openApiPublicAccess) {
+                    auth.requestMatchers(
+                        "/api/v1/api-docs/**",
+                        "/api/v1/swagger-ui/**",
+                        "/api/v1/swagger-ui.html"
+                    ).permitAll();
+                }
+                auth
+                    // Read operations allowed for both ADMIN and VIEWER roles
+                    .requestMatchers(HttpMethod.GET, "/api/v1/**").hasAnyRole("ADMIN", "VIEWER")
+                    // Write operations restricted to ADMIN role only
+                    .requestMatchers(HttpMethod.POST, "/api/v1/**").hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.PUT, "/api/v1/**").hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.DELETE, "/api/v1/**").hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.PATCH, "/api/v1/**").hasRole("ADMIN")
+                    .anyRequest().authenticated();
+            });
 
         return http.build();
     }
