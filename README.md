@@ -4,7 +4,7 @@ A Java-based simulation of lift (elevator) controllers with a focus on correctne
 
 ## Version
 
-Current version: **0.47.1**
+Current version: **0.48.0**
 
 This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history, including a condensed summary of the pre-release foundation milestones.
 
@@ -17,6 +17,10 @@ The Lift Simulator is an iterative project to model and test lift controller alg
 - Time-based simulation using discrete ticks
 
 The simulation is text-based and designed for clarity over visual appeal.
+
+### Architecture Assumption: Single Lift System per Simulation Run
+
+The persistence model can store multiple lift systems and versions, but each simulation run executes exactly one selected lift system/version/scenario combination. This single-lift-system-per-run constraint keeps scheduling, artefact capture, and KPI calculations deterministic. To compare buildings or controller strategies, create separate published versions or separate lift systems and run them independently.
 
 ## Quick Start for UAT
 
@@ -267,7 +271,7 @@ To package the React UI with the Spring Boot backend and serve everything from *
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.46.0.jar
+java -jar target/lift-simulator-0.48.0.jar
 ```
 
 This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api/v1`.
@@ -303,7 +307,7 @@ The Swagger UI provides:
 - Security scheme documentation (HTTP Basic Auth and API Key)
 - Example requests and responses for all endpoints
 
-**Note:** The Swagger UI is publicly accessible, but actual API endpoints require authentication (HTTP Basic for admin endpoints, API Key for runtime endpoints).
+**Note:** The Swagger UI and OpenAPI JSON are publicly accessible by default to preserve local development behavior, but actual API endpoints require authentication (HTTP Basic for admin endpoints, API Key for runtime endpoints). Set `security.openapi.public-access=false` (or `SECURITY_OPENAPI_PUBLIC_ACCESS=false`) to require ADMIN-role HTTP Basic authentication for Swagger/OpenAPI endpoints.
 
 #### Running the Backend
 
@@ -317,7 +321,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.46.0.jar
+java -jar target/lift-simulator-0.48.0.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -1323,9 +1327,11 @@ curl -O http://localhost:8080/api/simulation-runs/1/artefacts/results.json
 - **Secure Resolution**: Attempts to access files outside the artefact directory are blocked
 
 **Configuration:**
-```properties
-# Base directory for simulation artefacts (application.properties)
-simulation.artefacts.base-path=./simulation-runs
+```yaml
+# Base directory for simulation artefacts (application.yml)
+simulation:
+  artefacts:
+    base-path: ./simulation-runs
 ```
 
 **Directory Structure:**
@@ -1374,7 +1380,7 @@ The command-line interface remains **fully backward compatible** with previous v
 Run a simulation using a `.scenario` file:
 
 ```bash
-java -cp target/lift-simulator-0.46.0.jar \
+java -cp target/lift-simulator-0.48.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   path/to/scenario.scenario
 ```
@@ -1388,12 +1394,12 @@ If no scenario file is provided, uses `demo.scenario` from the classpath.
 **Example:**
 ```bash
 # Run with a specific scenario file
-java -cp target/lift-simulator-0.46.0.jar \
+java -cp target/lift-simulator-0.48.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   my-test-scenario.scenario
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.46.0.jar \
+java -cp target/lift-simulator-0.48.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain
 ```
 
@@ -1432,7 +1438,7 @@ idle_timeout_ticks: 5
 Run a simulation using a JSON configuration file:
 
 ```bash
-java -cp target/lift-simulator-0.46.0.jar \
+java -cp target/lift-simulator-0.48.0.jar \
   com.liftsimulator.runtime.LocalSimulationMain \
   --config=path/to/config.json \
   --ticks=100
@@ -1445,7 +1451,7 @@ java -cp target/lift-simulator-0.46.0.jar \
 
 **Example:**
 ```bash
-java -cp target/lift-simulator-0.46.0.jar \
+java -cp target/lift-simulator-0.48.0.jar \
   com.liftsimulator.runtime.LocalSimulationMain \
   --config=building-a.json \
   --ticks=1000
@@ -1456,7 +1462,7 @@ java -cp target/lift-simulator-0.46.0.jar \
 Run a quick demo simulation with built-in configuration:
 
 ```bash
-java -cp target/lift-simulator-0.46.0.jar \
+java -cp target/lift-simulator-0.48.0.jar \
   com.liftsimulator.Main \
   --strategy=directional-scan
 ```
@@ -1569,9 +1575,11 @@ simulation-runs/
 ```
 
 **Configuration:**
-```properties
-# Base directory for simulation artefacts (application.properties)
-simulation.artefacts.base-path=./simulation-runs
+```yaml
+# Base directory for simulation artefacts (application.yml)
+simulation:
+  artefacts:
+    base-path: ./simulation-runs
 ```
 
 ###### Artefact Files
@@ -1730,7 +1738,7 @@ You can reproduce any UI-driven run using the CLI by downloading the generated i
 
 4. **Run via CLI**
    ```bash
-   java -cp target/lift-simulator-0.46.0.jar \
+   java -cp target/lift-simulator-0.48.0.jar \
      com.liftsimulator.scenario.ScenarioRunnerMain \
      run-42-reproduction.scenario
    ```
@@ -1775,7 +1783,7 @@ curl -X POST http://localhost:8080/api/batch/generate-input \
 **3. Run the scenario:**
 
 ```bash
-java -cp target/lift-simulator-0.46.0.jar \
+java -cp target/lift-simulator-0.48.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   run-42-reproduction.scenario
 ```
@@ -1867,7 +1875,7 @@ Where `run-123-inputs.json` contains:
 **2. Run via CLI:**
 
 ```bash
-java -cp target/lift-simulator-0.46.0.jar \
+java -cp target/lift-simulator-0.48.0.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   morning-rush-reproduction.scenario
 ```
@@ -2084,9 +2092,11 @@ seed must be a valid integer
 
 **Resolution:**
 - Wait for concurrent runs to complete
-- Increase thread pool size in `application.properties`:
-  ```properties
-  simulation.execution.thread-pool-size=5
+- Increase thread pool size in `application.yml` or an active profile override:
+  ```yaml
+  simulation:
+    execution:
+      thread-pool-size: 5
   ```
 - Restart backend if needed
 
@@ -2208,7 +2218,7 @@ Runtime endpoints require the configured API key header (default `X-API-Key`).
 Example:
 ```bash
 curl -H "X-API-Key: replace-with-secure-key" \\
-  http://localhost:8080/api/runtime/systems/building-a-lifts/config
+  http://localhost:8080/api/v1/runtime/systems/building-a-lifts/config
 ```
 
 - **Get Published Configuration**: `GET /api/v1/runtime/systems/{systemKey}/config`
@@ -2298,12 +2308,18 @@ curl -H "X-API-Key: replace-with-secure-key" \\
 
 ### Configuration
 
-The backend is configured via `src/main/resources/application.properties`:
+The backend is configured via YAML files under `src/main/resources/`:
+- Base defaults: `application.yml`
+- Development secrets and database settings: copy `application-dev.yml.template` to `application-dev.yml`
+- Local machine overrides: copy `application-local.yml.template` to `application-local.yml`
 - Application name: `lift-config-service`
 - Server port: `8080`
-- Active profile: `dev` (default)
 - Logging level: `INFO` (root), `DEBUG` (com.liftsimulator package)
 - Actuator endpoints: health, info
+
+No profile is activated by the checked-in base configuration. Development and production launches must set `SPRING_PROFILES_ACTIVE` explicitly, for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for local development or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.48.0.jar` for production. This prevents a development profile from masking production configuration mistakes.
+
+OpenAPI/Swagger access is controlled by `security.openapi.public-access` (environment variable: `SECURITY_OPENAPI_PUBLIC_ACCESS`). The default is `true` to preserve current behavior; set it to `false` when documentation endpoints should require ADMIN-role authentication.
 
 ### Authentication
 
@@ -2575,14 +2591,15 @@ If you need to customize log file locations (e.g., different directory, external
 
 1. Create a local override file:
    ```bash
-   cp src/main/resources/application-local.properties.template src/main/resources/application-local.properties
+   cp src/main/resources/application-local.yml.template src/main/resources/application-local.yml
    ```
 
-2. Edit `application-local.properties` and uncomment/set your custom paths:
-   ```properties
-   # Custom log location
-   logging.file.name=/custom/path/to/application.log
-   logging.file.path=/custom/path/to/logs
+2. Edit `application-local.yml` and uncomment/set your custom paths:
+   ```yaml
+   logging:
+     file:
+       name: /custom/path/to/application.log
+       path: /custom/path/to/logs
    ```
 
 3. Run with the local profile:
@@ -2596,7 +2613,7 @@ export LOGGING_FILE_PATH=/custom/logs
 mvn spring-boot:run
 ```
 
-This approach prevents git conflicts - your `application-local.properties` file is excluded from version control, so `git pull` won't overwrite your local settings.
+This approach prevents git conflicts - your `application-local.yml` file is excluded from version control, so `git pull` won't overwrite your local settings.
 
 ### Database Setup
 
@@ -2679,15 +2696,15 @@ When you start the Spring Boot application, Flyway will automatically:
 
 The application supports different profiles for different environments:
 
-- **dev** (default): Uses local PostgreSQL with connection pooling
+- **dev**: Uses local PostgreSQL with connection pooling
   - **Template**: `src/main/resources/application-dev.yml.template` (version controlled)
   - **Local Config**: `src/main/resources/application-dev.yml` (create from template, **not** version controlled)
   - Database: `localhost:5432/lift_simulator`
   - Default user: `lift_admin` (customizable in your local config)
 
 - **local** (optional): For local-only overrides without git conflicts
-  - **Template**: `src/main/resources/application-local.properties.template` (version controlled)
-  - **Local Config**: `src/main/resources/application-local.properties` (create from template, **not** version controlled)
+  - **Template**: `src/main/resources/application-local.yml.template` (version controlled)
+  - **Local Config**: `src/main/resources/application-local.yml` (create from template, **not** version controlled)
   - **Use case**: Override log paths, server ports, or other settings locally
   - **Activation**: `SPRING_PROFILES_ACTIVE=dev,local` (combine with dev profile)
   - **Benefits**:
@@ -2793,7 +2810,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.46.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.48.0.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -3044,7 +3061,7 @@ dropdb lift_simulator_test
 
 ## Features
 
-The current version (v0.46.0) includes comprehensive lift simulation and configuration management capabilities:
+The current version (v0.48.0) includes comprehensive lift simulation and configuration management capabilities:
 
 ### Admin Backend & REST API
 
@@ -3252,10 +3269,10 @@ To build a deployable Spring Boot JAR that also serves the React admin UI from `
 mvn -Pfrontend clean package
 ```
 
-The frontend profile installs Node.js 20.19.0 for compatibility with Vite 7, runs `npm ci`, builds the Vite bundle, copies the generated files into `target/classes/static/`, and packages them under `BOOT-INF/classes/static/` in `target/lift-simulator-0.47.1.jar`. The CI backend and E2E packaging jobs use this profile so downloaded CI JAR artifacts include the frontend assets. You can verify the packaged UI with:
+The frontend profile installs Node.js 20.19.0 for compatibility with Vite 7, runs `npm ci`, builds the Vite bundle, copies the generated files into `target/classes/static/`, and packages them under `BOOT-INF/classes/static/` in `target/lift-simulator-0.48.0.jar`. The CI backend and E2E packaging jobs use this profile so downloaded CI JAR artifacts include the frontend assets. You can verify the packaged UI with:
 
 ```bash
-jar tf target/lift-simulator-0.47.1.jar | grep '^BOOT-INF/classes/static/'
+jar tf target/lift-simulator-0.48.0.jar | grep '^BOOT-INF/classes/static/'
 ```
 
 ## Running Tests
@@ -3336,7 +3353,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.48.0.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -3345,16 +3362,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.48.0.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.48.0.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.48.0.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.48.0.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -3368,7 +3385,7 @@ The demo runs a pre-configured scenario with several lift requests and displays 
 Use a published configuration JSON file to run a lightweight simulation:
 
 ```bash
-java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.48.0.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 
 Optional flags:
@@ -3386,7 +3403,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.48.0.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -3395,13 +3412,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.48.0.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.48.0.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.46.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.48.0.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**

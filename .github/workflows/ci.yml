@@ -65,6 +65,14 @@ jobs:
         SPRING_JPA_HIBERNATE_DDL_AUTO: update
         SPRING_JPA_PROPERTIES_HIBERNATE_HBM2DDL_CREATE_NAMESPACES: 'false'
 
+    - name: Upload JaCoCo HTML report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: jacoco-html-report
+        path: target/site/jacoco/
+        retention-days: 30
+
     - name: Check code style
       run: mvn -q checkstyle:check
 

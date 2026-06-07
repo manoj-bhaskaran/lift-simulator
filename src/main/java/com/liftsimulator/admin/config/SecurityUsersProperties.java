@@ -10,18 +10,7 @@ import java.util.List;
  * Configuration properties for security users.
  *
  * <p>Supports configuring multiple users with different roles for local development.
- * Users can be defined in application.properties or application-dev.yml:
- *
- * <pre>
- * security.users[0].username=admin
- * security.users[0].password=adminpass
- * security.users[0].role=ADMIN
- * security.users[1].username=viewer
- * security.users[1].password=viewerpass
- * security.users[1].role=VIEWER
- * </pre>
- *
- * <p>Or in YAML format:
+ * Users can be defined in application.yml or application-dev.yml:
  *
  * <pre>
  * security:
