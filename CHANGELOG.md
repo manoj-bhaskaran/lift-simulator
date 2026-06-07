@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI coverage artifacts**: The backend CI job now uploads the JaCoCo HTML report from `target/site/jacoco/` on every run.
 
 ### Changed
+- **REST API reference extraction**: Moved the detailed REST API reference, batch input generator notes, simulation run workflow documentation, runtime configuration API, and health endpoint reference out of `README.md` into `docs/API.md`; the README now keeps a concise API summary with links to the dedicated reference and Swagger UI.
+- **Patch version bump**: Updated repository package metadata and documentation from 0.48.0 to 0.48.1 for this documentation release.
 - **YAML configuration cleanup**: Replaced the checked-in base `application.properties` and local override properties template with YAML equivalents, removed the hardcoded development profile activation, and documented explicit `SPRING_PROFILES_ACTIVE` requirements for development and production launches.
 - **README configuration documentation**: Documented the single-lift-system-per-simulation-run architecture assumption, profile setup, YAML configuration files, current 0.48.0 package version, and configurable Swagger/OpenAPI access.
 - **Simulation run performance optimization**: Replaced O(n²) log tail buffering with an `ArrayDeque` ring buffer, cached shared `RunMetrics` KPI values across result serializers, and avoided allocating passenger-flow tick maps for empty scenarios. Added large-file tail coverage for 12K and 100K line logs.
