@@ -269,8 +269,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Centralized Frontend Logging**: Added structured logging utilities with levels, timestamps, optional context, and environment-aware output for API calls, validation, user actions, and component lifecycle events.
 
 ### Changed
-- Version bumped from 0.39.0 to 0.40.0.
-- Frontend package version updated to 0.40.0.
 - README and frontend documentation now describe logging usage and configuration.
 
 ## [0.39.1] - 2026-01-19
@@ -284,8 +282,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - GitHub Actions workflow now runs frontend install, lint, build, and test steps
 - Frontend npm scripts now include `lint:fix` and `test` placeholders
-- Version bumped from 0.39.0 to 0.39.1
-- Frontend package version updated to 0.39.1
 
 ## [0.39.0] - 2026-01-18
 
@@ -297,8 +293,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Improved frontend README accuracy and organization by documenting semantic version ranges, deployment options, troubleshooting placement, and production build guidance.
 - Fixed version documentation mismatches, clarified deployment recommendations, and added missing maintenance guidance.
-- Version bumped from 0.38.1 to 0.39.0.
-- Frontend package version updated to 0.39.0.
 
 ## [0.38.1] - 2026-01-18
 
@@ -308,8 +302,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Refactored ConfigEditor, LiftSystemDetail, and LiftSystems to use shared status/error utilities
-- Version bumped from 0.38.0 to 0.38.1
-- Frontend package version updated to 0.38.1
 
 ## [0.38.0] - 2026-01-17
 
@@ -318,8 +310,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Updated ConfigEditor, LiftSystems, and LiftSystemDetail to use the new modal components for confirmations and error messages.
-- Version bumped from 0.35.2 to 0.36.0.
-- Frontend package version updated to 0.36.0.
 
 ## [0.37.0] - 2026-01-16
 
@@ -329,8 +319,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Lift Systems list now filters results case-insensitively based on the search query
-- Version bumped from 0.36.3 to 0.37.0
-- Frontend package version updated to 0.37.0
 
 ## [0.36.3] - 2026-01-16
 
@@ -342,8 +330,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - ConfigEditor save workflow improved: auto-runs validation before save if not already validated
 - LiftSystems error handling improved: removed unnecessary error throw that could cause unexpected behavior
-- Version bumped from 0.36.2 to 0.36.3
-- Frontend package version updated to 0.36.3
 
 ### Fixed
 - ConfigEditor no longer allows saving invalid configurations without validation
@@ -357,8 +343,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - AlertModal and ConfirmModal now render via the shared Modal component to reduce duplication
-- Version bumped from 0.36.1 to 0.36.2
-- Frontend package version updated to 0.36.2
 
 ## [0.36.1] - 2026-01-16
 
@@ -367,8 +351,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Default Axios request timeout set to 10 seconds to prevent hanging requests
-- Version bumped from 0.36.0 to 0.36.1
-- Frontend package version updated to 0.36.1
 
 ## [0.36.0] - 2026-01-16
 
@@ -377,8 +359,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mobile Navigation**: Added a hamburger menu and touch-friendly navigation for smaller screens.
 
 ### Changed
-- Version bumped from 0.35.0 to 0.36.0.
-- Frontend package version updated to 0.36.0.
 - README now documents responsive design capabilities.
 
 ## [0.35.2] - 2026-02-12
@@ -393,8 +373,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lift systems list now routes the Manage Versions action to the versions section instead of duplicating the view details navigation
 - Admin UI version details page scrolls to the versions section when linked with a `#versions` anchor
 - Documentation refreshed for updated version numbers and UI navigation guidance
-- Frontend package version aligned with the application release
-- Version bumped from 0.35.0 to 0.35.1
 
 ## [0.35.0] - 2026-01-16
 
@@ -403,7 +381,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Comprehensive Test Coverage**: Added unknown-field rejection tests covering single, typo, multiple, and otherwise-valid payload scenarios.
 
 ### Changed
-- Version bumped from 0.34.2 to 0.35.0.
 - `ConfigValidationService`, production/test ObjectMapper configuration, and `LocalSimulationMain` now enforce strict schema validation consistently.
 
 ## [0.34.2] - 2026-02-10
@@ -411,17 +388,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Avoid null dereference warnings when detecting packaged JARs by using a path string check
 
-### Changed
-- Version bumped from 0.34.1 to 0.34.2
-
 ## [0.34.1] - 2026-02-10
 
 ### Fixed
 - Guard runtime simulator process tracking against PID reuse by removing entries only when the same process exits
 - Avoid null dereference when detecting packaged JARs and use executor execute to avoid ignored submit results
-
-### Changed
-- Version bumped from 0.34.0 to 0.34.1
 
 ## [0.34.0] - 2026-02-10
 
@@ -429,9 +400,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Runtime simulation launcher now supports packaged Spring Boot JARs via `PropertiesLauncher` with `--loader.main`
 - Process lifecycle management for runtime-launched simulators, including tracked PIDs, output logging, and graceful shutdown on service stop
 - Runtime documentation for local vs packaged simulation launch assumptions
-
-### Changed
-- Version bumped from 0.33.5 to 0.34.0
 
 ## [0.33.5] - 2026-01-15
 
@@ -451,7 +419,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Test DTOs with @AssertTrue constraints for object-level validation testing
 
 ### Changed
-- Version bumped from 0.33.4 to 0.33.5
 - GlobalExceptionHandler now imports ObjectError alongside FieldError
 - Enhanced JavaDoc comments in GlobalExceptionHandler for validation error handling
 
@@ -460,9 +427,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Database Backup and Restore Documentation**: Added cross-platform PostgreSQL backup, restore, verification, and periodic restore-testing guidance to README.
 - **ADR-0012**: Documented backup/restore strategy, tooling choices, automation integration, alternatives, and operational considerations.
-
-### Changed
-- Version bumped from 0.33.3 to 0.33.4.
 
 ## [0.33.3] - 2026-02-01
 
@@ -487,7 +451,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Admin UI action to launch simulator for published versions
 
 ### Changed
-- Version bumped from 0.32.1 to 0.33.0
 - Updated README and frontend docs for runtime launch workflow
 
 ## [0.32.1] - 2026-01-20
@@ -502,7 +465,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SPA route forwarding controller so client-side routes load correctly when served by Spring Boot
 
 ### Changed
-- Version bumped from 0.31.0 to 0.32.0
 - Updated README and frontend docs with clear dev vs production run instructions
 
 ## [0.31.0] - 2026-01-12
@@ -513,7 +475,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Enhanced Version Actions**: Added edit/view configuration actions to version cards and grouped version controls more clearly.
 
 ### Changed
-- Version bumped from 0.30.0 to 0.31.0.
 - README now documents the Configuration Editor feature.
 - Routing and `LiftSystemDetail` now expose configuration edit and view flows.
 
@@ -525,7 +486,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Routing and UI Components**: Added `/systems/:id` routing and updated lift-system React components to support detail navigation and creation flows.
 
 ### Changed
-- Version bumped from 0.29.0 to 0.30.0.
 - README now documents lift-system CRUD and version-management capabilities.
 - Lift Systems page actions now navigate to the detail view.
 
@@ -590,7 +550,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation**: ADR-0010 for publish/archive workflow design decisions
 
 ### Changed
-- Version bumped from 0.27.0 to 0.28.0
 - `publishVersion()` method now archives previously published versions before publishing new version
 - Publish workflow is transactional - if archiving or publishing fails, entire operation rolls back
 - Updated service layer tests to verify archiving behavior
@@ -654,7 +613,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - All existing tests updated to mock ConfigValidationService
 
 ### Changed
-- Version bumped from 0.26.0 to 0.27.0
 - `LiftSystemVersionService` now validates configurations before saving
   - Injected `ConfigValidationService` dependency
   - `createVersion()` validates before creating
@@ -688,7 +646,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Full coverage of success cases, error cases, and validation failures
 
 ### Changed
-- Version bumped from 0.25.0 to 0.26.0
 - REST API now provides full version lifecycle management for lift system configurations
 - Version numbers automatically increment starting from 1 for each lift system
 
@@ -725,7 +682,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Transaction rollback testing with `@Transactional`
 
 ### Changed
-- Version bumped from 0.24.0 to 0.25.0
 - REST API now provides full lifecycle management for lift systems
 - Service layer enforces business rules and validation
 
@@ -815,9 +771,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add the `lift_simulator` schema with `lift_system` and `lift_system_version` tables for versioned JSONB configurations.
 - Include publish status fields, foreign keys, and indexes for lift system versions.
 
-### Changed
-- Bump project version to 0.23.0 to reflect the new database schema.
-
 ## [0.22.3] - 2026-01-09
 
 ### Fixed
@@ -879,7 +832,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Architecture Decision Record**: ADR-0007 documenting PostgreSQL and Flyway integration rationale (see `docs/decisions/0007-postgresql-flyway-integration.md`)
 
 ### Changed
-- Version bumped from 0.21.0 to 0.22.0
 - `application.properties` now includes database-related settings
 - Spring Boot application now requires PostgreSQL database to start
 - README updated with database setup instructions and new version references
@@ -908,7 +860,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Maven POM now inherits from `spring-boot-starter-parent` for Spring Boot dependency management
 - Project description updated to reflect Spring Boot backend integration
-- Version bumped from 0.20.0 to 0.21.0
 
 ## [0.20.0] - 2026-01-09
 
