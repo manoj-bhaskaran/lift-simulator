@@ -12,25 +12,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.49.10] - 2026-06-08
+
+### Changed
+- **Changelog style normalization**: Standardized entries on the Keep a Changelog category vocabulary and a single bullet style (bold lead-in titles for top-level changes), normalizing sections that mixed bold and plain bullets. Removed the boilerplate "Patch version bump" / "Updated version references" bullets that carried no user-facing information, and deleted the partial, dead footer compare-link block (which defined links only for `0.1.0`–`0.6.0` and linked none of the version headings).
+
 ## [0.49.9] - 2026-06-08
 
 ### Changed
 - **Changelog de-duplication and ordering cleanup**: Merged the near-identical consecutive patch entries `0.41.2`/`0.41.3` (duplicate SPA index.html 404 fix) and `0.17.1`/`0.17.2` (duplicate directional-scan furthest-stop behavior) into single range entries matching the existing range pattern, and documented that entry dates reflect authoring order rather than a strict release sequence so the version/date ordering inversions no longer read as errors.
-- **Patch version bump**: Updated repository package metadata, frontend package metadata, README version references, and extracted documentation JAR examples from 0.49.8 to 0.49.9.
 
 ## [0.49.8] - 2026-06-08
 
 ### Changed
 - **Changelog proportionality cleanup**: Condensed over-detailed mid-history entries for 0.42.0, 0.29.0, 0.27.0, 0.26.0, 0.25.0, 0.24.0, 0.22.0, 0.20.0, and 0.19.0 to one-line summaries with no more than five high-value bullets each, while preserving user-facing behavior notes and confirming no breaking-change or security notes were present in those entries.
-- **Patch version bump**: Updated repository package metadata, frontend package metadata, README version references, and extracted documentation JAR examples from 0.49.7 to 0.49.8.
 
 ## [0.49.7] - 2026-06-08
 
 ### Fixed
 - **Changelog structure cleanup**: Relocated the empty `Unreleased` placeholder to the top of the changelog, migrated already-shipped entries into `0.49.6`, removed the phantom maintenance-version reference and outdated current-version claims, and normalized section headings to Keep a Changelog categories.
-
-### Changed
-- **Patch version bump**: Updated repository package metadata, frontend package metadata, README examples, and extracted documentation references from 0.49.6 to 0.49.7.
 
 ## [0.49.6] - 2026-06-08
 
@@ -53,7 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Backend-backed E2E stabilization**: Updated Playwright tests and helpers to use the inline Create Version validation flow, unique retry-safe system data, scoped assertions, backend response waits, route-aware system creation waits, current alert modal selectors, the current health-check UI payload, and Vite dev-proxy auth header injection so the new CI E2E job exercises the live backend reliably.
 - **Decoupled simulation run execution wiring**: Removed the lazy circular dependency between `SimulationRunService` and `SimulationRunExecutionService`; the execution service now updates run lifecycle state and progress through `SimulationRunRepository` directly.
 - **Extract RunMetrics to `metrics` sub-package**: Decomposed `SimulationRunExecutionService` by moving `RunMetrics`, `FloorMetrics`, and `RequestLifecycle` inner classes into a new `com.liftsimulator.admin.service.metrics` package. The execution service is reduced from ~711 lines to ~450 lines and the metrics classes are now independently testable. No public API or behaviour changes.
-- **Patch version bump**: Updated package metadata, frontend package metadata, README references, and extracted API documentation references from 0.49.5 to 0.49.6.
 
 ### Fixed
 - **Hibernate 6.6 cascade delete tests**: Cleared managed child entities before repository cascade-delete assertions so tests rely on the PostgreSQL `ON DELETE CASCADE` constraints without Hibernate transient-reference flush errors.
@@ -68,14 +67,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Changelog compaction**: Collapsed narrow historical patch series into range entries, folded related patch fixes into their base minor entries, and replaced verbose test-case/method listings with concise test-suite scope summaries.
-- **Patch version bump**: Updated version references from 0.49.4 to 0.49.5 across package metadata, README, and extracted API documentation.
 
 ## [0.49.4] - 2026-06-08
 
 ### Changed
 - **Troubleshooting guide extraction**: Moved the Quick Troubleshooting section and Database Troubleshooting content from `README.md` into a new `docs/TROUBLESHOOTING.md`; the README Quick Troubleshooting section is now a short list of the four most common issues with a link to the full guide.
 - **Database backup extraction**: Moved the Database Backup and Restore section from `README.md` into a new `docs/DATABASE-BACKUP.md`; the README Database Setup section now links to the dedicated file.
-- **Patch version bump**: Updated version references from 0.49.3 to 0.49.4.
 
 ## [0.49.3] - 2026-06-08
 
@@ -86,13 +83,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Changelog maintenance**: Condensed selected historical entries from 0.30.0 through 0.46.0 by removing boilerplate implementation, benefit, documentation, and notes sub-sections while preserving user-facing changes and breaking-change summaries.
-- **Patch version bump**: Updated repository package metadata and README version references from 0.49.1 to 0.49.2.
 
 ## [0.49.1] - 2026-06-07
 
 ### Changed
 - **REST API reference extraction**: Moved the detailed REST API reference, batch input generator notes, simulation run workflow documentation, runtime configuration API, and health endpoint reference out of `README.md` into `docs/API.md`; the README now keeps a concise API summary with links to the dedicated reference and Swagger UI.
-- **Patch version bump**: Updated repository package metadata and documentation from 0.48.0 to 0.49.1 so package versions sort after the latest documented 0.49.0 release.
 
 ## [0.49.0] - 2026-06-07
 
@@ -124,7 +119,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Breaking: All API endpoints now use `/api/v1` prefix**: API consumers must update base URLs from `/api` to `/api/v1`; runtime and simulation endpoints are protected by API-key authentication and admin endpoints require HTTP Basic credentials.
-- Version bumped from 0.45.0 to 0.46.0.
 
 ### Security
 - Added startup validation for required API keys, constant-time hashed API-key comparison, configurable CORS/CSRF defaults, and dependency updates for frontend and backend vulnerabilities.
@@ -180,7 +174,7 @@ UI consistency release for configuration-version workflows, lift-system editing,
   - Shows next version number (calculated as max existing version + 1, or 1 for first version)
   - Added styled version number display with blue accent border
   - Version number automatically updates based on existing versions
-- Show descriptive validation feedback in the Create Version modal when configuration JSON fails backend validation.
+- **Validation feedback**: Show descriptive validation feedback in the Create Version modal when configuration JSON fails backend validation.
 - **React Hooks and Linting**: Fixed React hooks exhaustive-deps warnings and ESLint errors
   - Fixed missing dependency warnings in `useEffect` hooks in ConfigEditor.jsx and LiftSystemDetail.jsx
   - Wrapped `loadData` and `loadSystemData` functions in `useCallback` to properly memoize them
@@ -315,8 +309,7 @@ UI consistency release for configuration-version workflows, lift-system editing,
 ## [0.35.2] - 2026-02-12
 
 ### Fixed
-- Ensure the Versions anchor scroll runs after loading completes, including systems with zero versions
-- Version bumped from 0.35.1 to 0.35.2
+- **Versions anchor scroll**: Ensure the Versions anchor scroll runs after loading completes, including systems with zero versions
 
 ## [0.35.1] - 2026-02-12
 
@@ -546,7 +539,7 @@ PostgreSQL/Flyway integration release establishing persistent storage for the Li
     - Logging: INFO level (root), DEBUG level (com.liftsimulator package)
     - Custom console and file logging patterns
   - Cross-platform support: Runs on Windows, Linux, and macOS with Java 17+
-- Documentation in README:
+- **Documentation in README**:
   - "Admin UI Backend" section with setup and running instructions
   - Available endpoints documentation
   - Configuration details
@@ -712,14 +705,14 @@ Directional/SCAN controller release integrating direction-aware scheduling into 
 
 ### Added
 - **Out-of-service functionality**: Full support for taking lifts out of service safely
-- `takeOutOfService()` method in `NaiveLiftController` to cancel all active requests when taking lift out of service
-- `returnToService()` method in `NaiveLiftController` to prepare lift for returning to normal operation
-- `setOutOfService()` method in `SimulationEngine` to transition lift to OUT_OF_SERVICE state from any state
-- `returnToService()` method in `SimulationEngine` to transition from OUT_OF_SERVICE back to IDLE state
-- Automatic cancellation of all pending requests (QUEUED, ASSIGNED, SERVING) when taking lift out of service
-- Comprehensive test suite (`OutOfServiceTest`) covering entering/exiting service from all states
-- Demo updated to showcase out-of-service scenario at tick 25 and return to service at tick 30
-- Documentation of out-of-service behavior in README with usage examples
+- **`takeOutOfService()`**: Cancels all active requests in `NaiveLiftController` when taking the lift out of service
+- **`returnToService()` (controller)**: Prepares `NaiveLiftController` for returning to normal operation
+- **`setOutOfService()`**: Transitions the lift to OUT_OF_SERVICE state from any state in `SimulationEngine`
+- **`returnToService()` (engine)**: Transitions `SimulationEngine` from OUT_OF_SERVICE back to IDLE state
+- **Automatic request cancellation**: Cancels all pending requests (QUEUED, ASSIGNED, SERVING) when taking the lift out of service
+- **Test coverage**: Comprehensive `OutOfServiceTest` suite covering entering/exiting service from all states
+- **Demo update**: Showcases the out-of-service scenario at tick 25 and return to service at tick 30
+- **Documentation**: Out-of-service behavior documented in README with usage examples
 
 ### Fixed
 - Corrected arrival and door timing by normalizing movement status and preserving `MOVING_*` state until controller decisions.
@@ -747,24 +740,24 @@ Directional/SCAN controller release integrating direction-aware scheduling into 
 
 ### Added
 - **Request cancellation API**: New `cancelRequest(long requestId)` method in `NaiveLiftController` to safely cancel pending requests
-- Ability to cancel requests in any non-terminal state (QUEUED, ASSIGNED, SERVING)
-- Automatic removal of cancelled requests from the controller's queue
-- Return value indicates cancellation success (false if request not found or already terminal)
-- Comprehensive unit tests for cancelling requests in each lifecycle state
-- Integration tests for cancellation scenarios (while moving, multiple requests same floor)
-- Lifecycle tests verifying CANCELLED terminal state behavior
+- **Non-terminal cancellation**: Ability to cancel requests in any non-terminal state (QUEUED, ASSIGNED, SERVING)
+- **Queue cleanup**: Automatic removal of cancelled requests from the controller's queue
+- **Success signaling**: Return value indicates cancellation success (false if request not found or already terminal)
+- **Unit tests**: Comprehensive coverage for cancelling requests in each lifecycle state
+- **Integration tests**: Cancellation scenarios (while moving, multiple requests on the same floor)
+- **Lifecycle tests**: Verify CANCELLED terminal state behavior
 
 ## [0.6.0] - 2026-01-06
 
 ### Added
 - **Door reopening window**: Configurable time window during door closing when doors can be reopened for new requests
-- `doorReopenWindowTicks` parameter to `SimulationEngine` constructor (default: `min(2, doorTransitionTicks)`)
-- Realistic door behavior: doors reopen if request arrives for current floor within the reopen window
-- Automatic request queuing when door closing window has passed
-- Validation ensuring `doorReopenWindowTicks` is non-negative and does not exceed `doorTransitionTicks`
-- Comprehensive unit tests for door reopening scenarios (within window, outside window, boundary cases, zero window)
-- Integration tests with `NaiveLiftController` demonstrating real-world door reopening behavior
-- Backward compatibility: default window automatically adjusts to `doorTransitionTicks` when smaller than 2
+- **`doorReopenWindowTicks` parameter**: Added to the `SimulationEngine` constructor (default: `min(2, doorTransitionTicks)`)
+- **Realistic door behavior**: Doors reopen if a request arrives for the current floor within the reopen window
+- **Request queuing**: Automatic queuing when the door closing window has passed
+- **Validation**: Ensures `doorReopenWindowTicks` is non-negative and does not exceed `doorTransitionTicks`
+- **Unit tests**: Comprehensive coverage for door reopening scenarios (within window, outside window, boundary cases, zero window)
+- **Integration tests**: `NaiveLiftController` coverage demonstrating real-world door reopening behavior
+- **Backward compatibility**: Default window automatically adjusts to `doorTransitionTicks` when smaller than 2
 
 ### Changed
 - `NaiveLiftController` now attempts to reopen doors when a request arrives for the current floor during door closing
@@ -775,14 +768,14 @@ Directional/SCAN controller release integrating direction-aware scheduling into 
 
 ### Added
 - **Lift request lifecycle management**: Requests are now first-class entities with explicit lifecycle states
-- `LiftRequest` domain model with unique ID, type, origin, destination, and direction
-- `RequestState` enum with six lifecycle states: CREATED, QUEUED, ASSIGNED, SERVING, COMPLETED, CANCELLED
-- `RequestType` enum to distinguish between HALL_CALL and CAR_CALL requests
-- State transition validation ensuring only valid request state changes occur
-- Factory methods `LiftRequest.hallCall()` and `LiftRequest.carCall()` for creating requests
-- Terminal state detection with `isTerminal()` method
-- Comprehensive unit tests for request lifecycle (LiftRequestTest, LiftRequestLifecycleTest)
-- ADR-0003 documenting request lifecycle architectural decision
+- **`LiftRequest` domain model**: Unique ID, type, origin, destination, and direction
+- **`RequestState` enum**: Six lifecycle states: CREATED, QUEUED, ASSIGNED, SERVING, COMPLETED, CANCELLED
+- **`RequestType` enum**: Distinguishes between HALL_CALL and CAR_CALL requests
+- **State transition validation**: Ensures only valid request state changes occur
+- **Factory methods**: `LiftRequest.hallCall()` and `LiftRequest.carCall()` for creating requests
+- **Terminal state detection**: `isTerminal()` method
+- **Unit tests**: Comprehensive request lifecycle coverage (`LiftRequestTest`, `LiftRequestLifecycleTest`)
+- **ADR-0003**: Documents the request lifecycle architectural decision
 
 ### Changed
 - `NaiveLiftController` now manages requests as `LiftRequest` objects internally
@@ -838,12 +831,12 @@ Directional/SCAN controller release integrating direction-aware scheduling into 
 
 ### Changed
 - **Breaking**: `LiftState` refactored to single source of truth pattern
-- `LiftState` now stores only `floor` and `status` (direction and doorState are derived)
-- Constructor signature changed from `LiftState(floor, direction, doorState, status)` to `LiftState(floor, status)`
-- `Direction` and `DoorState` are now computed properties, not stored fields
-- `SimulationEngine` refactored to be state-driven with enforced transitions
-- State transitions are validated before being applied
-- Door behavior is now symmetric (both opening and closing are transitional states)
+- **Reduced state**: `LiftState` now stores only `floor` and `status` (direction and doorState are derived)
+- **Constructor change**: Signature changed from `LiftState(floor, direction, doorState, status)` to `LiftState(floor, status)`
+- **Computed properties**: `Direction` and `DoorState` are now derived, not stored fields
+- **State-driven engine**: `SimulationEngine` refactored to be state-driven with enforced transitions
+- **Validated transitions**: State transitions are validated before being applied
+- **Symmetric door behavior**: Both opening and closing are now transitional states
 
 ### Fixed
 - Eliminated possibility of invalid state combinations (e.g., moving with doors open)
@@ -882,13 +875,3 @@ Directional/SCAN controller release integrating direction-aware scheduling into 
 - Chose tick-based simulation for predictable, testable time advancement.
 - Used immutable state objects to reduce shared-mutable-state defects.
 - Separated controller logic from the simulation engine for extensibility.
-
-[0.6.0]: https://github.com/manoj-bhaskaran/lift-simulator/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/manoj-bhaskaran/lift-simulator/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.4.0
-[0.3.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.3.0
-[0.2.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.0
-[0.1.3]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.1.3
-[0.1.2]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.1.2
-[0.1.1]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.1.1
-[0.1.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.1.0
