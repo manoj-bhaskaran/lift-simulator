@@ -167,6 +167,41 @@
                             <goal>run</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>sync-readme-version</id>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <target>
+                                <replaceregexp
+                                    file="${project.basedir}/README.md"
+                                    match="Current version: \*\*[0-9]+\.[0-9]+\.[0-9]+\*\*"
+                                    replace="Current version: **${project.version}**"
+                                    byline="true"/>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>sync-docs-jar-version</id>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <target>
+                                <replaceregexp
+                                    match="lift-simulator-[0-9]+\.[0-9]+\.[0-9]+\.jar"
+                                    replace="lift-simulator-${project.version}.jar"
+                                    byline="true">
+                                    <fileset dir="${project.basedir}/docs">
+                                        <include name="*.md"/>
+                                    </fileset>
+                                </replaceregexp>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -292,6 +327,15 @@
                                 <configuration>
                                     <nodeVersion>v20.19.0</nodeVersion>
                                     <npmVersion>10.2.4</npmVersion>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>sync-package-version</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>version ${project.version} --no-git-tag-version --allow-same-version</arguments>
                                 </configuration>
                             </execution>
                             <execution>
