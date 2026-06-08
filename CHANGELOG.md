@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.49.3] - 2026-06-08
+
+### Changed
+- **Changelog cleanup**: Removed boilerplate `### Technical Details`, `### Design Decisions`, `### Documentation`, and `### Migration Notes` sub-sections from pre-0.30.0 entries (0.5.0–0.29.0); stripped redundant "Version bumped from X to Y" and "Frontend package version updated to X.Y.Z" bullets from entries 0.22.0–0.43.0.
+
 ## [0.49.2] - 2026-06-07
 
 ### Changed
@@ -253,8 +258,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Restricted Playwright browser binaries and generated artifacts from source control.
 
 ### Changed
-- Version bumped from 0.40.0 to 0.41.0.
-- Frontend package version updated to 0.41.0.
 - README now documents the E2E testing workflow.
 
 ### Fixed
@@ -562,36 +565,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Production build instructions
 
 ### Changed
-- Version bumped from 0.28.0 to 0.29.0
 - Updated main README with frontend setup instructions and overview
 - Added frontend section to Admin Interface documentation
-
-### Changed
-- **Tech Stack**:
-  - React 19.2.0 with functional components and hooks
-  - Vite 7.2.4 for fast development and optimized builds
-  - React Router 7.12.0 for client-side routing
-  - Axios 1.13.2 for HTTP requests
-- **Development Setup**:
-  - Frontend runs on port 3000
-  - Backend runs on port 8080
-  - Vite proxy configuration forwards `/api/*` and `/actuator/*` to backend
-- **Project Structure**:
-  - `frontend/src/api/` - API client and service methods
-  - `frontend/src/components/` - Reusable UI components
-  - `frontend/src/pages/` - Page components for routes
-  - `frontend/src/App.jsx` - Root component with routing configuration
-- **API Integration**: Frontend integrates with all backend endpoints
-  - Lift Systems CRUD APIs
-  - Version Management APIs
-  - Configuration Validation API
-  - Health Check API
-
-### Changed
-- Added `frontend/README.md` with comprehensive setup guide
-- Updated main `README.md` with frontend overview and quick start
-- Documented local development workflow
-- Added troubleshooting section for common issues
 
 ## [0.28.0] - 2026-01-11
 
@@ -619,18 +594,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `publishVersion()` method now archives previously published versions before publishing new version
 - Publish workflow is transactional - if archiving or publishing fails, entire operation rolls back
 - Updated service layer tests to verify archiving behavior
-
-### Changed
-- Updated README with Runtime API documentation and usage examples
-- Added ADR-0010 to Architecture Decisions section
-- Updated version references from 0.27.0 to 0.28.0
-
-### Changed
-- Publish operation uses `@Transactional` to ensure atomicity
-- Previously published versions are found via `findByLiftSystemIdAndIsPublishedTrue()`
-- Each published version's `archive()` method sets status to ARCHIVED
-- Runtime APIs filter for `isPublished = true` configurations only
-- Runtime package structure: `com.liftsimulator.runtime.{controller,service,dto}`
 
 ## [0.27.0] - 2026-01-11
 
@@ -700,24 +663,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Version creation and updates now fail with 400 Bad Request if configuration is invalid
 - Global exception handler expanded to handle validation and state exceptions
 
-### Changed
-- Updated README with Configuration Validation section
-  - Documented validation endpoint and request/response format
-  - Added configuration structure table with all required fields
-  - Documented validation rules for each field
-  - Listed validation features (structural, type, domain, warnings)
-  - Documented automatic validation behavior
-  - Added error response format examples
-- Added publish endpoint documentation to Version Management section
-- Added ADR-0009 for Configuration Validation Framework design decisions
-
-### Changed
-- Uses Jakarta Bean Validation (JSR-380) for structural validation
-- Custom domain validation logic in `ConfigValidationService`
-- Validation errors block operations, warnings are informational only
-- JSON parsing using Jackson ObjectMapper
-- Defensive validation with detailed error messages for debugging
-
 ## [0.26.0] - 2026-01-11
 
 ### Added
@@ -746,11 +691,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Version bumped from 0.25.0 to 0.26.0
 - REST API now provides full version lifecycle management for lift system configurations
 - Version numbers automatically increment starting from 1 for each lift system
-
-### Changed
-- Updated README with Version Management API documentation
-- Added API endpoint examples with request/response payloads for all versioning operations
-- Documented version cloning functionality and auto-increment behavior
 
 ## [0.25.0] - 2026-01-11
 
@@ -795,11 +735,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `@SuppressFBWarnings` to `LiftSystemController` constructor for Spring DI false positive
   - All medium-severity EI_EXPOSE_REP warnings resolved
 
-### Changed
-- Updated README with Lift System CRUD API documentation
-- API endpoint examples with request/response payloads
-- Error response format documentation
-
 ## [0.24.0] - 2026-01-11
 
 ### Added
@@ -834,16 +769,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Verifies entity relationships and cascading
   - Tests all custom repository query methods
   - Located at `com.liftsimulator.admin.runner.JpaVerificationRunner`
-
-### Changed
-- Bump project version to 0.24.0 to reflect new JPA persistence layer
-
-### Changed
-- Updated README with comprehensive JPA entities and repositories documentation
-- Added JPA verification instructions and examples
-- Documented JSONB field mapping approach
-- Added integration test running instructions
-- Updated all version references from 0.23.6 to 0.24.0
 
 ## [0.23.6] - 2026-01-09
 
@@ -958,42 +883,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `application.properties` now includes database-related settings
 - Spring Boot application now requires PostgreSQL database to start
 - README updated with database setup instructions and new version references
-- Build artifact name updated to `lift-simulator-0.22.0.jar`
-
-### Changed
-- **Dependencies added**:
-  - `spring-boot-starter-data-jpa` - JPA and Hibernate ORM
-  - `postgresql` (runtime scope) - PostgreSQL JDBC driver
-  - `flyway-core` - Database migration framework
-  - `flyway-database-postgresql` - PostgreSQL-specific Flyway support
-- **Database schema version**: V1 (baseline)
-- **Flyway settings**:
-  - Migration location: `classpath:db/migration`
-  - Baseline version: 0
-  - Validation enabled on migrate
-  - Out-of-order migrations disabled
-- **Hibernate settings**:
-  - Dialect: `org.hibernate.dialect.PostgreSQLDialect`
-  - DDL auto: `validate` (production-safe, no auto-schema changes)
-  - SQL logging: DEBUG level in dev profile
-  - Parameter binding trace: TRACE level for troubleshooting
-- **Connection pool** (HikariCP):
-  - Maximum pool size: 5 connections
-  - Minimum idle: 2 connections
-  - Connection timeout: 30 seconds
-  - Idle timeout: 10 minutes
-  - Max lifetime: 30 minutes
-- Database configuration follows Spring Boot best practices for production readiness
-- Clear separation between base configuration and profile-specific settings
-- Migration-first approach ensures consistent schema across environments
-
-### Changed
-For developers updating from v0.21.0:
-1. Install PostgreSQL 12 or later
-2. Create database and user as documented in README
-3. Run `mvn clean install` to download new dependencies
-4. Start the application - Flyway will initialize the schema automatically
-5. Verify schema with: `psql -U lift_admin -d lift_simulator -c "\dt"`
 
 ## [0.21.0] - 2026-01-09
 
@@ -1020,13 +909,6 @@ For developers updating from v0.21.0:
 - Maven POM now inherits from `spring-boot-starter-parent` for Spring Boot dependency management
 - Project description updated to reflect Spring Boot backend integration
 - Version bumped from 0.20.0 to 0.21.0
-
-### Changed
-- Uses Spring Boot 3.2.1 (requires Java 17+)
-- Spring Boot Web Starter for RESTful API capabilities
-- Spring Boot Actuator for health monitoring and metrics
-- Existing lift simulator functionality remains unchanged and independent
-- Backend provides foundation for future admin UI development
 
 ## [0.20.0] - 2026-01-09
 
@@ -1062,12 +944,6 @@ For developers updating from v0.21.0:
 - Test suite now provides comprehensive coverage of realistic multi-request routing scenarios
 - Both controller strategies protected against behavioral regressions through scenario tests
 
-### Changed
-- ScenarioHarness tracks last moving direction to accurately log service events
-- Tests use realistic timing: 1 tick/floor travel, 2 ticks door transition, 3 ticks door dwell
-- Maximum tick limits prevent infinite loops while allowing sufficient time for complex scenarios
-- Service event logging captures tick, floor, and direction for detailed assertions
-
 ## [0.19.0] - 2026-01-09
 
 ### Added
@@ -1098,12 +974,6 @@ For developers updating from v0.21.0:
 - Main.java help text updated to document the new `--strategy` flag
 - README updated with comprehensive DirectionalScanLiftController documentation
 - README demo configuration section updated to show controller selection examples
-
-### Changed
-- DirectionalScanLiftController was implemented in v0.16.0 but not integrated with the main application
-- This release completes the integration, making the controller usable in the demo application
-- Regression testing confirms NaiveLiftController (nearest-request) continues to work unchanged
-- All existing tests pass, confirming no behavioral regressions
 
 ## [0.18.1] - 2026-01-12
 
@@ -1174,13 +1044,6 @@ For developers updating from v0.21.0:
 - `ScenarioDefinition`, `ScenarioParser`, and `ScenarioRunnerMain` updated to support controller strategy configuration
 - `Main.java` updated to use `ControllerFactory` with explicit `NEAREST_REQUEST_ROUTING` strategy
 - `demo.scenario` updated to include explicit controller strategy configuration
-
-### Changed
-- Enum-based strategy selection provides type safety and compile-time validation
-- Factory pattern centralizes controller instantiation logic
-- Default strategy preserves backward compatibility (NEAREST_REQUEST_ROUTING)
-- Unimplemented strategies (DIRECTIONAL_SCAN) throw `UnsupportedOperationException` with clear error messages
-- Controller strategy is configured at initialization time (not runtime switchable)
 
 ## [0.13.0] - 2026-01-09
 
@@ -1351,16 +1214,6 @@ For developers updating from v0.21.0:
 - Lifts in OUT_OF_SERVICE state cannot move, open doors, or accept new requests
 - Demo simulation extended to 50 ticks to show complete out-of-service workflow
 
-### Changed
-- Taking lift out of service immediately cancels all unserviced requests for safety
-- **Graceful shutdown sequence**: If moving, lift completes movement to next floor; doors then open to allow passenger exit, then close, before transitioning to OUT_OF_SERVICE
-- Ensures passenger safety by allowing exit before going offline
-- If lift is stationary with doors closed, doors still open/close to ensure nobody is trapped
-- Door state is CLOSED when out of service (derived from status)
-- Direction is IDLE when out of service (derived from status)
-- Returning to service transitions to IDLE state, ready to accept new requests
-- Two-step process: controller cancels requests, engine manages graceful shutdown (separation of concerns)
-
 ## [0.8.0] - 2026-01-06
 
 ### Added
@@ -1384,13 +1237,6 @@ For developers updating from v0.21.0:
 - Integration tests for cancellation scenarios (while moving, multiple requests same floor)
 - Lifecycle tests verifying CANCELLED terminal state behavior
 
-### Changed
-- Cancelled requests transition to CANCELLED state before removal, maintaining lifecycle integrity
-- Cancellation is idempotent - calling multiple times on same request ID is safe
-- Cancelled requests are immediately removed from queue to prevent processing
-- Existing `isTerminal()` checks automatically filter cancelled requests from active processing
-- No ADR created as this extends the existing request lifecycle architecture (ADR-0003)
-
 ## [0.6.0] - 2026-01-06
 
 ### Added
@@ -1407,12 +1253,6 @@ For developers updating from v0.21.0:
 - `NaiveLiftController` now attempts to reopen doors when a request arrives for the current floor during door closing
 - `SimulationEngine` tracks elapsed ticks during door closing to enforce reopen window
 - Door reopening logic in `startAction()` checks elapsed time against configured window
-
-### Changed
-- Reopen window measured in simulation ticks for consistency with other timing parameters
-- Window applies only during DOORS_CLOSING state, not after doors fully close
-- Zero-tick window disables reopening entirely (doors cannot be interrupted once closing starts)
-- Request remains queued if door closing window has passed, lift will serve it after current cycle
 
 ## [0.5.0] - 2026-01-06
 
@@ -1433,13 +1273,6 @@ For developers updating from v0.21.0:
 - Completed and cancelled requests are automatically removed from the controller
 - Backward compatibility maintained: `addCarCall()` and `addHallCall()` methods still work
 - Demo output now displays request lifecycle status with compact "Requests" column showing counts by state (Q:n, A:n, S:n)
-
-### Changed
-- Every request must end in either COMPLETED or CANCELLED state (terminal states)
-- Invalid state transitions throw `IllegalStateException`
-- Self-transitions are prevented
-- Terminal states cannot transition to any other state
-- Request state progression is automatically managed by the controller
 
 ## [0.4.0] - 2026-01-13
 
