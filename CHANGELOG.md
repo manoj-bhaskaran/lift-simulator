@@ -5,11 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.49.7] - 2026-06-08
+
+### Fixed
+- **Changelog structure cleanup**: Relocated the empty `Unreleased` placeholder to the top of the changelog, migrated already-shipped entries into `0.49.6`, removed the phantom maintenance-version reference and outdated current-version claims, and normalized section headings to Keep a Changelog categories.
+
+### Changed
+- **Patch version bump**: Updated repository package metadata, frontend package metadata, README examples, and extracted documentation references from 0.49.6 to 0.49.7.
+
 ## [0.49.6] - 2026-06-08
+
+### Added
+- **Configurable OpenAPI/Swagger access**: Added `security.openapi.public-access` / `SECURITY_OPENAPI_PUBLIC_ACCESS` so Swagger UI and OpenAPI JSON can either remain public (default, preserving existing behavior) or require ADMIN-role HTTP Basic authentication.
+- **CI coverage artifacts**: The backend CI job now uploads the JaCoCo HTML report from `target/site/jacoco/` on every run.
+- **Testcontainers-backed integration tests**: Integration and repository tests now provision a throwaway `postgres:15-alpine` instance on demand via Testcontainers, so `mvn test` runs without a pre-existing PostgreSQL database (a running Docker daemon is the only prerequisite). A single container is shared across the suite via a globally-registered Spring `ContextCustomizerFactory`, covering both `@SpringBootTest` and `@DataJpaTest` slices.
+- **Flyway migrations exercised by tests**: The test profile now runs the real `db/migration` scripts at startup and Hibernate runs in `validate` mode (instead of `ddl-auto: update`), so migration bugs and entity/schema drift are caught by the test suite.
+- **Migration verification test**: Added `FlywayMigrationIntegrationTest`, which asserts the Flyway schema history is populated, all migrations succeeded, and migrated tables exist.
+- **Unit tests for RunMetrics**: Added `RunMetricsTest` covering KPI computation (completed/cancelled counts, average and max wait ticks, utilisation), per-floor passenger flows and lift visits, per-lift config output, and idempotency of `recordTerminalRequests`.
 
 ### Changed
 - **Developer guide extraction**: Moved simulation engine internals, request modeling, lift state machine, and JPA entity/repository reference material from `README.md` into the new `docs/DEVELOPER-GUIDE.md`; the README now links to the dedicated developer reference.
+- **YAML configuration cleanup**: Replaced the checked-in base `application.properties` and local override properties template with YAML equivalents, removed the hardcoded development profile activation, and documented explicit `SPRING_PROFILES_ACTIVE` requirements for development and production launches.
+- **README configuration documentation**: Documented the single-lift-system-per-simulation-run architecture assumption, profile setup, YAML configuration files, current 0.49.6 package version, and configurable Swagger/OpenAPI access.
+- **Simulation run performance optimization**: Replaced O(n²) log tail buffering with an `ArrayDeque` ring buffer, cached shared `RunMetrics` KPI values across result serializers, and avoided allocating passenger-flow tick maps for empty scenarios. Added large-file tail coverage for 12K and 100K line logs.
+- **Backend dependency refresh**: Updated backend package metadata to 0.49.6, upgraded Spring Boot from 3.2.1 to 3.4.13, added the Spring Boot-managed Flyway PostgreSQL database module required by the newer Flyway baseline, and verified the PostgreSQL JDBC driver remains on the latest 42.7.11 release.
+- **CI Playwright E2E coverage**: Moved frontend Playwright execution into a dedicated `e2e-playwright` GitHub Actions job that provisions PostgreSQL, packages and starts the Spring Boot backend, waits for `/api/v1/health`, and runs the browser suite against the live API. The job publishes the Playwright HTML report and failure artifacts, including backend logs, so feature-test failures are visible in CI.
+- **Playwright-only E2E auth configuration**: Added optional Playwright environment variables for admin Basic auth and runtime API-key headers so local and CI E2E runs can exercise authenticated backend endpoints without exposing credentials in browser bundles.
+- **Backend-backed E2E stabilization**: Updated Playwright tests and helpers to use the inline Create Version validation flow, unique retry-safe system data, scoped assertions, backend response waits, route-aware system creation waits, current alert modal selectors, the current health-check UI payload, and Vite dev-proxy auth header injection so the new CI E2E job exercises the live backend reliably.
+- **Decoupled simulation run execution wiring**: Removed the lazy circular dependency between `SimulationRunService` and `SimulationRunExecutionService`; the execution service now updates run lifecycle state and progress through `SimulationRunRepository` directly.
+- **Extract RunMetrics to `metrics` sub-package**: Decomposed `SimulationRunExecutionService` by moving `RunMetrics`, `FloorMetrics`, and `RequestLifecycle` inner classes into a new `com.liftsimulator.admin.service.metrics` package. The execution service is reduced from ~711 lines to ~450 lines and the metrics classes are now independently testable. No public API or behaviour changes.
 - **Patch version bump**: Updated package metadata, frontend package metadata, README references, and extracted API documentation references from 0.49.5 to 0.49.6.
+
+### Fixed
+- **Hibernate 6.6 cascade delete tests**: Cleared managed child entities before repository cascade-delete assertions so tests rely on the PostgreSQL `ON DELETE CASCADE` constraints without Hibernate transient-reference flush errors.
+- **CI deployable JAR packaging**: GitHub Actions backend and E2E packaging steps now activate the Maven `frontend` profile, log profile activation, install a Vite-compatible Node.js 20.19.0 runtime, verify the produced Spring Boot JAR contains React assets under `BOOT-INF/classes/static/`, and confirm the packaged app serves the React root page during E2E startup.
+- **NPE prevention in scenario execution**: Added null check for `scenario.durationTicks()` in `SimulationRunExecutionService.runSimulation()`. The method now fails cleanly with a clear error message if the scenario has a null duration, preventing NullPointerException during unboxing to primitive int.
+- **Removed dead code**: Eliminated duplicate `SimulationRunService.getAllRuns()` method which was superseded by the more efficient `getAllRunsWithDetails()` that eagerly loads related entities (lift system, version, scenario).
+- **Unified artefact path configuration**: Removed the duplicate `simulation.runs.artefacts-root` config key from `SimulationRunExecutionService`. All artefact storage now uses the single `simulation.artefacts.base-path` property (default: `./simulation-runs`) that was already present in `application.properties`.
+- **Directory orphaning eliminated**: `SimulationRunExecutionService.executeRun()` no longer creates a second run directory and overwrites the persisted path. The execution service now reads `artefactBasePath` from the run entity (set once by `SimulationRunService`) and writes all artefacts to that directory.
+- **Artefact storage documentation and tests**: Added `simulation.artefacts.base-path` to `application-dev.yml.template`, updated README documentation for the single artefact storage configuration key, and added `SimulationRunDirectoryIntegrationTest` coverage verifying that exactly one artefact directory is created per run and that it matches the persisted `artefactBasePath`.
 
 ## [0.49.5] - 2026-06-08
 
@@ -50,69 +86,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Paginated simulation run list endpoint**: `GET /api/v1/simulation-runs` now accepts `?page=0&size=20&sort=createdAt,desc` query parameters and returns a Spring Data `Page` envelope with `content`, `totalElements`, and `totalPages`. Default page size is 20; the API enforces a maximum of 100 per request. Filter parameters (`systemId`, `status`) continue to work alongside pagination. The frontend API client (`simulationRunsApi.js`) is updated to pass page, size, and sort on every call.
-
-## [Unreleased]
-
-### Added
-- **Configurable OpenAPI/Swagger access**: Added `security.openapi.public-access` / `SECURITY_OPENAPI_PUBLIC_ACCESS` so Swagger UI and OpenAPI JSON can either remain public (default, preserving existing behavior) or require ADMIN-role HTTP Basic authentication.
-- **CI coverage artifacts**: The backend CI job now uploads the JaCoCo HTML report from `target/site/jacoco/` on every run.
-
-### Changed
-- **YAML configuration cleanup**: Replaced the checked-in base `application.properties` and local override properties template with YAML equivalents, removed the hardcoded development profile activation, and documented explicit `SPRING_PROFILES_ACTIVE` requirements for development and production launches.
-- **README configuration documentation**: Documented the single-lift-system-per-simulation-run architecture assumption, profile setup, YAML configuration files, current 0.48.0 package version, and configurable Swagger/OpenAPI access.
-- **Simulation run performance optimization**: Replaced O(n²) log tail buffering with an `ArrayDeque` ring buffer, cached shared `RunMetrics` KPI values across result serializers, and avoided allocating passenger-flow tick maps for empty scenarios. Added large-file tail coverage for 12K and 100K line logs.
-- **Backend dependency refresh**: Bumped the backend maintenance version to 0.47.1, upgraded Spring Boot from 3.2.1 to 3.4.13, added the Spring Boot-managed Flyway PostgreSQL database module required by the newer Flyway baseline, and verified the PostgreSQL JDBC driver remains on the latest 42.7.11 release.
-- **CI Playwright E2E coverage**: Moved frontend Playwright execution into a dedicated `e2e-playwright` GitHub Actions job that provisions PostgreSQL, packages and starts the Spring Boot backend, waits for `/api/v1/health`, and runs the browser suite against the live API. The job publishes the Playwright HTML report and failure artifacts, including backend logs, so feature-test failures are visible in CI.
-- **Playwright-only E2E auth configuration**: Added optional Playwright environment variables for admin Basic auth and runtime API-key headers so local and CI E2E runs can exercise authenticated backend endpoints without exposing credentials in browser bundles.
-- **Backend-backed E2E stabilization**: Updated Playwright tests and helpers to use the inline Create Version validation flow, unique retry-safe system data, scoped assertions, backend response waits, route-aware system creation waits, current alert modal selectors, the current health-check UI payload, and Vite dev-proxy auth header injection so the new CI E2E job exercises the live backend reliably.
-
-### Refactored
-- **Decoupled simulation run execution wiring**: Removed the lazy circular dependency between `SimulationRunService` and `SimulationRunExecutionService`; the execution service now updates run lifecycle state and progress through `SimulationRunRepository` directly.
-- **Extract RunMetrics to `metrics` sub-package**: Decomposed `SimulationRunExecutionService`
-  by moving `RunMetrics`, `FloorMetrics`, and `RequestLifecycle` inner classes into a new
-  `com.liftsimulator.admin.service.metrics` package. The execution service is reduced from
-  ~711 lines to ~450 lines and the metrics classes are now independently testable. No public
-  API or behaviour changes.
-
-### Added
-- **Testcontainers-backed integration tests**: Integration and repository tests now provision a
-  throwaway `postgres:15-alpine` instance on demand via Testcontainers, so `mvn test` runs without
-  a pre-existing PostgreSQL database (a running Docker daemon is the only prerequisite). A single
-  container is shared across the suite via a globally-registered Spring `ContextCustomizerFactory`,
-  covering both `@SpringBootTest` and `@DataJpaTest` slices.
-- **Flyway migrations exercised by tests**: The test profile now runs the real `db/migration`
-  scripts at startup and Hibernate runs in `validate` mode (instead of `ddl-auto: update`), so
-  migration bugs and entity/schema drift are caught by the test suite.
-- **Migration verification test**: Added `FlywayMigrationIntegrationTest`, which asserts the Flyway
-  schema history is populated, all migrations succeeded, and migrated tables exist.
-- **Unit tests for RunMetrics**: Added `RunMetricsTest` covering KPI computation (completed/
-  cancelled counts, average and max wait ticks, utilisation), per-floor passenger flows and
-  lift visits, per-lift config output, and idempotency of `recordTerminalRequests`.
-
-### Fixed
-- **Hibernate 6.6 cascade delete tests**: Cleared managed child entities before repository cascade-delete assertions so tests rely on the PostgreSQL `ON DELETE CASCADE` constraints without Hibernate transient-reference flush errors.
-- **CI deployable JAR packaging**: GitHub Actions backend and E2E packaging steps now activate the Maven `frontend` profile, log profile activation, install a Vite-compatible Node.js 20.19.0 runtime, verify the produced Spring Boot JAR contains React assets under `BOOT-INF/classes/static/`, and confirm the packaged app serves the React root page during E2E startup.
-- **NPE prevention in scenario execution**: Added null check for `scenario.durationTicks()` in
-  `SimulationRunExecutionService.runSimulation()`. The method now fails cleanly with a clear
-  error message if the scenario has a null duration, preventing NullPointerException during
-  unboxing to primitive int.
-- **Removed dead code**: Eliminated duplicate `SimulationRunService.getAllRuns()` method which
-  was superseded by the more efficient `getAllRunsWithDetails()` that eagerly loads related
-  entities (lift system, version, scenario).
-- **Unified artefact path configuration**: Removed the duplicate `simulation.runs.artefacts-root`
-  config key from `SimulationRunExecutionService`. All artefact storage now uses the single
-  `simulation.artefacts.base-path` property (default: `./simulation-runs`) that was already
-  present in `application.properties`.
-- **Directory orphaning eliminated**: `SimulationRunExecutionService.executeRun()` no longer
-  creates a second run directory and overwrites the persisted path. The execution service now
-  reads `artefactBasePath` from the run entity (set once by `SimulationRunService`) and writes
-  all artefacts to that directory.
-- Added `simulation.artefacts.base-path` to `application-dev.yml.template` so developers have
-  an explicit reference for the configuration key.
-- Updated README to document `simulation.artefacts.base-path` as the single configuration key
-  for artefact storage.
-- Added integration tests (`SimulationRunDirectoryIntegrationTest`) verifying that exactly one
-  artefact directory is created per run and that it matches the persisted `artefactBasePath`.
 
 ## [0.47.0] - 2026-06-06
 
