@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.49.12] - 2026-06-08
+
+### Changed
+- **README deduplication and restructure**: Removed in-file duplication left over after the API, troubleshooting, database-backup, and developer-guide extractions, and reorganised the README into a single logical section order (What is this? → Quick Start → Admin Interface → Building → Running the Application → Testing → Quality Checks → Configuration → Authentication → Database Setup → Logging → Development Setup → Project Structure → Architecture Decisions → License). Consolidated the duplicated build and testing sections so each command (notably `mvn test`, Checkstyle, and SpotBugs) appears exactly once; collapsed the standalone Features section into the Admin Interface capability summary; trimmed Authentication to a summary that links to `docs/API.md` and the security ADRs; removed the Scenario Builder UI micro-fix bullets (changelog content); and folded the orphaned Prerequisites, Backend Dependency Baseline, and Commenting Style sections into Quick Start and Development Setup.
+
 ## [0.49.11] - 2026-06-08
 
 ### Changed
