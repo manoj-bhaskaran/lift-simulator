@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.49.5] - 2026-06-08
+
+### Changed
+- **Changelog compaction**: Collapsed narrow historical patch series into range entries, folded related patch fixes into their base minor entries, and replaced verbose test-case/method listings with concise test-suite scope summaries.
+- **Patch version bump**: Updated version references from 0.49.4 to 0.49.5 across package metadata, README, and extracted API documentation.
+
 ## [0.49.4] - 2026-06-08
 
 ### Changed
@@ -134,7 +140,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Simulator Run UI**: Added lift system/version run setup, reproducible seed input, polling status, results rendering, artefact downloads, CLI reproduction guidance, and published-version launch links.
 - **Simulation Runs History**: Added a persistent runs list/detail experience with filtering, historical result review, navigation integration, and backend list support.
 - **Scenario and simulation APIs**: Added scenario naming/list/delete support, scenario validation/storage, asynchronous simulation-run lifecycle APIs, artefact handling, structured results output, and batch-input generation for CLI compatibility.
-- **Testing**: Added run lifecycle, batch-input golden-file, CLI compatibility, and Scenario Builder Playwright coverage.
+- **Testing**: Added run lifecycle, batch-input golden-file, CLI compatibility, and Scenario Builder Playwright coverage, including Playwright E2E tests for scenario creation, JSON mode editing, and validation error display (4 test cases).
 
 ### Fixed
 - Improved run artefact downloads, progress persistence, scenario filtering, Advanced JSON Mode persistence, template selection styling, random seed checkbox alignment, Create Scenario navigation, linked-data delete conflicts, frontend version display, SpotBugs warnings, scenario validation failures, H2 test compatibility, simulator preselection behavior, stale version responses, cascade deletion, README schema references, and Start Run double-click handling.
@@ -151,7 +157,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Playwright UI Automation Framework**: Added Playwright configuration, smoke tests, E2E scripts, CI artifact handling, and documentation for frontend browser testing.
-- **Automated UI Test Suite**: Converted critical lift-system, configuration-version, validator, health-check, and dashboard flows into reusable Playwright tests with fixtures and cleanup helpers.
+- **Automated UI Test Suite**: Converted critical flows into reusable Playwright tests with fixtures and cleanup helpers: Lift Systems CRUD (5 tests), Configuration Versions (6 tests), Config Validator (6 tests), Health Check (4 tests), and Dashboard (4 tests).
 
 ### Fixed
 - Corrected the lift-systems navigation smoke test route to match the actual React routing.
@@ -419,11 +425,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Both error types are properly surfaced in ValidationErrorResponse
 
 ### Added
-- **Comprehensive Validation Tests**: Added GlobalExceptionHandlerValidationTest with 10 test cases
-  - Test coverage for field-level validation errors (single and multiple fields)
-  - Test coverage for object-level validation errors (e.g., password matching, date range validation)
-  - Test coverage for mixed validation scenarios (both field and object errors)
-  - Test DTOs with @AssertTrue constraints for object-level validation testing
+- **Comprehensive Validation Tests**: Added a 10-case `GlobalExceptionHandlerValidationTest` suite covering field-level, object-level, and mixed validation constraint handling.
 
 ### Changed
 - GlobalExceptionHandler now imports ObjectError alongside FieldError
@@ -550,10 +552,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Returns 404 if no published version exists
   - Clear separation between admin APIs (management) and runtime APIs (consumption)
   - `RuntimeConfigDTO` with streamlined response format
-- **Comprehensive Test Coverage**: Tests for publish/archive workflow and runtime APIs
-  - `testPublishVersion_ArchivesPreviouslyPublishedVersion()` validates automatic archiving behavior
-  - `RuntimeConfigServiceTest` with 6 unit tests covering all runtime API scenarios
-  - Tests for system not found, no published version, and version not published error paths
+- **Comprehensive Test Coverage**: Added publish/archive workflow coverage and `RuntimeConfigServiceTest` with 6 unit tests for runtime API success paths plus system-not-found, no-published-version, and unpublished-version errors.
 - **Documentation**: ADR-0010 for publish/archive workflow design decisions
 
 ### Changed
@@ -601,23 +600,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ConfigValidationException` for validation failures with detailed response
   - `IllegalStateException` handler returning 409 Conflict for state errors (e.g., already published)
   - `ConfigValidationException` handler returning validation response with 400 status
-- **Comprehensive Test Coverage**: Unit tests for validation framework
-  - `ConfigValidationServiceTest`: 15 unit tests covering all validation scenarios
-    - Valid configuration test
-    - Invalid JSON test
-    - Missing required fields test
-    - Negative/invalid value tests for each field
-    - Domain validation rule tests (doorReopenWindowTicks, homeFloor)
-    - Invalid enum value tests
-    - Warning generation tests (low values, inefficient configurations)
-    - Multiple errors test
-  - `LiftSystemVersionServiceTest`: Updated with 6 additional tests
-    - Publish version success test
-    - Publish already published version test (IllegalStateException)
-    - Publish with validation errors test (ConfigValidationException)
-    - Create version with validation errors test
-    - Update version with validation errors test
-    - All existing tests updated to mock ConfigValidationService
+- **Comprehensive Test Coverage**: Added `ConfigValidationServiceTest` with 15 unit tests for valid configs, malformed JSON, missing fields, invalid numeric and enum values, domain rules, warnings, and multiple-error responses.
+- **Version Validation Test Coverage**: Expanded `LiftSystemVersionServiceTest` with 6 additional tests covering publish success, already-published conflicts, validation failures during publish/create/update flows, and mocked validation dependencies.
 
 ### Changed
 - `LiftSystemVersionService` now validates configurations before saving
@@ -733,43 +717,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tests all custom repository query methods
   - Located at `com.liftsimulator.admin.runner.JpaVerificationRunner`
 
-## [0.23.6] - 2026-01-09
+## [0.23.1–0.23.6] - 2026-01-09
 
 ### Fixed
-- Ensure Flyway migrations are retained in build output by cleaning stale resources before the copy phase.
-- Bump project version to 0.23.6 to reflect the migration packaging fix.
-
-## [0.23.5] - 2026-01-09
-
-### Fixed
-- Document cleanup steps for legacy `public.schema_metadata`.
-- Bump project version to 0.23.5 to reflect the legacy schema guidance.
-
-## [0.23.4] - 2026-01-09
-
-### Fixed
-- Document cleanup steps when Flyway history exists in the `public` schema.
-- Bump project version to 0.23.4 to reflect the schema-history guidance.
-
-## [0.23.3] - 2026-01-09
-
-### Fixed
-- Configure Flyway to target the `lift_simulator` schema so baseline migrations create the expected tables.
-- Document the schema-specific Flyway behavior and update database setup guidance.
-- Bump project version to 0.23.3 to reflect the schema migration fix.
-
-## [0.23.2] - 2026-01-09
-
-### Fixed
-- Remove stale Flyway migration resources during build so older `V1__init.sql` artifacts cannot collide with `V1__init_schema.sql`.
-- Bump project version to 0.23.2 to reflect the migration cleanup fix.
-
-## [0.23.1] - 2026-01-09
-
-### Fixed
-- Restore the baseline Flyway migration filename to `V1__init_schema.sql` to avoid duplicate version 1 migrations after upgrading.
-- Document the cleanup step for stale `V1__init.sql` artifacts when upgrading from 0.23.0.
-- Bump project version to 0.23.1 to reflect the migration fix.
+- Fixed Flyway migration filename conflicts, PostgreSQL `lift_simulator` schema targeting, and stale build artifact cleanup across six consecutive patch releases.
 
 ## [0.23.0] - 2026-01-09
 
@@ -777,24 +728,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Create the initial lift configuration schema with Flyway migration `V1__init.sql`.
 - Add the `lift_simulator` schema with `lift_system` and `lift_system_version` tables for versioned JSONB configurations.
 - Include publish status fields, foreign keys, and indexes for lift system versions.
-
-## [0.22.3] - 2026-01-09
-
-### Fixed
-- Correct the development database password for `lift_admin` in configuration and documentation.
-- Bump project version to 0.22.3 to reflect the credential update.
-
-## [0.22.2] - 2026-01-09
-
-### Fixed
-- Remove the unused Flyway PostgreSQL module dependency so Maven resolves Flyway from Spring Boot's managed version.
-- Bump project version to 0.22.2 to reflect the build fix.
-
-## [0.22.1] - 2026-01-09
-
-### Fixed
-- Add an explicit Flyway PostgreSQL artifact version in the Maven POM to restore dependency resolution.
-- Bump project version to 0.22.1 to reflect the build fix.
 
 ## [0.22.0] - 2026-01-09
 
@@ -842,6 +775,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `application.properties` now includes database-related settings
 - Spring Boot application now requires PostgreSQL database to start
 - README updated with database setup instructions and new version references
+
+### Fixed
+- Fixed Flyway PostgreSQL module dependency resolution and development database credential alignment across three patch releases.
 
 ## [0.21.0] - 2026-01-09
 
@@ -1018,90 +954,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Idle parking logic now respects configured mode (only initiates parking movement when mode is `PARK_TO_HOME_FLOOR`)
 - `ScenarioDefinition`, `ScenarioParser`, and `ScenarioRunnerMain` updated to support idle parking mode configuration
 
-## [0.12.17] - 2026-01-25
+## [0.12.7–0.12.17] - 2026-01-25
+
+### Added
+- Added CI and quality tooling with build, coverage, style, static-analysis, packaging, Checkstyle, SpotBugs, and OWASP Dependency-Check coverage.
 
 ### Changed
-- Centralize request completion transitions in `LiftRequest` to avoid duplicated lifecycle chains
-
-## [0.12.16] - 2026-01-24
+- Improved CI and quality implementation by centralizing request lifecycle transitions, indexing naive-controller active requests, retaining dedicated request collections, and standardizing comment formatting.
 
 ### Fixed
-- Guard idle timeout calculations in the naive controller against null idle tracking state
+- Fixed SpotBugs offline dependency resolution, guarded idle-timeout calculations, enforced scenario tick/event input limits, optimized naive-controller request handling, and improved scenario validation safety.
 
-## [0.12.15] - 2026-01-23
+## [0.12.1–0.12.6] - 2026-01-14
+
+### Added
+- Added simulation engine package documentation, JaCoCo coverage enforcement, scenario parsing/execution integration tests, and a lift request ID generator reset hook for test isolation.
 
 ### Changed
-- Standardize comment formatting across the codebase and tests
-
-## [0.12.14] - 2026-01-22
+- Refactored the simulation engine around builder defaults, named timing/sentinel constants, state-specific tick handlers, JavaDoc coverage, and lower-boilerplate sequence-based engine tests.
 
 ### Fixed
-- Enforce scenario tick and event limits to prevent resource exhaustion when parsing scenario files
-
-## [0.12.13] - 2026-01-21
-
-### Changed
-- Keep dedicated active/completed request collections in the naive controller to avoid rebuilding active sets during scheduling
-
-## [0.12.12] - 2026-01-20
-
-### Changed
-- Index active lift requests by ID in the naive controller to avoid linear lookups during cancellation
-
-## [0.12.11] - 2026-01-19
-
-### Added
-- Add OWASP Dependency-Check Maven plugin to scan for vulnerable dependencies during builds
-
-## [0.12.10] - 2026-01-18
-
-### Fixed
-- Replace SpotBugs annotation dependency with a local exclude filter to keep builds resolving offline
-
-## [0.12.7] - 2026-01-15
-
-### Added
-- Expand CI to include build, coverage, style checks, static analysis, and packaging steps
-- Add Checkstyle and SpotBugs tooling with a shared Checkstyle configuration
-
-## [0.12.6] - 2026-01-14
-
-### Added
-- Add package-level documentation for the core lift simulator packages
-
-## [0.12.5] - 2026-01-13
-
-### Changed
-- Add JavaDoc coverage for public APIs in the lift engine and domain enums
-
-## [0.12.4] - 2026-01-12
-
-### Added
-- Add JaCoCo coverage reporting and enforce an 80% line coverage minimum in Maven builds
-- Add integration tests covering scenario parsing, execution, and invalid scenario handling
-
-### Changed
-- Refactor simulation engine tests to use a sequence-based controller helper to reduce boilerplate
-- Extend the move-down test sequence to cover all downward ticks
-
-### Fixed
-- Validate scenario event ticks to reject negative or malformed values with clear error messages
-- Return explicit action results and log invalid action attempts in the simulation engine to avoid silent failures
-
-## [0.12.3] - 2026-01-11
-
-### Added
-- Add a test reset hook for the lift request ID generator to improve test isolation
-
-## [0.12.2] - 2026-01-10
-
-### Changed
-- Refactor tick processing into state-specific handlers for clearer maintenance
-
-## [0.12.1] - 2026-01-10
-
-### Changed
-- Extract default timing values and sentinel configuration into named constants
+- Fixed scenario event tick validation and invalid action reporting so malformed scenario files and invalid engine actions fail with explicit messages.
 
 ## [0.12.0] - 2026-01-10
 
@@ -1133,27 +1006,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plain-text scenario definitions with support for car calls, hall calls, cancellations, and service mode changes
 - Scenario output logging that includes tick, floor, lift state, and pending requests
 
-## [0.9.4] - 2026-01-08
-
-### Fixed
-- Ignore new request assignments while a lift is out of service
-
-## [0.9.3] - 2026-01-08
-
-### Fixed
-- Align out-of-service integration test flow with the required stop tick before door opening
-
-## [0.9.2] - 2026-01-08
-
-### Fixed
-- Preserve MOVING_* status on arrival until controller decisions so door dwell timing and parking interruptions occur after a stop tick
-
-## [0.9.1] - 2026-01-08
-
-### Fixed
-- Normalize movement status before controller decisions so doors can open immediately after arriving at a requested floor
-- Avoid reopening doors during out-of-service shutdown when doors are already open or opening
-
 ## [0.9.0] - 2026-01-08
 
 ### Added
@@ -1166,6 +1018,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test suite (`OutOfServiceTest`) covering entering/exiting service from all states
 - Demo updated to showcase out-of-service scenario at tick 25 and return to service at tick 30
 - Documentation of out-of-service behavior in README with usage examples
+
+### Fixed
+- Corrected arrival and door timing by normalizing movement status and preserving `MOVING_*` state until controller decisions.
+- Aligned out-of-service test flow with the required stop tick and ignored new request assignments while a lift is out of service.
+- Avoided reopening doors during out-of-service shutdown when doors are already open or opening.
 
 ### Changed
 - OUT_OF_SERVICE state (already existed since v0.2.0) now has full operational support
@@ -1255,52 +1112,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Movement and door transitions now consume configured ticks before completing
 
-## [0.2.9] - 2026-01-06
-
-### Fixed
-- Configure Maven to use Java release targeting to avoid module path warnings
-- Explicitly set the resources plugin encoding for filtered properties files
-
-## [0.2.8] - 2026-01-11
-
-### Fixed
-- Keep the naive controller idle while doors are closing to avoid invalid move attempts
-
-## [0.2.7] - 2026-01-11
+## [0.2.1–0.2.9] - 2026-01-11
 
 ### Added
-- Print the running software version in the demo output
-
-## [0.2.6] - 2026-01-11
+- Added version display to demo output so runs show the active software version.
 
 ### Fixed
-- Keep the NaiveLiftController idle during door opening to prevent invalid move attempts
-- Clear same-floor requests while doors are opening to avoid redundant open commands
-
-## [0.2.5] - 2026-01-11
-
-### Fixed
-- Clear same-floor requests while doors are opening or open to avoid extra open/close cycles
-
-## [0.2.4] - 2026-01-11
-
-### Fixed
-- Ensure the NaiveLiftController stops before opening doors when arriving at a requested floor while moving
-
-## [0.2.3] - 2026-01-10
-
-### Fixed
-- Include lift status in the NaiveLiftController demo output so transitional states are visible
-
-## [0.2.2] - 2026-01-10
-
-### Fixed
-- Align door-opening test flow with state machine requirements before attempting to move down
-
-## [0.2.1] - 2026-01-10
-
-### Fixed
-- Add missing `LiftStatus` import in `SimulationEngineTest` to restore test compilation
+- Fixed door-state, direction, and state-machine guard bugs in the naive controller, including same-floor request cleanup, transitional door states, stop-before-open behavior, and door-opening/downward movement sequencing.
+- Fixed build reliability by adding the missing `LiftStatus` test import, configuring the Maven Java release target, and setting filtered resource encoding.
 
 ## [0.2.0] - 2026-01-06
 
@@ -1362,20 +1181,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Used immutable state objects to reduce shared-mutable-state defects.
 - Separated controller logic from the simulation engine for extensibility.
 
-[0.9.1]: https://github.com/manoj-bhaskaran/lift-simulator/compare/v0.9.0...v0.9.1
 [0.6.0]: https://github.com/manoj-bhaskaran/lift-simulator/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/manoj-bhaskaran/lift-simulator/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.4.0
 [0.3.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.3.0
-[0.2.9]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.9
-[0.2.8]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.8
-[0.2.7]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.7
-[0.2.6]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.6
-[0.2.5]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.5
-[0.2.4]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.4
-[0.2.3]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.3
-[0.2.2]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.2
-[0.2.1]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.1
 [0.2.0]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.2.0
 [0.1.3]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.1.3
 [0.1.2]: https://github.com/manoj-bhaskaran/lift-simulator/releases/tag/v0.1.2
