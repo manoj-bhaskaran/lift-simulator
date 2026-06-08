@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Changelog compaction**: Collapsed narrow historical patch series into range entries, folded related patch fixes into their base minor entries, and replaced verbose test-case/method listings with concise test-suite scope summaries.
-- **Patch version bump**: Updated version references from 0.49.4 to 0.49.5.
+- **Patch version bump**: Updated version references from 0.49.4 to 0.49.5 across package metadata, README, and extracted API documentation.
 
 ## [0.49.4] - 2026-06-08
 
