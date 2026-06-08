@@ -2,11 +2,7 @@
 
 A Java-based simulation of lift (elevator) controllers with a focus on correctness and design clarity.
 
-## Version
-
-Current version: **0.49.11**
-
-This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history, including a condensed summary of the pre-release foundation milestones.
+Current version: **0.49.12**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## What is this?
 
@@ -18,631 +14,24 @@ The Lift Simulator is an iterative project to model and test lift controller alg
 
 The simulation is text-based and designed for clarity over visual appeal.
 
-### Architecture Assumption: Single Lift System per Simulation Run
+**Architecture assumption — single lift system per run:** The persistence model can store multiple lift systems and versions, but each simulation run executes exactly one selected lift system/version/scenario combination. This keeps scheduling, artefact capture, and KPI calculations deterministic. To compare buildings or controller strategies, create separate published versions and run them independently.
 
-The persistence model can store multiple lift systems and versions, but each simulation run executes exactly one selected lift system/version/scenario combination. This single-lift-system-per-run constraint keeps scheduling, artefact capture, and KPI calculations deterministic. To compare buildings or controller strategies, create separate published versions or separate lift systems and run them independently.
+## Quick Start
 
-## Quick Start for UAT
+**Prerequisites**
 
-**New to the Lift Simulator? Follow these steps to get up and running quickly.**
+- **Java 17+** — [Oracle](https://www.oracle.com/java/technologies/downloads/) or OpenJDK
+- **Node.js 20.19+ or 22.12+** and npm — [nodejs.org](https://nodejs.org/)
+- **PostgreSQL 12+** — [postgresql.org](https://www.postgresql.org/download/)
+- **Maven 3.6+** — bundled with most Java IDEs, or [download separately](https://maven.apache.org/download.cgi)
 
-### Prerequisites
+**First-time setup (15–20 minutes)**
 
-- **Java 17+** - [Download from Oracle](https://www.oracle.com/java/technologies/downloads/) or use OpenJDK
-- **Node.js 20.19+ or 22.12+** and npm - [Download from nodejs.org](https://nodejs.org/)
-- **PostgreSQL 12+** - [Download from postgresql.org](https://www.postgresql.org/download/)
-- **Maven 3.6+** - Usually bundled with Java IDEs, or [download separately](https://maven.apache.org/download.cgi)
-
-### First-Time Setup (15-20 minutes)
-
-#### 1. Set Up PostgreSQL Database
-
-Start PostgreSQL, then create the database and user:
-
-```bash
-# Connect to PostgreSQL as superuser
-sudo -u postgres psql
-
-# Execute these commands in the psql prompt:
-CREATE DATABASE lift_simulator;
-CREATE USER lift_admin WITH PASSWORD 'YOUR_SECURE_PASSWORD';
-GRANT ALL PRIVILEGES ON DATABASE lift_simulator TO lift_admin;
-\c lift_simulator
-CREATE SCHEMA IF NOT EXISTS lift_simulator AUTHORIZATION lift_admin;
-GRANT ALL ON SCHEMA lift_simulator TO lift_admin;
-\q
-```
-
-**Windows users:** Replace `sudo -u postgres psql` with `psql -U postgres`
-
-**Verification:**
-```bash
-psql -h localhost -U lift_admin -d lift_simulator
-# Enter the password you set above when prompted
-# You should see the PostgreSQL prompt
-\q
-```
-
-See [Database Setup](#database-setup) section for detailed instructions.
-
-#### 2. Configure Application Settings
-
-Create your local configuration file:
-
-```bash
-cp src/main/resources/application-dev.yml.template src/main/resources/application-dev.yml
-```
-
-Edit `src/main/resources/application-dev.yml` and replace `CHANGE_ME` with your database password:
-
-```yaml
-spring:
-  datasource:
-    password: YOUR_SECURE_PASSWORD  # Replace CHANGE_ME with the password you set in step 1
-```
-
-**Note:** This file is excluded from version control and contains your local credentials.
-
-#### 3. Start the Backend
-
-From the project root directory:
-
-```bash
-mvn spring-boot:run
-```
-
-**Expected output:**
-```
-Started LiftConfigServiceApplication in X.XXX seconds
-```
-
-The backend will be available at **http://localhost:8080**
-
-**Note:** First run will download Maven dependencies (may take a few minutes) and automatically run Flyway database migrations.
-
-#### 4. Start the Frontend
-
-Open a new terminal window, then:
-
-```bash
-cd frontend
-npm install    # First time only - installs dependencies
-npm run dev
-```
-
-**Expected output:**
-```
-VITE v7.x.x  ready in XXX ms
-
-➜  Local:   http://localhost:3000/
-```
-
-The frontend will be available at **http://localhost:3000**
-
-#### 5. Access the Application
-
-Open your browser and navigate to **http://localhost:3000**
-
-You should see the Lift Simulator dashboard.
-
-### Daily Usage (After First-Time Setup)
-
-Once set up, starting the application is quick:
-
-1. **Start PostgreSQL** (if not already running as a service)
-2. **Start backend:** `mvn spring-boot:run` (from project root)
-3. **Start frontend:** `cd frontend && npm run dev` (in a separate terminal)
-4. **Access:** Open http://localhost:3000 in your browser
-
-### UAT Testing
-
-Follow the comprehensive test scenarios in **[docs/UAT-TEST-SCENARIOS.md](docs/UAT-TEST-SCENARIOS.md)**
-
-The UAT guide includes:
-- 14 detailed test scenarios covering all major workflows
-- Expected results for each test
-- Pass/fail criteria
-- Issue reporting template
-- UAT sign-off checklist
-
-**Estimated testing time:** 2-3 hours
-
-### Sample Configurations
-
-Sample lift configurations are available in `src/main/resources/scenarios/`:
-- **basic-office-building.json** - Simple 10-floor, 2-lift system
-- **high-rise-residential.json** - Complex 30-floor, 4-lift system
-- **invalid-example.json** - Configuration with validation errors (for testing)
-
-Use these as starting points or reference examples.
-
-### Quick Troubleshooting
-
-Most setup failures fall into one of these categories:
-
-- **Database not running** — start PostgreSQL and verify credentials in `application-dev.yml`
-- **Port conflict** — check that ports 8080 (backend) and 3000 (frontend) are free
-- **Node version** — ensure Node.js 20.19+ or 22.12+ is installed (`node --version`)
-- **Migration failure** — verify PostgreSQL 12+ and check Flyway files in `src/main/resources/db/migration/`
-
-For the full troubleshooting guide covering all failure modes, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
-
----
-
-## Admin Interface
-
-The project includes both a backend API and a React-based frontend for managing lift simulator configurations.
-
-### Frontend Admin UI
-
-A modern React web application provides a user-friendly interface for managing lift systems:
-
-#### Features
-- **Dashboard**: Overview of lift systems with quick statistics
-- **Lift Systems Management**: Full CRUD interface for lift systems with list/detail views and quick access to versions
-- **Version Management**: Create, publish, and manage versioned configurations with pagination, sorting, and filtering
-  - Paginate version lists (10/20/50/100 per page)
-  - Sort by version number, creation date, or status
-  - Filter by status (All/Published/Draft/Archived)
-  - Search by version number
-- **Scenario Builder**: Create and manage passenger flow scenarios for simulations
-  - Build scenarios using template-based quick start or custom flows
-  - Navigate directly to the Create Scenario screen at `/scenarios/new` without blank-page regressions
-  - Highlight the selected quick start template for clear visual feedback
-  - Align the random seed checkbox with its label text for consistent form layout
-  - Define passenger flows with origin, destination, timing, and passenger count
-  - Server-side validation with detailed error and warning feedback
-  - Advanced JSON editor mode for direct scenario editing
-  - Optional random seed for reproducible simulations
-- **Simulator Runs**: Launch published versions with scenarios, poll status, and review results
-  - **Simulator landing page**: Choose a lift system and published version before configuring scenarios
-  - **Run Simulator button**: Quick access button next to each published version for immediate simulation launch
-  - Run setup with lift system, published version, and passenger flow scenario selection
-  - Live status updates with elapsed time and progress details
-  - Results view with KPI cards, per-lift/per-floor tables, artefact downloads, and CLI reproduction hints
-- **Validation Feedback**: Display detailed configuration validation errors when version creation fails
-- **Configuration Editor**: Edit configuration JSON with validation, save draft, and publish workflows
-- **Configuration Validator**: Validate configuration JSON before publishing
-- **Health Check**: Monitor backend service status
-
-#### Running the Frontend (Dev Mode)
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The frontend will start on **http://localhost:3000** and automatically proxy API requests to the backend on port 8080.
-
-The frontend API base URL and request timeout can be configured via Vite environment variables. See the [frontend README](frontend/README.md#environment-variables) for details.
-
-**See [frontend/README.md](frontend/README.md) for detailed setup instructions and documentation.**
-
-#### Frontend Type Definitions (JSDoc)
-
-The admin UI ships TypeScript declaration files for core data models to provide type-aware IntelliSense in JavaScript files without a full TypeScript migration. To opt in, add `// @ts-check` to the top of your file and reference the types in JSDoc:
-
-```js
-// @ts-check
-
-/**
- * @param {import('../types/models').LiftSystem} system
- */
-function renderSystem(system) {
-  // IDE now knows system shape
-}
-```
-
-The shared models live in `frontend/src/types/models.d.ts` and include LiftSystem, Version, and ValidationResult interfaces. See the frontend README for more details.
-
-#### Production Build (Single App)
-
-To package the React UI with the Spring Boot backend and serve everything from **http://localhost:8080**:
-
-```bash
-mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.49.11.jar
-```
-
-This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api/v1`.
-
-### Backend API
-
-The Spring Boot backend service (`Lift Config Service`) provides a RESTful API for managing lift simulator configurations.
-
-#### API Versioning
-
-All API endpoints are versioned using URL-based versioning with the `/api/v1` prefix. This ensures API stability and allows for future breaking changes without disrupting existing clients.
-
-**Current Version:** v1
-
-**Base URL:** `http://localhost:8080/api/v1`
-
-**Versioning Policy:**
-- Major version changes (v1 → v2) may introduce breaking changes
-- Within a major version, all changes are backward compatible
-- See [ADR-0020](docs/decisions/0020-url-based-api-versioning.md) for the complete versioning strategy
-
-#### API Documentation
-
-Interactive API documentation is available via Swagger UI when the application is running:
-
-**Swagger UI:** `http://localhost:8080/api/v1/swagger-ui.html`
-
-**OpenAPI Specification:** `http://localhost:8080/api/v1/api-docs`
-
-The Swagger UI provides:
-- Complete API endpoint documentation with request/response schemas
-- Interactive "Try it out" functionality to test endpoints directly in the browser
-- Security scheme documentation (HTTP Basic Auth and API Key)
-- Example requests and responses for all endpoints
-
-**Note:** The Swagger UI and OpenAPI JSON are publicly accessible by default to preserve local development behavior, but actual API endpoints require authentication (HTTP Basic for admin endpoints, API Key for runtime endpoints). Set `security.openapi.public-access=false` (or `SECURITY_OPENAPI_PUBLIC_ACCESS=false`) to require ADMIN-role HTTP Basic authentication for Swagger/OpenAPI endpoints.
-
-#### Running the Backend
-
-Start the Spring Boot application:
-
-```bash
-mvn spring-boot:run
-```
-
-Or build and run the JAR:
-
-```bash
-mvn clean package
-java -jar target/lift-simulator-0.49.11.jar
-```
-
-The backend will start on `http://localhost:8080`.
-
-### API Reference
-
-- **Base URL:** `http://localhost:8080/api/v1` for versioned application endpoints.
-- **Interactive docs:** Swagger UI is available at `http://localhost:8080/api/v1/swagger-ui.html`; OpenAPI JSON is available at `http://localhost:8080/api/v1/api-docs`.
-- **Full reference:** See [docs/API.md](docs/API.md) for endpoint details, request/response examples, authentication notes, batch input conversion, simulation run artefacts, CLI/UI run workflows, runtime configuration APIs, and health endpoints.
-- **Lift Systems:** Create, list, update, and delete lift system definitions.
-- **Versions:** Manage draft, published, and archived lift configuration versions.
-- **Scenarios:** Create, validate, list, retrieve, update, and delete passenger-flow scenarios.
-- **Simulation Runs:** Start asynchronous runs, poll status, cancel runs, retrieve results/logs, and download artefacts.
-- **Runtime:** Fetch the published configuration for a lift system by key.
-- **Health:** Check custom service health and Spring Boot actuator health/info endpoints.
-
-### Configuration
-
-The backend is configured via YAML files under `src/main/resources/`:
-- Base defaults: `application.yml`
-- Development secrets and database settings: copy `application-dev.yml.template` to `application-dev.yml`
-- Local machine overrides: copy `application-local.yml.template` to `application-local.yml`
-- Application name: `lift-config-service`
-- Server port: `8080`
-- Logging level: `INFO` (root), `DEBUG` (com.liftsimulator package)
-- Actuator endpoints: health, info
-
-No profile is activated by the checked-in base configuration. Development and production launches must set `SPRING_PROFILES_ACTIVE` explicitly, for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for local development or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.49.11.jar` for production. This prevents a development profile from masking production configuration mistakes.
-
-OpenAPI/Swagger access is controlled by `security.openapi.public-access` (environment variable: `SECURITY_OPENAPI_PUBLIC_ACCESS`). The default is `true` to preserve current behavior; set it to `false` when documentation endpoints should require ADMIN-role authentication.
-
-### Authentication
-
-The backend requires authentication for API access. Two authentication mechanisms are supported:
-
-#### Admin APIs (HTTP Basic Authentication)
-
-Admin APIs (`/api/v1/**` except `/api/v1/health`) require HTTP Basic authentication with username and password.
-
-**Configuration:**
-
-1. **Edit** `src/main/resources/application-dev.yml` and set your admin credentials:
-   ```yaml
-   security:
-     admin:
-       username: admin              # Default username
-       password: YOUR_SECURE_PASSWORD  # REQUIRED: Set a secure password
-   ```
-
-2. **Alternative: Environment Variables**
+1. **Create the database, user, and schema** (Windows users: replace `sudo -u postgres psql` with `psql -U postgres`):
    ```bash
-   export ADMIN_USERNAME=admin
-   export ADMIN_PASSWORD=your_secure_password
-   mvn spring-boot:run
-   ```
-
-**Usage with curl:**
-```bash
-# Access admin APIs with HTTP Basic authentication
-curl -u admin:your_password http://localhost:8080/api/v1/lift-systems
-
-# Or using explicit Authorization header
-curl -H "Authorization: Basic $(echo -n 'admin:your_password' | base64)" \
-     http://localhost:8080/api/v1/lift-systems
-```
-
-#### Runtime APIs (API Key Authentication)
-
-Runtime APIs (`/api/v1/runtime/**`) require API key authentication via the `X-API-Key` header.
-
-**Configuration:**
-
-1. **Edit** `src/main/resources/application-dev.yml` and set your API key:
-   ```yaml
-   security:
-     api-key: YOUR_SECURE_API_KEY  # REQUIRED: Generate a secure random key
-   ```
-
-2. **Generate a secure API key:**
-   ```bash
-   # Generate a 32-byte random hex key
-   openssl rand -hex 32
-   ```
-
-3. **Alternative: Environment Variables**
-   ```bash
-   export API_KEY=your_secure_api_key
-   mvn spring-boot:run
-   ```
-
-**Usage with curl:**
-```bash
-# Access runtime APIs with API key
-curl -H "X-API-Key: your_api_key" \
-     http://localhost:8080/api/v1/runtime/systems/my-system/config
-```
-
-#### Public Endpoints (No Authentication Required)
-
-The following endpoints do not require authentication:
-
-- `/api/v1/health` - Application health check
-- `/actuator/health` - Spring Boot Actuator health
-- `/actuator/info` - Application information
-- Static assets and frontend routes
-
-#### Error Responses
-
-Unauthenticated requests return HTTP 401 with a consistent JSON error payload:
-
-```json
-{
-  "status": 401,
-  "message": "Authentication required",
-  "timestamp": "2026-01-31T12:00:00Z"
-}
-```
-
-Unauthorized access (authenticated user lacking permission) returns HTTP 403 Forbidden:
-
-```json
-{
-  "status": 403,
-  "message": "Access denied",
-  "timestamp": "2026-02-01T12:00:00Z"
-}
-```
-
-#### Role-Based Access Control (RBAC)
-
-The Admin APIs support role-based access control with two roles:
-
-| Role | Description | Permissions |
-|------|-------------|-------------|
-| **ADMIN** | Full administrative access | Read and write all resources |
-| **VIEWER** | Read-only access | View configurations, scenarios, and results |
-
-**Authorization Rules:**
-
-| HTTP Method | Required Role | Examples |
-|-------------|---------------|----------|
-| GET | ADMIN or VIEWER | List systems, view scenarios, get results |
-| POST | ADMIN only | Create systems, create scenarios |
-| PUT | ADMIN only | Update configurations |
-| DELETE | ADMIN only | Delete systems, delete scenarios |
-| PATCH | ADMIN only | Partial updates |
-
-**Multi-User Configuration:**
-
-Configure multiple users with different roles in `application-dev.yml`:
-
-```yaml
-security:
-  users:
-    - username: admin
-      password: YOUR_ADMIN_PASSWORD
-      role: ADMIN
-    - username: viewer
-      password: YOUR_VIEWER_PASSWORD
-      role: VIEWER
-```
-
-Or using environment variables with the legacy single-admin configuration:
-
-```bash
-export ADMIN_USERNAME=admin
-export ADMIN_PASSWORD=your_secure_password
-```
-
-#### CORS & CSRF Policy
-
-The backend defines explicit CORS and CSRF policies for predictable frontend behavior in production.
-
-**CORS Configuration:**
-
-```properties
-security.cors.allowed-origins=http://localhost:3000,http://127.0.0.1:3000
-security.cors.allowed-methods=GET,POST,PUT,DELETE,PATCH,OPTIONS
-security.cors.allowed-headers=Authorization,Content-Type,X-API-Key,X-Requested-With,Accept,Origin
-security.cors.exposed-headers=WWW-Authenticate
-security.cors.allow-credentials=true
-security.cors.max-age=3600
-```
-
-Set `CORS_ALLOWED_ORIGINS` in production to the exact domains hosting the frontend.
-
-**CSRF Configuration:**
-
-```properties
-security.csrf.enabled=false
-security.csrf.ignored-paths=/api/**,/actuator/**
-```
-
-CSRF protection is disabled by default because the backend APIs are stateless and use HTTP Basic or API key auth.
-If you enable CSRF for browser-based sessions, configure ignored paths for API endpoints and ensure the frontend
-reads the CSRF token from the cookie and echoes it in the `X-CSRF-TOKEN` header.
-
-**Usage with curl:**
-
-```bash
-# Admin user can create resources
-curl -u admin:adminpass -X POST \
-     -H "Content-Type: application/json" \
-     -d '{"systemKey": "test", "displayName": "Test"}' \
-     http://localhost:8080/api/v1/lift-systems
-
-# Viewer user can read but not write
-curl -u viewer:viewerpass http://localhost:8080/api/v1/lift-systems  # OK (200)
-curl -u viewer:viewerpass -X POST ...  # Forbidden (403)
-```
-
-#### Security Best Practices
-
-1. **Never commit credentials**: Keep `application-dev.yml` out of version control
-2. **Use strong passwords**: At least 16 characters with mixed case, numbers, and symbols
-3. **Rotate API keys**: Change API keys periodically, especially after team changes
-4. **Use environment variables in production**: Avoid storing secrets in files
-5. **Use HTTPS in production**: HTTP Basic credentials are only base64-encoded, not encrypted
-
-### Logging
-
-The backend uses Logback for comprehensive logging with both console and file output.
-
-#### Log File Locations
-
-All backend logs are persisted to the `logs/` directory in the project root:
-
-- **Main application log**: `logs/application.log`
-  - Contains all log messages (INFO, DEBUG, ERROR, etc.)
-  - Automatically rotates when file reaches 10MB or daily at midnight
-  - Keeps 30 days of history (max 1GB total)
-  - Archived logs: `logs/application-YYYY-MM-DD.N.log`
-
-- **Error log**: `logs/application-error.log`
-  - Contains ERROR level messages only
-  - Automatically rotates when file reaches 10MB or daily at midnight
-  - Keeps 90 days of history (max 500MB total)
-  - Archived logs: `logs/application-error-YYYY-MM-DD.N.log`
-
-#### Log Configuration
-
-Logging is configured via `src/main/resources/logback-spring.xml`:
-- **Console Output**: Logs to stdout for development monitoring
-- **File Output**: Logs to rotating files for debugging and audit trails
-- **Full Stack Traces**: All exceptions include complete stack traces
-- **Profile-Specific Levels**:
-  - **Dev profile** (default): DEBUG level for application code, verbose SQL logging
-  - **Prod profile**: INFO level for application code, reduced noise
-
-#### Accessing Logs
-
-**View recent logs:**
-```bash
-# Main application log (all levels)
-tail -f logs/application.log
-
-# Error log only
-tail -f logs/application-error.log
-
-# Last 100 lines of main log
-tail -n 100 logs/application.log
-```
-
-**Search for specific errors:**
-```bash
-# Find all ERROR level messages
-grep "ERROR" logs/application.log
-
-# Find stack traces for a specific exception
-grep -A 20 "NullPointerException" logs/application.log
-
-# Search across all archived logs
-grep "ERROR" logs/application-*.log
-```
-
-**View logs by date:**
-```bash
-# View logs from a specific date
-cat logs/application-2026-01-17.0.log
-
-# List all archived logs
-ls -lht logs/
-```
-
-#### Log Retention
-
-Log files are automatically managed:
-- Files rotate when they reach 10MB in size
-- Files also rotate daily at midnight
-- Old files are automatically deleted after retention period
-- Main log: 30 days retention, 1GB max total size
-- Error log: 90 days retention, 500MB max total size
-
-**Note**: Log files (`*.log`) are excluded from version control via `.gitignore`. The `logs/` directory structure is preserved with a `.gitkeep` file.
-
-#### Customizing Log Locations
-
-If you need to customize log file locations (e.g., different directory, external drive, or to avoid git pull conflicts), use **local configuration overrides**:
-
-1. Create a local override file:
-   ```bash
-   cp src/main/resources/application-local.yml.template src/main/resources/application-local.yml
-   ```
-
-2. Edit `application-local.yml` and uncomment/set your custom paths:
-   ```yaml
-   logging:
-     file:
-       name: /custom/path/to/application.log
-       path: /custom/path/to/logs
-   ```
-
-3. Run with the local profile:
-   ```bash
-   SPRING_PROFILES_ACTIVE=dev,local mvn spring-boot:run
-   ```
-
-**Alternative: Environment Variables**
-```bash
-export LOGGING_FILE_PATH=/custom/logs
-mvn spring-boot:run
-```
-
-This approach prevents git conflicts - your `application-local.yml` file is excluded from version control, so `git pull` won't overwrite your local settings.
-
-### Database Setup
-
-The backend uses PostgreSQL with Flyway for schema migrations. Follow these steps to set up the database:
-
-#### Prerequisites
-
-- PostgreSQL 12 or later installed and running
-
-#### Setup Steps
-
-1. **Start PostgreSQL Service** (if not already running):
-   ```bash
-   # Linux/Ubuntu
-   sudo service postgresql start
-
-   # macOS with Homebrew
-   brew services start postgresql
-   ```
-
-2. **Create Database and User**:
-   ```bash
-   # Connect to PostgreSQL as superuser
    sudo -u postgres psql
-
-   # Execute these commands in the psql prompt:
+   ```
+   ```sql
    CREATE DATABASE lift_simulator;
    CREATE USER lift_admin WITH PASSWORD 'YOUR_SECURE_PASSWORD';
    GRANT ALL PRIVILEGES ON DATABASE lift_simulator TO lift_admin;
@@ -651,521 +40,236 @@ The backend uses PostgreSQL with Flyway for schema migrations. Follow these step
    GRANT ALL ON SCHEMA lift_simulator TO lift_admin;
    \q
    ```
-
-3. **Configure Application Settings**:
-
-   Create your local configuration file from the template:
+2. **Configure application settings** — copy the template and set your database password:
    ```bash
    cp src/main/resources/application-dev.yml.template src/main/resources/application-dev.yml
    ```
-
-   **Edit** `src/main/resources/application-dev.yml` and replace `CHANGE_ME` with your database password:
-   ```yaml
-   spring:
-     datasource:
-       password: YOUR_SECURE_PASSWORD  # Replace CHANGE_ME with the password you set above
-   ```
-
-   **Important:**
-   - The file `application-dev.yml` is excluded from version control (listed in `.gitignore`)
-   - Never commit this file - it contains your local credentials
-   - The template file (`application-dev.yml.template`) is version controlled for reference
-
-   **Alternative: Environment Variables**
-
-   You can override database credentials using environment variables instead of editing the file:
+   Edit `application-dev.yml` and replace `CHANGE_ME` under `spring.datasource.password`. This file is excluded from version control.
+3. **Start the backend** with the `dev` profile so it loads `application-dev.yml` (the first run downloads dependencies and applies Flyway migrations):
    ```bash
-   export DB_USERNAME=lift_admin
-   export DB_PASSWORD=your_secure_password
-   mvn spring-boot:run
+   SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run
    ```
-
-   This is especially useful for CI/CD pipelines or Docker deployments.
-
-4. **Verify Database Connection**:
+   The backend listens on **http://localhost:8080**.
+4. **Start the frontend** in a new terminal:
    ```bash
-   psql -h localhost -U lift_admin -d lift_simulator
-   # Enter the password you set when prompted
+   cd frontend
+   npm install   # first time only
+   npm run dev
    ```
+   The frontend is served at **http://localhost:3000**.
+5. **Open** http://localhost:3000 — you should see the Lift Simulator dashboard.
 
-5. **Run the Application**:
-When you start the Spring Boot application, Flyway will automatically:
-   - Create the `lift_simulator` schema (if it does not exist yet)
-   - Create the `flyway_schema_history` table inside the `lift_simulator` schema
-   - Execute all pending migrations from `src/main/resources/db/migration/`
-   - Initialize the schema with the baseline version
+**Daily usage** (after first-time setup)
 
-#### Configuration Profiles
+1. Start PostgreSQL (if it is not already running as a service).
+2. Start the backend: `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` (from the project root).
+3. Start the frontend: `cd frontend && npm run dev` (in a separate terminal).
+4. Open http://localhost:3000 in your browser.
 
-The application supports different profiles for different environments:
+**Sample configurations** live in `src/main/resources/scenarios/`: `basic-office-building.json` (10-floor, 2-lift), `high-rise-residential.json` (30-floor, 4-lift), and `invalid-example.json` (validation errors, for testing).
 
-- **dev**: Uses local PostgreSQL with connection pooling
-  - **Template**: `src/main/resources/application-dev.yml.template` (version controlled)
-  - **Local Config**: `src/main/resources/application-dev.yml` (create from template, **not** version controlled)
-  - Database: `localhost:5432/lift_simulator`
-  - Default user: `lift_admin` (customizable in your local config)
+**UAT testing** — follow the 14 detailed scenarios in [docs/UAT-TEST-SCENARIOS.md](docs/UAT-TEST-SCENARIOS.md) (estimated 2–3 hours, with expected results, pass/fail criteria, and a sign-off checklist).
 
-- **local** (optional): For local-only overrides without git conflicts
-  - **Template**: `src/main/resources/application-local.yml.template` (version controlled)
-  - **Local Config**: `src/main/resources/application-local.yml` (create from template, **not** version controlled)
-  - **Use case**: Override log paths, server ports, or other settings locally
-  - **Activation**: `SPRING_PROFILES_ACTIVE=dev,local` (combine with dev profile)
-  - **Benefits**:
-    - Your custom settings won't be overwritten by `git pull`
-    - No git merge conflicts for environment-specific config
-    - Each developer can have different local settings
+**Quick troubleshooting** — most setup failures are: database not running (check credentials in `application-dev.yml`), a port conflict (8080 and 3000 must be free), the wrong Node version (`node --version`), or a migration failure (requires PostgreSQL 12+). See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for the full guide.
 
-**Using Multiple Profiles:**
-```bash
-# Activate both dev and local profiles
-SPRING_PROFILES_ACTIVE=dev,local mvn spring-boot:run
-```
+## Admin Interface
 
-**Using a Different Profile:**
-```bash
-# Use production profile
-SPRING_PROFILES_ACTIVE=prod mvn spring-boot:run
-```
+The project ships a Spring Boot backend (`Lift Config Service`) and a React single-page admin UI.
 
-#### Database Schema
+The **frontend admin UI** provides:
+- **Dashboard** — overview of lift systems with quick statistics
+- **Lift Systems Management** — full CRUD with list and detail views
+- **Version Management** — create, publish, and archive versioned configurations with pagination, sorting, and filtering
+- **Scenario Builder** — template-based or custom passenger-flow scenarios with server-side validation and an advanced JSON editor
+- **Simulator Runs** — launch published versions with scenarios, poll status, and review KPI results with artefact downloads and CLI reproduction hints
+- **Configuration Editor & Validator** — edit and validate configuration JSON before publishing
+- **Health Check** — monitor backend service status
 
-The schema includes the following tables:
-- `lift_simulator` - Application schema for lift configuration data (Flyway default)
-- `lift_simulator.flyway_schema_history` - Flyway migration tracking (auto-created)
-- `lift_system` - Lift system configuration roots
-- `lift_system_version` - Versioned lift configuration payloads (JSONB)
-- `scenario` - Reusable test scenarios with JSON configuration (V3)
-- `simulation_run` - Individual simulation run executions with lifecycle tracking (V3)
+Run the UI in dev mode with `cd frontend && npm install && npm run dev`; it proxies API requests to the backend on port 8080. See [frontend/README.md](frontend/README.md) for setup, environment variables, and the type-definition (JSDoc) workflow.
 
-The `simulation_run` table tracks run status (CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED) and maintains referential integrity with lift systems and versions for persistent run lifecycle management.
-
-### JPA Entities and Repositories
-
-For developer-facing details about JPA entities, Spring Data repositories, verification runner usage, and repository integration tests, see [docs/DEVELOPER-GUIDE.md#jpa-entities-and-repositories](docs/DEVELOPER-GUIDE.md#jpa-entities-and-repositories).
-
-
-#### Troubleshooting
-
-For connection, permission, and migration errors, see [docs/TROUBLESHOOTING.md — Database Troubleshooting](docs/TROUBLESHOOTING.md#database-troubleshooting).
-
-### Database Backup and Restore
-
-For backup and restore procedures, see [docs/DATABASE-BACKUP.md](docs/DATABASE-BACKUP.md).
-
-## Features
-
-The current version (v0.49.11) includes comprehensive lift simulation and configuration management capabilities:
-
-### Admin Backend & REST API
-
-- **Spring Boot Admin Backend**: RESTful API service for managing lift system configurations
-- **PostgreSQL Database**: Persistent storage with Flyway migrations for schema management
-- **JPA Entities**: Object-relational mapping with `LiftSystem` and `LiftSystemVersion` entities
-- **JSONB Support**: PostgreSQL JSONB field mapping for flexible configuration storage
-- **Lift System CRUD APIs**: Create, read, update, and delete lift systems
-- **Version Management APIs**: Create, update, list, and retrieve versioned configurations
-- **Configuration Validation Framework**: Comprehensive validation for configuration JSON
-  - Structural validation with Jakarta Bean Validation
-  - Domain validation for business rules and cross-field constraints
-  - Detailed error messages with field-level granularity
-  - Warning system for suboptimal configurations
-  - Validation blocking on create, update, and publish operations
-- **Publish/Archive Workflow**: Automatic state management for configuration versions
-  - Publish mechanism with validation enforcement
-  - Automatically archives previously published version when publishing a new one
-  - Guarantees exactly one published configuration per lift system
-  - Transactional workflow ensures atomic state transitions
-- **Runtime Configuration API**: Dedicated read-only API for published configurations
-  - Retrieves currently published configuration by system key
-  - Filters for published status only (hides drafts and archived versions)
-  - Streamlined response format optimized for runtime consumption
-  - Clear separation between admin and runtime concerns
-- **Global Exception Handling**: Consistent error responses with appropriate HTTP status codes
-- **Health Endpoints**: Custom health checks and Spring Boot Actuator integration
-- **Persistent File-Based Logging**: Comprehensive logging system for debugging and audit trails
-  - Dual output: console (development) and rotating files (debugging/audit)
-  - Automatic log rotation (daily and size-based) to prevent disk exhaustion
-  - Separate error log for quick issue identification
-  - Full stack traces preserved for all exceptions
-  - Profile-specific log levels (verbose dev, production-ready prod)
-  - Configurable via Logback with retention policies (30/90 days)
-
-### React Admin UI
-
-- **Modern Web Interface**: React 19.2.0 single-page application for managing lift systems
-- **Vite Build Tool**: Fast development server with HMR and optimized production builds
-- **Client-Side Routing**: React Router 7.12.0 for seamless navigation without page reloads
-- **Dashboard**: Overview page with system statistics and quick actions
-- **Lift Systems Management**: Complete CRUD interface for lift system configurations
-  - List view with responsive card grid showing all lift systems
-  - System key, display name, and description display
-  - Version count and creation timestamps
-  - Create new system modal with form validation
-  - Detail view for individual lift systems with full metadata
-  - Edit system metadata (display name and description)
-  - Delete system functionality with confirmation
-  - Navigation between list and detail views
-- **Version Management**: Comprehensive version control interface
-  - List all versions for a lift system (ordered by version number)
-  - Status badges (DRAFT, PUBLISHED, ARCHIVED) with color coding
-  - Create new versions with explicit validation workflow
-    - JSON configuration input with dedicated validation button
-    - Real-time validation with detailed error and warning messages
-    - Create Version button disabled until configuration is validated
-    - Split-pane layout with editor and validation results side-by-side
-    - Prevents creation of invalid configurations
-  - Edit existing version configurations with dedicated editor
-  - Publish versions with validation and automatic archiving
-  - View version configuration with expandable JSON display
-  - Published/created timestamps for version tracking
-- **Configuration Editor**: Full-featured JSON editor for version configurations
-  - Edit configuration JSON with syntax highlighting in monospace textarea
-  - Save draft functionality to persist changes without publishing
-  - Real-time validation with detailed error and warning messages
-  - Publish action with validation enforcement (blocks invalid configs)
-  - Visual indicators for unsaved changes and last saved time
-  - Read-only view for published and archived versions
-  - Split-pane layout with editor and validation results side-by-side
-- **Simulator Runs**: End-to-end UI flow for executing and monitoring simulation runs
-  - **Run Simulator button**: Discoverable button next to each published version for quick access to simulation workflow
-  - Launch runs from published versions (via button) or the dedicated Simulator landing page
-  - Automatic preselection of lift system and version when launching from published version list
-  - Poll run status with elapsed time, progress, and status indicators
-  - Results rendering with KPI cards, per-lift/per-floor tables, artefact downloads, and CLI reproduction details
-- **Configuration Validator**: Interactive JSON editor for validating configurations
-  - Live editing with syntax highlighting
-  - Real-time validation using backend API
-  - Sample configuration template provided
-  - Split-pane layout showing editor and validation results
-  - Distinct display of errors and warnings with field-level detail
-  - Clear indication of validation success with optional warnings
-- **Health Check Monitor**: Real-time backend service health monitoring
-  - Status display with color-coded indicators
-  - Manual refresh capability
-  - Detailed health information and error handling
-- **API Integration**: Axios-based HTTP client with centralized service methods
-  - Connects to all backend endpoints
-  - Global error handling with interceptors
-  - Structured API layer for maintainability
-- **Development Proxy**: Vite proxy configuration for seamless local development
-  - Frontend on port 3000, backend on port 8080
-  - Automatic proxying of `/api/*` and `/actuator/*` requests
-  - Eliminates CORS issues during development
-- **JSDoc Documentation**: Comprehensive inline documentation for all components
-  - Detailed JSDoc comments on all React components and utility functions
-  - Props documentation with types and descriptions
-  - Function parameter and return type annotations
-  - Usage examples and feature descriptions
-  - Improved IDE autocomplete and type hints
-  - Enhanced developer onboarding and code maintainability
-
-### Lift Simulation Engine
-
-- **Selectable Controller Strategy**: Choose between NEAREST_REQUEST_ROUTING or DIRECTIONAL_SCAN algorithms
-- **NaiveLiftController**: Simple controller that services the nearest pending request
-- **DirectionalScanLiftController**: SCAN-style algorithm with direction commitment and batching
-- **Hall-Call Direction Filtering**: Direction-aware request servicing for efficient routing
-- **Request Lifecycle Management**: First-class request entities with explicit lifecycle states (CREATED → QUEUED → ASSIGNED → SERVING → COMPLETED/CANCELLED)
-- **Request Cancellation**: Cancel any request by ID before completion
-- **Out-of-Service Functionality**: Safe maintenance mode with automatic request cancellation
-- **Formal Lift State Machine**: 7 explicit states (IDLE, MOVING_UP, MOVING_DOWN, DOORS_OPENING, DOORS_OPEN, DOORS_CLOSING, OUT_OF_SERVICE)
-- **State Transition Validation**: Enforces valid state changes for both lift and requests
-- **Single Source of Truth**: LiftStatus is the only stored state; all other properties are derived
-- **Tick-Based Simulation**: Discrete time advancement with configurable durations
-- **Simulation Clock**: Deterministic tick progression for reproducible simulations
-- **Configurable Door Behavior**:
-  - Symmetric door opening/closing as transitional states
-  - Configurable door transition, dwell, and reopen window timing
-- **Configurable Idle Parking**: STAY_AT_CURRENT_FLOOR or PARK_TO_HOME_FLOOR modes
-- **Request Types**: Car calls (from inside) and hall calls (from floor with direction)
-- **Safety Enforcement**: Prevents moving with doors open or opening doors while moving
-
-### Testing & Quality
-
-- **Comprehensive Test Coverage**: 80%+ line coverage requirement with JaCoCo
-- **Unit Tests**: Extensive unit tests for controllers, services, and domain logic
-- **Integration Tests**: Full Spring context testing for REST APIs and repositories
-- **Scenario Tests**: Realistic multi-request routing scenarios for both controller strategies
-- **Playwright E2E Tests**: Browser smoke and feature tests for lift systems, scenarios, simulator flows, health checks, and configuration validation run against a live backend in CI
-- **Code Quality Tools**: Checkstyle, SpotBugs, OWASP Dependency Check
-
-### Developer Tools
-
-- **Scenario Runner**: Scripted simulations with tick-based events and lifecycle summaries
-- **Console Output**: Tick-by-tick lift state visualization with request lifecycle tracking
-- **Request Lifecycle Visibility**: Compact status display (Q:n, A:n, S:n) and summary tables
-- **Command-Line Configuration**: Configurable controller strategy and simulation parameters
-- **EditorConfig**: Consistent code formatting across editors
-
-### Documentation
-
-- **Comprehensive README**: Setup guides and usage examples with a concise API overview
-- **REST API Reference**: Dedicated endpoint reference in [docs/API.md](docs/API.md) with request/response examples and workflow details
-- **Architecture Decision Records (ADRs)**: 9 ADRs documenting key design decisions
-- **Changelog**: Detailed version history following Keep a Changelog format
-- **Inline Documentation**: Extensive Javadoc comments throughout the codebase
-
-Future iterations will add multi-lift systems, coordination algorithms, request priorities, and more realistic constraints.
-
-## Prerequisites
-
-- Java 17 or later
-- Maven 3.6 or later
-
-## Backend Dependency Baseline
-
-- Spring Boot: 3.4.13
-- PostgreSQL JDBC driver: 42.7.11
-- Flyway PostgreSQL database module: managed by Spring Boot dependency management
-
-## Development Setup
-
-This project includes an `.editorconfig` file to maintain consistent code formatting across different editors and IDEs. Most modern editors support EditorConfig either natively or through plugins:
-
-- **IntelliJ IDEA**: Built-in support (no plugin needed)
-- **VS Code**: Install the "EditorConfig for VS Code" extension
-- **Eclipse**: Install the EditorConfig Eclipse plugin
-- **Vim/Neovim**: Install the editorconfig-vim plugin
-
-The configuration enforces:
-- UTF-8 encoding
-- LF line endings (ensures compatibility across Windows, Linux, and macOS)
-- 4-space indentation for Java and XML files
-- Trailing whitespace removal
-- Final newline insertion
-
-## Commenting Style
-
-Use the following commenting conventions throughout the codebase:
-
-- Use `//` for single-line comments.
-- Use `/* */` for multi-line explanations.
-- End comment sentences with periods.
-- Use complete sentences for non-obvious logic.
+The **backend REST API** is versioned under `/api/v1` (base URL `http://localhost:8080/api/v1`). Interactive documentation is available via Swagger UI at `/api/v1/swagger-ui.html` and OpenAPI JSON at `/api/v1/api-docs`. For the complete endpoint reference — lift systems, versions, scenarios, simulation runs, runtime configuration, health, request/response examples, and CLI/UI run workflows — see [docs/API.md](docs/API.md). See [ADR-0020](docs/decisions/0020-url-based-api-versioning.md) for the versioning strategy.
 
 ## Building the Project
 
-Compile the project using Maven:
-
+Compile the project:
 ```bash
 mvn clean compile
 ```
 
-To build a backend-only JAR package:
-
+Build a backend-only JAR:
 ```bash
 mvn clean package
 ```
 
-To build a deployable Spring Boot JAR that also serves the React admin UI from `/`, activate the Maven frontend profile:
-
+Build a deployable Spring Boot JAR that also serves the React admin UI from `/` (activates the Maven `frontend` profile):
 ```bash
 mvn -Pfrontend clean package
+java -jar target/lift-simulator-0.49.12.jar
 ```
 
-The frontend profile installs Node.js 20.19.0 for compatibility with Vite 7, runs `npm ci`, builds the Vite bundle, copies the generated files into `target/classes/static/`, and packages them under `BOOT-INF/classes/static/` in `target/lift-simulator-0.49.11.jar`. The CI backend and E2E packaging jobs use this profile so downloaded CI JAR artifacts include the frontend assets. You can verify the packaged UI with:
-
+The `frontend` profile installs Node.js 20.19.0 (for Vite 7 compatibility), runs `npm ci`, builds the Vite bundle, and packages it under `BOOT-INF/classes/static/`. CI uses this profile so downloaded JAR artifacts include the frontend assets. Verify the packaged UI with:
 ```bash
-jar tf target/lift-simulator-0.49.11.jar | grep '^BOOT-INF/classes/static/'
+jar tf target/lift-simulator-0.49.12.jar | grep '^BOOT-INF/classes/static/'
 ```
 
-## Running Tests
+## Running the Application
 
-Run the test suite with Maven:
+Run the demo simulation:
+```bash
+mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
+```
 
+Or run the built JAR. The demo selects a controller strategy via command-line arguments:
+```bash
+java -cp target/lift-simulator-0.49.12.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.49.12.jar com.liftsimulator.Main --strategy=directional-scan
+```
+`--strategy` accepts `nearest-request` (default) or `directional-scan`. The demo runs a pre-configured scenario and prints the simulation state at each tick.
+
+Run a lightweight simulation from a published configuration JSON:
+```bash
+java -cp target/lift-simulator-0.49.12.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+```
+Optional flags: `--ticks=<count>` (default 25) and `-h, --help`.
+
+Run scripted scenarios with the scenario runner — either the bundled demo or a custom file:
+```bash
+mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
+java -cp target/lift-simulator-0.49.12.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+```
+
+Scenario files are plain text with metadata and tick-based event lines (parsing enforces limits of 1,000,000 ticks and 10,000 events per file); the controller strategy and idle-parking mode are taken from the scenario file. For the scenario file format and metadata keys, see the [CLI run workflows in docs/API.md](docs/API.md#cli-and-ui-run-workflows). For simulation engine internals, controller strategy behaviour, out-of-service handling, request modelling, and the lift state machine, see [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md).
+
+## Testing
+
+Run the full test suite:
 ```bash
 mvn test
 ```
 
 > **No local PostgreSQL needed.** Integration tests provision a throwaway PostgreSQL container via
-> [Testcontainers](https://java.testcontainers.org/) and run the real Flyway migrations against it.
-> The only requirement is a running **Docker** daemon. (CI continues to use its PostgreSQL service
-> container — see `.github/workflows/ci.yml`.)
+> [Testcontainers](https://java.testcontainers.org/) and run the real Flyway migrations against it; the only
+> requirement is a running **Docker** daemon. (CI uses its own PostgreSQL service container — see
+> `.github/workflows/ci.yml`.)
 
-The test suite includes integration coverage for the scenario system using fixtures in
-`src/test/resources/scenarios`.
-It also exercises simulation run lifecycle polling and batch input generator contracts
-with golden files under `src/test/resources/batch-input`.
+The suite spans several levels:
 
-### Frontend E2E Tests
+- **Unit tests** — controllers, services, and domain logic: request lifecycle transitions (`LiftRequestTest`), nearest-request and directional-scan routing, door handling and cancellation (`NaiveLiftControllerTest`, `DirectionalScanLiftControllerTest`), and the tick mechanism (`SimulationEngineTest`).
+- **Integration tests** — full Spring context for REST APIs and repositories, including multi-request scenarios, dynamic request addition during movement, cancellation, and out-of-service handling (`DirectionalScanIntegrationTest`, `LiftRequestLifecycleTest`). Scenario fixtures live in `src/test/resources/scenarios` and batch-input golden files under `src/test/resources/batch-input`.
+- **Scenario tests** — `ControllerScenarioTest` exercises realistic multi-request routing for both controller strategies via a deterministic `ScenarioHarness`, guarding against behavioural regressions.
+- **Playwright E2E tests** — browser smoke and feature tests under `frontend/e2e` run against the React dev server (port 3000) and a live backend (port 8080). See [ADR-0014](docs/decisions/0014-playwright-e2e-testing.md).
 
-Playwright E2E tests live under `frontend/e2e` and run against the React dev server on port 3000. Feature tests require a live backend on port 8080; the tests check `http://localhost:8080/api/v1/health` before exercising lift systems, scenarios, simulator runs, and configuration validation.
-
-For local E2E runs, start the backend with credentials in one terminal and then run the frontend tests with matching Playwright-only variables in another terminal:
-
+Run a single class or method:
 ```bash
-# Terminal 1: repository root
-export ADMIN_USERNAME=admin
-export ADMIN_PASSWORD=local-admin-password
-export API_KEY=local-api-key
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
+mvn test -Dtest=ControllerScenarioTest
+mvn test -Dtest=ControllerScenarioTest#testDirectionalScan_CanonicalScenario_FromReadme
 ```
 
+The project enforces a minimum **80% line coverage** through JaCoCo; the build fails below this threshold. Generate the coverage report (available at `target/site/jacoco/index.html`):
+```bash
+mvn jacoco:report
+```
+
+For local frontend E2E runs, start the backend with credentials in one terminal, then run Playwright with matching variables in another:
+```bash
+# Terminal 1: repository root
+export ADMIN_USERNAME=admin ADMIN_PASSWORD=local-admin-password API_KEY=local-api-key
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
 ```bash
 # Terminal 2: frontend/
 E2E_ADMIN_USERNAME=admin E2E_ADMIN_PASSWORD=local-admin-password E2E_API_KEY=local-api-key npm test
 ```
-
-In CI, the `e2e-playwright` job provisions PostgreSQL, packages the backend with `mvn -Pfrontend package -DskipTests`, verifies the JAR contains `BOOT-INF/classes/static/` frontend assets, starts the packaged application, waits for both `/api/v1/health` and the packaged React root page at `/`, runs `npm test` in `frontend/`, injects test-only auth through Playwright and the Vite dev proxy, and uploads Playwright HTML reports plus failure artifacts.
+In CI, the `e2e-playwright` job packages the backend with `mvn -Pfrontend package -DskipTests`, starts the packaged application, waits for `/api/v1/health` and the React root page, and runs `npm test` in `frontend/`.
 
 ## Quality Checks
 
-Run code style checks:
-
 ```bash
-mvn checkstyle:check
-```
-
-Run static analysis:
-
-```bash
-mvn spotbugs:check
+mvn checkstyle:check        # code style
+mvn spotbugs:check          # static analysis
+mvn dependency-check:check  # dependency vulnerability scan
 ```
 
 SpotBugs suppressions are limited to Spring-managed dependency injection in service constructors.
 
-Run dependency vulnerability checks:
+## Configuration
 
+The backend is configured via YAML files under `src/main/resources/`:
+
+- `application.yml` — base defaults (application name `lift-config-service`, server port `8080`, actuator `health`/`info`, root log level `INFO` and `DEBUG` for `com.liftsimulator`)
+- `application-dev.yml` — development secrets and database settings (copy from `application-dev.yml.template`)
+- `application-local.yml` — optional local-only overrides such as log paths or ports (copy from `application-local.yml.template`)
+
+No profile is active in the checked-in base configuration, so launches must set `SPRING_PROFILES_ACTIVE` explicitly — for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for development, `SPRING_PROFILES_ACTIVE=dev,local` to add local overrides (your `application-local.yml` is git-ignored, so `git pull` will not overwrite it), or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.49.12.jar` for production. This prevents a development profile from masking production configuration mistakes.
+
+OpenAPI/Swagger access is controlled by `security.openapi.public-access` (`SECURITY_OPENAPI_PUBLIC_ACCESS`). It defaults to `true` to preserve local development behaviour; set it to `false` to require ADMIN-role authentication for the documentation endpoints.
+
+## Authentication
+
+The backend requires authentication for API access through two mechanisms:
+
+- **Admin APIs** (`/api/v1/**` except `/api/v1/health`) use **HTTP Basic** authentication. Set credentials under `security.admin` in `application-dev.yml`, or via the `ADMIN_USERNAME` / `ADMIN_PASSWORD` environment variables.
+- **Runtime APIs** (`/api/v1/runtime/**`) use an **API key** in the `X-API-Key` header. Set `api.auth.key` (or the `API_KEY` environment variable); generate a key with `openssl rand -hex 32`.
+
+Public endpoints requiring no authentication are `/api/v1/health`, `/actuator/health`, `/actuator/info`, and static/frontend routes. Unauthenticated requests return HTTP 401; authenticated requests lacking permission return HTTP 403.
+
+Admin APIs support role-based access control with two roles: **ADMIN** (read and write) and **VIEWER** (read-only). Write methods (POST, PUT, PATCH, DELETE) require ADMIN; configure multiple users under `security.users` in `application-dev.yml`. Always keep credentials out of version control, prefer environment variables in production, and use HTTPS so HTTP Basic credentials are not exposed.
+
+For runtime API-key setup and request/response examples, see [docs/API.md](docs/API.md). The security baseline, RBAC, and CORS/CSRF policies are documented in [ADR-0019](docs/decisions/0019-spring-security-baseline.md), [ADR-0021](docs/decisions/0021-role-based-access-control-rbac.md), and [ADR-0022](docs/decisions/0022-explicit-cors-csrf-policy.md).
+
+## Database Setup
+
+The backend uses PostgreSQL with Flyway for schema migrations (PostgreSQL 12+ required).
+
+1. **Start PostgreSQL** if it is not already running:
+   ```bash
+   sudo service postgresql start   # Linux/Ubuntu
+   brew services start postgresql  # macOS (Homebrew)
+   ```
+2. **Create the database, user, and schema** as shown in [Quick Start](#quick-start), or override credentials with the `DB_USERNAME` / `DB_PASSWORD` environment variables (useful for CI/CD pipelines and Docker deployments).
+3. **Verify the connection:**
+   ```bash
+   psql -h localhost -U lift_admin -d lift_simulator
+   ```
+
+On startup the application runs Flyway automatically: it creates the `lift_simulator` schema and the `flyway_schema_history` table, then applies all pending migrations from `src/main/resources/db/migration/`.
+
+The schema includes `lift_system` and `lift_system_version` (versioned JSONB configurations), `scenario` (reusable test scenarios), and `simulation_run`, which tracks run status (CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED) with referential integrity to lift systems and versions. See [ADR-0007](docs/decisions/0007-postgresql-flyway-integration.md) and [ADR-0008](docs/decisions/0008-jpa-entities-and-jsonb-mapping.md) for the persistence design.
+
+For JPA entities, repositories, and verification-runner usage, see [docs/DEVELOPER-GUIDE.md#jpa-entities-and-repositories](docs/DEVELOPER-GUIDE.md#jpa-entities-and-repositories). For connection, permission, and migration errors, see [docs/TROUBLESHOOTING.md#database-troubleshooting](docs/TROUBLESHOOTING.md#database-troubleshooting). For backup and restore procedures, see [docs/DATABASE-BACKUP.md](docs/DATABASE-BACKUP.md).
+
+## Logging
+
+The backend uses Logback for logging with both console and file output. All logs are persisted to the `logs/` directory in the project root:
+
+- **Main application log** (`logs/application.log`) — all levels; rotates at 10MB or daily at midnight; 30 days / 1GB retention; archived as `logs/application-YYYY-MM-DD.N.log`.
+- **Error log** (`logs/application-error.log`) — ERROR level only; rotates at 10MB or daily; 90 days / 500MB retention.
+
+Logging is configured via `src/main/resources/logback-spring.xml`, with profile-specific levels (DEBUG and verbose SQL for `dev`, INFO for `prod`) and full stack traces for all exceptions. Log files (`*.log`) are git-ignored; the `logs/` directory is preserved with a `.gitkeep` file.
+
+View and search logs:
 ```bash
-mvn dependency-check:check
+tail -f logs/application.log          # follow the main log
+tail -f logs/application-error.log    # follow errors only
+grep "ERROR" logs/application-*.log   # search across archives
 ```
 
-Generate coverage reports while running tests:
-
-```bash
-mvn test jacoco:report
+To customise log locations without git conflicts, set them in `application-local.yml` (run with `SPRING_PROFILES_ACTIVE=dev,local`):
+```yaml
+logging:
+  file:
+    name: /custom/path/to/application.log
+    path: /custom/path/to/logs
 ```
+Alternatively, set `LOGGING_FILE_PATH` as an environment variable.
 
-## Running the Simulation
+## Development Setup
 
-Run the demo simulation:
+This project ships an `.editorconfig` for consistent formatting across editors and IDEs (IntelliJ IDEA has built-in support; VS Code, Eclipse, and Vim/Neovim use plugins). It enforces UTF-8 encoding, LF line endings, 4-space indentation for Java and XML, trailing-whitespace removal, and final-newline insertion.
 
-```bash
-mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
-```
+**Backend dependency baseline:** Spring Boot 3.4.13, PostgreSQL JDBC driver 42.7.11, and the Flyway PostgreSQL module (managed by Spring Boot dependency management).
 
-Or run directly after building:
-
-```bash
-java -cp target/lift-simulator-0.49.11.jar com.liftsimulator.Main
-```
-
-### Configuring the Demo
-
-The demo supports selecting the controller strategy via command-line arguments:
-
-```bash
-# Show help
-java -cp target/lift-simulator-0.49.11.jar com.liftsimulator.Main --help
-
-# Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.49.11.jar com.liftsimulator.Main
-
-# Run with directional scan controller
-java -cp target/lift-simulator-0.49.11.jar com.liftsimulator.Main --strategy=directional-scan
-
-# Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.49.11.jar com.liftsimulator.Main --strategy=nearest-request
-```
-
-**Available Options:**
-- `-h, --help`: Show help message
-- `--strategy=<strategy>`: Controller strategy to use (nearest-request or directional-scan)
-
-The demo runs a pre-configured scenario with several lift requests and displays the simulation state at each tick.
-
-### Running a Configured Simulation
-
-Use a published configuration JSON file to run a lightweight simulation:
-
-```bash
-java -cp target/lift-simulator-0.49.11.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
-```
-
-Optional flags:
-- `--ticks=<count>`: Number of ticks to simulate (default: 25)
-- `-h, --help`: Show help message
-
-## Running Scripted Scenarios
-
-Run the scenario runner with the bundled demo scenario:
-
-```bash
-mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
-```
-
-Or run a custom scenario file:
-
-```bash
-java -cp target/lift-simulator-0.49.11.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
-```
-
-### Configuring Scenario Runner
-
-The scenario runner relies on scenario file settings for controller strategy and idle parking mode. The only command-line option is the help flag:
-
-```bash
-# Show help
-java -cp target/lift-simulator-0.49.11.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
-
-# Run with default demo scenario
-java -cp target/lift-simulator-0.49.11.jar com.liftsimulator.scenario.ScenarioRunnerMain
-
-# Run a custom scenario
-java -cp target/lift-simulator-0.49.11.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
-```
-
-**Available Options:**
-- `-h, --help`: Show help message
-
-Scenario file settings take precedence over defaults.
-
-Scenario files are plain text with metadata and event lines. Scenario parsing enforces limits of 1,000,000 ticks and 10,000 events per file:
-
-```text
-name: Demo scenario - multiple events
-ticks: 30
-min_floor: 0
-max_floor: 10
-initial_floor: 0
-travel_ticks_per_floor: 1
-door_transition_ticks: 2
-door_dwell_ticks: 3
-door_reopen_window_ticks: 2
-home_floor: 0
-idle_timeout_ticks: 5
-
-0, car_call, req1, 3
-2, hall_call, req2, 7, UP
-4, car_call, req3, 5
-10, cancel, req3
-15, out_of_service
-20, return_to_service
-22, car_call, req4, 4
-```
-
-Each event executes at the specified tick, and the output logs the tick, floor, lift state, and pending requests to help validate complex behavior. After the run, a request lifecycle summary table lists when each request was created and completed or cancelled.
-The scenario runner automatically expands the default floor range (0–10) to include any requested floors, so negative floors in scripted scenarios are supported without extra configuration.
-If you set any of the scenario parameters (e.g., `door_dwell_ticks`), the scenario runner uses them to configure the controller and simulation engine.
-
-Scenario metadata keys:
-
-- **min_floor** / **max_floor**: floor bounds used for the simulation (still expanded to include requested floors)
-- **initial_floor**: starting floor for the lift (clamped to the final min/max range)
-- **travel_ticks_per_floor**: ticks required to travel one floor
-- **door_transition_ticks**: ticks required to open or close doors
-- **door_dwell_ticks**: ticks doors stay open before closing
-- **door_reopen_window_ticks**: ticks during door closing when doors can reopen (0 disables)
-- **home_floor**: idle parking floor for the naive controller (used with `PARK_TO_HOME_FLOOR` mode)
-- **idle_timeout_ticks**: idle ticks before the parking behavior activates
-- **idle_parking_mode**: parking behavior when idle (`STAY_AT_CURRENT_FLOOR` or `PARK_TO_HOME_FLOOR`, optional, defaults to `PARK_TO_HOME_FLOOR`)
-- **controller_strategy**: controller algorithm to use (`NEAREST_REQUEST_ROUTING` or `DIRECTIONAL_SCAN`, optional, defaults to `NEAREST_REQUEST_ROUTING`)
-
-Note: If a `return_to_service` event is scheduled while the lift is still completing the out-of-service shutdown sequence, the return is deferred until the lift reaches the `OUT_OF_SERVICE` state.
-
-## Simulation Engine and Developer Reference
-
-For simulation engine internals, programmatic configuration, controller strategy behavior, out-of-service handling, request modeling, and the lift state machine, see [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md).
+**Commenting style:** use `//` for single-line comments and `/* */` for multi-line explanations, write non-obvious logic as complete sentences, and end comment sentences with periods.
 
 ## Project Structure
 
@@ -1176,17 +280,14 @@ src/
 │   ├── admin/                             # Spring Boot admin backend
 │   │   ├── LiftConfigServiceApplication.java  # Spring Boot main class
 │   │   ├── controller/                    # REST controllers
-│   │   │   └── HealthController.java      # Health check endpoint
 │   │   ├── service/                       # Business logic services
 │   │   ├── repository/                    # Data access layer
 │   │   ├── domain/                        # Backend domain models
 │   │   └── dto/                           # Data transfer objects
 │   ├── domain/                            # Core domain models
 │   │   ├── Action.java                    # Actions the lift can take
-│   │   ├── CarCall.java                   # Request from inside lift (legacy)
 │   │   ├── Direction.java                 # UP, DOWN, IDLE
 │   │   ├── DoorState.java                 # OPEN, CLOSED
-│   │   ├── HallCall.java                  # Request from a floor (legacy)
 │   │   ├── LiftRequest.java               # First-class request entity
 │   │   ├── LiftState.java                 # Immutable lift state
 │   │   ├── LiftStatus.java                # Lift state machine enum
@@ -1195,85 +296,15 @@ src/
 │   └── engine/                            # Simulation engine and controllers
 │       ├── LiftController.java            # Controller interface
 │       ├── NaiveLiftController.java       # Simple nearest-floor controller
-│       ├── SimpleLiftController.java      # Alternative basic controller
 │       ├── SimulationClock.java           # Deterministic simulation clock
 │       ├── SimulationEngine.java          # Tick-based simulation engine
 │       └── StateTransitionValidator.java  # State machine validator
-└── test/java/com/liftsimulator/
-    ├── domain/
-    │   └── LiftRequestTest.java                 # Request lifecycle tests
-    ├── engine/
-    │   ├── ControllerScenarioTest.java          # Scenario-based routing tests
-    │   ├── DirectionalScanIntegrationTest.java  # Directional controller integration tests
-    │   ├── LiftRequestLifecycleTest.java        # Controller integration tests
-    │   ├── NaiveLiftControllerTest.java         # Controller unit tests
-    │   ├── OutOfServiceTest.java                # Out-of-service tests
-    │   └── SimulationEngineTest.java            # Engine unit tests
-    └── ...                                      # Additional tests
+└── test/java/com/liftsimulator/           # Unit, integration, and scenario tests
 ```
-
-## Testing
-
-The project includes comprehensive test coverage across multiple levels:
-
-### Unit Tests
-- **LiftRequestTest**: Tests request lifecycle state transitions (CREATED → QUEUED → ASSIGNED → SERVING → COMPLETED)
-- **NaiveLiftControllerTest**: 50+ tests covering nearest-request logic, door handling, cancellation, idle parking
-- **DirectionalScanLiftControllerTest**: Tests direction selection, commitment, reversal, hall call filtering
-- **SimulationEngineTest**: Tests tick mechanism, state transitions, door cycles
-
-### Integration Tests
-- **DirectionalScanIntegrationTest**: End-to-end tests with SimulationEngine
-  - Multi-request scenarios
-  - Dynamic request addition during movement
-  - Cancellation handling
-  - Out-of-service scenarios
-  - Direction-aware scheduling validation
-- **LiftRequestLifecycleTest**: Tests request state tracking through full simulation
-
-### Scenario Tests (NEW)
-- **ControllerScenarioTest**: Comprehensive scenario-based test suite for both controller strategies
-  - Provides `ScenarioHarness` utility for deterministic scenario testing
-  - Tests realistic multi-request routing scenarios
-  - Validates service order, direction transitions, and queue management
-  - Protects both NaiveLift and DirectionalScan strategies from behavioral regressions
-
-**Example scenario tests:**
-- **Canonical DirectionalScan scenario**: Validates deferred hall call servicing (from README documentation)
-- **Mixed calls while moving**: Tests direction commitment with requests above and below current position
-- **Idle → commit → clear → reverse**: Tests complete direction selection and reversal cycle
-- **Comparison tests**: Runs identical scenarios with both strategies to highlight behavioral differences
-
-### Running Tests
-
-Run all tests:
-```bash
-mvn test
-```
-
-Run specific test class:
-```bash
-mvn test -Dtest=ControllerScenarioTest
-```
-
-Run specific test method:
-```bash
-mvn test -Dtest=ControllerScenarioTest#testDirectionalScan_CanonicalScenario_FromReadme
-```
-
-Generate coverage report (requires 80% line coverage):
-```bash
-mvn jacoco:report
-# Report available at target/site/jacoco/index.html
-```
-
-### Test Coverage Requirements
-
-The project enforces a minimum of **80% line coverage** through JaCoCo. The build will fail if coverage falls below this threshold.
 
 ## Architecture Decisions
 
-See [docs/decisions](docs/decisions) for Architecture Decision Records (ADRs). For developer-facing simulation engine and persistence internals associated with these decisions, see [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md).
+See [docs/decisions](docs/decisions) for the full Architecture Decision Records (ADRs). For developer-facing simulation engine and persistence internals associated with these decisions, see [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md).
 
 - [ADR-0001: Tick-Based Simulation](docs/decisions/0001-tick-based-simulation.md)
 - [ADR-0002: Single Source of Truth for Lift State](docs/decisions/0002-single-source-of-truth-state.md)
