@@ -24,6 +24,9 @@ public class OpenApiConfig {
     @Value("${spring.application.name:lift-config-service}")
     private String applicationName;
 
+    @Value("${version:unknown}")
+    private String projectVersion;
+
     /**
      * Configures the OpenAPI specification with API metadata and security schemes.
      *
@@ -37,7 +40,7 @@ public class OpenApiConfig {
                         .description("REST API for managing lift systems, scenarios, and simulation runs. "
                                 + "The Lift Simulator provides endpoints for creating and managing lift "
                                 + "configurations, running simulations, and retrieving results.")
-                        .version("0.46.0")
+                        .version(projectVersion)
                         .contact(new Contact()
                                 .name("Lift Simulator Team")
                                 .url("https://github.com/manoj-bhaskaran/lift-simulator"))
