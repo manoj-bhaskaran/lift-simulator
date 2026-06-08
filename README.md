@@ -45,9 +45,9 @@ The simulation is text-based and designed for clarity over visual appeal.
    cp src/main/resources/application-dev.yml.template src/main/resources/application-dev.yml
    ```
    Edit `application-dev.yml` and replace `CHANGE_ME` under `spring.datasource.password`. This file is excluded from version control.
-3. **Start the backend** (the first run downloads dependencies and applies Flyway migrations):
+3. **Start the backend** with the `dev` profile so it loads `application-dev.yml` (the first run downloads dependencies and applies Flyway migrations):
    ```bash
-   mvn spring-boot:run
+   SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run
    ```
    The backend listens on **http://localhost:8080**.
 4. **Start the frontend** in a new terminal:
@@ -62,7 +62,7 @@ The simulation is text-based and designed for clarity over visual appeal.
 **Daily usage** (after first-time setup)
 
 1. Start PostgreSQL (if it is not already running as a service).
-2. Start the backend: `mvn spring-boot:run` (from the project root).
+2. Start the backend: `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` (from the project root).
 3. Start the frontend: `cd frontend && npm run dev` (in a separate terminal).
 4. Open http://localhost:3000 in your browser.
 
@@ -209,7 +209,7 @@ OpenAPI/Swagger access is controlled by `security.openapi.public-access` (`SECUR
 The backend requires authentication for API access through two mechanisms:
 
 - **Admin APIs** (`/api/v1/**` except `/api/v1/health`) use **HTTP Basic** authentication. Set credentials under `security.admin` in `application-dev.yml`, or via the `ADMIN_USERNAME` / `ADMIN_PASSWORD` environment variables.
-- **Runtime APIs** (`/api/v1/runtime/**`) use an **API key** in the `X-API-Key` header. Set `security.api-key` (or the `API_KEY` environment variable); generate a key with `openssl rand -hex 32`.
+- **Runtime APIs** (`/api/v1/runtime/**`) use an **API key** in the `X-API-Key` header. Set `api.auth.key` (or the `API_KEY` environment variable); generate a key with `openssl rand -hex 32`.
 
 Public endpoints requiring no authentication are `/api/v1/health`, `/actuator/health`, `/actuator/info`, and static/frontend routes. Unauthenticated requests return HTTP 401; authenticated requests lacking permission return HTTP 403.
 
