@@ -6,8 +6,18 @@ if ! git diff --cached --name-only | grep -q '^pom\.xml$'; then
   exit 0
 fi
 
+# Resolve python binary (python3 on Linux/Mac, may be python on Windows)
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON=python3
+elif command -v python >/dev/null 2>&1; then
+  PYTHON=python
+else
+  echo "[pre-commit] ERROR: python3/python not found — cannot sync version." >&2
+  exit 1
+fi
+
 # Extract project version from staged pom.xml (avoids reading parent <version>)
-VERSION=$(git show :pom.xml | python3 -c "
+VERSION=$(git show :pom.xml | $PYTHON -c "
 import sys, xml.etree.ElementTree as ET
 tree = ET.parse(sys.stdin)
 root = tree.getroot()
@@ -24,7 +34,7 @@ mvn generate-resources -q
 if command -v npm >/dev/null 2>&1; then
   npm --prefix frontend version "${VERSION}" --no-git-tag-version --allow-same-version --silent
 else
-  python3 - "${VERSION}" <<'PYEOF'
+  $PYTHON - "${VERSION}" <<'PYEOF'
 import json, sys
 path = 'frontend/package.json'
 with open(path) as f:
