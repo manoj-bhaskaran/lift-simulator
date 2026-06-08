@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.49.8] - 2026-06-08
+
+### Changed
+- **Changelog proportionality cleanup**: Condensed over-detailed mid-history entries for 0.42.0, 0.29.0, 0.27.0, 0.26.0, 0.25.0, 0.24.0, 0.22.0, 0.20.0, and 0.19.0 to one-line summaries with no more than five high-value bullets each, while preserving user-facing behavior notes and confirming no breaking-change or security notes were present in those entries.
+- **Patch version bump**: Updated repository package metadata, frontend package metadata, and README version references from 0.49.7 to 0.49.8.
+
 ## [0.49.7] - 2026-06-08
 
 ### Fixed
@@ -68,7 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.49.2] - 2026-06-07
 
 ### Changed
-- **Changelog maintenance**: Condensed historical entries from 0.30.0 through 0.46.0 by removing boilerplate implementation, benefit, documentation, and notes sub-sections while preserving user-facing changes and breaking-change summaries.
+- **Changelog maintenance**: Condensed selected historical entries from 0.30.0 through 0.46.0 by removing boilerplate implementation, benefit, documentation, and notes sub-sections while preserving user-facing changes and breaking-change summaries.
 - **Patch version bump**: Updated repository package metadata and README version references from 0.49.1 to 0.49.2.
 
 ## [0.49.1] - 2026-06-07
@@ -143,66 +149,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.42.0] - 2026-01-19
 
-### Added
-- **Version Display in Footer**: Current version number is now displayed in the footer on all screens
-  - Version number pulled from package.json and displayed as "Version X.Y.Z"
-  - Visible on all application screens through the shared Layout component
-  - Provides users with quick reference to the current application version
-- **Lift System Edit Functionality**: Added ability to edit lift system name and description after creation
-  - New "Edit System" button in the Lift System Detail page header
-  - EditSystemModal component for editing system metadata
-  - System Key field is displayed as read-only (cannot be changed after creation)
-  - Edit modal pre-populates with current system values
-  - Form validation matching backend constraints (displayName 1-200 chars, description max 5000 chars)
-  - Automatic refresh of system details after successful update
-  - Responsive design with mobile support
+UI consistency release for configuration-version workflows, lift-system editing, footer version display, and related frontend/backend fixes.
 
-### Changed
-- **Create New Version UI Standardization**: Standardized action buttons between Edit Config and Create New Version for consistency
-  - Added "Validate" button to Create New Version form to match Edit Config workflow
-  - "Create Version" button now disabled after any configuration change until validation is completed
-  - Split-pane layout with configuration editor on left and validation results panel on right
-  - Real-time validation feedback with detailed error and warning messages
-  - Validation state tracking (validating, validationResult, hasConfigChanges)
-  - Configuration changes clear previous validation results
-  - Users must explicitly validate before creating a version, preventing invalid configurations
-  - Consistent user experience across all configuration editing workflows
-  - Improved error prevention by requiring validation before version creation
-- **Footer Copyright Notice**: Updated the footer copyright to reference Manoj Bhaskaran.
-
-### Fixed
-- **Lift System Service Tests**: Mocked version-count repository dependencies to prevent null pointer failures in LiftSystemService unit tests.
-- **Lift System Service Tests**: Corrected mocked version-count return typing to fix test compilation.
-- **Run Simulator UI Feedback**: Clicking Run Simulator now shows a graceful message noting the feature is unavailable until a future release.
-- **Version Search Matching**: Searching by version number now returns only exact version matches instead of versions that merely contain the digits.
-- **Create Version Validation Workflow**: Added a Validate button to the Create New Version form and require a successful validation before enabling version creation.
-- **Create Version Button Action**: Wired the Create Version button to trigger version creation even when the wrapper is a non-form container.
-- **Lift System Detail Lint Errors**: Removed unused handlers and wired the create-version form submit to fix ESLint no-unused-vars/no-undef violations.
-- **Dashboard Versions Metric**: Lift system responses now include `versionCount`, allowing the dashboard and lift system list to accurately total configuration versions.
-- **Config Validation Compilation**: Corrected the Jackson exception reference type to restore compilation in ConfigValidationService.
-- **Configuration Validation Error Messages**: Non-numeric values in configuration fields now display clear, user-friendly error messages
-  - When entering non-numeric values (e.g., "A", "abc", true) for numeric fields, the system now shows: "Field 'fieldName' must be a numeric value, got 'value'"
-  - Previously displayed generic JSON parsing errors: "Invalid JSON format: Unrecognized token..."
-  - Added specific handling for InvalidFormatException and MismatchedInputException in ConfigValidationService
-  - Error messages now include the field name and the actual invalid value provided
-  - Improves user experience when creating or editing lift system version configurations
-- **Dashboard Label Consistency**: Updated label from "Total Versions" to "Configuration Versions" in the Overview section for consistency with terminology used throughout the application
-- **Dashboard Versions Metric**: Lift system responses now include `versionCount`, allowing the dashboard and lift system list to accurately total configuration versions.
-- **Configuration Validator**: Fixed validation failure on valid configurations in standalone Configuration Validator tool
-  - ConfigValidator page now correctly sends validation requests as `{ config: "..." }` instead of parsed JSON object
-  - Resolves "Unknown property 'floors' is not allowed" error when validating configurations
-  - Improved validation result display to show errors and warnings distinctly
-  - Validation errors now display field name and message in a clear, structured format
-  - Warnings are shown separately from errors when configuration is valid but has potential issues
-- **Lift Systems Version Counts**: Lift system list responses now compute version totals per system to prevent zeroed counts on the Lift Systems page.
-- **Versions Status Sort Order**: Fixed incorrect sort order when sorting versions by status in Manage Versions screen
-  - When selecting "Published" order (desc), versions now correctly display: Published, Draft, Archived
-  - When selecting "Archived" order (asc), versions now correctly display: Archived, Draft, Published
-  - Previously the sort order was reversed, showing Archived first when "Published" was selected and vice versa
-- **Create New Version Form HTML Tag Mismatch**: Fixed mismatched HTML tags in LiftSystemDetail component
-  - Corrected closing `</form>` tag to `</div>` tag on line 543 to match opening `<div className="create-version-form">` tag
-  - Resolved build error: "Unexpected closing 'form' tag does not match opening 'div' tag"
-  - Build now completes successfully without transformation errors
+- Added a package-driven footer version display and Manoj Bhaskaran copyright notice across the shared layout.
+- Added lift-system metadata editing with a read-only system key, validation-aligned form constraints, detail refresh, and responsive modal UI.
+- Standardized Create New Version and Edit Config flows by requiring explicit validation before creation and presenting split-pane validation results.
+- Fixed user-facing UI/API behavior for simulator availability messaging, exact version search, version-count totals, dashboard labels, version-status sort order, and standalone configuration validation display.
+- Fixed test, lint, compilation, and build blockers in lift-system services, config validation, create-version form handling, and HTML tag structure.
 
 ## [0.41.4] - 2026-01-18
 
@@ -479,42 +432,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.29.0] - 2026-01-12
 
-### Added
-- **React Admin UI Scaffold**: Modern web-based admin interface for managing lift systems
-  - Built with React 19.2.0, Vite 7.2.4, React Router 7.12.0, and Axios 1.13.2
-  - Client-side routing with four main pages: Dashboard, Lift Systems, Config Validator, Health Check
-  - Responsive layout with header navigation and footer
-  - API client with Axios configured for backend integration
-  - Vite dev server proxy configuration for seamless local development (eliminates CORS issues)
-- **Dashboard Page**: Overview of lift systems with statistics and quick actions
-  - Displays total lift systems and version counts
-  - Quick action buttons for common tasks
-  - Real-time data fetching from backend API
-- **Lift Systems Page**: Management interface for lift system configurations
-  - Grid view of all lift systems with metadata
-  - Placeholder UI for create, view, and manage operations
-  - Display of system key, description, version count, and creation date
-- **Config Validator Page**: Interactive JSON configuration validation tool
-  - Live configuration editor with sample configuration
-  - Real-time validation feedback with error and success states
-  - Utilizes backend validation API endpoint
-  - Split-pane layout with editor and results
-- **Health Check Page**: Backend service monitoring interface
-  - Real-time health status display
-  - Manual refresh capability
-  - Detailed health information display
-  - Error handling for service unavailability
-- **Frontend Documentation**: Comprehensive README for frontend setup
-  - Installation and setup instructions
-  - Development workflow documentation
-  - API integration details
-  - Project structure overview
-  - Troubleshooting guide
-  - Production build instructions
+React admin UI scaffold release introducing the first web interface for lift-system management and backend monitoring.
 
-### Changed
-- Updated main README with frontend setup instructions and overview
-- Added frontend section to Admin Interface documentation
+- Added a React 19/Vite frontend with client-side routing, shared layout, Axios API client, and local dev-server proxying.
+- Added Dashboard, Lift Systems, Config Validator, and Health Check pages for common administrative workflows.
+- Added interactive JSON validation and backend health-monitoring screens with live API feedback.
+- Added frontend README coverage for setup, development workflow, API integration, troubleshooting, and production builds.
+- Updated the main README and admin-interface docs to include frontend setup and overview material.
 
 ## [0.28.0] - 2026-01-11
 
@@ -541,160 +465,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.27.0] - 2026-01-11
 
-### Added
-- **Configuration Validation Framework**: Comprehensive validation for lift system configuration JSON
-  - `LiftConfigDTO` record with Jakarta Bean Validation annotations for structural validation
-  - `ConfigValidationService` for domain-level validation logic
-  - Structural validation ensures all required fields are present and correctly typed
-  - Domain validation enforces business rules and cross-field constraints:
-    - Validates `doorReopenWindowTicks` does not exceed `doorTransitionTicks`
-    - Validates `homeFloor` is within valid floor range (0 to floors-1)
-    - Validates minimum values for all numeric fields
-    - Validates enum values for `controllerStrategy` and `idleParkingMode`
-  - Warning system for suboptimal configurations:
-    - Low `doorDwellTicks` values
-    - More lifts than floors
-    - Low `idleTimeoutTicks` with `PARK_TO_HOME_FLOOR` mode
-    - Zero `doorReopenWindowTicks` (disables door reopening)
-- **Validation REST API**: `POST /api/config/validate` endpoint
-  - Validates configuration JSON without persisting
-  - Returns structured errors and warnings
-  - Request: `ConfigValidationRequest` with config JSON string
-  - Response: `ConfigValidationResponse` with validation results
-- **Version Publishing API**: `POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`
-  - Publishes a version after validating its configuration
-  - Only versions with valid configurations can be published
-  - Returns 409 Conflict if version is already published
-  - Blocks publishing if configuration has validation errors
-- **Automatic Validation Integration**: Validation automatically enforced when:
-  - Creating new versions (`POST /api/lift-systems/{systemId}/versions`)
-  - Updating version configurations (`PUT /api/lift-systems/{systemId}/versions/{versionNumber}`)
-  - Publishing versions (`POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`)
-  - Returns 400 Bad Request with detailed validation errors if configuration is invalid
-- **Validation DTOs**: Type-safe validation response objects
-  - `ConfigValidationRequest` for validation endpoint requests
-  - `ConfigValidationResponse` with valid flag, errors list, and warnings list
-  - `ValidationIssue` record with field, message, and severity (ERROR or WARNING)
-- **Exception Handling**: Enhanced global exception handling
-  - `ConfigValidationException` for validation failures with detailed response
-  - `IllegalStateException` handler returning 409 Conflict for state errors (e.g., already published)
-  - `ConfigValidationException` handler returning validation response with 400 status
-- **Comprehensive Test Coverage**: Added `ConfigValidationServiceTest` with 15 unit tests for valid configs, malformed JSON, missing fields, invalid numeric and enum values, domain rules, warnings, and multiple-error responses.
-- **Version Validation Test Coverage**: Expanded `LiftSystemVersionServiceTest` with 6 additional tests covering publish success, already-published conflicts, validation failures during publish/create/update flows, and mocked validation dependencies.
+Configuration-validation release enforcing structural, domain, and publish-time checks for lift-system version JSON.
 
-### Changed
-- `LiftSystemVersionService` now validates configurations before saving
-  - Injected `ConfigValidationService` dependency
-  - `createVersion()` validates before creating
-  - `updateVersionConfig()` validates before updating
-  - `publishVersion()` validates before publishing
-- Version creation and updates now fail with 400 Bad Request if configuration is invalid
-- Global exception handler expanded to handle validation and state exceptions
+- Added `LiftConfigDTO`, `ConfigValidationService`, and validation DTOs for typed structural errors, domain rules, and warnings.
+- Added `POST /api/config/validate` for non-persistent configuration validation with structured errors and warnings.
+- Added version publishing validation through `POST /api/lift-systems/{systemId}/versions/{versionNumber}/publish`, including 409 responses for already-published versions.
+- Enforced validation during version create, update, and publish flows so invalid configurations return 400 responses with detailed validation results.
+- Expanded exception handling and tests for malformed JSON, domain rules, warnings, publish conflicts, and create/update validation failures.
 
 ## [0.26.0] - 2026-01-11
 
-### Added
-- **Lift System Versioning REST APIs**: Full REST API implementation for managing lift system versions
-  - `POST /api/lift-systems/{systemId}/versions` - Create new version with optional cloning from existing version
-  - `PUT /api/lift-systems/{systemId}/versions/{versionNumber}` - Update version configuration JSON
-  - `GET /api/lift-systems/{systemId}/versions` - List all versions for a lift system
-  - `GET /api/lift-systems/{systemId}/versions/{versionNumber}` - Get specific version by number
-- **Version Service Layer**: `LiftSystemVersionService` providing business logic for version operations
-  - Auto-incrementing version numbers per lift system
-  - Configuration cloning from existing versions
-  - Validation for lift system and version existence
-  - Transactional integrity for all write operations
-- **Version DTOs**: Type-safe API contracts for versioning
-  - `CreateVersionRequest` with validation (config required, optional cloneFromVersionNumber)
-  - `UpdateVersionConfigRequest` for config updates
-  - `VersionResponse` for consistent version API responses
-- **Comprehensive Test Coverage**: Unit and integration tests for versioning
-  - `LiftSystemVersionServiceTest`: 10 unit tests covering all service operations with mocks
-  - `LiftSystemVersionControllerTest`: 13 integration tests with full Spring context
-  - Tests for version creation, cloning, updating, listing, and retrieval
-  - Tests for version number auto-increment functionality
-  - Full coverage of success cases, error cases, and validation failures
+Lift-system versioning API release adding lifecycle management for configuration versions.
 
-### Changed
-- REST API now provides full version lifecycle management for lift system configurations
-- Version numbers automatically increment starting from 1 for each lift system
+- Added REST endpoints to create, update, list, and retrieve lift-system versions, including optional cloning from an existing version.
+- Added `LiftSystemVersionService` with per-system auto-incrementing version numbers, existence checks, and transactional writes.
+- Added typed request/response DTOs for version creation, configuration updates, and version responses.
+- Added unit and integration coverage for version creation, cloning, updating, listing, retrieval, auto-incrementing, error cases, and validation failures.
+- Updated the REST API behavior so lift-system configurations have full version lifecycle management starting at version number 1 per system.
 
 ## [0.25.0] - 2026-01-11
 
-### Added
-- **Lift System CRUD REST APIs**: Full REST API implementation for managing lift systems
-  - `POST /api/lift-systems` - Create new lift system with name and description
-  - `GET /api/lift-systems` - List all lift systems
-  - `GET /api/lift-systems/{id}` - Get lift system details by ID
-  - `PUT /api/lift-systems/{id}` - Update lift system metadata (name/description)
-  - `DELETE /api/lift-systems/{id}` - Delete lift system and all versions (cascade)
-- **Service Layer**: `LiftSystemService` providing business logic for CRUD operations
-  - Validation for duplicate system keys on creation
-  - Automatic audit timestamp management (createdAt, updatedAt)
-  - Transactional integrity for all write operations
-  - Proper error handling with custom exceptions
-- **Request/Response DTOs**: Type-safe API contracts
-  - `CreateLiftSystemRequest` with validation (systemKey, displayName, description)
-  - `UpdateLiftSystemRequest` for metadata updates (displayName, description)
-  - `LiftSystemResponse` for consistent API responses
-  - Jakarta validation annotations for request validation
-- **Global Exception Handling**: Consistent error responses across all endpoints
-  - `GlobalExceptionHandler` with `@RestControllerAdvice`
-  - 404 responses for `ResourceNotFoundException`
-  - 400 responses for validation errors and illegal arguments
-  - Structured error responses with status, message, and timestamp
-  - Field-level validation error details in responses
-- **Comprehensive Test Coverage**: Unit and integration tests
-  - `LiftSystemServiceTest`: 9 unit tests covering all service operations with mocks
-  - `LiftSystemControllerTest`: 10 integration tests with full Spring context
-  - Tests for success cases, error cases, and validation failures
-  - Full coverage of create, read, update, delete operations
-  - Transaction rollback testing with `@Transactional`
+Lift-system CRUD API release adding backend lifecycle management for lift-system records.
 
-### Changed
-- REST API now provides full lifecycle management for lift systems
-- Service layer enforces business rules and validation
-
-### Fixed
-- **SpotBugs warnings**: Resolved static analysis warnings
-  - `ValidationErrorResponse` now uses defensive copying with `Map.copyOf()` to prevent external modification
-  - Added `@SuppressFBWarnings` to `LiftSystemController` constructor for Spring DI false positive
-  - All medium-severity EI_EXPOSE_REP warnings resolved
+- Added create, list, detail, update, and delete endpoints for lift systems, with cascade deletion of versions.
+- Added `LiftSystemService` business logic for duplicate-key validation, audit timestamps, transactions, and error handling.
+- Added typed request/response DTOs with Jakarta validation for lift-system create and update flows.
+- Added global exception handling for 404, validation, and illegal-argument responses with structured error payloads.
+- Added service/controller tests and fixed SpotBugs representation-exposure warnings with defensive copies and targeted suppression for Spring DI.
 
 ## [0.24.0] - 2026-01-11
 
-### Added
-- **JPA Entities**: Created JPA entity mappings for database tables
-  - `LiftSystem` entity mapping `lift_system` table with automatic timestamp management
-  - `LiftSystemVersion` entity mapping `lift_system_version` table
-  - One-to-many relationship between LiftSystem and LiftSystemVersion with cascade operations
-  - Entity helper methods: `publish()`, `archive()` for version lifecycle management
-- **JSONB Field Mapping**: Implemented proper PostgreSQL JSONB support
-  - Uses `@JdbcTypeCode(SqlTypes.JSON)` annotation for Hibernate 6.x compatibility
-  - Stores lift configuration as JSON strings in the `config` column
-  - Full support for complex nested JSON structures
-- **Spring Data Repositories**: Created repository interfaces for database access
-  - `LiftSystemRepository` with custom query methods (`findBySystemKey`, `existsBySystemKey`)
-  - `LiftSystemVersionRepository` with comprehensive query methods:
-    - Find versions by lift system with ordering
-    - Find by version number
-    - Find published versions
-    - Find by status (DRAFT, PUBLISHED, ARCHIVED)
-    - Get maximum version number for a system
-- **Integration Tests**: Comprehensive test coverage for JPA operations
-  - `LiftSystemRepositoryTest`: 7 tests covering CRUD, queries, and updates
-  - `LiftSystemVersionRepositoryTest`: 12 tests covering versions, JSONB, relationships
-  - H2 in-memory database for testing with PostgreSQL compatibility mode
-  - Test configuration with dedicated test profile (`application-test.yml`)
-  - No external database required for running tests
-  - Tests verify basic save/find operations, JSONB mapping, and cascading deletes
-- **JPA Verification Runner**: Command-line tool to verify database operations
-  - Enabled with `--spring.jpa.verify=true` flag
-  - Tests all entity CRUD operations
-  - Validates JSONB field persistence and retrieval
-  - Verifies entity relationships and cascading
-  - Tests all custom repository query methods
-  - Located at `com.liftsimulator.admin.runner.JpaVerificationRunner`
+JPA persistence release mapping lift systems, versions, JSONB configuration, and repository access.
+
+- Added `LiftSystem` and `LiftSystemVersion` entities with timestamps, relationships, cascade operations, and version lifecycle helpers.
+- Added Hibernate 6 JSONB mapping for lift configuration storage in PostgreSQL.
+- Added Spring Data repositories with lookup, status, published-version, ordering, and max-version-number queries.
+- Added repository integration tests using an H2 PostgreSQL-compatible test profile for CRUD, JSONB, relationship, and cascade behavior.
+- Added an optional JPA verification runner for exercising entity CRUD, JSONB persistence, relationships, and custom repository queries.
 
 ## [0.23.1–0.23.6] - 2026-01-09
 
@@ -710,53 +517,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.22.0] - 2026-01-09
 
-### Added
-- **PostgreSQL database connectivity**: Integrated PostgreSQL as the primary database for the Lift Config Service backend
-  - Spring Data JPA for database access layer
-  - PostgreSQL JDBC driver for database connectivity
-  - HikariCP connection pooling (via Spring Boot defaults)
-  - Configured for local development with dedicated database and user
-- **Flyway database migration management**: Version-controlled schema migrations with automatic execution on startup
-  - Flyway Core for migration engine
-  - Flyway PostgreSQL-specific support
-  - Initial baseline migration (V1__init_schema.sql) creating schema metadata tracking table
-  - Automatic `flyway_schema_history` table creation for migration tracking
-  - Baseline-on-migrate enabled for smooth initial setup
-- **Profile-based configuration**: Separation of environment-specific settings
-  - New `application-dev.yml` for development profile with PostgreSQL configuration
-  - Default profile set to `dev` in `application.properties`
-  - Database connection settings: `localhost:5432/lift_simulator`
-  - Development credentials: `lift_admin` user with secure password
-  - Connection pool tuning: max 5 connections, min 2 idle, 30s timeout
-- **JPA/Hibernate configuration**: Optimized for development and PostgreSQL
-  - PostgreSQL dialect configured
-  - DDL auto-validation (validate-only, no auto-generation)
-  - SQL logging enabled in dev profile for debugging
-  - Formatted SQL output with comments
-  - Batch processing optimized (batch size 20, ordered inserts/updates)
-  - Open-in-view disabled for better transaction management
-- **Database schema initialization**:
-  - `schema_metadata` table tracking application versions and schema changes
-  - Indexed version column for efficient lookups
-  - Comprehensive table and column comments for documentation
-  - Initial version record (0.22.0) inserted automatically
-- **Documentation enhancements**:
-  - Comprehensive "Database Setup" section in README with step-by-step instructions
-  - PostgreSQL prerequisites and installation verification
-  - Database and user creation commands
-  - Connection verification steps
-  - Configuration profiles explanation
-  - Troubleshooting guide for common database issues
-  - Schema overview and future migration guidance
-- **Architecture Decision Record**: ADR-0007 documenting PostgreSQL and Flyway integration rationale (see `docs/decisions/0007-postgresql-flyway-integration.md`)
+PostgreSQL/Flyway integration release establishing persistent storage for the Lift Config Service backend.
 
-### Changed
-- `application.properties` now includes database-related settings
-- Spring Boot application now requires PostgreSQL database to start
-- README updated with database setup instructions and new version references
-
-### Fixed
-- Fixed Flyway PostgreSQL module dependency resolution and development database credential alignment across three patch releases.
+- Added PostgreSQL connectivity with Spring Data JPA, the PostgreSQL JDBC driver, and default HikariCP pooling.
+- Added Flyway migration management with a baseline schema migration and automatic migration tracking at startup.
+- Added profile-based development configuration for local PostgreSQL credentials, connection pooling, SQL logging, and Hibernate validation.
+- Added initial `schema_metadata` storage and ADR-0007 documenting the PostgreSQL/Flyway decision.
+- Updated README database setup guidance and fixed Flyway module resolution plus development credential alignment across patch releases.
 
 ## [0.21.0] - 2026-01-09
 
@@ -785,68 +552,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.20.0] - 2026-01-09
 
-### Added
-- **Comprehensive scenario-based test suite** for both controller strategies (ControllerScenarioTest.java)
-  - Reusable `ScenarioHarness` test utility for deterministic scenario testing
-    - Supports tick simulation with configurable timing parameters
-    - Request injection at specific ticks (hall calls and car calls)
-    - Service event logging with floor and direction tracking
-    - Assertion utilities for service order, direction transitions, and queue state
-  - **DirectionalScan controller scenario tests** validating scheduling outcomes:
-    - Canonical scenario from README documentation (floor 2 UP, floor 5 car, floor 3 DOWN)
-    - Mixed calls above and below while moving (validates direction commitment)
-    - Idle to direction selection to completion with multiple reversals
-    - Single direction multiple stops (validates batching efficiency)
-    - Alternating directions with hall and car calls
-    - Service order precisely asserted with expected floor sequences
-    - Direction transitions validated (UP sweep, reversal, DOWN sweep)
-  - **NaiveLift controller scenario tests** protecting current behavior:
-    - Nearest-first routing validation
-    - Back-and-forth movement patterns (demonstrates inefficiency vs directional)
-    - Mixed call types (hall and car calls)
-    - Dynamic request addition during movement
-    - Single request baseline test
-  - **Comparison test** running identical scenario with both strategies to highlight differences
-- All scenario tests verify:
-  - Deterministic and reliable execution
-  - All requests reach COMPLETED state
-  - Queue is fully cleared after scenario completion
-  - No lost or duplicated requests
+Scenario-test release adding deterministic coverage for controller routing behavior across realistic multi-request flows.
 
-### Changed
-- Test suite now provides comprehensive coverage of realistic multi-request routing scenarios
-- Both controller strategies protected against behavioral regressions through scenario tests
+- Added a reusable `ScenarioHarness` for tick simulation, timed request injection, service-event logging, and queue/service assertions.
+- Added DirectionalScan scenario tests for documented examples, calls above/below the lift, reversals, batching, alternating directions, and service order.
+- Added NaiveLift scenario tests for nearest-first routing, back-and-forth behavior, mixed call types, dynamic additions, and baseline requests.
+- Added comparison coverage running identical scenarios against both strategies.
+- Verified scenario tests complete all requests, clear queues, and prevent lost or duplicated servicing.
 
 ## [0.19.0] - 2026-01-09
 
-### Added
-- **Directional/SCAN controller integration**: DirectionalScanLiftController is now fully integrated with the simulation lifecycle
-  - Accepts new requests during movement and schedules them according to directional rules
-  - Recomputes next target stop dynamically without breaking invariants
-  - Updates targets appropriately at floor arrivals and door cycles
-  - Maintains key invariants: no duplicate servicing, no lost requests
-  - Full compatibility with existing door open/close timing semantics
-- Command-line flag `--strategy=<strategy>` for Main demo application to select controller strategy
-  - Valid values: `nearest-request` (default), `directional-scan`
-  - Example: `java -jar lift-simulator.jar --strategy=directional-scan`
-- Comprehensive end-to-end integration tests for DirectionalScanLiftController (DirectionalScanIntegrationTest.java)
-  - Tests request acceptance during movement
-  - Tests proper direction-aware scheduling of hall calls
-  - Tests request cancellation handling
-  - Tests out-of-service and return-to-service scenarios
-  - Tests complex multi-request scenarios ensuring no lost requests
-  - Validates no duplicate servicing through state transition tracking
-- Detailed README documentation of controller strategies
-  - Comparison between Nearest Request Routing and Directional Scan algorithms
-  - Example scenarios demonstrating directional scan behavior
-  - Documentation of advantages and use cases for each strategy
-  - Clear explanation of hall call filtering and direction commitment
+Directional/SCAN controller release integrating direction-aware scheduling into the simulator lifecycle.
 
-### Changed
-- Main.java now supports `--strategy` command-line argument for controller selection
-- Main.java help text updated to document the new `--strategy` flag
-- README updated with comprehensive DirectionalScanLiftController documentation
-- README demo configuration section updated to show controller selection examples
+- Integrated `DirectionalScanLiftController` so new requests, floor arrivals, and door cycles update target stops without losing or duplicating requests.
+- Added `--strategy=<strategy>` to the Main demo with `nearest-request` as the default and `directional-scan` as an alternative.
+- Added end-to-end DirectionalScan integration tests for movement-time requests, hall-call scheduling, cancellation, service transitions, and out-of-service recovery.
+- Documented controller strategy tradeoffs, examples, hall-call filtering, and direction commitment in the README.
+- Updated Main help text and demo configuration docs for controller selection.
 
 ## [0.18.1] - 2026-01-12
 
