@@ -52,6 +52,41 @@ jobs:
       env:
         PGPASSWORD: liftpassword
 
+    - name: Verify version consistency
+      run: |
+        POM_VERSION=$(python3 -c "
+        import xml.etree.ElementTree as ET
+        tree = ET.parse('pom.xml')
+        root = tree.getroot()
+        ns = {'m': 'http://maven.apache.org/POM/4.0.0'}
+        print(root.find('m:version', ns).text)
+        ")
+        echo "POM version: $POM_VERSION"
+        FAILED=0
+
+        if ! grep -qF "Current version: **${POM_VERSION}**" README.md; then
+          echo "ERROR: README.md version does not match pom.xml ($POM_VERSION)"
+          FAILED=1
+        fi
+
+        for f in docs/*.md; do
+          if grep -qE 'lift-simulator-[0-9]+\.[0-9]+\.[0-9]+\.jar' "$f"; then
+            if ! grep -qF "lift-simulator-${POM_VERSION}.jar" "$f"; then
+              echo "ERROR: $f contains a stale JAR version (expected $POM_VERSION)"
+              FAILED=1
+            fi
+          fi
+        done
+
+        PKG_VERSION=$(python3 -c "import json; print(json.load(open('frontend/package.json'))['version'])")
+        if [ "$PKG_VERSION" != "$POM_VERSION" ]; then
+          echo "ERROR: frontend/package.json version ($PKG_VERSION) != pom.xml ($POM_VERSION)"
+          FAILED=1
+        fi
+
+        [ $FAILED -eq 0 ] && echo "All version references are consistent."
+        exit $FAILED
+
     - name: Build project
       run: mvn -q clean compile
 

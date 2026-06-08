@@ -443,3 +443,17 @@ Run the tests:
 ```bash
 mvn test -Dtest=LiftSystemRepositoryTest,LiftSystemVersionRepositoryTest
 ```
+
+## Git Hooks
+
+A pre-commit hook lives in `.githooks/pre-commit`. It fires automatically whenever `pom.xml` is staged and keeps version references in `README.md`, `docs/*.md`, and `frontend/package.json` in sync — so you never need to update them by hand.
+
+Activate it once after cloning:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+**What the hook does:** when it detects a version change in the staged `pom.xml`, it runs `mvn generate-resources` to update `README.md` and `docs/*.md`, updates `frontend/package.json` (via `npm version` if available, otherwise Python), and re-stages all affected files before the commit is recorded.
+
+**CI safety net:** the CI pipeline includes a version-consistency check that fails the build if any of these files are out of sync with `pom.xml`, catching the rare case where the hook was bypassed with `--no-verify`.
