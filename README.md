@@ -242,7 +242,7 @@ To package the React UI with the Spring Boot backend and serve everything from *
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.49.3.jar
+java -jar target/lift-simulator-0.49.4.jar
 ```
 
 This builds the React app and bundles it into the Spring Boot JAR so the frontend is served from `/` and all API calls remain under `/api/v1`.
@@ -292,7 +292,7 @@ Or build and run the JAR:
 
 ```bash
 mvn clean package
-java -jar target/lift-simulator-0.49.3.jar
+java -jar target/lift-simulator-0.49.4.jar
 ```
 
 The backend will start on `http://localhost:8080`.
@@ -320,7 +320,7 @@ The backend is configured via YAML files under `src/main/resources/`:
 - Logging level: `INFO` (root), `DEBUG` (com.liftsimulator package)
 - Actuator endpoints: health, info
 
-No profile is activated by the checked-in base configuration. Development and production launches must set `SPRING_PROFILES_ACTIVE` explicitly, for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for local development or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.49.3.jar` for production. This prevents a development profile from masking production configuration mistakes.
+No profile is activated by the checked-in base configuration. Development and production launches must set `SPRING_PROFILES_ACTIVE` explicitly, for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for local development or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.49.4.jar` for production. This prevents a development profile from masking production configuration mistakes.
 
 OpenAPI/Swagger access is controlled by `security.openapi.public-access` (environment variable: `SECURITY_OPENAPI_PUBLIC_ACCESS`). The default is `true` to preserve current behavior; set it to `false` when documentation endpoints should require ADMIN-role authentication.
 
@@ -813,7 +813,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.49.3.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.49.4.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -1085,10 +1085,10 @@ To build a deployable Spring Boot JAR that also serves the React admin UI from `
 mvn -Pfrontend clean package
 ```
 
-The frontend profile installs Node.js 20.19.0 for compatibility with Vite 7, runs `npm ci`, builds the Vite bundle, copies the generated files into `target/classes/static/`, and packages them under `BOOT-INF/classes/static/` in `target/lift-simulator-0.49.3.jar`. The CI backend and E2E packaging jobs use this profile so downloaded CI JAR artifacts include the frontend assets. You can verify the packaged UI with:
+The frontend profile installs Node.js 20.19.0 for compatibility with Vite 7, runs `npm ci`, builds the Vite bundle, copies the generated files into `target/classes/static/`, and packages them under `BOOT-INF/classes/static/` in `target/lift-simulator-0.49.4.jar`. The CI backend and E2E packaging jobs use this profile so downloaded CI JAR artifacts include the frontend assets. You can verify the packaged UI with:
 
 ```bash
-jar tf target/lift-simulator-0.49.3.jar | grep '^BOOT-INF/classes/static/'
+jar tf target/lift-simulator-0.49.4.jar | grep '^BOOT-INF/classes/static/'
 ```
 
 ## Running Tests
@@ -1169,7 +1169,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 Or run directly after building:
 
 ```bash
-java -cp target/lift-simulator-0.49.3.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.49.4.jar com.liftsimulator.Main
 ```
 
 ### Configuring the Demo
@@ -1178,16 +1178,16 @@ The demo supports selecting the controller strategy via command-line arguments:
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.49.3.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.49.4.jar com.liftsimulator.Main --help
 
 # Run with the default demo configuration (nearest-request routing)
-java -cp target/lift-simulator-0.49.3.jar com.liftsimulator.Main
+java -cp target/lift-simulator-0.49.4.jar com.liftsimulator.Main
 
 # Run with directional scan controller
-java -cp target/lift-simulator-0.49.3.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.49.4.jar com.liftsimulator.Main --strategy=directional-scan
 
 # Run with nearest-request routing controller (explicit)
-java -cp target/lift-simulator-0.49.3.jar com.liftsimulator.Main --strategy=nearest-request
+java -cp target/lift-simulator-0.49.4.jar com.liftsimulator.Main --strategy=nearest-request
 ```
 
 **Available Options:**
@@ -1201,7 +1201,7 @@ The demo runs a pre-configured scenario with several lift requests and displays 
 Use a published configuration JSON file to run a lightweight simulation:
 
 ```bash
-java -cp target/lift-simulator-0.49.3.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.49.4.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 
 Optional flags:
@@ -1219,7 +1219,7 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
 Or run a custom scenario file:
 
 ```bash
-java -cp target/lift-simulator-0.49.3.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.49.4.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 ### Configuring Scenario Runner
@@ -1228,13 +1228,13 @@ The scenario runner relies on scenario file settings for controller strategy and
 
 ```bash
 # Show help
-java -cp target/lift-simulator-0.49.3.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
+java -cp target/lift-simulator-0.49.4.jar com.liftsimulator.scenario.ScenarioRunnerMain --help
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.49.3.jar com.liftsimulator.scenario.ScenarioRunnerMain
+java -cp target/lift-simulator-0.49.4.jar com.liftsimulator.scenario.ScenarioRunnerMain
 
 # Run a custom scenario
-java -cp target/lift-simulator-0.49.3.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
+java -cp target/lift-simulator-0.49.4.jar com.liftsimulator.scenario.ScenarioRunnerMain custom.scenario
 ```
 
 **Available Options:**
