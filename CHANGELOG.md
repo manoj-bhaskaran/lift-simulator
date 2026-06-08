@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.49.13] - 2026-06-08
+
+### Changed
+- **Workflow and troubleshooting guide extraction**: Moved the CLI and UI-run workflow guidance, artefact reproduction steps, Morning Rush walkthrough, and simulation-run troubleshooting scenarios from `docs/API.md` into the new `docs/Workflows-and-Troubleshooting.md`; the API reference now links to the dedicated guide from the Simulation Run APIs section.
+
 ## [0.49.12] - 2026-06-08
 
 ### Changed
