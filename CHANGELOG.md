@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.49.4] - 2026-06-08
+
+### Changed
+- **Troubleshooting guide extraction**: Moved the Quick Troubleshooting section and Database Troubleshooting content from `README.md` into a new `docs/TROUBLESHOOTING.md`; the README Quick Troubleshooting section is now a short list of the four most common issues with a link to the full guide.
+- **Database backup extraction**: Moved the Database Backup and Restore section from `README.md` into a new `docs/DATABASE-BACKUP.md`; the README Database Setup section now links to the dedicated file.
+- **Patch version bump**: Updated version references from 0.49.3 to 0.49.4.
+
 ## [0.49.3] - 2026-06-08
 
 ### Changed
