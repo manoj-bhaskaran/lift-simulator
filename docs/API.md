@@ -1025,7 +1025,7 @@ The command-line interface remains **fully backward compatible** with previous v
 Run a simulation using a `.scenario` file:
 
 ```bash
-java -cp target/lift-simulator-0.49.5.jar \
+java -cp target/lift-simulator-0.49.6.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   path/to/scenario.scenario
 ```
@@ -1039,12 +1039,12 @@ If no scenario file is provided, uses `demo.scenario` from the classpath.
 **Example:**
 ```bash
 # Run with a specific scenario file
-java -cp target/lift-simulator-0.49.5.jar \
+java -cp target/lift-simulator-0.49.6.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   my-test-scenario.scenario
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.49.5.jar \
+java -cp target/lift-simulator-0.49.6.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain
 ```
 
@@ -1083,7 +1083,7 @@ idle_timeout_ticks: 5
 Run a simulation using a JSON configuration file:
 
 ```bash
-java -cp target/lift-simulator-0.49.5.jar \
+java -cp target/lift-simulator-0.49.6.jar \
   com.liftsimulator.runtime.LocalSimulationMain \
   --config=path/to/config.json \
   --ticks=100
@@ -1096,7 +1096,7 @@ java -cp target/lift-simulator-0.49.5.jar \
 
 **Example:**
 ```bash
-java -cp target/lift-simulator-0.49.5.jar \
+java -cp target/lift-simulator-0.49.6.jar \
   com.liftsimulator.runtime.LocalSimulationMain \
   --config=building-a.json \
   --ticks=1000
@@ -1107,7 +1107,7 @@ java -cp target/lift-simulator-0.49.5.jar \
 Run a quick demo simulation with built-in configuration:
 
 ```bash
-java -cp target/lift-simulator-0.49.5.jar \
+java -cp target/lift-simulator-0.49.6.jar \
   com.liftsimulator.Main \
   --strategy=directional-scan
 ```
@@ -1383,7 +1383,7 @@ You can reproduce any UI-driven run using the CLI by downloading the generated i
 
 4. **Run via CLI**
    ```bash
-   java -cp target/lift-simulator-0.49.5.jar \
+   java -cp target/lift-simulator-0.49.6.jar \
      com.liftsimulator.scenario.ScenarioRunnerMain \
      run-42-reproduction.scenario
    ```
@@ -1428,7 +1428,7 @@ curl -X POST http://localhost:8080/api/batch/generate-input \
 **3. Run the scenario:**
 
 ```bash
-java -cp target/lift-simulator-0.49.5.jar \
+java -cp target/lift-simulator-0.49.6.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   run-42-reproduction.scenario
 ```
@@ -1520,7 +1520,7 @@ Where `run-123-inputs.json` contains:
 **2. Run via CLI:**
 
 ```bash
-java -cp target/lift-simulator-0.49.5.jar \
+java -cp target/lift-simulator-0.49.6.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   morning-rush-reproduction.scenario
 ```

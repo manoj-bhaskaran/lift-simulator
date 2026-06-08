@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.49.6] - 2026-06-08
+
+### Changed
+- **Developer guide extraction**: Moved simulation engine internals, request modeling, lift state machine, and JPA entity/repository reference material from `README.md` into the new `docs/DEVELOPER-GUIDE.md`; the README now links to the dedicated developer reference.
+- **Patch version bump**: Updated package metadata, frontend package metadata, README references, and extracted API documentation references from 0.49.5 to 0.49.6.
+
 ## [0.49.5] - 2026-06-08
 
 ### Changed
