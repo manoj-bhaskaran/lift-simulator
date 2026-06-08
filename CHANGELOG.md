@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Changelog proportionality cleanup**: Condensed over-detailed mid-history entries for 0.42.0, 0.29.0, 0.27.0, 0.26.0, 0.25.0, 0.24.0, 0.22.0, 0.20.0, and 0.19.0 to one-line summaries with no more than five high-value bullets each, while preserving user-facing behavior notes and confirming no breaking-change or security notes were present in those entries.
-- **Patch version bump**: Updated repository package metadata, frontend package metadata, and README version references from 0.49.7 to 0.49.8.
+- **Patch version bump**: Updated repository package metadata, frontend package metadata, README version references, and extracted documentation JAR examples from 0.49.7 to 0.49.8.
 
 ## [0.49.7] - 2026-06-08
 
