@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.49.14] - 2026-06-08
+
+### Changed
+- **NaiveLiftController test cleanup**: Removed duplicate, incorrect, and low-value controller tests, and corrected the mixed car/hall-call scenario so it starts between pending requests and asserts the lower-floor selection.
+
 ## [0.49.13] - 2026-06-08
 
 ### Changed

@@ -74,49 +74,6 @@ public class NaiveLiftControllerTest {
     }
 
     @Test
-    public void testIdleWhileDoorsOpenDuringDwellTime() {
-        // Add a car call to floor 5 and simulate arriving there.
-        controller.addCarCall(new CarCall(5));
-
-        // First, lift arrives and opens door (tick 0).
-        LiftState closedState = new LiftState(5, LiftStatus.IDLE);
-        Action openAction = controller.decideNextAction(closedState, 0);
-        assertEquals(Action.OPEN_DOOR, openAction);
-
-        // Doors are now open, should idle during dwell time (ticks 1-2).
-        LiftState openState = new LiftState(5, LiftStatus.DOORS_OPEN);
-
-        Action idleAction1 = controller.decideNextAction(openState, 1);
-        assertEquals(Action.IDLE, idleAction1);
-
-        Action idleAction2 = controller.decideNextAction(openState, 2);
-        assertEquals(Action.IDLE, idleAction2);
-    }
-
-    @Test
-    public void testCloseDoorAfterDwellTime() {
-        // Add a car call to floor 4 and simulate arriving there.
-        controller.addCarCall(new CarCall(4));
-
-        // First, lift arrives and opens door (tick 0).
-        LiftState closedState = new LiftState(4, LiftStatus.IDLE);
-        controller.decideNextAction(closedState, 0);
-
-        // Doors are now open, simulate dwell time passing.
-        LiftState openState = new LiftState(4, LiftStatus.DOORS_OPEN);
-
-        // Tick 1: still dwelling.
-        controller.decideNextAction(openState, 1);
-
-        // Tick 2: still dwelling.
-        controller.decideNextAction(openState, 2);
-
-        // Tick 3: controller should remain idle; engine handles close timing.
-        Action idleAction = controller.decideNextAction(openState, 3);
-        assertEquals(Action.IDLE, idleAction);
-    }
-
-    @Test
     public void testMoveUpToNearestRequestedFloor() {
         // Add a car call to floor 5.
         controller.addCarCall(new CarCall(5));
@@ -186,20 +143,6 @@ public class NaiveLiftControllerTest {
     }
 
     @Test
-    public void testTieBreakerPrefersLowerFloorForEquidistantMixedCalls() {
-        // Add equidistant mixed requests around the current floor.
-        controller.addCarCall(new CarCall(2));
-        controller.addHallCall(new HallCall(6, Direction.UP));
-
-        // Lift is at floor 4 with doors closed.
-        LiftState state = new LiftState(4, LiftStatus.IDLE);
-
-        // Floors 2 and 6 are both distance 2; should prefer lower floor (2).
-        Action action = controller.decideNextAction(state, 0);
-        assertEquals(Action.MOVE_DOWN, action);
-    }
-
-    @Test
     public void testRequestsClearedWhenServiced() {
         // Add a car call to floor 2.
         controller.addCarCall(new CarCall(2));
@@ -228,31 +171,17 @@ public class NaiveLiftControllerTest {
     }
 
     @Test
-    public void testMultipleRequestsHandled() {
-        // Add multiple car calls.
-        controller.addCarCall(new CarCall(3));
-        controller.addCarCall(new CarCall(5));
-
-        // Lift at floor 0.
-        LiftState state = new LiftState(0, LiftStatus.IDLE);
-
-        // Should move up towards nearest (floor 3).
-        Action action = controller.decideNextAction(state, 0);
-        assertEquals(Action.MOVE_UP, action);
-    }
-
-    @Test
     public void testMixedCarAndHallCalls() {
         // Add both car call and hall call.
         controller.addCarCall(new CarCall(4));
         controller.addHallCall(new HallCall(2, Direction.DOWN));
 
-        // Lift at floor 0.
-        LiftState state = new LiftState(0, LiftStatus.IDLE);
+        // Lift starts between both calls so the direction proves mixed requests are evaluated together.
+        LiftState state = new LiftState(3, LiftStatus.IDLE);
 
-        // Floor 2 is nearer (distance 2) than floor 4 (distance 4).
+        // Floors 2 and 4 are equidistant; the lower floor should be selected.
         Action action = controller.decideNextAction(state, 0);
-        assertEquals(Action.MOVE_UP, action);
+        assertEquals(Action.MOVE_DOWN, action);
     }
 
     @Test
@@ -608,47 +537,6 @@ public class NaiveLiftControllerTest {
     }
 
     @Test
-    public void testCancellationDoesNotCorruptQueue() {
-        // Add multiple requests.
-        LiftRequest request1 = LiftRequest.carCall(2);
-        LiftRequest request2 = LiftRequest.carCall(4);
-        LiftRequest request3 = LiftRequest.carCall(6);
-        LiftRequest request4 = LiftRequest.carCall(8);
-
-        controller.addRequest(request1);
-        controller.addRequest(request2);
-        controller.addRequest(request3);
-        controller.addRequest(request4);
-
-        assertEquals(4, controller.getRequests().size());
-
-        // Cancel middle requests.
-        controller.cancelRequest(request2.getId());
-        controller.cancelRequest(request3.getId());
-
-        assertEquals(2, controller.getRequests().size());
-
-        // Verify remaining requests are still valid.
-        LiftState state = new LiftState(0, LiftStatus.IDLE);
-        Action action = controller.decideNextAction(state, 0);
-        assertEquals(Action.MOVE_UP, action);
-
-        // Serve floor 2.
-        LiftState state2 = new LiftState(2, LiftStatus.IDLE);
-        controller.decideNextAction(state2, 1);
-
-        // Doors opening - completes floor 2 request.
-        LiftState opening2 = new LiftState(2, LiftStatus.DOORS_OPENING);
-        controller.decideNextAction(opening2, 2);
-
-        // Should go to floor 8 next (floor 4 and 6 were cancelled).
-        assertEquals(1, controller.getRequests().size());
-        LiftState afterFloor2 = new LiftState(2, LiftStatus.IDLE);
-        Action nextAction = controller.decideNextAction(afterFloor2, 3);
-        assertEquals(Action.MOVE_UP, nextAction);
-    }
-
-    @Test
     public void testIntegrationCancelWhileMoving() {
         // Integration test: cancel request while lift is moving towards it.
         SimulationEngine engine = SimulationEngine.builder(controller, 0, 10)
@@ -718,44 +606,6 @@ public class NaiveLiftControllerTest {
     }
 
     @Test
-    public void testStaysAtCurrentFloorWithStayMode() {
-        // Test that lift stays at current floor when mode is STAY_AT_CURRENT_FLOOR.
-        NaiveLiftController stayController = new NaiveLiftController(2, 3, IdleParkingMode.STAY_AT_CURRENT_FLOOR);
-        SimulationEngine engine = SimulationEngine.builder(stayController, 0, 5).build();
-
-        // Start at floor 0, idle timeout is 3 ticks.
-        assertEquals(0, engine.getCurrentState().getFloor());
-        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
-
-        // Wait through idle timeout period.
-        engine.tick(); // tick 0.
-        assertEquals(0, engine.getCurrentState().getFloor());
-        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
-
-        engine.tick(); // tick 1.
-        assertEquals(0, engine.getCurrentState().getFloor());
-        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
-
-        engine.tick(); // tick 2.
-        assertEquals(0, engine.getCurrentState().getFloor());
-        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
-
-        // After timeout, lift should STAY at floor 0 (not move to home floor 2).
-        engine.tick(); // tick 3 -> timeout reached.
-        assertEquals(0, engine.getCurrentState().getFloor());
-        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
-
-        // Continue idling at floor 0.
-        engine.tick(); // tick 4.
-        assertEquals(0, engine.getCurrentState().getFloor());
-        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
-
-        engine.tick(); // tick 5.
-        assertEquals(0, engine.getCurrentState().getFloor());
-        assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
-    }
-
-    @Test
     public void testStaysAtCurrentFloorWithStayModeAtNonZeroFloor() {
         // Test that lift stays at current floor even when not at floor 0.
         NaiveLiftController stayController = new NaiveLiftController(0, 2, IdleParkingMode.STAY_AT_CURRENT_FLOOR);
@@ -822,35 +672,6 @@ public class NaiveLiftControllerTest {
         engine.tick(); // tick 6.
         assertEquals(3, engine.getCurrentState().getFloor());
         assertEquals(LiftStatus.IDLE, engine.getCurrentState().getStatus());
-    }
-
-    @Test
-    public void testIdleTimeIncrementsSameForBothModes() {
-        // Test that idle time tracking works the same for both modes.
-        // Only difference is what happens after timeout.
-
-        // Create two controllers with same timeout but different modes.
-        NaiveLiftController stayController = new NaiveLiftController(5, 3, IdleParkingMode.STAY_AT_CURRENT_FLOOR);
-        NaiveLiftController parkController = new NaiveLiftController(5, 3, IdleParkingMode.PARK_TO_HOME_FLOOR);
-
-        // Both should idle for the same duration before acting.
-        LiftState idleState = new LiftState(2, LiftStatus.IDLE);
-
-        // Before timeout, both should remain idle.
-        assertEquals(Action.IDLE, stayController.decideNextAction(idleState, 0));
-        assertEquals(Action.IDLE, parkController.decideNextAction(idleState, 0));
-
-        assertEquals(Action.IDLE, stayController.decideNextAction(idleState, 1));
-        assertEquals(Action.IDLE, parkController.decideNextAction(idleState, 1));
-
-        assertEquals(Action.IDLE, stayController.decideNextAction(idleState, 2));
-        assertEquals(Action.IDLE, parkController.decideNextAction(idleState, 2));
-
-        // After timeout (tick 3), behavior differs:
-        // - STAY mode: remains idle at floor 2
-        // - PARK mode: moves toward home floor 5
-        assertEquals(Action.IDLE, stayController.decideNextAction(idleState, 3));
-        assertEquals(Action.MOVE_UP, parkController.decideNextAction(idleState, 3));
     }
 
     @Test
