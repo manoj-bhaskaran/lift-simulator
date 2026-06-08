@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.49.15] - 2026-06-08
+
+### Changed
+- **Changelog proportionality cleanup (round 2)**: Condensed the remaining over-detailed mid-history patch entries (0.41.4, 0.36.3, 0.33.5) from nested bullet lists into concise summaries of the user-facing fixes, dropping no-value churn bullets (import/JavaDoc-only changes), to match the proportionality treatment already applied across the rest of the changelog.
+
 ## [0.49.14] - 2026-06-08
 
 ### Changed
@@ -189,23 +194,9 @@ UI consistency release for configuration-version workflows, lift-system editing,
 ## [0.41.4] - 2026-01-18
 
 ### Fixed
-- **Draft Version Validation**: Fixed validation failure when editing DRAFT versions
-  - ConfigEditor now correctly sends validation requests as `{ config: "..." }` instead of parsed JSON object
-  - Resolves "Unknown property 'floors' is not allowed" error when validating DRAFT configurations
-  - Both handleValidate and handleSaveDraft validation calls updated to use correct request format
-  - Validation now works consistently with create and update operations
-- **Create Version Modal**: Version number is now displayed prominently at the top of the Create Version form
-  - Shows next version number (calculated as max existing version + 1, or 1 for first version)
-  - Added styled version number display with blue accent border
-  - Version number automatically updates based on existing versions
-- **Validation feedback**: Show descriptive validation feedback in the Create Version modal when configuration JSON fails backend validation.
-- **React Hooks and Linting**: Fixed React hooks exhaustive-deps warnings and ESLint errors
-  - Fixed missing dependency warnings in `useEffect` hooks in ConfigEditor.jsx and LiftSystemDetail.jsx
-  - Wrapped `loadData` and `loadSystemData` functions in `useCallback` to properly memoize them
-  - Added `useCallback` to dependency arrays to satisfy exhaustive-deps rules
-  - Removed unused `configObject` variables in ConfigEditor.jsx that violated no-unused-vars rule
-  - Changed to direct `JSON.parse()` calls where parsed object wasn't needed
-  - All ESLint warnings and errors now resolved
+- **Draft version validation**: ConfigEditor now sends validation requests as `{ config: "..." }` (raw string) rather than a parsed object, resolving the spurious "Unknown property 'floors' is not allowed" error when validating DRAFT versions; create and update flows now validate consistently.
+- **Create Version modal**: Display the next version number (max existing + 1) prominently at the top of the form, and surface descriptive backend validation feedback inline when the configuration JSON fails validation.
+- **React hooks/linting**: Memoized `loadData`/`loadSystemData` with `useCallback` and removed unused `configObject` variables, clearing all exhaustive-deps and no-unused-vars warnings.
 
 ## [0.41.2–0.41.3] - 2026-01-17
 
@@ -291,18 +282,11 @@ UI consistency release for configuration-version workflows, lift-system editing,
 
 ## [0.36.3] - 2026-01-16
 
-### Added
-- ConfigEditor now auto-validates configuration on save attempt to prevent saving invalid configurations
-- Validation errors are displayed immediately when attempting to save invalid configuration
-- Invalid configurations are now blocked from being saved until errors are fixed
-
 ### Changed
-- ConfigEditor save workflow improved: auto-runs validation before save if not already validated
-- LiftSystems error handling improved: removed unnecessary error throw that could cause unexpected behavior
+- **Auto-validate on save**: ConfigEditor now runs validation automatically before saving, blocking invalid configurations from being saved until errors are fixed and displaying validation errors immediately.
 
 ### Fixed
-- ConfigEditor no longer allows saving invalid configurations without validation
-- LiftSystems error handling no longer throws after displaying error in AlertModal, preventing duplicate error handling
+- LiftSystems no longer re-throws after showing an error in AlertModal, preventing duplicate error handling.
 
 ## [0.36.2] - 2026-01-16
 
@@ -372,19 +356,10 @@ UI consistency release for configuration-version workflows, lift-system editing,
 ## [0.33.5] - 2026-01-15
 
 ### Fixed
-- **Validation Error Handling**: Hardened GlobalExceptionHandler to safely handle both field-level and object-level validation constraints
-  - Fixed ClassCastException when processing object-level constraint violations (e.g., @AssertTrue on class methods)
-  - Updated handleValidationErrors method to check error type before casting
-  - Field-level errors (FieldError) now use field name as key
-  - Object-level errors (ObjectError) now use object name as key
-  - Both error types are properly surfaced in ValidationErrorResponse
+- **Validation error handling**: Hardened `GlobalExceptionHandler` to handle both field-level (`FieldError`) and object-level (`ObjectError`, e.g. `@AssertTrue` on class methods) constraints by checking error type before casting — fixing a `ClassCastException` on object-level violations — and surfaced both, keyed by field/object name, in `ValidationErrorResponse`.
 
 ### Added
-- **Comprehensive Validation Tests**: Added a 10-case `GlobalExceptionHandlerValidationTest` suite covering field-level, object-level, and mixed validation constraint handling.
-
-### Changed
-- GlobalExceptionHandler now imports ObjectError alongside FieldError
-- Enhanced JavaDoc comments in GlobalExceptionHandler for validation error handling
+- **Validation tests**: Added a 10-case `GlobalExceptionHandlerValidationTest` covering field-level, object-level, and mixed constraint handling.
 
 ## [0.33.4] - 2026-01-13
 
@@ -452,7 +427,6 @@ UI consistency release for configuration-version workflows, lift-system editing,
 ### Changed
 - README now documents lift-system CRUD and version-management capabilities.
 - Lift Systems page actions now navigate to the detail view.
-
 
 ## Earlier history
 
