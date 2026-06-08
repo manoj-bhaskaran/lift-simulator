@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+> **Note on dates:** Entries are ordered newest-first by semantic version. The
+> dates reflect when each entry was authored rather than a strict release
+> sequence, so a few dates do not decrease monotonically alongside the version
+> numbers.
+
 ## [Unreleased]
+
+## [0.49.9] - 2026-06-08
+
+### Changed
+- **Changelog de-duplication and ordering cleanup**: Merged the near-identical consecutive patch entries `0.41.2`/`0.41.3` (duplicate SPA index.html 404 fix) and `0.17.1`/`0.17.2` (duplicate directional-scan furthest-stop behavior) into single range entries matching the existing range pattern, and documented that entry dates reflect authoring order rather than a strict release sequence so the version/date ordering inversions no longer read as errors.
+- **Patch version bump**: Updated repository package metadata, frontend package metadata, README version references, and extracted documentation JAR examples from 0.49.8 to 0.49.9.
 
 ## [0.49.8] - 2026-06-08
 
@@ -178,16 +189,11 @@ UI consistency release for configuration-version workflows, lift-system editing,
   - Changed to direct `JSON.parse()` calls where parsed object wasn't needed
   - All ESLint warnings and errors now resolved
 
-## [0.41.3] - 2026-01-17
+## [0.41.2–0.41.3] - 2026-01-17
 
 ### Fixed
 - Return a helpful 404 response when the SPA index.html asset is missing, avoiding noisy stack traces when the frontend is not built.
 - Ensure SPA forwarding uses explicit return types so Spring MVC applies the correct view/response handling.
-
-## [0.41.2] - 2026-01-17
-
-### Fixed
-- Return a helpful 404 response when the SPA index.html asset is missing, avoiding noisy stack traces when the frontend is not built.
 
 ## [0.41.1] - 2026-01-17
 
@@ -580,15 +586,10 @@ Directional/SCAN controller release integrating direction-aware scheduling into 
 ### Added
 - Demo output now includes a request lifecycle summary table showing created and completed/cancelled ticks for each request
 
-## [0.17.2] - 2026-01-12
+## [0.17.1–0.17.2] - 2026-01-12
 
 ### Changed
 - Directional scan controller keeps traveling to the furthest pending stop in the current direction before reversing, even when only opposite-direction hall calls remain
-
-## [0.17.1] - 2026-01-12
-
-### Changed
-- Directional scan controller now rides to the furthest pending stop in the current direction before reversing, even when only opposite-direction hall calls remain
 
 ## [0.17.0] - 2026-01-11
 
