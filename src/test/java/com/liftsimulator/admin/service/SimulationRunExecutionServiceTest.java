@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.ScenarioValidationResponse;
+import com.liftsimulator.admin.dto.ValidationIssue;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.Scenario;
@@ -171,6 +172,27 @@ public class SimulationRunExecutionServiceTest {
         assertInternalStateCleared(2L);
     }
 
+    @Test
+    public void submitRunForExecutionFailsRunAndWritesResultsWhenScenarioValidationFails() throws Exception {
+        Path runDir = tempDir.resolve("run-3");
+        Files.createDirectories(runDir);
+        SimulationRun run = runWithArtefactDirectory(3L, runDir, SHORT_SCENARIO);
+        AtomicReference<SimulationRun> storedRun = prepareRepository(run);
+        when(configValidationService.validate(VALID_CONFIG)).thenReturn(validConfigResponse());
+        when(scenarioValidationService.validate(any(JsonNode.class))).thenReturn(invalidScenarioResponse());
+
+        executionService.submitRunForExecution(3L);
+
+        waitForExecutionToFinish(storedRun, SimulationRun.RunStatus.FAILED);
+        assertEquals("Invalid scenario payload.", storedRun.get().getErrorMessage());
+        assertTrue(Files.readString(runDir.resolve("run.log")).contains("Scenario validation failed"));
+
+        JsonNode results = objectMapper.readTree(runDir.resolve("results.json").toFile());
+        assertEquals("FAILED", results.at("/runSummary/status").asText());
+        assertEquals("Invalid scenario payload.", results.at("/runSummary/message").asText());
+        assertInternalStateCleared(3L);
+    }
+
     private AtomicReference<SimulationRun> prepareRepository(SimulationRun run) {
         AtomicReference<SimulationRun> storedRun = new AtomicReference<>(run);
         when(runRepository.findById(run.getId())).thenAnswer(invocation -> Optional.of(storedRun.get()));
@@ -212,6 +234,18 @@ public class SimulationRunExecutionServiceTest {
 
     private ScenarioValidationResponse validScenarioResponse() {
         return new ScenarioValidationResponse(true, List.of(), List.of());
+    }
+
+    private ScenarioValidationResponse invalidScenarioResponse() {
+        return new ScenarioValidationResponse(
+                false,
+                List.of(new ValidationIssue(
+                        "durationTicks",
+                        "durationTicks must be at least 1",
+                        ValidationIssue.Severity.ERROR
+                )),
+                List.of()
+        );
     }
 
     private void waitForExecutionToFinish(AtomicReference<SimulationRun> storedRun,
