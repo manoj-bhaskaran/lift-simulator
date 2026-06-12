@@ -24,6 +24,7 @@ summary is kept under [Earlier history](#earlier-history).
 ### Fixed
 - **Artefact symlink escape protection**: Hardened artefact downloads and listings to reject or skip symbolic links that resolve outside the run artefact directory.
 - **Fast execution cleanup race**: Removed completed run futures and cancellation tokens immediately after submission if a short run finishes before its future is tracked.
+- **Release metadata consistency**: Synchronized developer/workflow guide JAR examples and frontend package metadata with the `0.49.19` backend version.
 
 ## [0.49.18] - 2026-06-12
 
