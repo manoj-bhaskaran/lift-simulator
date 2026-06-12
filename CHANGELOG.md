@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.49.18] - 2026-06-12
+
+### Added
+- **Runtime and health controller coverage**: Added MockMvc tests for runtime configuration and simulation-launch endpoints, including API-key success/failure paths, response formats, service-not-found errors, and public health endpoint behaviour. Updated README version references for the 0.49.18 patch release.
+
 ## [0.49.17] - 2026-06-12
 
 ### Added

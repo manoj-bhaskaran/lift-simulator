@@ -2,7 +2,7 @@
 
 A Java-based simulation of lift (elevator) controllers with a focus on correctness and design clarity.
 
-Current version: **0.49.17**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
+Current version: **0.49.18**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## What is this?
 
@@ -104,12 +104,12 @@ mvn clean package
 Build a deployable Spring Boot JAR that also serves the React admin UI from `/` (activates the Maven `frontend` profile):
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.49.17.jar
+java -jar target/lift-simulator-0.49.18.jar
 ```
 
 The `frontend` profile installs Node.js 20.19.0 (for Vite 7 compatibility), runs `npm ci`, builds the Vite bundle, and packages it under `BOOT-INF/classes/static/`. CI uses this profile so downloaded JAR artifacts include the frontend assets. Verify the packaged UI with:
 ```bash
-jar tf target/lift-simulator-0.49.17.jar | grep '^BOOT-INF/classes/static/'
+jar tf target/lift-simulator-0.49.18.jar | grep '^BOOT-INF/classes/static/'
 ```
 
 ## Running the Application
@@ -121,21 +121,21 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 
 Or run the built JAR. The demo selects a controller strategy via command-line arguments:
 ```bash
-java -cp target/lift-simulator-0.49.17.jar com.liftsimulator.Main --help
-java -cp target/lift-simulator-0.49.17.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.49.18.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.49.18.jar com.liftsimulator.Main --strategy=directional-scan
 ```
 `--strategy` accepts `nearest-request` (default) or `directional-scan`. The demo runs a pre-configured scenario and prints the simulation state at each tick.
 
 Run a lightweight simulation from a published configuration JSON:
 ```bash
-java -cp target/lift-simulator-0.49.17.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.49.18.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 Optional flags: `--ticks=<count>` (default 25) and `-h, --help`.
 
 Run scripted scenarios with the scenario runner — either the bundled demo or a custom file:
 ```bash
 mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
-java -cp target/lift-simulator-0.49.17.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.49.18.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 Scenario files are plain text with metadata and tick-based event lines (parsing enforces limits of 1,000,000 ticks and 10,000 events per file); the controller strategy and idle-parking mode are taken from the scenario file. For the scenario file format and metadata keys, see the [CLI run workflows guide](docs/Workflows-and-Troubleshooting.md#cli-usage-unchanged). For simulation engine internals, controller strategy behaviour, out-of-service handling, request modelling, and the lift state machine, see [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md).
@@ -155,7 +155,7 @@ mvn test
 The suite spans several levels:
 
 - **Unit tests** — controllers, services, and domain logic: request lifecycle transitions (`LiftRequestTest`), nearest-request and directional-scan routing, door handling and cancellation (`NaiveLiftControllerTest`, `DirectionalScanLiftControllerTest`), and the tick mechanism (`SimulationEngineTest`).
-- **Integration tests** — full Spring context for REST APIs and repositories, including scenario CRUD and configuration-validation controller APIs, multi-request scenarios, dynamic request addition during movement, cancellation, and out-of-service handling (`ScenarioControllerTest`, `ConfigValidationControllerTest`, `DirectionalScanIntegrationTest`, `LiftRequestLifecycleTest`). Scenario fixtures live in `src/test/resources/scenarios`, controller API fixtures live under `src/test/java/com/liftsimulator/admin/controller/fixtures`, and batch-input golden files live under `src/test/resources/batch-input`.
+- **Integration tests** — full Spring context for REST APIs and repositories, including scenario CRUD, configuration-validation, runtime configuration, simulation-launch, and health controller APIs, multi-request scenarios, dynamic request addition during movement, cancellation, and out-of-service handling (`ScenarioControllerTest`, `ConfigValidationControllerTest`, `RuntimeConfigControllerTest`, `HealthControllerTest`, `DirectionalScanIntegrationTest`, `LiftRequestLifecycleTest`). Scenario fixtures live in `src/test/resources/scenarios`, controller API fixtures live under `src/test/java/com/liftsimulator/admin/controller/fixtures`, and batch-input golden files live under `src/test/resources/batch-input`.
 - **Scenario tests** — `ControllerScenarioTest` exercises realistic multi-request routing for both controller strategies via a deterministic `ScenarioHarness`, guarding against behavioural regressions.
 - **Playwright E2E tests** — browser smoke and feature tests under `frontend/e2e` run against the React dev server (port 3000) and a live backend (port 8080). See [ADR-0014](docs/decisions/0014-playwright-e2e-testing.md).
 
@@ -200,7 +200,7 @@ The backend is configured via YAML files under `src/main/resources/`:
 - `application-dev.yml` — development secrets and database settings (copy from `application-dev.yml.template`)
 - `application-local.yml` — optional local-only overrides such as log paths or ports (copy from `application-local.yml.template`)
 
-No profile is active in the checked-in base configuration, so launches must set `SPRING_PROFILES_ACTIVE` explicitly — for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for development, `SPRING_PROFILES_ACTIVE=dev,local` to add local overrides (your `application-local.yml` is git-ignored, so `git pull` will not overwrite it), or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.49.17.jar` for production. This prevents a development profile from masking production configuration mistakes.
+No profile is active in the checked-in base configuration, so launches must set `SPRING_PROFILES_ACTIVE` explicitly — for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for development, `SPRING_PROFILES_ACTIVE=dev,local` to add local overrides (your `application-local.yml` is git-ignored, so `git pull` will not overwrite it), or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.49.18.jar` for production. This prevents a development profile from masking production configuration mistakes.
 
 OpenAPI/Swagger access is controlled by `security.openapi.public-access` (`SECURITY_OPENAPI_PUBLIC_ACCESS`). It defaults to `true` to preserve local development behaviour; set it to `false` to require ADMIN-role authentication for the documentation endpoints.
 
