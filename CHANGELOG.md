@@ -19,7 +19,7 @@ summary is kept under [Earlier history](#earlier-history).
 ## [0.49.18] - 2026-06-12
 
 ### Added
-- **Runtime and health controller coverage**: Added MockMvc tests for runtime configuration and simulation-launch endpoints, including API-key success/failure paths, response formats, service-not-found errors, and public health endpoint behaviour. Updated README version references for the 0.49.18 patch release.
+- **Runtime and health controller coverage**: Added MockMvc tests for runtime configuration and simulation-launch endpoints, including API-key success/failure paths, response formats, service-not-found errors, and public health endpoint behaviour. The Spring Boot test base now explicitly loads the application class for tests outside the admin package, runtime components are included in application component scanning, and unsupported API methods return 405 responses. Updated README version references for the 0.49.18 patch release.
 
 ## [0.49.17] - 2026-06-12
 
