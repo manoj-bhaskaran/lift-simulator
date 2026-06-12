@@ -284,6 +284,59 @@
   margin-bottom: 1rem;
 }
 
+
+.config-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.config-label-row label {
+  margin-bottom: 0;
+}
+
+.config-label-row a {
+  color: #3498db;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.config-label-row a:hover {
+  text-decoration: underline;
+}
+
+.config-help-text,
+.config-required-fields {
+  margin: 0 0 0.75rem 0;
+  color: #5d6d7e;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.config-example-help {
+  margin-bottom: 0.75rem;
+  color: #34495e;
+  font-size: 0.9rem;
+}
+
+.config-example-help summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.config-example-help pre {
+  margin: 0.75rem 0 0 0;
+  padding: 0.75rem;
+  overflow-x: auto;
+  background: #eef3f7;
+  border: 1px solid #d6e0ea;
+  border-radius: 4px;
+  color: #2c3e50;
+}
+
 .form-actions {
   display: flex;
   gap: 0.5rem;

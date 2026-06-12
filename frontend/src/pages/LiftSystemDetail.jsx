@@ -8,6 +8,7 @@ import AlertModal from '../components/AlertModal';
 import EditSystemModal from '../components/EditSystemModal';
 import { handleApiError } from '../utils/errorHandlers';
 import { getStatusBadgeClass } from '../utils/statusUtils';
+import { CONFIG_EXAMPLE_JSON, CONFIG_REQUIRED_FIELDS, CONFIG_SCHEMA_DOCS_URL, CONFIG_SCHEMA_HELP_TEXT } from '../utils/configSchemaHelp';
 import './LiftSystemDetail.css';
 
 /**
@@ -387,15 +388,29 @@ function LiftSystemDetail() {
             <div className="version-number-display">
               <h4>Version {versions.length > 0 ? Math.max(...versions.map(v => v.versionNumber)) + 1 : 1}</h4>
             </div>
-            <label htmlFor="config">Configuration JSON</label>
+            <div className="config-label-row">
+              <label htmlFor="config">Configuration JSON</label>
+              <a href={CONFIG_SCHEMA_DOCS_URL} target="_blank" rel="noreferrer">
+                View schema docs
+              </a>
+            </div>
+            <p id="config-help" className="config-help-text">{CONFIG_SCHEMA_HELP_TEXT}</p>
+            <details className="config-example-help">
+              <summary>Show complete valid example</summary>
+              <pre>{CONFIG_EXAMPLE_JSON}</pre>
+            </details>
             <textarea
               id="config"
               value={newVersionConfig}
               onChange={handleNewVersionConfigChange}
-              placeholder='{"minFloor": 0, "maxFloor": 9, "lifts": 2, "travelTicksPerFloor": 10, ...}'
-              rows="10"
+              placeholder={CONFIG_EXAMPLE_JSON}
+              rows="14"
               required
+              aria-describedby="config-help config-required-fields"
             />
+            <p id="config-required-fields" className="config-required-fields">
+              Required fields: {CONFIG_REQUIRED_FIELDS.map((field) => `\`${field}\``).join(', ')}.
+            </p>
             <div className="form-actions">
               <button
                 type="button"

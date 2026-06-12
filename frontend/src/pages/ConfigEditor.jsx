@@ -5,6 +5,7 @@ import { liftSystemsApi } from '../api/liftSystemsApi';
 import ConfirmModal from '../components/ConfirmModal';
 import { handleApiError } from '../utils/errorHandlers';
 import { getStatusBadgeClass } from '../utils/statusUtils';
+import { CONFIG_EXAMPLE_JSON, CONFIG_REQUIRED_FIELDS, CONFIG_SCHEMA_DOCS_URL, CONFIG_SCHEMA_HELP_TEXT } from '../utils/configSchemaHelp';
 import './ConfigEditor.css';
 
 /**
@@ -254,7 +255,12 @@ function ConfigEditor() {
       <div className="editor-layout">
         <div className="editor-section">
           <div className="section-header">
-            <h3>Configuration JSON</h3>
+            <div>
+              <h3>Configuration JSON</h3>
+              <a className="schema-docs-link" href={CONFIG_SCHEMA_DOCS_URL} target="_blank" rel="noreferrer">
+                View schema docs
+              </a>
+            </div>
             {lastSaved && (
               <span className="last-saved">
                 Last saved: {lastSaved.toLocaleTimeString()}
@@ -262,13 +268,22 @@ function ConfigEditor() {
             )}
           </div>
 
+          <p id="config-editor-help" className="config-help-text">{CONFIG_SCHEMA_HELP_TEXT}</p>
+          <details className="config-example-help">
+            <summary>Show complete valid example</summary>
+            <pre>{CONFIG_EXAMPLE_JSON}</pre>
+          </details>
           <textarea
             className="config-textarea"
             value={config}
             onChange={handleConfigChange}
             spellCheck="false"
-            placeholder='{"minFloor": 0, "maxFloor": 9, "lifts": 2, ...}'
+            placeholder={CONFIG_EXAMPLE_JSON}
+            aria-describedby="config-editor-help config-editor-required-fields"
           />
+          <p id="config-editor-required-fields" className="config-required-fields">
+            Required fields: {CONFIG_REQUIRED_FIELDS.map((field) => `\`${field}\``).join(', ')}.
+          </p>
 
           <div className="editor-actions">
             <button
