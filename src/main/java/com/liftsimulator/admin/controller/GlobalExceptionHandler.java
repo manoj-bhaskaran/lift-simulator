@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -176,6 +177,22 @@ public class GlobalExceptionHandler {
             OffsetDateTime.now()
         );
         return ResponseEntity.status(ex.getStatusCode()).body(error);
+    }
+
+    /**
+     * Handles unsupported HTTP methods with 405 status.
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex) {
+        logger.info("HTTP method not supported: {}", ex.getMessage());
+
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.METHOD_NOT_ALLOWED.value(),
+            ex.getMessage(),
+            OffsetDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
     }
 
     /**

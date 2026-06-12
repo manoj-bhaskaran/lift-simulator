@@ -1,5 +1,6 @@
 package com.liftsimulator;
 
+import com.liftsimulator.admin.LiftConfigServiceApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -25,7 +26,7 @@ import org.springframework.test.context.DynamicPropertySource;
  * override for explicit {@code SPRING_DATASOURCE_*} environment variables; the
  * Testcontainers customizer handles the local case.
  */
-@SpringBootTest
+@SpringBootTest(classes = LiftConfigServiceApplication.class)
 @ActiveProfiles("test")
 public abstract class BaseIntegrationTest {
 
