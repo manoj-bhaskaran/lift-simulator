@@ -7,11 +7,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -44,11 +44,16 @@ class OpenApiPrivateSecurityConfigTest extends LocalIntegrationTest {
     }
 
     @Test
-    void openApiDocs_PrivateAccess_AdminRole_DoesNotReturnAuthzFailure() throws Exception {
+    void openApiDocs_PrivateAccess_AdminRole_ReturnsOpenApiJsonWithSecuritySchemes() throws Exception {
         mockMvc.perform(get("/api/v1/api-docs")
                 .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
-            .andExpect(result -> assertThat(result.getResponse().getStatus())
-                .isNotIn(401, 403));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.openapi").exists())
+            .andExpect(jsonPath("$.components.securitySchemes.basicAuth.type").value("http"))
+            .andExpect(jsonPath("$.components.securitySchemes.basicAuth.scheme").value("basic"))
+            .andExpect(jsonPath("$.components.securitySchemes.apiKey.type").value("apiKey"))
+            .andExpect(jsonPath("$.components.securitySchemes.apiKey.in").value("header"))
+            .andExpect(jsonPath("$.components.securitySchemes.apiKey.name").value("X-API-Key"));
     }
 
     @Test

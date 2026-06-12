@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.49.16] - 2026-06-12
+
+### Fixed
+- **Swagger/OpenAPI compatibility**: Upgraded `springdoc-openapi-starter-webmvc-ui` to `2.7.0` so Spring Boot 3.4.13 can generate `/api/v1/api-docs` without the removed `ControllerAdviceBean(Object)` constructor error, restoring Swagger UI at `/api/v1/swagger-ui.html` with the configured `basicAuth` and `apiKey` security schemes.
+
 ## [0.49.15] - 2026-06-08
 
 ### Changed
