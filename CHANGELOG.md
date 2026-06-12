@@ -19,7 +19,7 @@ summary is kept under [Earlier history](#earlier-history).
 ## [0.49.17] - 2026-06-12
 
 ### Added
-- **Controller API test coverage**: Added MockMvc coverage for scenario CRUD, scenario validation failures, and configuration validation error responses, backed by reusable controller API JSON fixtures.
+- **Controller API test coverage**: Added MockMvc coverage for scenario CRUD, scenario validation failures, and configuration validation error responses, backed by reusable controller API JSON fixtures. Synchronized JAR-version examples across the README, developer guide, and workflow troubleshooting guide for the 0.49.17 patch release.
 
 ## [0.49.16] - 2026-06-12
 
