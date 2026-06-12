@@ -70,7 +70,19 @@ Shared interfaces include `LiftSystem`, `Version`, and `ValidationResult`.
 npm install
 ```
 
-### 2. Start Development Server
+### 2. Configure API Credentials
+
+Create `frontend/.env.local` with credentials that match the backend values in `application-dev.yml` or the backend environment. The file is ignored by Git through the frontend `*.local` rule.
+
+```bash
+VITE_ADMIN_USERNAME=admin
+VITE_ADMIN_PASSWORD=local-admin-password
+VITE_API_KEY=local-api-key
+```
+
+The Axios client sends `Authorization: Basic ...` when both admin values are set and sends `X-API-Key` when `VITE_API_KEY` is set. Vite exposes `VITE_*` values in the browser bundle, so use environment-scoped credentials and never commit this file.
+
+### 3. Start Development Server
 
 ```bash
 npm run dev
@@ -78,7 +90,7 @@ npm run dev
 
 The application will start on **http://localhost:3000**
 
-### 3. Start Backend Service
+### 4. Start Backend Service
 
 Make sure the Spring Boot backend is running on port 8080. The authenticated admin and simulation APIs require credentials even during E2E runs, so export backend credentials before starting Spring Boot. The matching browser-test credentials are injected by Playwright at test time, not by the application bundle:
 
@@ -433,15 +445,21 @@ The API client can be configured at build time via Vite environment variables:
 | --- | --- | --- |
 | `VITE_API_BASE_URL` | Base URL for API requests (e.g., `https://api.example.com/api/v1`) | `/api/v1` |
 | `VITE_API_TIMEOUT_MS` | Axios request timeout in milliseconds | `10000` |
+| `VITE_ADMIN_USERNAME` | Optional admin username used with `VITE_ADMIN_PASSWORD` to build an HTTP Basic `Authorization` header | unset |
+| `VITE_ADMIN_PASSWORD` | Optional admin password used with `VITE_ADMIN_USERNAME` to build an HTTP Basic `Authorization` header | unset |
+| `VITE_API_KEY` | Optional runtime/simulation API key sent as `X-API-Key` | unset |
 
 Example `.env` file:
 
 ```bash
 VITE_API_BASE_URL=http://localhost:8080/api/v1
 VITE_API_TIMEOUT_MS=15000
+VITE_ADMIN_USERNAME=admin
+VITE_ADMIN_PASSWORD=local-admin-password
+VITE_API_KEY=local-api-key
 ```
 
-If `VITE_API_BASE_URL` is left unset, the app will continue to use `/api/v1`, which works with the Vite proxy in local development.
+If `VITE_API_BASE_URL` is left unset, the app will continue to use `/api/v1`, which works with the Vite proxy in local development. The backend ignores whichever auth header does not apply to a specific endpoint, so sending both the Basic auth and API-key headers from the shared Axios client is safe.
 
 ### Playwright E2E Environment Variables
 
