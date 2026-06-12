@@ -59,6 +59,13 @@ test.describe('Configuration Version Management', () => {
     await expect(page.locator('.create-version-form')).toBeVisible();
     await expect(page.locator('.create-version-form h4')).toHaveText(/Version 1/i);
 
+    const configField = page.locator('#config');
+    await expect(configField).toHaveAttribute('placeholder', /"doorTransitionTicks"/);
+    await expect(configField).not.toHaveAttribute('placeholder', /\.\.\./);
+    await expect(page.locator('#config-help')).toContainText('Required integer fields');
+    await expect(page.locator('#config-required-fields')).toContainText('controllerStrategy');
+    await expect(page.locator('.create-version-form a:has-text("View schema docs")')).toBeVisible();
+
     // Step 2: Paste valid configuration JSON
     const validConfig = VALID_CONFIGS.basicOffice;
     await page.locator('#config').fill(JSON.stringify(validConfig, null, 2));

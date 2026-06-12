@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.49.21] - 2026-06-12
+
+### Fixed
+- **Version configuration JSON guidance**: Replaced truncated configuration editor placeholders with complete valid JSON examples, added required-field/schema help and a schema documentation link beside the create/edit version fields, and refreshed API examples to avoid invalid ellipsis placeholders. Updated README, developer/workflow guides, and package metadata for the 0.49.21 patch release.
+
 ## [0.49.20] - 2026-06-12
 
 ### Added

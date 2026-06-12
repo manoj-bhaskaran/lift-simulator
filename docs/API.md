@@ -177,7 +177,7 @@ The backend includes a comprehensive validation framework for lift system config
   - Request body:
     ```json
     {
-      "config": "{\"minFloor\": 0, \"maxFloor\": 9, \"lifts\": 2, \"travelTicksPerFloor\": 1, ...}"
+      "config": "{\"minFloor\": 0, \"maxFloor\": 9, \"lifts\": 2, \"travelTicksPerFloor\": 1, \"doorTransitionTicks\": 2, \"doorDwellTicks\": 3, \"doorReopenWindowTicks\": 2, \"homeFloor\": 0, \"idleTimeoutTicks\": 5, \"controllerStrategy\": \"NEAREST_REQUEST_ROUTING\", \"idleParkingMode\": \"PARK_TO_HOME_FLOOR\"}"
     }
     ```
   - Response (200 OK) - Valid configuration:
@@ -418,7 +418,7 @@ Path inputFile = runService.generateBatchInputFile(runId);
 | `passengerFlows[].passengers` | Integer | Required, ≥ 1 | Number of passengers in the flow |
 | `seed` | Integer | Optional, ≥ 0 | Random seed for deterministic runs |
 
-**Configuration Structure:**
+##### Configuration Structure
 
 All lift system configurations must conform to the following structure:
 
@@ -1017,7 +1017,7 @@ curl -H "X-API-Key: replace-with-secure-key" \\
       "systemKey": "building-a-lifts",
       "displayName": "Building A Lift System",
       "versionNumber": 3,
-      "config": "{\"minFloor\": 0, \"maxFloor\": 9, \"lifts\": 2, ...}",
+      "config": "{\"minFloor\": 0, \"maxFloor\": 9, \"lifts\": 2, \"travelTicksPerFloor\": 1, \"doorTransitionTicks\": 2, \"doorDwellTicks\": 3, \"doorReopenWindowTicks\": 2, \"homeFloor\": 0, \"idleTimeoutTicks\": 5, \"controllerStrategy\": \"NEAREST_REQUEST_ROUTING\", \"idleParkingMode\": \"PARK_TO_HOME_FLOOR\"}",
       "publishedAt": "2026-01-11T14:30:00Z"
     }
     ```
