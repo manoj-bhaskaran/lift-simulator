@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.49.20] - 2026-06-12
+
+### Added
+- **Service-layer scenario coverage**: Added `ScenarioValidationServiceTest` and `ScenarioServiceTest` coverage for scenario schema errors, bean/domain rules, version-specific floor-range validation, create/update validation gates, stored JSON serialization, response version metadata, and corrupt stored payload handling. Expanded `SimulationRunServiceTest` to cover scenario association checks and create-and-start execution state transitions.
+
 ## [0.49.19] - 2026-06-12
 
 ### Added

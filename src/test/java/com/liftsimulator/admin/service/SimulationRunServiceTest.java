@@ -2,6 +2,7 @@ package com.liftsimulator.admin.service;
 
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
+import com.liftsimulator.admin.entity.Scenario;
 import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.entity.SimulationRun.RunStatus;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
@@ -13,9 +14,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -25,7 +28,9 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -160,6 +165,68 @@ public class SimulationRunServiceTest {
         assertEquals("Version 5 does not belong to lift system 1", exception.getMessage());
         verify(liftSystemRepository).findById(1L);
         verify(versionRepository).findById(5L);
+    }
+
+    @Test
+    public void testCreateRun_WithScenarioAttachesScenarioWhenVersionMatches() {
+        Scenario scenario = new Scenario("Morning Rush", "{}", mockVersion);
+        scenario.setId(7L);
+        when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(versionRepository.findById(1L)).thenReturn(Optional.of(mockVersion));
+        when(scenarioRepository.findById(7L)).thenReturn(Optional.of(scenario));
+        when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SimulationRun result = runService.createRun(1L, 1L, 7L);
+
+        assertNotNull(result);
+        assertEquals(scenario, result.getScenario());
+        ArgumentCaptor<SimulationRun> runCaptor = ArgumentCaptor.forClass(SimulationRun.class);
+        verify(runRepository).save(runCaptor.capture());
+        assertEquals(7L, runCaptor.getValue().getScenario().getId());
+        verify(scenarioRepository).findById(7L);
+    }
+
+    @Test
+    public void testCreateRun_WithScenarioFromDifferentVersionFails() {
+        LiftSystemVersion otherVersion = new LiftSystemVersion();
+        otherVersion.setId(2L);
+        otherVersion.setLiftSystem(mockLiftSystem);
+        Scenario scenario = new Scenario("Other Scenario", "{}", otherVersion);
+        scenario.setId(7L);
+        when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(versionRepository.findById(1L)).thenReturn(Optional.of(mockVersion));
+        when(scenarioRepository.findById(7L)).thenReturn(Optional.of(scenario));
+
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> runService.createRun(1L, 1L, 7L)
+        );
+
+        assertEquals("Scenario 7 does not belong to version 1", exception.getMessage());
+        verify(runRepository, never()).save(any(SimulationRun.class));
+    }
+
+    @Test
+    public void testCreateAndStartRun_ConfiguresRunStartsAndSubmitsExecution() throws Exception {
+        when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(versionRepository.findById(1L)).thenReturn(Optional.of(mockVersion));
+        when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> {
+            SimulationRun savedRun = invocation.getArgument(0);
+            if (savedRun.getId() == null) {
+                savedRun.setId(42L);
+            }
+            return savedRun;
+        });
+
+        SimulationRun result = runService.createAndStartRun(1L, 1L, null, 12345L);
+
+        assertEquals(42L, result.getId());
+        assertEquals(RunStatus.RUNNING, result.getStatus());
+        assertEquals(10000L, result.getTotalTicks());
+        assertEquals(12345L, result.getSeed());
+        assertNotNull(result.getArtefactBasePath());
+        assertTrue(Files.isDirectory(Path.of(result.getArtefactBasePath())));
+        verify(executionService).submitRunForExecution(42L);
     }
 
     @Test
