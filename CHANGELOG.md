@@ -16,6 +16,15 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.49.19] - 2026-06-12
+
+### Added
+- **Service-layer artefact and execution coverage**: Added temporary-directory based `ArtefactServiceTest` cases for nested artefact listing, safe download metadata, missing result/log handling, tail limits, and invalid traversal/absolute/symlink paths. Expanded `SimulationRunExecutionServiceTest` to execute mocked runs asynchronously, verify config/scenario/log/result artefacts, failed missing-scenario results, progress persistence, and cleanup of execution tracking state.
+
+### Fixed
+- **Artefact symlink escape protection**: Hardened artefact downloads and listings to reject or skip symbolic links that resolve outside the run artefact directory.
+- **Fast execution cleanup race**: Removed completed run futures and cancellation tokens immediately after submission if a short run finishes before its future is tracked.
+
 ## [0.49.18] - 2026-06-12
 
 ### Added
