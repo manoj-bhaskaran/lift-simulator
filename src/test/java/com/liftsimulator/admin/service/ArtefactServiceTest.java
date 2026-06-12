@@ -1,6 +1,8 @@
 package com.liftsimulator.admin.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liftsimulator.admin.dto.ArtefactInfo;
 import com.liftsimulator.admin.entity.SimulationRun;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -13,7 +15,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ArtefactServiceTest {
 
@@ -21,6 +26,124 @@ class ArtefactServiceTest {
 
     @TempDir
     private Path tempDir;
+
+    @Test
+    void listArtefactsReturnsRelativePathsForNestedFiles() throws IOException {
+        Files.createDirectories(tempDir.resolve("metrics"));
+        Files.writeString(tempDir.resolve("results.json"), "{\"status\":\"SUCCEEDED\"}");
+        Files.writeString(tempDir.resolve("metrics/per-floor.csv"), "floor,requests\n0,1\n");
+
+        List<ArtefactInfo> artefacts = artefactService.listArtefacts(runForTempDir());
+
+        assertEquals(2, artefacts.size());
+        assertTrue(artefacts.stream().anyMatch(artefact -> artefact.name().equals("results.json")
+            && artefact.path().equals("results.json")
+            && artefact.mimeType().equals("application/json")));
+        assertTrue(artefacts.stream().anyMatch(artefact -> artefact.name().equals("per-floor.csv")
+            && artefact.path().equals("metrics/per-floor.csv")
+            && artefact.mimeType().equals("text/csv")));
+    }
+
+    @Test
+    void listArtefactsReturnsEmptyListForMissingDirectory() throws IOException {
+        SimulationRun run = new SimulationRun();
+        run.setId(1L);
+        run.setArtefactBasePath(tempDir.resolve("missing").toString());
+
+        assertTrue(artefactService.listArtefacts(run).isEmpty());
+    }
+
+    @Test
+    void getArtefactReturnsDownloadMetadataForSafeRelativePath() throws IOException {
+        Files.createDirectories(tempDir.resolve("outputs"));
+        Path resultFile = tempDir.resolve("outputs/results.json");
+        Files.writeString(resultFile, "{\"ok\":true}");
+
+        ArtefactService.ArtefactDownload download = artefactService.getArtefact(
+            runForTempDir(),
+            "outputs/results.json"
+        );
+
+        assertEquals(resultFile.toAbsolutePath().normalize(), download.path());
+        assertEquals("results.json", download.fileName());
+        assertEquals(Files.size(resultFile), download.size());
+        assertTrue(download.mimeType().equals("application/json")
+            || download.mimeType().equals("application/octet-stream"));
+    }
+
+    @Test
+    void getArtefactRejectsPathTraversalOutsideArtefactDirectory() {
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> artefactService.getArtefact(runForTempDir(), "../secrets.txt")
+        );
+
+        assertTrue(exception.getMessage().contains("Invalid artefact path"));
+    }
+
+    @Test
+    void getArtefactRejectsAbsolutePaths() {
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> artefactService.getArtefact(runForTempDir(), tempDir.resolve("results.json").toString())
+        );
+
+        assertTrue(exception.getMessage().contains("Invalid artefact path"));
+    }
+
+    @Test
+    void getArtefactRejectsEscapedSymbolicLinks() throws IOException {
+        Path externalFile = Files.createTempFile("lift-simulator-external", ".txt");
+        Files.writeString(externalFile, "outside artefact root");
+        Path link = tempDir.resolve("external-link.txt");
+        Files.createSymbolicLink(link, externalFile);
+
+        try {
+            IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> artefactService.getArtefact(runForTempDir(), "external-link.txt")
+            );
+            assertTrue(exception.getMessage().contains("Invalid artefact path"));
+        } finally {
+            Files.deleteIfExists(externalFile);
+        }
+    }
+
+    @Test
+    void getArtefactThrowsNotFoundForMissingFile() {
+        ResourceNotFoundException exception = assertThrows(
+            ResourceNotFoundException.class,
+            () -> artefactService.getArtefact(runForTempDir(), "missing-results.json")
+        );
+
+        assertEquals("Artefact not found: missing-results.json", exception.getMessage());
+    }
+
+    @Test
+    void readResultsParsesFirstKnownResultsFile() throws IOException {
+        Files.writeString(tempDir.resolve("results.json"), "{\"runSummary\":{\"status\":\"SUCCEEDED\"}}");
+
+        JsonNode results = artefactService.readResults(runForTempDir());
+
+        assertEquals("SUCCEEDED", results.at("/runSummary/status").asText());
+    }
+
+    @Test
+    void readResultsThrowsWhenResultsFileIsMissing() {
+        IOException exception = assertThrows(
+            IOException.class,
+            () -> artefactService.readResults(runForTempDir())
+        );
+
+        assertTrue(exception.getMessage().contains("No results file found"));
+    }
+
+    @Test
+    void readLogsReturnsMessageWhenLogFileIsMissing() throws IOException {
+        String logs = artefactService.readLogs(runForTempDir(), 25);
+
+        assertEquals("No log file found for simulation run 1", logs);
+    }
 
     @Test
     void readLogsReturnsLastLinesFromLargeFile() throws IOException {
@@ -38,6 +161,17 @@ class ArtefactServiceTest {
         SimulationRun run = runForTempDir();
 
         assertEquals("", artefactService.readLogs(run, 0));
+    }
+
+    @Test
+    void readLogsCapsTailAtMaximumLineCount() throws IOException {
+        writeRunLog(12_000);
+
+        String logs = artefactService.readLogs(runForTempDir(), 20_000);
+
+        assertEquals(10_000, logs.split("\\n").length);
+        assertFalse(logs.contains("line-1999\n"));
+        assertTrue(logs.startsWith("line-2001\n"));
     }
 
     @Test

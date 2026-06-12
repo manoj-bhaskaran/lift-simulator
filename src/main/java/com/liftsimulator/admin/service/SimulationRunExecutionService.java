@@ -488,6 +488,10 @@ public class SimulationRunExecutionService {
     private void submitExecution(RunExecutionRequest request) {
         Future<?> future = executor.submit(() -> executeRun(request));
         runningTasks.put(request.runId(), future);
+        if (future.isDone()) {
+            runningTasks.remove(request.runId(), future);
+            cancellationTokens.remove(request.runId());
+        }
     }
 
     private static final class CancellationToken {

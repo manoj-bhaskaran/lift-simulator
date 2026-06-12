@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,10 +70,11 @@ public class ArtefactService {
             throw new IllegalStateException("Artefact base path is not a directory: " + basePath);
         }
 
+        Path realDirectory = directory.toRealPath();
         List<ArtefactInfo> artefacts = new ArrayList<>();
 
         try (Stream<Path> paths = Files.walk(directory)) {
-            paths.filter(Files::isRegularFile)
+            paths.filter(path -> isSafeRegularFile(path, realDirectory))
                 .forEach(path -> {
                     try {
                         Path fileNamePath = path.getFileName();
@@ -120,6 +122,12 @@ public class ArtefactService {
 
         if (!Files.exists(artefactPath) || Files.isDirectory(artefactPath)) {
             throw new ResourceNotFoundException("Artefact not found: " + relativePath);
+        }
+
+        try {
+            ensureExistingPathStaysWithinBase(Paths.get(basePath), artefactPath);
+        } catch (SecurityException e) {
+            throw new IllegalArgumentException("Invalid artefact path: " + relativePath, e);
         }
 
         Path fileNamePath = artefactPath.getFileName();
@@ -207,6 +215,31 @@ public class ArtefactService {
         }
 
         return objectMapper.readTree(resultsPath.toFile());
+    }
+
+    private boolean isSafeRegularFile(Path path, Path realDirectory) {
+        try {
+            BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class);
+            if (!attributes.isRegularFile()) {
+                return false;
+            }
+            return path.toRealPath().startsWith(realDirectory);
+        } catch (IOException | SecurityException e) {
+            logger.warn("Skipping unsafe or unreadable artefact path: " + path, e);
+            return false;
+        }
+    }
+
+    private void ensureExistingPathStaysWithinBase(Path basePath, Path artefactPath) {
+        try {
+            Path realBase = basePath.toAbsolutePath().normalize().toRealPath();
+            Path realArtefact = artefactPath.toRealPath();
+            if (!realArtefact.startsWith(realBase)) {
+                throw new SecurityException("Resolved artefact path escapes base directory: " + artefactPath);
+            }
+        } catch (IOException e) {
+            throw new SecurityException("Unable to validate artefact path: " + artefactPath, e);
+        }
     }
 
     /**
