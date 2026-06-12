@@ -396,7 +396,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.49.21.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.49.22.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -443,6 +443,18 @@ Run the tests:
 ```bash
 mvn test -Dtest=LiftSystemRepositoryTest,LiftSystemVersionRepositoryTest
 ```
+
+## Frontend API Authentication
+
+The React admin UI uses `frontend/src/api/client.js` for backend calls. During local development, create `frontend/.env.local` with credentials that match `src/main/resources/application-dev.yml` or the backend environment variables:
+
+```bash
+VITE_ADMIN_USERNAME=admin
+VITE_ADMIN_PASSWORD=local-admin-password
+VITE_API_KEY=local-api-key
+```
+
+When both admin values are present, the Axios client sends an HTTP Basic `Authorization` header. When `VITE_API_KEY` is present, it sends the runtime `X-API-Key` header. The backend ignores the header that is irrelevant to a given endpoint, so the shared client can send both defaults. `frontend/.env.local` is covered by the frontend `*.local` ignore rule; never commit real credentials, and remember that Vite exposes `VITE_*` variables to browser bundles.
 
 ## Git Hooks
 

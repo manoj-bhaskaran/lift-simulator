@@ -2,7 +2,7 @@
 
 A Java-based simulation of lift (elevator) controllers with a focus on correctness and design clarity.
 
-Current version: **0.49.21**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
+Current version: **0.49.22**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## What is this?
 
@@ -40,24 +40,31 @@ The simulation is text-based and designed for clarity over visual appeal.
    GRANT ALL ON SCHEMA lift_simulator TO lift_admin;
    \q
    ```
-2. **Configure application settings** — copy the template and set your database password:
+2. **Configure application settings** — copy the template and set your database password and API credentials:
    ```bash
    cp src/main/resources/application-dev.yml.template src/main/resources/application-dev.yml
    ```
-   Edit `application-dev.yml` and replace `CHANGE_ME` under `spring.datasource.password`. This file is excluded from version control.
-3. **Start the backend** with the `dev` profile so it loads `application-dev.yml` (the first run downloads dependencies and applies Flyway migrations):
+   Edit `application-dev.yml` and replace `CHANGE_ME` under `spring.datasource.password`, `security.admin.password`, and `api.auth.key`. This file is excluded from version control.
+3. **Configure frontend API credentials** — create `frontend/.env.local` with values matching `application-dev.yml` so the browser client can send both backend auth schemes:
+   ```bash
+   VITE_ADMIN_USERNAME=admin
+   VITE_ADMIN_PASSWORD=local-admin-password
+   VITE_API_KEY=local-api-key
+   ```
+   `frontend/.env.local` is ignored by Git via the frontend `*.local` rule. Vite exposes `VITE_*` values to the browser bundle, so use only environment-appropriate credentials and never commit this file.
+4. **Start the backend** with the `dev` profile so it loads `application-dev.yml` (the first run downloads dependencies and applies Flyway migrations):
    ```bash
    SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run
    ```
    The backend listens on **http://localhost:8080**.
-4. **Start the frontend** in a new terminal:
+5. **Start the frontend** in a new terminal:
    ```bash
    cd frontend
    npm install   # first time only
    npm run dev
    ```
    The frontend is served at **http://localhost:3000**.
-5. **Open** http://localhost:3000 — you should see the Lift Simulator dashboard.
+6. **Open** http://localhost:3000 — you should see the Lift Simulator dashboard.
 
 **Daily usage** (after first-time setup)
 
@@ -104,12 +111,12 @@ mvn clean package
 Build a deployable Spring Boot JAR that also serves the React admin UI from `/` (activates the Maven `frontend` profile):
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.49.21.jar
+java -jar target/lift-simulator-0.49.22.jar
 ```
 
 The `frontend` profile installs Node.js 20.19.0 (for Vite 7 compatibility), runs `npm ci`, builds the Vite bundle, and packages it under `BOOT-INF/classes/static/`. CI uses this profile so downloaded JAR artifacts include the frontend assets. Verify the packaged UI with:
 ```bash
-jar tf target/lift-simulator-0.49.21.jar | grep '^BOOT-INF/classes/static/'
+jar tf target/lift-simulator-0.49.22.jar | grep '^BOOT-INF/classes/static/'
 ```
 
 ## Running the Application
@@ -121,21 +128,21 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 
 Or run the built JAR. The demo selects a controller strategy via command-line arguments:
 ```bash
-java -cp target/lift-simulator-0.49.21.jar com.liftsimulator.Main --help
-java -cp target/lift-simulator-0.49.21.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.49.22.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.49.22.jar com.liftsimulator.Main --strategy=directional-scan
 ```
 `--strategy` accepts `nearest-request` (default) or `directional-scan`. The demo runs a pre-configured scenario and prints the simulation state at each tick.
 
 Run a lightweight simulation from a published configuration JSON:
 ```bash
-java -cp target/lift-simulator-0.49.21.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.49.22.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 Optional flags: `--ticks=<count>` (default 25) and `-h, --help`.
 
 Run scripted scenarios with the scenario runner — either the bundled demo or a custom file:
 ```bash
 mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
-java -cp target/lift-simulator-0.49.21.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.49.22.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 Scenario files are plain text with metadata and tick-based event lines (parsing enforces limits of 1,000,000 ticks and 10,000 events per file); the controller strategy and idle-parking mode are taken from the scenario file. For the scenario file format and metadata keys, see the [CLI run workflows guide](docs/Workflows-and-Troubleshooting.md#cli-usage-unchanged). For simulation engine internals, controller strategy behaviour, out-of-service handling, request modelling, and the lift state machine, see [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md).
@@ -200,7 +207,7 @@ The backend is configured via YAML files under `src/main/resources/`:
 - `application-dev.yml` — development secrets and database settings (copy from `application-dev.yml.template`)
 - `application-local.yml` — optional local-only overrides such as log paths or ports (copy from `application-local.yml.template`)
 
-No profile is active in the checked-in base configuration, so launches must set `SPRING_PROFILES_ACTIVE` explicitly — for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for development, `SPRING_PROFILES_ACTIVE=dev,local` to add local overrides (your `application-local.yml` is git-ignored, so `git pull` will not overwrite it), or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.49.21.jar` for production. This prevents a development profile from masking production configuration mistakes.
+No profile is active in the checked-in base configuration, so launches must set `SPRING_PROFILES_ACTIVE` explicitly — for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for development, `SPRING_PROFILES_ACTIVE=dev,local` to add local overrides (your `application-local.yml` is git-ignored, so `git pull` will not overwrite it), or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.49.22.jar` for production. This prevents a development profile from masking production configuration mistakes.
 
 OpenAPI/Swagger access is controlled by `security.openapi.public-access` (`SECURITY_OPENAPI_PUBLIC_ACCESS`). It defaults to `true` to preserve local development behaviour; set it to `false` to require ADMIN-role authentication for the documentation endpoints.
 
@@ -209,7 +216,9 @@ OpenAPI/Swagger access is controlled by `security.openapi.public-access` (`SECUR
 The backend requires authentication for API access through two mechanisms:
 
 - **Admin APIs** (`/api/v1/**` except `/api/v1/health`) use **HTTP Basic** authentication. Set credentials under `security.admin` in `application-dev.yml`, or via the `ADMIN_USERNAME` / `ADMIN_PASSWORD` environment variables.
-- **Runtime APIs** (`/api/v1/runtime/**`) use an **API key** in the `X-API-Key` header. Set `api.auth.key` (or the `API_KEY` environment variable); generate a key with `openssl rand -hex 32`.
+- **Runtime and simulation APIs** (`/api/v1/runtime/**`, `/api/v1/simulation-runs/**`) use an **API key** in the `X-API-Key` header. Set `api.auth.key` (or the `API_KEY` environment variable); generate a key with `openssl rand -hex 32`.
+
+The React admin UI sends both schemes from Vite environment variables when present. For local development, create `frontend/.env.local` with `VITE_ADMIN_USERNAME`, `VITE_ADMIN_PASSWORD`, and `VITE_API_KEY` values that match the backend credentials. The backend ignores the unused header for each endpoint, so one Axios client can safely send both headers on API requests.
 
 Public endpoints requiring no authentication are `/api/v1/health`, `/actuator/health`, `/actuator/info`, and static/frontend routes. Unauthenticated requests return HTTP 401; authenticated requests lacking permission return HTTP 403.
 

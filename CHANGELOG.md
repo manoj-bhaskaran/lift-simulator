@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.49.22] - 2026-06-12
+
+### Fixed
+- **Frontend API authentication headers**: The Axios client now reads Vite-provided admin Basic auth and runtime API-key credentials at construction time and sends `Authorization` and `X-API-Key` defaults with API requests. Updated setup documentation for `frontend/.env.local` and synchronized package metadata for the 0.49.22 patch release.
+
 ## [0.49.21] - 2026-06-12
 
 ### Fixed
