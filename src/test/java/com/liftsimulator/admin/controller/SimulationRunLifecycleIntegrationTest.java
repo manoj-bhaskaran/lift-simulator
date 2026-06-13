@@ -7,9 +7,11 @@ import com.liftsimulator.admin.dto.CreateSimulationRunRequest;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.LiftSystemVersion.VersionStatus;
+import com.liftsimulator.admin.entity.Scenario;
 import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
+import com.liftsimulator.admin.repository.ScenarioRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
 import com.liftsimulator.admin.service.SimulationRunService;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,6 +71,9 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
     private SimulationRunRepository runRepository;
 
     @Autowired
+    private ScenarioRepository scenarioRepository;
+
+    @Autowired
     private SimulationRunService runService;
 
     private LiftSystem testSystem;
@@ -77,6 +82,7 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
     @BeforeEach
     public void setUp() {
         runRepository.deleteAll();
+        scenarioRepository.deleteAll();
         versionRepository.deleteAll();
         liftSystemRepository.deleteAll();
 
@@ -94,10 +100,17 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
 
     @Test
     public void testRunLifecycle_StartPollResults() throws Exception {
+        Scenario scenario = scenarioRepository.save(new Scenario(
+                "Lifecycle scenario",
+                "{\"durationTicks\": 20, \"seed\": 4242, \"passengerFlows\": "
+                        + "[{\"startTick\": 0, \"originFloor\": 0, \"destinationFloor\": 3, \"passengers\": 1}]}",
+                testVersion
+        ));
+
         CreateSimulationRunRequest request = new CreateSimulationRunRequest(
                 testSystem.getId(),
                 testVersion.getId(),
-                null,
+                scenario.getId(),
                 4242L
         );
 

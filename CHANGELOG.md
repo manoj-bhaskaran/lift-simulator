@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.49.23] - 2026-06-13
+
+### Fixed
+- **Simulation run failure recovery**: Hardened async run failure handling so lifecycle transition races fall back to a direct guarded database update for RUNNING runs instead of leaving them stuck indefinitely at 0.0% progress. Runs now also persist an initial 0-tick progress update immediately after starting execution, and README/JAR metadata was synchronized for the 0.49.23 patch release.
+
 ## [0.49.22] - 2026-06-12
 
 ### Fixed

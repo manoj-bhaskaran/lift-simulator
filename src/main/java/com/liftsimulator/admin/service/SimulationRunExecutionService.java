@@ -192,6 +192,7 @@ public class SimulationRunExecutionService {
                 startRun(request.runId());
             }
             started = true;
+            updateProgress(request.runId(), 0L);
             log(logWriter, "Simulation started for run " + request.runId());
 
             RunMetrics metrics = runSimulation(request.runId(), config, scenario, logWriter, cancelToken);
@@ -394,8 +395,34 @@ public class SimulationRunExecutionService {
                 startRun(runId);
             }
             failRun(runId, message);
+        } catch (IllegalStateException ex) {
+            markRunningRunFailedSafely(runId, message, ex);
         } catch (Exception ex) {
             logger.error("Failed to mark run {} as failed", runId, ex);
+        }
+    }
+
+    private void markRunningRunFailedSafely(Long runId, String message, IllegalStateException transitionFailure) {
+        int updated = runRepository.markRunningRunFailed(runId, message, OffsetDateTime.now());
+        if (updated > 0) {
+            logger.warn(
+                    "Recovered run {} by marking RUNNING run as FAILED after lifecycle transition failure",
+                    runId,
+                    transitionFailure
+            );
+            return;
+        }
+
+        try {
+            SimulationRun run = getRunById(runId);
+            logger.warn(
+                    "Run {} was not marked FAILED because its current status is {}; preserving existing lifecycle state",
+                    runId,
+                    run.getStatus(),
+                    transitionFailure
+            );
+        } catch (Exception lookupFailure) {
+            logger.error("Failed to inspect run {} after failure transition error", runId, lookupFailure);
         }
     }
 
