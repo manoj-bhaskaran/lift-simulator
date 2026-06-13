@@ -193,6 +193,24 @@ public class SimulationRunExecutionServiceTest {
         assertInternalStateCleared(3L);
     }
 
+
+    @Test
+    public void failRunWithMessageUsesDirectFailedUpdateWhenLifecycleTransitionRaces() throws Exception {
+        SimulationRun run = new SimulationRun();
+        run.setId(9L);
+        run.setStatus(SimulationRun.RunStatus.RUNNING);
+        when(runRepository.findById(9L)).thenReturn(Optional.of(run));
+        when(runRepository.save(any(SimulationRun.class))).thenThrow(new IllegalStateException("stale state"));
+        when(runRepository.markRunningRunFailed(anyLong(), any(String.class), any())).thenReturn(1);
+
+        Method failRunWithMessage = SimulationRunExecutionService.class.getDeclaredMethod(
+                "failRunWithMessage", Long.class, String.class, boolean.class);
+        failRunWithMessage.setAccessible(true);
+        failRunWithMessage.invoke(executionService, 9L, "boom", true);
+
+        verify(runRepository).markRunningRunFailed(anyLong(), any(String.class), any());
+    }
+
     private AtomicReference<SimulationRun> prepareRepository(SimulationRun run) {
         AtomicReference<SimulationRun> storedRun = new AtomicReference<>(run);
         when(runRepository.findById(run.getId())).thenAnswer(invocation -> Optional.of(storedRun.get()));

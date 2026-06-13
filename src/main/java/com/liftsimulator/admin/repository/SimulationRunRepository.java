@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
@@ -220,4 +221,24 @@ public interface SimulationRunRepository extends JpaRepository<SimulationRun, Lo
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE SimulationRun r SET r.currentTick = :currentTick WHERE r.id = :id")
     int updateCurrentTick(@Param("id") Long id, @Param("currentTick") Long currentTick);
+
+    /**
+     * Mark a currently running simulation run as failed without loading the entity.
+     * This best-effort update is used by asynchronous failure handling to avoid
+     * leaving runs orphaned in RUNNING if an entity state-machine transition races
+     * with another lifecycle update.
+     *
+     * @param id the run id
+     * @param errorMessage the failure message
+     * @param endedAt completion timestamp
+     * @return number of rows updated
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE SimulationRun r SET r.status = 'FAILED', r.errorMessage = :errorMessage, "
+            + "r.endedAt = :endedAt WHERE r.id = :id AND r.status = 'RUNNING'")
+    int markRunningRunFailed(
+            @Param("id") Long id,
+            @Param("errorMessage") String errorMessage,
+            @Param("endedAt") OffsetDateTime endedAt);
 }
