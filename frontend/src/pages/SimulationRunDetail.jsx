@@ -7,7 +7,7 @@ import { handleApiError } from '../utils/errorHandlers';
 import './SimulationRunDetail.css';
 
 const terminalStatuses = new Set(['SUCCEEDED', 'FAILED', 'CANCELLED']);
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').trim() || '/api';
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '/api/v1').trim() || '/api/v1';
 const normalizedApiBaseUrl = apiBaseUrl.replace(/\/$/, '');
 
 const kpiLabels = {
