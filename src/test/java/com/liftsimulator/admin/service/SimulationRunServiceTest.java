@@ -17,6 +17,8 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -227,6 +229,36 @@ public class SimulationRunServiceTest {
         assertNotNull(result.getArtefactBasePath());
         assertTrue(Files.isDirectory(Path.of(result.getArtefactBasePath())));
         verify(executionService).submitRunForExecution(42L);
+    }
+
+    @Test
+    public void testCreateAndStartRun_SubmitsExecutionAfterTransactionCommit() throws Exception {
+        when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(versionRepository.findById(1L)).thenReturn(Optional.of(mockVersion));
+        when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> {
+            SimulationRun savedRun = invocation.getArgument(0);
+            if (savedRun.getId() == null) {
+                savedRun.setId(42L);
+            }
+            return savedRun;
+        });
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            SimulationRun result = runService.createAndStartRun(1L, 1L, null, 12345L);
+
+            assertEquals(42L, result.getId());
+            verify(executionService, never()).submitRunForExecution(42L);
+
+            List<TransactionSynchronization> synchronizations =
+                    TransactionSynchronizationManager.getSynchronizations();
+            assertEquals(1, synchronizations.size());
+
+            synchronizations.get(0).afterCommit();
+            verify(executionService).submitRunForExecution(42L);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 
     @Test

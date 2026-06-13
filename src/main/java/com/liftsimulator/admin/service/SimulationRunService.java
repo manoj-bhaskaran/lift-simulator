@@ -15,6 +15,8 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
@@ -149,10 +151,25 @@ public class SimulationRunService {
         run.start();
         run = runRepository.save(run);
 
-        // Submit the run for execution
-        // The execution service will handle the actual simulation
-        executionService.submitRunForExecution(run.getId());
+        // Submit the run for execution only after the surrounding transaction commits.
+        // Otherwise, the async executor can start immediately and attempt to read the
+        // run before the newly-created row is visible outside this transaction.
+        submitRunForExecutionAfterCommit(run.getId());
         return run;
+    }
+
+    private void submitRunForExecutionAfterCommit(Long runId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            executionService.submitRunForExecution(runId);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                executionService.submitRunForExecution(runId);
+            }
+        });
     }
 
     /**
