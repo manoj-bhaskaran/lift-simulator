@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.49.24] - 2026-06-13
+
+### Fixed
+- **Simulation run async submission race**: Deferred simulation execution submission until after the create-and-start transaction commits, ensuring the async worker can see the persisted run before configuring artefacts or advancing ticks. Updated service coverage and synchronized README/JAR metadata for the 0.49.24 patch release.
+
 ## [0.49.23] - 2026-06-13
 
 ### Fixed
