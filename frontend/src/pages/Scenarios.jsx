@@ -79,10 +79,11 @@ function Scenarios() {
    * @param {Object} scenario - Scenario selected for copying
    */
   const handleOpenCopy = async (scenario) => {
-    setCopyScenario(scenario);
     setTargetVersionId('');
+    setTargetVersions([]);
     const preferredSystemId = scenario.versionInfo?.liftSystemId ? String(scenario.versionInfo.liftSystemId) : '';
     setTargetSystemId(preferredSystemId);
+    setCopyScenario(scenario);
 
     try {
       const systemsResponse = await liftSystemsApi.getAllSystems();
