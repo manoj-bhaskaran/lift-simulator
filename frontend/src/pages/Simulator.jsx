@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import { scenariosApi } from '../api/scenariosApi';
+import { authHeaders } from '../api/client';
 import { simulationRunsApi } from '../api/simulationRunsApi';
 import ConfirmModal from '../components/ConfirmModal';
 import { handleApiError } from '../utils/errorHandlers';
@@ -339,7 +340,7 @@ function Simulator() {
 
       try {
         setResultsError(null);
-        const response = await fetch(artefactDownloadUrl(artefact.path));
+        const response = await fetch(artefactDownloadUrl(artefact.path), { headers: authHeaders });
         if (!response.ok) {
           let errorMessage = `Unable to download ${artefact.name || 'artefact'}.`;
           const contentType = response.headers.get('content-type') || '';

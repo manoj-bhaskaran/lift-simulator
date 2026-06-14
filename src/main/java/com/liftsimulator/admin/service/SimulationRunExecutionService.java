@@ -52,12 +52,14 @@ public class SimulationRunExecutionService {
     private static final int PROGRESS_UPDATE_INTERVAL = 5;
     private static final String CONFIG_FILE_NAME = "config.json";
     private static final String SCENARIO_FILE_NAME = "scenario.json";
+    private static final String INPUT_SCENARIO_FILE_NAME = "input.scenario";
     private static final String LOG_FILE_NAME = "run.log";
     private static final String RESULTS_FILE_NAME = "results.json";
 
     private final SimulationRunRepository runRepository;
     private final ConfigValidationService configValidationService;
     private final ScenarioValidationService scenarioValidationService;
+    private final BatchInputGenerator batchInputGenerator;
     private final ObjectMapper objectMapper;
     private final ExecutorService executor;
     private final Map<Long, Future<?>> runningTasks = new ConcurrentHashMap<>();
@@ -71,10 +73,12 @@ public class SimulationRunExecutionService {
             SimulationRunRepository runRepository,
             ConfigValidationService configValidationService,
             ScenarioValidationService scenarioValidationService,
+            BatchInputGenerator batchInputGenerator,
             ObjectMapper objectMapper) {
         this.runRepository = runRepository;
         this.configValidationService = configValidationService;
         this.scenarioValidationService = scenarioValidationService;
+        this.batchInputGenerator = batchInputGenerator;
         this.objectMapper = objectMapper;
         this.executor = Executors.newCachedThreadPool(new SimulationRunnerThreadFactory());
     }
@@ -90,8 +94,9 @@ public class SimulationRunExecutionService {
         SimulationRun run = getRunById(runId);
         String configJson = run.getVersion().getConfig();
         String scenarioJson = run.getScenario() != null ? run.getScenario().getScenarioJson() : null;
+        String scenarioName = run.getScenario() != null ? run.getScenario().getName() : null;
 
-        RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, scenarioJson);
+        RunExecutionRequest request = new RunExecutionRequest(run.getId(), configJson, scenarioJson, scenarioName);
         submitExecution(request);
     }
 
@@ -372,6 +377,13 @@ public class SimulationRunExecutionService {
         if (request.scenarioJson() != null) {
             Files.writeString(runDir.resolve(SCENARIO_FILE_NAME), request.scenarioJson(), StandardCharsets.UTF_8);
             log(logWriter, "Wrote scenario input to " + SCENARIO_FILE_NAME);
+
+            ScenarioDefinitionDTO scenarioDefinition = objectMapper.readValue(
+                    request.scenarioJson(), ScenarioDefinitionDTO.class);
+            String name = request.scenarioName() != null ? request.scenarioName() : "run";
+            batchInputGenerator.generateBatchInputFile(
+                    request.configJson(), scenarioDefinition, name, runDir.resolve(INPUT_SCENARIO_FILE_NAME));
+            log(logWriter, "Wrote batch input to " + INPUT_SCENARIO_FILE_NAME);
         }
     }
 
@@ -509,7 +521,7 @@ public class SimulationRunExecutionService {
         executor.shutdown();
     }
 
-    private record RunExecutionRequest(Long runId, String configJson, String scenarioJson) {
+    private record RunExecutionRequest(Long runId, String configJson, String scenarioJson, String scenarioName) {
     }
 
     private void submitExecution(RunExecutionRequest request) {
