@@ -3,14 +3,13 @@ package com.liftsimulator.admin.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.liftsimulator.admin.dto.HealthResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Controller for custom health check endpoints.
@@ -27,11 +26,12 @@ public class HealthController {
     )
     @ApiResponse(responseCode = "200", description = "Service is healthy")
     @GetMapping("/health")
-    public ResponseEntity<Map<String, Object>> health() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", "UP");
-        response.put("service", "Lift Config Service");
-        response.put("timestamp", Instant.now().toString());
+    public ResponseEntity<HealthResponse> health() {
+        HealthResponse response = new HealthResponse(
+            "UP",
+            "Lift Config Service",
+            Instant.now().toString()
+        );
         return ResponseEntity.ok(response);
     }
 }

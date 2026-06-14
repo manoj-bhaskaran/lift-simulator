@@ -282,9 +282,9 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         mockMvc.perform(get("/api/v1/simulation-runs/" + run.getId() + "/logs?tail=2")
                 .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.runId").value(run.getId().toString()))
+            .andExpect(jsonPath("$.runId").value(run.getId()))
             .andExpect(jsonPath("$.logs").value("Line 2\nLine 3"))
-            .andExpect(jsonPath("$.tail").value("2"));
+            .andExpect(jsonPath("$.tail").value(2));
     }
 
     @Test

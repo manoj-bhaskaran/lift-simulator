@@ -2,7 +2,9 @@ package com.liftsimulator.admin.controller;
 
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
+import com.liftsimulator.admin.dto.ErrorResponse;
 import com.liftsimulator.admin.dto.ScenarioValidationResponse;
+import com.liftsimulator.admin.dto.ValidationErrorResponse;
 import com.liftsimulator.admin.service.ArtefactDeletionException;
 import com.liftsimulator.admin.service.ConfigValidationException;
 import com.liftsimulator.admin.service.ResourceNotFoundException;
@@ -243,33 +245,5 @@ public class GlobalExceptionHandler {
             OffsetDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-    }
-
-    /**
-     * Standard error response.
-     */
-    public record ErrorResponse(
-        int status,
-        String message,
-        OffsetDateTime timestamp
-    ) {
-    }
-
-    /**
-     * Validation error response with field-level errors.
-     * Uses defensive copying to prevent external modification of field errors.
-     */
-    public record ValidationErrorResponse(
-        int status,
-        String message,
-        Map<String, String> fieldErrors,
-        OffsetDateTime timestamp
-    ) {
-        /**
-         * Compact constructor that creates defensive copies of the field errors map.
-         */
-        public ValidationErrorResponse {
-            fieldErrors = Map.copyOf(fieldErrors);
-        }
     }
 }

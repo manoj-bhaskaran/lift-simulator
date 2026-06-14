@@ -6,13 +6,13 @@ import com.liftsimulator.admin.dto.VersionResponse;
 import com.liftsimulator.admin.service.LiftSystemVersionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -39,11 +39,11 @@ public class LiftSystemVersionController {
      * @return the created version
      */
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public VersionResponse createVersion(
+    public ResponseEntity<VersionResponse> createVersion(
             @PathVariable Long systemId,
             @Valid @RequestBody CreateVersionRequest request) {
-        return versionService.createVersion(systemId, request);
+        VersionResponse response = versionService.createVersion(systemId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
@@ -55,11 +55,12 @@ public class LiftSystemVersionController {
      * @return the updated version
      */
     @PutMapping("/{versionNumber}")
-    public VersionResponse updateVersionConfig(
+    public ResponseEntity<VersionResponse> updateVersionConfig(
             @PathVariable Long systemId,
             @PathVariable Integer versionNumber,
             @Valid @RequestBody UpdateVersionConfigRequest request) {
-        return versionService.updateVersionConfig(systemId, versionNumber, request);
+        VersionResponse response = versionService.updateVersionConfig(systemId, versionNumber, request);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -69,8 +70,9 @@ public class LiftSystemVersionController {
      * @return list of versions ordered by version number descending
      */
     @GetMapping
-    public List<VersionResponse> listVersions(@PathVariable Long systemId) {
-        return versionService.listVersions(systemId);
+    public ResponseEntity<List<VersionResponse>> listVersions(@PathVariable Long systemId) {
+        List<VersionResponse> responses = versionService.listVersions(systemId);
+        return ResponseEntity.ok(responses);
     }
 
     /**
@@ -81,10 +83,11 @@ public class LiftSystemVersionController {
      * @return the version details
      */
     @GetMapping("/{versionNumber}")
-    public VersionResponse getVersion(
+    public ResponseEntity<VersionResponse> getVersion(
             @PathVariable Long systemId,
             @PathVariable Integer versionNumber) {
-        return versionService.getVersion(systemId, versionNumber);
+        VersionResponse response = versionService.getVersion(systemId, versionNumber);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -96,9 +99,10 @@ public class LiftSystemVersionController {
      * @return the published version
      */
     @PostMapping("/{versionNumber}/publish")
-    public VersionResponse publishVersion(
+    public ResponseEntity<VersionResponse> publishVersion(
             @PathVariable Long systemId,
             @PathVariable Integer versionNumber) {
-        return versionService.publishVersion(systemId, versionNumber);
+        VersionResponse response = versionService.publishVersion(systemId, versionNumber);
+        return ResponseEntity.ok(response);
     }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.liftsimulator.admin.dto.ArtefactInfo;
 import com.liftsimulator.admin.dto.CreateSimulationRunRequest;
 import com.liftsimulator.admin.dto.SimulationResultResponse;
+import com.liftsimulator.admin.dto.SimulationLogResponse;
 import com.liftsimulator.admin.dto.SimulationRunListResponse;
 import com.liftsimulator.admin.dto.SimulationRunResponse;
 import com.liftsimulator.admin.entity.SimulationRun;
@@ -34,9 +35,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -227,7 +226,7 @@ public class SimulationRunController {
      * @return the log content as plain text
      */
     @GetMapping("/{id}/logs")
-    public ResponseEntity<Map<String, String>> getSimulationLogs(
+    public ResponseEntity<SimulationLogResponse> getSimulationLogs(
             @PathVariable Long id,
             @RequestParam(required = false) Integer tail
     ) {
@@ -235,18 +234,10 @@ public class SimulationRunController {
 
         try {
             String logs = artefactService.readLogs(run, tail);
-            Map<String, String> response = new HashMap<>();
-            response.put("runId", id.toString());
-            response.put("logs", logs);
-            if (tail != null) {
-                response.put("tail", tail.toString());
-            }
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(SimulationLogResponse.success(id, logs, tail));
         } catch (IOException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("runId", id.toString());
-            errorResponse.put("error", "Failed to read logs: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(SimulationLogResponse.failure(id, "Failed to read logs: " + e.getMessage()));
         }
     }
 
