@@ -96,15 +96,6 @@ function SimulatorLanding() {
             Choose a lift system and a published version to start a simulation run.
           </p>
         </div>
-        <div className="page-actions">
-          <button
-            className="btn-primary"
-            onClick={handleProceed}
-            disabled={!selectedSystemId || !selectedVersionId}
-          >
-            Continue to Simulation Setup
-          </button>
-        </div>
       </div>
 
       {loading ? (
