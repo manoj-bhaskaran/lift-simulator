@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.49.25] - 2026-06-14
+
+### Fixed
+- **Simulation results log navigation**: Removed the redundant `View logs` links from simulator result banners and run details, keeping log review within the existing results UI and avoiding unauthenticated direct log requests. Stabilized artefact download URL callbacks to clear React hook lint warnings, and updated README and package metadata for the 0.49.25 patch release.
+
 ## [0.49.24] - 2026-06-13
 
 ### Fixed
