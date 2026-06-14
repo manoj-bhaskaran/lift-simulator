@@ -136,19 +136,15 @@ function SimulationRunDetail() {
     return Math.min(100, (runInfo.currentTick / runInfo.totalTicks) * 100);
   }, [runInfo]);
 
-  const encodeArtefactPath = (path) => {
-    if (!path) return '';
+  const artefactDownloadUrl = useCallback((path) => {
+    if (!runInfo?.id || !path) return '#';
     const normalizedPath = path.replace(/\\/g, '/');
-    return normalizedPath
+    const encodedPath = normalizedPath
       .split('/')
       .map((segment) => encodeURIComponent(segment))
       .join('/');
-  };
-
-  const artefactDownloadUrl = (path) => {
-    if (!runInfo?.id || !path) return '#';
-    return `${normalizedApiBaseUrl}/simulation-runs/${runInfo.id}/artefacts/${encodeArtefactPath(path)}`;
-  };
+    return `${normalizedApiBaseUrl}/simulation-runs/${runInfo.id}/artefacts/${encodedPath}`;
+  }, [runInfo?.id]);
 
   const handleArtefactDownload = useCallback(
     async (event, artefact) => {

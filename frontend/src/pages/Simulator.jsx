@@ -312,23 +312,17 @@ function Simulator() {
     return Math.min(100, (runInfo.currentTick / runInfo.totalTicks) * 100);
   }, [runInfo?.currentTick, runInfo?.totalTicks]);
 
-  const encodeArtefactPath = (path) => {
-    if (!path) {
-      return '';
-    }
-    const normalizedPath = path.replace(/\\/g, '/');
-    return normalizedPath
-      .split('/')
-      .map((segment) => encodeURIComponent(segment))
-      .join('/');
-  };
-
-  const artefactDownloadUrl = (path) => {
+  const artefactDownloadUrl = useCallback((path) => {
     if (!runInfo?.id || !path) {
       return '#';
     }
-    return `${normalizedApiBaseUrl}/simulation-runs/${runInfo.id}/artefacts/${encodeArtefactPath(path)}`;
-  };
+    const normalizedPath = path.replace(/\\/g, '/');
+    const encodedPath = normalizedPath
+      .split('/')
+      .map((segment) => encodeURIComponent(segment))
+      .join('/');
+    return `${normalizedApiBaseUrl}/simulation-runs/${runInfo.id}/artefacts/${encodedPath}`;
+  }, [runInfo?.id]);
 
   const handleArtefactDownload = useCallback(
     async (event, artefact) => {
