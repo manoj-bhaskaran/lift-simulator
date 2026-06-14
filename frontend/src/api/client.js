@@ -7,17 +7,20 @@ const requestTimeoutMs =
 const adminUsername = (import.meta.env.VITE_ADMIN_USERNAME || '').trim();
 const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || '';
 const apiKey = (import.meta.env.VITE_API_KEY || '').trim();
-const defaultHeaders = {
-  'Content-Type': 'application/json',
-};
+export const authHeaders = {};
 
 if (adminUsername && adminPassword) {
-  defaultHeaders.Authorization = `Basic ${btoa(`${adminUsername}:${adminPassword}`)}`;
+  authHeaders.Authorization = `Basic ${btoa(`${adminUsername}:${adminPassword}`)}`;
 }
 
 if (apiKey) {
-  defaultHeaders['X-API-Key'] = apiKey;
+  authHeaders['X-API-Key'] = apiKey;
 }
+
+const defaultHeaders = {
+  'Content-Type': 'application/json',
+  ...authHeaders,
+};
 
 const apiClient = axios.create({
   baseURL: apiBaseUrl,

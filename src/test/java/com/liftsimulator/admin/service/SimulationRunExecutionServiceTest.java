@@ -85,6 +85,9 @@ public class SimulationRunExecutionServiceTest {
     @Mock
     private ScenarioValidationService scenarioValidationService;
 
+    @Mock
+    private BatchInputGenerator batchInputGenerator;
+
     @TempDir
     private Path tempDir;
 
@@ -97,6 +100,7 @@ public class SimulationRunExecutionServiceTest {
                 runRepository,
                 configValidationService,
                 scenarioValidationService,
+                batchInputGenerator,
                 objectMapper
         );
     }

@@ -1,6 +1,7 @@
 // @ts-check
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { authHeaders } from '../api/client';
 import { simulationRunsApi } from '../api/simulationRunsApi';
 import ConfirmModal from '../components/ConfirmModal';
 import { handleApiError } from '../utils/errorHandlers';
@@ -159,7 +160,7 @@ function SimulationRunDetail() {
 
       try {
         setResultsError(null);
-        const response = await fetch(artefactDownloadUrl(artefact.path));
+        const response = await fetch(artefactDownloadUrl(artefact.path), { headers: authHeaders });
         if (!response.ok) {
           let errorMessage = `Unable to download ${artefact.name || 'artefact'}.`;
           const contentType = response.headers.get('content-type') || '';
