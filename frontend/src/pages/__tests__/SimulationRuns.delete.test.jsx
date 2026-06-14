@@ -85,6 +85,34 @@ describe('SimulationRuns delete action', () => {
     expect(simulationRunsApi.listRuns).toHaveBeenCalledTimes(2);
   });
 
+  it('steps back a page when deleting the only row on a non-first page', async () => {
+    // Page 0 holds run #7; page 1 holds the single run #21 (last page).
+    simulationRunsApi.listRuns.mockImplementation((params = {}) => {
+      const page = Number(params.page ?? 0);
+      const content = page >= 1 ? [{ ...succeededRun, id: 21 }] : [succeededRun];
+      return Promise.resolve({
+        data: { content, totalElements: 21, totalPages: 2, number: page },
+      });
+    });
+    simulationRunsApi.deleteRun.mockResolvedValue({ status: 204 });
+    renderPage();
+
+    await screen.findByText('#7');
+    fireEvent.click(screen.getByRole('button', { name: /Next/ }));
+    await screen.findByText('#21');
+
+    const callsBeforeDelete = simulationRunsApi.listRuns.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete run' }));
+
+    await waitFor(() => expect(simulationRunsApi.deleteRun).toHaveBeenCalledWith(21));
+    // The deletion emptied page 1, so the reload must step back to page 0.
+    await waitFor(() => {
+      const reloadCalls = simulationRunsApi.listRuns.mock.calls.slice(callsBeforeDelete);
+      expect(reloadCalls.some((call) => Number(call[0]?.page) === 0)).toBe(true);
+    });
+  });
+
   it('surfaces an error when deletion fails', async () => {
     simulationRunsApi.listRuns.mockResolvedValue(buildPage([succeededRun]));
     simulationRunsApi.deleteRun.mockRejectedValue({

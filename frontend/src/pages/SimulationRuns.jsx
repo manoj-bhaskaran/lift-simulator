@@ -229,7 +229,12 @@ function SimulationRuns() {
       await simulationRunsApi.deleteRun(runId);
       setActionNotice(`Run #${runId} and its artefacts were deleted.`);
       setActionError(null);
-      await loadRuns(false);
+      // When the deleted run was the only row on a non-first page, that page no
+      // longer exists after removal, so step back a page to avoid landing on an
+      // out-of-range page that renders as an empty state.
+      const emptiesCurrentPage = runs.length === 1 && currentPage > 0;
+      const targetPage = emptiesCurrentPage ? currentPage - 1 : currentPage;
+      await loadRuns(false, targetPage);
     } catch (err) {
       setActionError(getApiErrorMessage(err, `Failed to delete run #${runId}`));
       console.error(err);
@@ -237,7 +242,7 @@ function SimulationRuns() {
       setIsDeleting(false);
       setRunToDelete(null);
     }
-  }, [runToDelete, loadRuns]);
+  }, [runToDelete, loadRuns, runs.length, currentPage]);
 
   const hasFilters = selectedSystemId || (selectedStatus && selectedStatus !== 'ALL');
 
