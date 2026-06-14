@@ -24,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -144,6 +145,32 @@ public class SimulationRunController {
         SimulationRun run = executionService.cancelRun(id);
         SimulationRunResponse response = SimulationRunResponse.fromEntity(run);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Deletes a completed simulation run along with its stored artefacts.
+     * Endpoint: DELETE /api/v1/simulation-runs/{id}
+     *
+     * <p>Only runs in a terminal state (SUCCEEDED, FAILED, CANCELLED) can be deleted.
+     * Deleting an in-progress run returns 409 Conflict; deleting an unknown run returns
+     * 404 Not Found.</p>
+     *
+     * @param id the run ID
+     * @return 204 No Content on successful deletion
+     */
+    @Operation(
+        summary = "Delete a simulation run",
+        description = "Permanently deletes a completed simulation run, removing its run history "
+            + "and all stored artefacts. Only runs in a terminal state (SUCCEEDED, FAILED, "
+            + "CANCELLED) can be deleted."
+    )
+    @ApiResponse(responseCode = "204", description = "Simulation run deleted")
+    @ApiResponse(responseCode = "404", description = "Simulation run not found")
+    @ApiResponse(responseCode = "409", description = "Run is still in progress and cannot be deleted")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSimulationRun(@PathVariable Long id) {
+        simulationRunService.deleteRun(id);
+        return ResponseEntity.noContent().build();
     }
 
     /**

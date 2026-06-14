@@ -187,6 +187,36 @@ class ArtefactServiceTest {
         assertEquals("line-100000", tailedLines[tailedLines.length - 1]);
     }
 
+    @Test
+    void deleteArtefactsRemovesDirectoryAndNestedFiles() throws IOException {
+        Files.createDirectories(tempDir.resolve("metrics"));
+        Files.writeString(tempDir.resolve("results.json"), "{\"status\":\"SUCCEEDED\"}");
+        Files.writeString(tempDir.resolve("metrics/per-floor.csv"), "floor,requests\n0,1\n");
+
+        artefactService.deleteArtefacts(runForTempDir());
+
+        assertFalse(Files.exists(tempDir));
+    }
+
+    @Test
+    void deleteArtefactsIsNoOpForMissingDirectory() throws IOException {
+        SimulationRun run = new SimulationRun();
+        run.setId(1L);
+        run.setArtefactBasePath(tempDir.resolve("missing").toString());
+
+        // Should not throw even though the directory does not exist.
+        artefactService.deleteArtefacts(run);
+    }
+
+    @Test
+    void deleteArtefactsIsNoOpForBlankBasePath() throws IOException {
+        SimulationRun run = new SimulationRun();
+        run.setId(1L);
+        run.setArtefactBasePath("");
+
+        artefactService.deleteArtefacts(run);
+    }
+
     private void writeRunLog(int lines) throws IOException {
         List<String> content = new ArrayList<>(lines);
         for (int line = 1; line <= lines; line++) {

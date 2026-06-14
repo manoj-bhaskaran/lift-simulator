@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.50.0] - 2026-06-14
+
+### Added
+- **Delete completed simulation runs**: Added the ability to delete completed simulation runs along with their run history and stored artefacts. A new `DELETE /api/v1/simulation-runs/{id}` endpoint removes the run record and recursively deletes its artefact directory (generated input, logs, and result files); only terminal runs (`SUCCEEDED`, `FAILED`, `CANCELLED`) can be deleted, while in-progress runs return `409 Conflict` and unknown runs return `404 Not Found`. Artefacts are removed before the database record so a file-system failure aborts cleanly without leaving an inconsistent state, surfacing a clear `500` error. The Simulation Runs list and run detail screens now expose a guarded **Delete** action with a confirmation dialog warning that history and artefacts will be removed, plus success/failure feedback. Expanded service, artefact, controller, and frontend test coverage, and synchronized README/JAR/package metadata for the 0.50.0 release.
+
 ## [0.49.25] - 2026-06-14
 
 ### Fixed

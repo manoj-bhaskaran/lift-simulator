@@ -23,6 +23,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -352,6 +354,89 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
                 .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("Artefact not found: missing.json"));
+    }
+
+    @Test
+    public void testDeleteSimulationRun_Success() throws Exception {
+        SimulationRun run = new SimulationRun(testSystem, testVersion);
+        run.setArtefactBasePath("./simulation-runs/run-delete");
+        run.start();
+        run.succeed();
+        run = runRepository.save(run);
+
+        // Create artefact directory with files that must be removed on deletion.
+        Path artefactDir = Paths.get(run.getArtefactBasePath());
+        Files.createDirectories(artefactDir);
+        Files.writeString(artefactDir.resolve("results.json"), "{\"ok\": true}");
+        Files.writeString(artefactDir.resolve("simulation.log"), "Log content");
+
+        Long runId = run.getId();
+
+        mockMvc.perform(delete("/api/v1/simulation-runs/" + runId)
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isNoContent());
+
+        // Run history removed from the database.
+        mockMvc.perform(get("/api/v1/simulation-runs/" + runId)
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isNotFound());
+
+        // Stored artefacts removed from disk.
+        assertFalse(Files.exists(artefactDir));
+    }
+
+    @Test
+    public void testDeleteSimulationRun_RemovesArtefactsAndReturns404Afterwards() throws Exception {
+        SimulationRun run = new SimulationRun(testSystem, testVersion);
+        run.setArtefactBasePath("./simulation-runs/run-delete-artefacts");
+        run.start();
+        run.succeed();
+        run = runRepository.save(run);
+
+        Path artefactDir = Paths.get(run.getArtefactBasePath());
+        Files.createDirectories(artefactDir);
+        Files.writeString(artefactDir.resolve("results.json"), "{\"ok\": true}");
+
+        Long runId = run.getId();
+
+        mockMvc.perform(delete("/api/v1/simulation-runs/" + runId)
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isNoContent());
+
+        // Artefact links for a deleted run return a clear 404, not a 500.
+        mockMvc.perform(get("/api/v1/simulation-runs/" + runId + "/artefacts/results.json")
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testDeleteSimulationRun_NotFound() throws Exception {
+        mockMvc.perform(delete("/api/v1/simulation-runs/999")
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.message").value("Simulation run not found with id: 999"));
+    }
+
+    @Test
+    public void testDeleteSimulationRun_RunningRejected() throws Exception {
+        SimulationRun run = new SimulationRun(testSystem, testVersion);
+        run.start();
+        run = runRepository.save(run);
+
+        mockMvc.perform(delete("/api/v1/simulation-runs/" + run.getId())
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isConflict());
+
+        // Run still present after a rejected deletion.
+        mockMvc.perform(get("/api/v1/simulation-runs/" + run.getId())
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    public void testDeleteSimulationRun_RequiresApiKey() throws Exception {
+        mockMvc.perform(delete("/api/v1/simulation-runs/1"))
+            .andExpect(status().isUnauthorized());
     }
 
     @Test
