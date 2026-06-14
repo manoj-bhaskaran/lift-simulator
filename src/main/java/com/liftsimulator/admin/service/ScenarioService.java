@@ -26,6 +26,9 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ScenarioService {
 
+    private static final int SCENARIO_NAME_MAX_LENGTH = 200;
+    private static final String COPY_NAME_PREFIX = "Copy of ";
+
     private final ScenarioRepository scenarioRepository;
     private final LiftSystemVersionRepository versionRepository;
     private final ScenarioValidationService scenarioValidationService;
@@ -202,7 +205,11 @@ public class ScenarioService {
     }
 
     private String copiedScenarioName(String sourceName) {
-        return "Copy of " + sourceName;
+        int sourceNameLimit = SCENARIO_NAME_MAX_LENGTH - COPY_NAME_PREFIX.length();
+        String boundedSourceName = sourceName.length() > sourceNameLimit
+            ? sourceName.substring(0, sourceNameLimit)
+            : sourceName;
+        return COPY_NAME_PREFIX + boundedSourceName;
     }
 
     private String serializeScenarioJson(JsonNode scenarioJson) {

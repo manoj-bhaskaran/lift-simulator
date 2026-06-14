@@ -199,6 +199,31 @@ public class ScenarioServiceTest {
     }
 
     @Test
+    public void copyScenarioTruncatesGeneratedNameToColumnLimit() throws Exception {
+        String sourceName = "A".repeat(200);
+        Scenario source = new Scenario(sourceName, validScenario(), version);
+        source.setId(30L);
+        LiftSystemVersion targetVersion = version(22L);
+        when(scenarioRepository.findById(30L)).thenReturn(Optional.of(source));
+        when(versionRepository.findById(22L)).thenReturn(Optional.of(targetVersion));
+        when(scenarioValidationService.validate(objectMapper.readTree(validScenario()), 22L))
+                .thenReturn(validValidationResponse());
+        when(scenarioRepository.save(any(Scenario.class))).thenAnswer(invocation -> {
+            Scenario saved = invocation.getArgument(0);
+            saved.setId(31L);
+            return saved;
+        });
+
+        scenarioService.copyScenario(30L, 22L);
+
+        ArgumentCaptor<Scenario> scenarioCaptor = ArgumentCaptor.forClass(Scenario.class);
+        verify(scenarioRepository).save(scenarioCaptor.capture());
+        String copiedName = scenarioCaptor.getValue().getName();
+        assertEquals(200, copiedName.length());
+        assertTrue(copiedName.startsWith("Copy of "));
+    }
+
+    @Test
     public void copyScenarioDoesNotSaveWhenTargetValidationFails() throws Exception {
         Scenario source = new Scenario("Invalid for target", validScenario(), version);
         source.setId(30L);
