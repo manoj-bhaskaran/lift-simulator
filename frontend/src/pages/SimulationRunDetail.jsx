@@ -1,10 +1,11 @@
 // @ts-check
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { authHeaders } from '../api/client';
 import { simulationRunsApi } from '../api/simulationRunsApi';
+import AlertModal from '../components/AlertModal';
 import ConfirmModal from '../components/ConfirmModal';
-import { handleApiError } from '../utils/errorHandlers';
+import { getApiErrorMessage, handleApiError } from '../utils/errorHandlers';
 import './SimulationRunDetail.css';
 
 const terminalStatuses = new Set(['SUCCEEDED', 'FAILED', 'CANCELLED']);
@@ -31,6 +32,7 @@ const kpiLabels = {
  */
 function SimulationRunDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [runInfo, setRunInfo] = useState(null);
   const [results, setResults] = useState(null);
   const [artefacts, setArtefacts] = useState([]);
@@ -40,6 +42,9 @@ function SimulationRunDetail() {
   const [now, setNow] = useState(() => Date.now());
   const [isCancelling, setIsCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   const runStatus = runInfo?.status;
   const isTerminal = runStatus ? terminalStatuses.has(runStatus) : false;
@@ -70,6 +75,27 @@ function SimulationRunDetail() {
       setIsCancelling(false);
     }
   }, [runInfo?.id]);
+
+  const handleDeleteRun = useCallback(async () => {
+    if (!runInfo?.id) {
+      return;
+    }
+    const runId = runInfo.id;
+    try {
+      setIsDeleting(true);
+      setDeleteError(null);
+      await simulationRunsApi.deleteRun(runId);
+      navigate('/simulation-runs', {
+        replace: true,
+        state: { notice: `Run #${runId} and its artefacts were deleted.` },
+      });
+    } catch (err) {
+      setDeleteError(getApiErrorMessage(err, `Failed to delete run #${runId}`));
+      console.error(err);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [runInfo?.id, navigate]);
 
   useEffect(() => {
     const loadInitial = async () => {
@@ -299,6 +325,19 @@ function SimulationRunDetail() {
                 disabled={isCancelling}
               >
                 {isCancelling ? 'Cancelling...' : 'Cancel Run'}
+              </button>
+            )}
+            {isTerminal && (
+              <button
+                className="btn-danger"
+                type="button"
+                onClick={() => {
+                  setDeleteError(null);
+                  setShowDeleteModal(true);
+                }}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Run'}
               </button>
             )}
           </div>
@@ -569,6 +608,29 @@ function SimulationRunDetail() {
         confirmText="Cancel run"
         cancelText="Keep running"
         confirmStyle="danger"
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteRun}
+        title="Delete simulation run?"
+        message={
+          `This will permanently delete run #${runInfo.id}, including its run history `
+          + 'and all stored artefacts (generated input, logs, and result files). '
+          + 'This action cannot be undone.'
+        }
+        confirmText="Delete run"
+        cancelText="Keep run"
+        confirmStyle="danger"
+      />
+
+      <AlertModal
+        isOpen={deleteError !== null}
+        onClose={() => setDeleteError(null)}
+        title="Failed to delete run"
+        message={deleteError || ''}
+        type="error"
       />
     </div>
   );

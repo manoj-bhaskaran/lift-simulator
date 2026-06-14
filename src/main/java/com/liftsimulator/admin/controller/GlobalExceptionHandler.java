@@ -3,6 +3,7 @@ package com.liftsimulator.admin.controller;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.ScenarioValidationResponse;
+import com.liftsimulator.admin.service.ArtefactDeletionException;
 import com.liftsimulator.admin.service.ConfigValidationException;
 import com.liftsimulator.admin.service.ResourceNotFoundException;
 import com.liftsimulator.admin.service.ScenarioValidationException;
@@ -76,6 +77,23 @@ public class GlobalExceptionHandler {
             OffsetDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    /**
+     * Handles artefact deletion failures with 500 status.
+     * Surfaces a clear, actionable message instead of a generic server error so callers
+     * understand that the run was not deleted because its artefacts could not be removed.
+     */
+    @ExceptionHandler(ArtefactDeletionException.class)
+    public ResponseEntity<ErrorResponse> handleArtefactDeletionError(ArtefactDeletionException ex) {
+        logger.error("Artefact deletion failed: {}", ex.getMessage(), ex);
+
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            ex.getMessage(),
+            OffsetDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
     /**

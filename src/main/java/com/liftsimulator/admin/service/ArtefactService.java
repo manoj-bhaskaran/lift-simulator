@@ -18,6 +18,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
 import java.util.stream.Stream;
@@ -141,6 +142,46 @@ public class ArtefactService {
         }
 
         return new ArtefactDownload(artefactPath, fileName, size, mimeType);
+    }
+
+    /**
+     * Deletes all stored artefacts for a simulation run by recursively removing its
+     * artefact directory. This is a no-op when the run has no artefact base path set
+     * or the directory does not exist, so callers can invoke it safely for runs that
+     * never produced artefacts.
+     *
+     * @param run the simulation run whose artefacts should be removed
+     * @throws IOException if the directory exists but cannot be fully deleted
+     * @throws IllegalStateException if the artefact base path points to a non-directory
+     */
+    public void deleteArtefacts(SimulationRun run) throws IOException {
+        String basePath = run.getArtefactBasePath();
+        if (basePath == null || basePath.isBlank()) {
+            return;
+        }
+
+        Path directory = validateAndResolvePath(basePath, null);
+
+        if (!Files.exists(directory)) {
+            return;
+        }
+
+        if (!Files.isDirectory(directory)) {
+            throw new IllegalStateException("Artefact base path is not a directory: " + basePath);
+        }
+
+        // Walk the tree and delete children before parents by sorting paths in
+        // reverse order, ensuring directories are emptied before removal.
+        try (Stream<Path> paths = Files.walk(directory)) {
+            List<Path> orderedForDeletion = paths
+                .sorted(Comparator.reverseOrder())
+                .toList();
+            for (Path path : orderedForDeletion) {
+                Files.deleteIfExists(path);
+            }
+        }
+
+        logger.info("Deleted artefact directory for run {}: {}", run.getId(), directory);
     }
 
     /**

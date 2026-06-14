@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,6 +59,9 @@ public class SimulationRunServiceTest {
     private SimulationRunExecutionService executionService;
 
     @Mock
+    private ArtefactService artefactService;
+
+    @Mock
     private EntityManager entityManager;
 
     private SimulationRunService runService;
@@ -77,6 +81,7 @@ public class SimulationRunServiceTest {
                 versionRepository,
                 scenarioRepository,
                 executionService,
+                artefactService,
                 tempDir.toString()
         );
 
@@ -489,18 +494,20 @@ public class SimulationRunServiceTest {
     }
 
     @Test
-    public void testDeleteRun_Success() {
-        when(runRepository.existsById(1L)).thenReturn(true);
+    public void testDeleteRun_Success() throws Exception {
+        mockRun.setStatus(RunStatus.SUCCEEDED);
+        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
 
         runService.deleteRun(1L);
 
-        verify(runRepository).existsById(1L);
+        verify(runRepository).findById(1L);
+        verify(artefactService).deleteArtefacts(mockRun);
         verify(runRepository).deleteById(1L);
     }
 
     @Test
     public void testDeleteRun_NotFound() {
-        when(runRepository.existsById(999L)).thenReturn(false);
+        when(runRepository.findById(999L)).thenReturn(Optional.empty());
 
         ResourceNotFoundException exception = assertThrows(
             ResourceNotFoundException.class,
@@ -508,7 +515,39 @@ public class SimulationRunServiceTest {
         );
 
         assertEquals("Simulation run not found with id: 999", exception.getMessage());
-        verify(runRepository).existsById(999L);
+        verify(runRepository).findById(999L);
+        verify(runRepository, never()).deleteById(any());
+    }
+
+    @Test
+    public void testDeleteRun_RunningRunRejected() throws Exception {
+        mockRun.setStatus(RunStatus.RUNNING);
+        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+
+        IllegalStateException exception = assertThrows(
+            IllegalStateException.class,
+            () -> runService.deleteRun(1L)
+        );
+
+        assertTrue(exception.getMessage().contains("RUNNING"));
+        verify(artefactService, never()).deleteArtefacts(any());
+        verify(runRepository, never()).deleteById(any());
+    }
+
+    @Test
+    public void testDeleteRun_ArtefactDeletionFailureLeavesRunIntact() throws Exception {
+        mockRun.setStatus(RunStatus.FAILED);
+        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        doThrow(new java.io.IOException("disk error")).when(artefactService).deleteArtefacts(mockRun);
+
+        ArtefactDeletionException exception = assertThrows(
+            ArtefactDeletionException.class,
+            () -> runService.deleteRun(1L)
+        );
+
+        assertTrue(exception.getMessage().contains("disk error"));
+        // The database record must not be removed when artefact cleanup fails.
+        verify(runRepository, never()).deleteById(any());
     }
 
     @Test

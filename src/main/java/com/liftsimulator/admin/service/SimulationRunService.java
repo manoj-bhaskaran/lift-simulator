@@ -46,6 +46,7 @@ public class SimulationRunService {
     private final ScenarioRepository scenarioRepository;
     private final String artefactsBasePath;
     private final SimulationRunExecutionService executionService;
+    private final ArtefactService artefactService;
 
     @SuppressFBWarnings(
             value = "EI_EXPOSE_REP2",
@@ -57,12 +58,14 @@ public class SimulationRunService {
             LiftSystemVersionRepository versionRepository,
             ScenarioRepository scenarioRepository,
             SimulationRunExecutionService executionService,
+            ArtefactService artefactService,
             @Value("${simulation.artefacts.base-path:./simulation-runs}") String artefactsBasePath) {
         this.runRepository = runRepository;
         this.liftSystemRepository = liftSystemRepository;
         this.versionRepository = versionRepository;
         this.scenarioRepository = scenarioRepository;
         this.executionService = executionService;
+        this.artefactService = artefactService;
         this.artefactsBasePath = artefactsBasePath;
     }
 
@@ -419,16 +422,39 @@ public class SimulationRunService {
     }
 
     /**
-     * Delete a simulation run.
+     * Delete a completed simulation run, removing both its database record and any
+     * stored artefact files.
+     *
+     * <p>Only runs in a terminal state (SUCCEEDED, FAILED, CANCELLED) may be deleted;
+     * attempting to delete an in-progress run (CREATED or RUNNING) fails fast so that
+     * an active execution is never orphaned.</p>
+     *
+     * <p>Artefacts are removed before the database record so that a file system
+     * failure aborts the operation without deleting the run history, keeping the
+     * stored state consistent.</p>
      *
      * @param id the run id
      * @throws ResourceNotFoundException if the run is not found
+     * @throws IllegalStateException if the run is not in a terminal state
+     * @throws ArtefactDeletionException if the stored artefacts cannot be removed
      */
     @Transactional
     public void deleteRun(Long id) {
-        if (!runRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Simulation run not found with id: " + id);
+        SimulationRun run = getRunById(id);
+        RunStatus status = run.getStatus();
+        if (status != RunStatus.SUCCEEDED && status != RunStatus.FAILED && status != RunStatus.CANCELLED) {
+            throw new IllegalStateException(
+                    "Cannot delete a simulation run in " + status + " state. "
+                            + "Only completed runs (SUCCEEDED, FAILED, CANCELLED) can be deleted.");
         }
+
+        try {
+            artefactService.deleteArtefacts(run);
+        } catch (IOException e) {
+            throw new ArtefactDeletionException(
+                    "Failed to delete artefacts for simulation run " + id + ": " + e.getMessage(), e);
+        }
+
         runRepository.deleteById(id);
     }
 }

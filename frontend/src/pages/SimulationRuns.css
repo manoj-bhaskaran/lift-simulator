@@ -189,6 +189,37 @@
   background: #bdc3c7;
 }
 
+.simulation-runs .btn-small.btn-danger {
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.simulation-runs .btn-small.btn-danger:hover:not(:disabled) {
+  background: #c0392b;
+}
+
+.simulation-runs .btn-small.btn-danger:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.simulation-runs .run-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.simulation-runs .action-notice {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  background: #eafaf1;
+  color: #1e8449;
+  border: 1px solid #abebc6;
+}
+
 @media (max-width: 768px) {
   .simulation-runs .page-header {
     flex-direction: column;
