@@ -178,6 +178,22 @@ public class ScenarioControllerTest extends LocalIntegrationTest {
                 .value("Unknown property 'unsupportedMode' is not allowed in scenario schema"));
     }
 
+
+    @Test
+    public void testCopyScenario_Success() throws Exception {
+        Long scenarioId = createScenario("Copy Source");
+
+        mockMvc.perform(post("/api/v1/scenarios/{id}/copy", scenarioId)
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"targetLiftSystemVersionId\":" + version.getId() + "}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").value(org.hamcrest.Matchers.not(scenarioId.intValue())))
+            .andExpect(jsonPath("$.name").value("Copy of Copy Source"))
+            .andExpect(jsonPath("$.liftSystemVersionId").value(version.getId()))
+            .andExpect(jsonPath("$.scenarioJson.passengerFlows[0].destinationFloor").value(4));
+    }
+
     @Test
     public void testCreateScenario_MissingRequiredRequestFields() throws Exception {
         mockMvc.perform(post("/api/v1/scenarios")

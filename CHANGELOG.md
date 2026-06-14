@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.51.0] - 2026-06-14
+
+### Added
+- **Scenario copy across versions**: Added a validated scenario-copy API and Scenario list UI flow for copying existing passenger-flow scenarios to another Lift System Version. The backend validates the existing scenario JSON against the target version's floor constraints before persisting a new scenario record, and the UI surfaces success or validation failures from the copy action. Updated README, backend, and frontend package metadata for the 0.51.0 minor release.
+
 ## [0.50.1] - 2026-06-14
 
 ### Changed

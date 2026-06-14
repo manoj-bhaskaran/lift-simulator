@@ -26,6 +26,9 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ScenarioService {
 
+    private static final int SCENARIO_NAME_MAX_LENGTH = 200;
+    private static final String COPY_NAME_PREFIX = "Copy of ";
+
     private final ScenarioRepository scenarioRepository;
     private final LiftSystemVersionRepository versionRepository;
     private final ScenarioValidationService scenarioValidationService;
@@ -110,6 +113,41 @@ public class ScenarioService {
     }
 
     /**
+     * Copies a scenario to another lift system version after validating the existing payload
+     * against the target version constraints.
+     *
+     * @param sourceScenarioId source scenario id
+     * @param targetLiftSystemVersionId target lift system version id
+     * @return copied scenario response
+     * @throws ResourceNotFoundException if source scenario or target version is not found
+     * @throws ScenarioValidationException if scenario validation fails for the target version
+     */
+    @Transactional
+    public ScenarioResponse copyScenario(Long sourceScenarioId, Long targetLiftSystemVersionId) {
+        Scenario sourceScenario = scenarioRepository.findById(sourceScenarioId)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Scenario not found with id: " + sourceScenarioId
+            ));
+
+        LiftSystemVersion targetVersion = versionRepository.findById(targetLiftSystemVersionId)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Lift system version not found with id: " + targetLiftSystemVersionId
+            ));
+
+        JsonNode scenarioJson = parseStoredScenarioJson(sourceScenario);
+        validateScenarioJson(scenarioJson, targetLiftSystemVersionId);
+
+        Scenario copiedScenario = new Scenario(
+            copiedScenarioName(sourceScenario.getName()),
+            serializeScenarioJson(scenarioJson),
+            targetVersion
+        );
+        Scenario savedScenario = scenarioRepository.save(copiedScenario);
+
+        return toResponse(savedScenario);
+    }
+
+    /**
      * Retrieves a scenario by id.
      *
      * @param id scenario id
@@ -158,6 +196,22 @@ public class ScenarioService {
         }
     }
 
+    private JsonNode parseStoredScenarioJson(Scenario scenario) {
+        try {
+            return objectMapper.readTree(scenario.getScenarioJson());
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Stored scenario JSON could not be parsed", e);
+        }
+    }
+
+    private String copiedScenarioName(String sourceName) {
+        int sourceNameLimit = SCENARIO_NAME_MAX_LENGTH - COPY_NAME_PREFIX.length();
+        String boundedSourceName = sourceName.length() > sourceNameLimit
+            ? sourceName.substring(0, sourceNameLimit)
+            : sourceName;
+        return COPY_NAME_PREFIX + boundedSourceName;
+    }
+
     private String serializeScenarioJson(JsonNode scenarioJson) {
         try {
             return objectMapper.writeValueAsString(scenarioJson);
@@ -168,7 +222,7 @@ public class ScenarioService {
 
     private ScenarioResponse toResponse(Scenario scenario) {
         try {
-            JsonNode scenarioJson = objectMapper.readTree(scenario.getScenarioJson());
+            JsonNode scenarioJson = parseStoredScenarioJson(scenario);
 
             // Build version info if available
             ScenarioResponse.LiftSystemVersionInfo versionInfo = null;

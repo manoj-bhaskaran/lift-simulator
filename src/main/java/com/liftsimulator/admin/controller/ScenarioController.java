@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.controller;
 
+import com.liftsimulator.admin.dto.CopyScenarioRequest;
 import com.liftsimulator.admin.dto.ScenarioRequest;
 import com.liftsimulator.admin.dto.ScenarioResponse;
 import com.liftsimulator.admin.dto.ScenarioValidationResponse;
@@ -127,6 +128,32 @@ public class ScenarioController {
     public ResponseEntity<Void> deleteScenario(@PathVariable Long id) {
         scenarioService.deleteScenario(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Copies a scenario to another lift system version after validating target constraints.
+     *
+     * @param id source scenario id
+     * @param request copy target version request
+     * @return copied scenario response
+     */
+    @Operation(
+        summary = "Copy a scenario to another version",
+        description = "Validates the source scenario against the target lift system version before creating the copy"
+    )
+    @ApiResponse(responseCode = "201", description = "Scenario copied successfully")
+    @ApiResponse(responseCode = "400", description = "Scenario is invalid for target version")
+    @ApiResponse(responseCode = "404", description = "Source scenario or target version not found")
+    @PostMapping("/{id}/copy")
+    public ResponseEntity<ScenarioResponse> copyScenario(
+        @Parameter(description = "Source scenario ID") @PathVariable Long id,
+        @Valid @RequestBody CopyScenarioRequest request
+    ) {
+        ScenarioResponse response = scenarioService.copyScenario(
+            id,
+            request.targetLiftSystemVersionId()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**

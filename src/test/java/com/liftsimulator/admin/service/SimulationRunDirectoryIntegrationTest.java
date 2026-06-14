@@ -20,7 +20,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,6 +32,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * and no orphaned directories are left behind (issue #377).
  */
 public class SimulationRunDirectoryIntegrationTest extends LocalIntegrationTest {
+
+    private static final Set<SimulationRun.RunStatus> TERMINAL_STATUSES = Set.of(
+            SimulationRun.RunStatus.SUCCEEDED,
+            SimulationRun.RunStatus.FAILED,
+            SimulationRun.RunStatus.CANCELLED
+    );
 
     @TempDir
     static Path artefactsRoot;
@@ -69,9 +77,7 @@ public class SimulationRunDirectoryIntegrationTest extends LocalIntegrationTest 
         // Remove any run directories left by a previous test so each test starts clean
         try (var entries = Files.newDirectoryStream(artefactsRoot)) {
             for (Path entry : entries) {
-                Files.walk(entry)
-                        .sorted(Comparator.reverseOrder())
-                        .forEach(p -> { try { Files.delete(p); } catch (IOException ignored) { } });
+                deleteRecursively(entry);
             }
         }
 
@@ -82,8 +88,9 @@ public class SimulationRunDirectoryIntegrationTest extends LocalIntegrationTest 
     }
 
     @Test
-    void createAndStartRun_createsExactlyOneDirectory() throws IOException {
+    void createAndStartRun_createsExactlyOneDirectory() throws Exception {
         SimulationRun run = runService.createAndStartRun(testSystem.getId(), testVersion.getId(), null, 1L);
+        awaitTerminalRun(run.getId());
 
         // The persisted path must be inside artefactsRoot
         Path runDir = Path.of(run.getArtefactBasePath());
@@ -93,10 +100,13 @@ public class SimulationRunDirectoryIntegrationTest extends LocalIntegrationTest 
                 "artefact directory must exist on disk");
 
         // Exactly one subdirectory should exist under artefactsRoot (no orphans)
-        List<Path> dirs = Files.walk(artefactsRoot, 1)
-                .filter(p -> !p.equals(artefactsRoot))
-                .filter(Files::isDirectory)
-                .collect(Collectors.toList());
+        List<Path> dirs;
+        try (Stream<Path> paths = Files.walk(artefactsRoot, 1)) {
+            dirs = paths
+                    .filter(p -> !p.equals(artefactsRoot))
+                    .filter(Files::isDirectory)
+                    .collect(Collectors.toList());
+        }
         assertEquals(1, dirs.size(),
                 "Exactly one run directory should exist; found: " + dirs);
         assertEquals(runDir.toAbsolutePath(), dirs.get(0).toAbsolutePath(),
@@ -104,11 +114,38 @@ public class SimulationRunDirectoryIntegrationTest extends LocalIntegrationTest 
     }
 
     @Test
-    void createAndStartRun_directoryNameMatchesRunId() throws IOException {
+    void createAndStartRun_directoryNameMatchesRunId() throws Exception {
         SimulationRun run = runService.createAndStartRun(testSystem.getId(), testVersion.getId(), null, 2L);
+        awaitTerminalRun(run.getId());
 
         Path runDir = Path.of(run.getArtefactBasePath());
         assertEquals("run-" + run.getId(), runDir.getFileName().toString(),
                 "Run directory name must be run-{id}");
+    }
+
+    private void deleteRecursively(Path path) throws IOException {
+        try (Stream<Path> paths = Files.walk(path)) {
+            paths.sorted(Comparator.reverseOrder()).forEach(p -> {
+                try {
+                    Files.delete(p);
+                } catch (IOException ignored) {
+                    // Best-effort cleanup; the following test assertions use a clean root when deletion succeeds.
+                }
+            });
+        }
+    }
+
+    private void awaitTerminalRun(Long runId) throws InterruptedException {
+        long deadline = System.nanoTime() + 5_000_000_000L;
+        while (System.nanoTime() < deadline) {
+            SimulationRun run = runRepository.findById(runId).orElseThrow();
+            if (TERMINAL_STATUSES.contains(run.getStatus())) {
+                return;
+            }
+            Thread.sleep(50);
+        }
+        SimulationRun run = runRepository.findById(runId).orElseThrow();
+        assertTrue(TERMINAL_STATUSES.contains(run.getStatus()),
+                "Run should reach a terminal status before test cleanup");
     }
 }
