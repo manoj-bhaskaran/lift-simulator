@@ -374,11 +374,6 @@ function SimulationRunDetail() {
             <div className="result-banner error">
               <strong>Simulation failed.</strong>
               <p>{results?.errorMessage || runInfo.errorMessage || 'Unknown error.'}</p>
-              {results?.logsUrl && (
-                <a className="link" href={results.logsUrl}>
-                  View logs
-                </a>
-              )}
             </div>
           )}
 

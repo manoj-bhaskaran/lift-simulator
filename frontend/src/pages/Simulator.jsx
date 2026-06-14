@@ -651,11 +651,6 @@ function Simulator() {
             <div className="result-banner error">
               <strong>Simulation failed.</strong>
               <p>{results?.errorMessage || runInfo.errorMessage || 'Unknown error.'}</p>
-              {results?.logsUrl && (
-                <a className="link" href={results.logsUrl}>
-                  View logs
-                </a>
-              )}
             </div>
           )}
 
@@ -670,11 +665,6 @@ function Simulator() {
               <div className="result-banner success">
                 <strong>Simulation completed successfully.</strong>
                 {results.errorMessage && <p>{results.errorMessage}</p>}
-                {results.logsUrl && (
-                  <a className="link" href={results.logsUrl}>
-                    View logs
-                  </a>
-                )}
               </div>
 
               <div className="kpi-grid">
@@ -789,11 +779,6 @@ function Simulator() {
             <div className="result-banner warning">
               <strong>Simulation completed, but results were unavailable.</strong>
               <p>{results?.errorMessage || 'Results file could not be read.'}</p>
-              {results?.logsUrl && (
-                <a className="link" href={results.logsUrl}>
-                  View logs
-                </a>
-              )}
             </div>
           )}
 
