@@ -80,3 +80,47 @@
   background-color: #bdc3c7;
   cursor: not-allowed;
 }
+
+.copy-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(44, 62, 80, 0.45);
+}
+
+.copy-panel-content {
+  width: min(520px, 100%);
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.copy-panel-content h3 {
+  margin-top: 0;
+}
+
+.copy-panel-content label {
+  display: block;
+  margin-top: 1rem;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.copy-panel-content select {
+  width: 100%;
+  padding: 0.55rem;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+}
+
+.copy-panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}

@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { scenariosApi } from '../api/scenariosApi';
+import { liftSystemsApi } from '../api/liftSystemsApi';
 import AlertModal from '../components/AlertModal';
 import ConfirmModal from '../components/ConfirmModal';
 import { handleApiError } from '../utils/errorHandlers';
@@ -28,6 +29,12 @@ function Scenarios() {
   const [alertMessage, setAlertMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [copyScenario, setCopyScenario] = useState(null);
+  const [systems, setSystems] = useState([]);
+  const [targetSystemId, setTargetSystemId] = useState('');
+  const [targetVersions, setTargetVersions] = useState([]);
+  const [targetVersionId, setTargetVersionId] = useState('');
+  const [copying, setCopying] = useState(false);
 
   useEffect(() => {
     loadScenarios();
@@ -64,6 +71,76 @@ function Scenarios() {
    */
   const handleEditScenario = (scenarioId) => {
     navigate(`/scenarios/${scenarioId}/edit`);
+  };
+
+  /**
+   * Opens the copy dialog and preselects the source scenario's lift system when available.
+   *
+   * @param {Object} scenario - Scenario selected for copying
+   */
+  const handleOpenCopy = async (scenario) => {
+    setCopyScenario(scenario);
+    setTargetVersionId('');
+    const preferredSystemId = scenario.versionInfo?.liftSystemId ? String(scenario.versionInfo.liftSystemId) : '';
+    setTargetSystemId(preferredSystemId);
+
+    try {
+      const systemsResponse = await liftSystemsApi.getAllSystems();
+      setSystems(systemsResponse.data);
+      if (preferredSystemId) {
+        const versionsResponse = await liftSystemsApi.getVersions(preferredSystemId);
+        setTargetVersions(versionsResponse.data);
+      } else {
+        setTargetVersions([]);
+      }
+    } catch (err) {
+      handleApiError(err, setAlertMessage, 'Failed to load lift system versions');
+    }
+  };
+
+  /**
+   * Loads versions when the selected target system changes.
+   *
+   * @param {string} systemId - Selected lift system ID
+   */
+  const handleTargetSystemChange = async (systemId) => {
+    setTargetSystemId(systemId);
+    setTargetVersionId('');
+    setTargetVersions([]);
+    if (!systemId) {
+      return;
+    }
+
+    try {
+      const response = await liftSystemsApi.getVersions(systemId);
+      setTargetVersions(response.data);
+    } catch (err) {
+      handleApiError(err, setAlertMessage, 'Failed to load versions');
+    }
+  };
+
+  /**
+   * Copies the selected scenario after backend validation against the target version.
+   */
+  const handleCopyScenario = async () => {
+    if (!copyScenario || !targetVersionId) {
+      setAlertMessage('Select a target lift system version before copying.');
+      return;
+    }
+
+    try {
+      setCopying(true);
+      const response = await scenariosApi.copyScenario(copyScenario.id, {
+        targetLiftSystemVersionId: Number(targetVersionId)
+      });
+      setCopyScenario(null);
+      setAlertMessage(`Copied scenario as "${response.data.name}".`);
+      await loadScenarios();
+    } catch (err) {
+      handleApiError(err, setAlertMessage, 'Failed to copy scenario');
+    } finally {
+      setCopying(false);
+    }
   };
 
   /**
@@ -181,6 +258,12 @@ function Scenarios() {
                     Edit
                   </button>
                   <button
+                    className="btn-secondary"
+                    onClick={() => handleOpenCopy(scenario)}
+                  >
+                    Copy to Version
+                  </button>
+                  <button
                     className="btn-danger"
                     onClick={() => setDeleteConfirm(scenario)}
                   >
@@ -190,6 +273,46 @@ function Scenarios() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {copyScenario && (
+        <div className="copy-panel" role="dialog" aria-modal="true" aria-labelledby="copy-scenario-title">
+          <div className="copy-panel-content">
+            <h3 id="copy-scenario-title">Copy "{copyScenario.name}" to another version</h3>
+            <p>Select a target lift system version. The server validates the scenario against the target floor range before creating a copy.</p>
+            <label htmlFor="targetSystem">Lift System</label>
+            <select
+              id="targetSystem"
+              value={targetSystemId}
+              onChange={(event) => handleTargetSystemChange(event.target.value)}
+            >
+              <option value="">Select a lift system</option>
+              {systems.map((system) => (
+                <option key={system.id} value={system.id}>{system.displayName}</option>
+              ))}
+            </select>
+            <label htmlFor="targetVersion">Target Version</label>
+            <select
+              id="targetVersion"
+              value={targetVersionId}
+              onChange={(event) => setTargetVersionId(event.target.value)}
+              disabled={!targetSystemId}
+            >
+              <option value="">Select a version</option>
+              {targetVersions.map((version) => (
+                <option key={version.id} value={version.id}>
+                  Version {version.versionNumber} ({version.status})
+                </option>
+              ))}
+            </select>
+            <div className="copy-panel-actions">
+              <button className="btn-secondary" onClick={() => setCopyScenario(null)}>Cancel</button>
+              <button className="btn-primary" onClick={handleCopyScenario} disabled={copying || !targetVersionId}>
+                {copying ? 'Copying...' : 'Copy Scenario'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

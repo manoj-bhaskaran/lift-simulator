@@ -165,6 +165,68 @@ public class ScenarioServiceTest {
         verify(scenarioRepository).save(existing);
     }
 
+
+    @Test
+    public void copyScenarioValidatesAgainstTargetVersionAndCreatesNewRecord() throws Exception {
+        Scenario source = new Scenario("Morning rush", validScenario(), version);
+        source.setId(30L);
+        LiftSystemVersion targetVersion = version(22L);
+        ScenarioValidationResponse validationResponse = validValidationResponse();
+        when(scenarioRepository.findById(30L)).thenReturn(Optional.of(source));
+        when(versionRepository.findById(22L)).thenReturn(Optional.of(targetVersion));
+        when(scenarioValidationService.validate(objectMapper.readTree(validScenario()), 22L))
+                .thenReturn(validationResponse);
+        when(scenarioRepository.save(any(Scenario.class))).thenAnswer(invocation -> {
+            Scenario saved = invocation.getArgument(0);
+            saved.setId(31L);
+            saved.setCreatedAt(OffsetDateTime.parse("2026-06-14T10:00:00Z"));
+            saved.setUpdatedAt(OffsetDateTime.parse("2026-06-14T10:00:00Z"));
+            return saved;
+        });
+
+        ScenarioResponse response = scenarioService.copyScenario(30L, 22L);
+
+        assertEquals(31L, response.id());
+        assertEquals("Copy of Morning rush", response.name());
+        assertEquals(22L, response.liftSystemVersionId());
+        assertEquals(4, response.scenarioJson().at("/passengerFlows/0/destinationFloor").asInt());
+        ArgumentCaptor<Scenario> scenarioCaptor = ArgumentCaptor.forClass(Scenario.class);
+        verify(scenarioRepository).save(scenarioCaptor.capture());
+        Scenario copied = scenarioCaptor.getValue();
+        assertEquals("Copy of Morning rush", copied.getName());
+        assertEquals(22L, copied.getLiftSystemVersion().getId());
+        assertEquals(objectMapper.readTree(validScenario()), objectMapper.readTree(copied.getScenarioJson()));
+    }
+
+    @Test
+    public void copyScenarioDoesNotSaveWhenTargetValidationFails() throws Exception {
+        Scenario source = new Scenario("Invalid for target", validScenario(), version);
+        source.setId(30L);
+        LiftSystemVersion targetVersion = version(22L);
+        ScenarioValidationResponse validationResponse = new ScenarioValidationResponse(
+                false,
+                List.of(new ValidationIssue(
+                        "passengerFlows[0].destinationFloor",
+                        "Destination floor 4 is outside the lift system's floor range [0, 3]",
+                        ValidationIssue.Severity.ERROR
+                )),
+                List.of()
+        );
+        when(scenarioRepository.findById(30L)).thenReturn(Optional.of(source));
+        when(versionRepository.findById(22L)).thenReturn(Optional.of(targetVersion));
+        when(scenarioValidationService.validate(objectMapper.readTree(validScenario()), 22L))
+                .thenReturn(validationResponse);
+
+        ScenarioValidationException exception = assertThrows(
+                ScenarioValidationException.class,
+                () -> scenarioService.copyScenario(30L, 22L)
+        );
+
+        assertEquals("Scenario validation failed", exception.getMessage());
+        assertEquals(validationResponse, exception.getValidationResponse());
+        verify(scenarioRepository, never()).save(any(Scenario.class));
+    }
+
     @Test
     public void updateScenarioThrowsNotFoundWhenScenarioIsMissing() throws Exception {
         ScenarioRequest request = new ScenarioRequest("Missing", json(validScenario()), 20L);

@@ -7,6 +7,7 @@ export const scenariosApi = {
   createScenario: (data) => apiClient.post('/scenarios', data),
   updateScenario: (id, data) => apiClient.put(`/scenarios/${id}`, data),
   deleteScenario: (id) => apiClient.delete(`/scenarios/${id}`),
+  copyScenario: (id, data) => apiClient.post(`/scenarios/${id}/copy`, data),
 
   // Validation
   validateScenario: (data) => apiClient.post('/scenarios/validate', data),
