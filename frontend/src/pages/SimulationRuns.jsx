@@ -1,13 +1,16 @@
 // @ts-check
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import { simulationRunsApi } from '../api/simulationRunsApi';
-import { handleApiError } from '../utils/errorHandlers';
+import AlertModal from '../components/AlertModal';
+import ConfirmModal from '../components/ConfirmModal';
+import { getApiErrorMessage, handleApiError } from '../utils/errorHandlers';
 import './SimulationRuns.css';
 
 const statusOptions = ['ALL', 'SUCCEEDED', 'FAILED', 'RUNNING', 'CREATED', 'CANCELLED'];
 const activeStatuses = new Set(['RUNNING', 'CREATED']);
+const terminalStatuses = new Set(['SUCCEEDED', 'FAILED', 'CANCELLED']);
 
 /**
  * Simulation runs history page component.
@@ -23,6 +26,8 @@ const activeStatuses = new Set(['RUNNING', 'CREATED']);
  */
 function SimulationRuns() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [runs, setRuns] = useState([]);
   const [systems, setSystems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +35,10 @@ function SimulationRuns() {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [runToDelete, setRunToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [actionError, setActionError] = useState(null);
+  const [actionNotice, setActionNotice] = useState(null);
 
   const [selectedSystemId, setSelectedSystemId] = useState(
     searchParams.get('systemId') || ''
@@ -84,6 +93,15 @@ function SimulationRuns() {
   useEffect(() => {
     loadRuns(false);
   }, [loadRuns]);
+
+  // Surface a one-time notice passed via navigation state (e.g. after deleting a
+  // run from the detail page), then clear it so it does not reappear on refresh.
+  useEffect(() => {
+    if (location.state?.notice) {
+      setActionNotice(location.state.notice);
+      navigate(location.pathname + location.search, { replace: true, state: null });
+    }
+  }, [location, navigate]);
 
   // Check if any runs are active (RUNNING or CREATED) and need polling
   const hasActiveRuns = useMemo(
@@ -195,6 +213,37 @@ function SimulationRuns() {
     loadRuns(false, newPage);
   };
 
+  const handleRequestDelete = (run) => {
+    setActionError(null);
+    setActionNotice(null);
+    setRunToDelete(run);
+  };
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!runToDelete) {
+      return;
+    }
+    const runId = runToDelete.id;
+    try {
+      setIsDeleting(true);
+      await simulationRunsApi.deleteRun(runId);
+      setActionNotice(`Run #${runId} and its artefacts were deleted.`);
+      setActionError(null);
+      // When the deleted run was the only row on a non-first page, that page no
+      // longer exists after removal, so step back a page to avoid landing on an
+      // out-of-range page that renders as an empty state.
+      const emptiesCurrentPage = runs.length === 1 && currentPage > 0;
+      const targetPage = emptiesCurrentPage ? currentPage - 1 : currentPage;
+      await loadRuns(false, targetPage);
+    } catch (err) {
+      setActionError(getApiErrorMessage(err, `Failed to delete run #${runId}`));
+      console.error(err);
+    } finally {
+      setIsDeleting(false);
+      setRunToDelete(null);
+    }
+  }, [runToDelete, loadRuns, runs.length, currentPage]);
+
   const hasFilters = selectedSystemId || (selectedStatus && selectedStatus !== 'ALL');
 
   return (
@@ -251,6 +300,12 @@ function SimulationRuns() {
           </button>
         )}
       </div>
+
+      {actionNotice && (
+        <p className="action-notice" role="status">
+          {actionNotice}
+        </p>
+      )}
 
       {loading ? (
         <p>Loading runs...</p>
@@ -324,12 +379,24 @@ function SimulationRuns() {
                   <td>{formatDuration(run.startedAt, run.endedAt)}</td>
                   <td>{formatDate(run.createdAt)}</td>
                   <td>
-                    <Link
-                      to={`/simulation-runs/${run.id}`}
-                      className="btn-small btn-secondary"
-                    >
-                      View
-                    </Link>
+                    <div className="run-actions">
+                      <Link
+                        to={`/simulation-runs/${run.id}`}
+                        className="btn-small btn-secondary"
+                      >
+                        View
+                      </Link>
+                      {terminalStatuses.has(run.status) && (
+                        <button
+                          type="button"
+                          className="btn-small btn-danger"
+                          onClick={() => handleRequestDelete(run)}
+                          disabled={isDeleting}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -358,6 +425,31 @@ function SimulationRuns() {
           )}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={runToDelete !== null}
+        onClose={() => setRunToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete simulation run?"
+        message={
+          runToDelete
+            ? `This will permanently delete run #${runToDelete.id}, including its run history `
+              + 'and all stored artefacts (generated input, logs, and result files). '
+              + 'This action cannot be undone.'
+            : ''
+        }
+        confirmText="Delete run"
+        cancelText="Keep run"
+        confirmStyle="danger"
+      />
+
+      <AlertModal
+        isOpen={actionError !== null}
+        onClose={() => setActionError(null)}
+        title="Failed to delete run"
+        message={actionError || ''}
+        type="error"
+      />
     </div>
   );
 }

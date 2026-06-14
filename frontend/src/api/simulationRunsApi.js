@@ -25,4 +25,11 @@ export const simulationRunsApi = {
   getResults: (id) => apiClient.get(`/simulation-runs/${id}/results`),
   getArtefacts: (id) => apiClient.get(`/simulation-runs/${id}/artefacts`),
   cancelRun: (id) => apiClient.post(`/simulation-runs/${id}/cancel`),
+  /**
+   * Deletes a completed simulation run, removing its run history and stored artefacts.
+   * Only runs in a terminal state (SUCCEEDED, FAILED, CANCELLED) can be deleted.
+   * @param {number|string} id - Simulation run ID
+   * @returns {Promise} API response resolving on 204 No Content
+   */
+  deleteRun: (id) => apiClient.delete(`/simulation-runs/${id}`),
 };
