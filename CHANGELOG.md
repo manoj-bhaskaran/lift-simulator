@@ -16,6 +16,12 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.50.1] - 2026-06-14
+
+### Changed
+- **API response DTO standardisation**: Replaced ad-hoc health and simulation-log map responses with typed DTOs, moved common error payloads into reusable DTO classes, aligned version controller methods on `ResponseEntity`, and removed the unused simulation-run start request DTO. Updated API documentation and synchronized package metadata for the 0.50.1 patch release.
+
+
 ## [0.50.0] - 2026-06-14
 
 ### Added

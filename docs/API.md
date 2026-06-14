@@ -562,6 +562,11 @@ curl -H "X-API-Key: <your-api-key>" \\
 
 The Simulation Run APIs enable UI to start simulations, poll their status, and access results/logs. These endpoints provide the complete lifecycle management for simulation execution.
 
+### Standard Response DTOs
+
+Controllers return typed DTOs for JSON payloads rather than ad-hoc maps. Error payloads use the shared `ErrorResponse` shape (`status`, `message`, `timestamp`), bean-validation failures use `ValidationErrorResponse` (`status`, `message`, `fieldErrors`, `timestamp`), and validation endpoints continue to return typed validation responses containing `valid`, `errors`, and `warnings`.
+
+
 For step-by-step CLI usage, UI-driven run workflows, artefact reproduction, the Morning Rush walkthrough, and troubleshooting scenarios, see [Workflows and Troubleshooting](Workflows-and-Troubleshooting.md).
 
 **Key Features:**
@@ -866,9 +871,10 @@ Retrieves simulation logs with optional tail functionality.
 **Response (200 OK):**
 ```json
 {
-  "runId": "1",
+  "runId": 1,
   "logs": "Starting simulation...\nTick 0: Initializing lifts\nTick 1: Processing requests\n...",
-  "tail": "100"
+  "tail": 100,
+  "error": null
 }
 ```
 
@@ -880,7 +886,9 @@ Retrieves simulation logs with optional tail functionality.
 **Error Response (500 Internal Server Error):**
 ```json
 {
-  "runId": "1",
+  "runId": 1,
+  "logs": null,
+  "tail": null,
   "error": "Failed to read logs: Artefact base path is not set for run 1"
 }
 ```
