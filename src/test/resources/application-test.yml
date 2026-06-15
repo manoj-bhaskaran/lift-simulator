@@ -49,6 +49,11 @@ api:
     key: test-api-key
     header: X-API-Key
 
+# Disable rate limiting in tests to prevent CI runner's shared IP from
+# exhausting buckets during E2E test setup/teardown and assertion sequences.
+rate-limiting:
+  enabled: false
+
 # Security configuration for tests
 # Multi-user configuration with ADMIN and VIEWER roles for RBAC testing
 security:
