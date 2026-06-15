@@ -16,6 +16,8 @@ The simulation is text-based and designed for clarity over visual appeal.
 
 **Architecture assumption — single lift system per run:** The persistence model can store multiple lift systems and versions, but each simulation run executes exactly one selected lift system/version/scenario combination. This keeps scheduling, artefact capture, and KPI calculations deterministic. To compare buildings or controller strategies, create separate published versions and run them independently.
 
+For a visual overview of the major components (React admin UI, Spring Boot backend, simulation engine, PostgreSQL, and artefact storage) and the main configuration and simulation-run flows, see [docs/architecture.md](docs/architecture.md).
+
 ## Quick Start
 
 **Prerequisites**
