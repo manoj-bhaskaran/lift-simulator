@@ -342,6 +342,102 @@
   gap: 0.5rem;
 }
 
+/* Guided / Advanced editor mode toggle */
+.editor-mode-toggle {
+  display: inline-flex;
+  margin-bottom: 1.25rem;
+  border: 1px solid #d6dee6;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.editor-mode-toggle .mode-btn {
+  border: none;
+  background: transparent;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #5d6d7e;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.editor-mode-toggle .mode-btn + .mode-btn {
+  border-left: 1px solid #d6dee6;
+}
+
+.editor-mode-toggle .mode-btn:hover {
+  background: #eef3f7;
+}
+
+.editor-mode-toggle .mode-btn.active {
+  background: #3498db;
+  color: #fff;
+}
+
+/* Guided version configuration form */
+.version-config-form {
+  margin-bottom: 1rem;
+}
+
+.version-config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.version-config-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.version-config-field label {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: #2c3e50;
+}
+
+.version-config-field .required {
+  color: #e74c3c;
+}
+
+.version-config-field input,
+.version-config-field select {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.version-config-field input:focus,
+.version-config-field select:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.version-config-field input.error,
+.version-config-field select.error {
+  border-color: #e74c3c;
+}
+
+.version-config-help {
+  margin: 0.4rem 0 0 0;
+  font-size: 0.8rem;
+  color: #7f8c8d;
+  line-height: 1.4;
+}
+
+.version-config-field .error-message {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: #c0392b;
+  font-weight: 600;
+}
+
 .versions-list {
   display: flex;
   flex-direction: column;
@@ -659,6 +755,18 @@
 
   .create-version-editor {
     grid-template-columns: 1fr;
+  }
+
+  .version-config-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-mode-toggle {
+    width: 100%;
+  }
+
+  .editor-mode-toggle .mode-btn {
+    flex: 1;
   }
 
   .form-actions {
