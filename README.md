@@ -226,6 +226,41 @@ Admin APIs support role-based access control with two roles: **ADMIN** (read and
 
 For runtime API-key setup and request/response examples, see [docs/API.md](docs/API.md). The security baseline, RBAC, and CORS/CSRF policies are documented in [ADR-0019](docs/decisions/0019-spring-security-baseline.md), [ADR-0021](docs/decisions/0021-role-based-access-control-rbac.md), and [ADR-0022](docs/decisions/0022-explicit-cors-csrf-policy.md).
 
+## Rate Limiting
+
+The API is protected by a token-bucket rate limiter (Bucket4j) applied per client IP address. Separate limits apply to the admin and runtime/simulation-run API groups.
+
+Default thresholds (configurable in `application.yml` or overridden per environment):
+
+| API group | Default capacity | Refill |
+|-----------|-----------------|--------|
+| Admin (`/api/v1/**`) | 100 requests | 100 per 60 s |
+| Runtime / simulation-runs | 1 000 requests | 1 000 per 60 s |
+
+When the limit is exceeded the server responds with **HTTP 429 Too Many Requests** and includes:
+- `Retry-After: <seconds>` — how long to wait before retrying
+- `X-RateLimit-Limit: <capacity>` — total bucket capacity
+- `X-RateLimit-Remaining: 0` — tokens remaining (always 0 on a 429)
+
+**Configuration reference** (`application.yml`):
+```yaml
+rate-limiting:
+  enabled: true               # set to false to disable entirely (e.g. in integration tests)
+  trust-forwarded-for: false  # set to true only behind a trusted reverse proxy
+  admin:
+    capacity: 100             # bucket capacity (max burst)
+    refill-tokens: 100        # tokens added per period
+    refill-period-seconds: 60
+  runtime:
+    capacity: 1000
+    refill-tokens: 1000
+    refill-period-seconds: 60
+```
+
+**`trust-forwarded-for`** — when `false` (the default), the rate-limiter uses `getRemoteAddr()` as the bucket key, which prevents callers from bypassing limits by spoofing `X-Forwarded-For`. Set to `true` only when the service runs exclusively behind a trusted reverse proxy that controls this header.
+
+Override individual fields per Spring profile to tighten limits in production or loosen them for load testing.
+
 ## Database Setup
 
 The backend uses PostgreSQL with Flyway for schema migrations (PostgreSQL 12+ required).

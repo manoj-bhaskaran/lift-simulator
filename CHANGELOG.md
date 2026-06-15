@@ -17,6 +17,7 @@ summary is kept under [Earlier history](#earlier-history).
 ## [Unreleased]
 
 ### Added
+- **API rate limiting**: Added configurable token-bucket rate limiting (Bucket4j) for admin and runtime API endpoints. Limits are enforced per client IP with separate thresholds for admin (`/api/v1/**`) and runtime/simulation-run paths. Requests exceeding the limit receive HTTP 429 with `Retry-After` and `X-RateLimit-*` response headers. All thresholds are configurable via `rate-limiting.*` properties. Rate limiting can be disabled entirely via `rate-limiting.enabled=false`.
 - **Guided Create New Version form**: The Create New Version screen now defaults to a structured, guided form with a labelled input for every configuration parameter, inline help, and client-side validation that mirrors the backend constraints (minimum values, floor-range, home-floor-in-range, and door reopen window rules). The raw JSON editor is retained behind an **Advanced (JSON)** toggle for power users, and switching between modes preserves entered data where the JSON can be parsed. Added shared schema helpers and unit tests covering the form helpers and component.
 
 ## [0.51.0] - 2026-06-14
