@@ -56,6 +56,14 @@ describe('versionConfigSchema', () => {
       expect(config.maxFloor).toBeNull();
     });
 
+    it('does not coerce form-invalid numeric strings into JSON numbers', () => {
+      // "1e3" is rejected by the form validator; it must not be silently
+      // normalized to 1000 in the serialized config.
+      const data = { ...getDefaultVersionFormData(), lifts: '1e3' };
+      expect(validateVersionFormData(data).lifts).toBeDefined();
+      expect(formDataToConfig(data).lifts).toBeNull();
+    });
+
     it('round-trips through JSON back into matching form data', () => {
       const original = getDefaultVersionFormData();
       const json = formDataToJson(original);

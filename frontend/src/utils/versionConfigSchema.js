@@ -12,6 +12,9 @@ import { CONFIG_EXAMPLE } from './configSchemaHelp';
 export const FIELD_TYPE_NUMBER = 'number';
 export const FIELD_TYPE_SELECT = 'select';
 
+/** Matches whole integers (optionally negative); rejects decimals, exponents, hex, etc. */
+const NUMERIC_PATTERN = /^-?\d+$/;
+
 /** Allowed controller strategies (mirrors ControllerStrategy enum). */
 export const CONTROLLER_STRATEGY_OPTIONS = [
   { value: 'NEAREST_REQUEST_ROUTING', label: 'Nearest Request Routing' },
@@ -162,8 +165,10 @@ export function formDataToConfig(formData) {
     if (trimmed === '' || trimmed === null || trimmed === undefined) {
       config[field.name] = null;
     } else if (field.type === FIELD_TYPE_NUMBER) {
-      const num = Number(trimmed);
-      config[field.name] = Number.isNaN(num) ? null : num;
+      // Only serialize values that pass the same integer check the form validator
+      // applies, so input the UI flags as invalid (e.g. "1e3") cannot be silently
+      // coerced into a valid JSON number that the server would accept.
+      config[field.name] = NUMERIC_PATTERN.test(trimmed) ? Number(trimmed) : null;
     } else {
       config[field.name] = trimmed;
     }
@@ -180,8 +185,6 @@ export function formDataToConfig(formData) {
 export function formDataToJson(formData) {
   return JSON.stringify(formDataToConfig(formData), null, 2);
 }
-
-const NUMERIC_PATTERN = /^-?\d+$/;
 
 /**
  * Performs client-side validation of the guided form, mirroring the backend
