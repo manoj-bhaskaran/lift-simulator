@@ -8,6 +8,7 @@ import { liftSystemsApi } from '../../api/liftSystemsApi';
 vi.mock('../../api/simulationRunsApi', () => ({
   simulationRunsApi: {
     listRuns: vi.fn(),
+    cancelRun: vi.fn(),
     deleteRun: vi.fn(),
   },
 }));
@@ -111,6 +112,60 @@ describe('SimulationRuns delete action', () => {
       const reloadCalls = simulationRunsApi.listRuns.mock.calls.slice(callsBeforeDelete);
       expect(reloadCalls.some((call) => Number(call[0]?.page) === 0)).toBe(true);
     });
+  });
+
+
+  it('bulk cancels selected active runs and reports the outcome', async () => {
+    const secondRunningRun = { ...runningRun, id: 9 };
+    simulationRunsApi.listRuns
+      .mockResolvedValueOnce(buildPage([runningRun, secondRunningRun]))
+      .mockResolvedValueOnce(buildPage([]));
+    simulationRunsApi.cancelRun.mockResolvedValue({ status: 200 });
+    renderPage();
+
+    await screen.findByText('#8');
+    fireEvent.click(screen.getByLabelText('Select run #8'));
+    fireEvent.click(screen.getByLabelText('Select run #9'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel Selected' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel runs' }));
+
+    await waitFor(() => expect(simulationRunsApi.cancelRun).toHaveBeenCalledWith(8));
+    expect(simulationRunsApi.cancelRun).toHaveBeenCalledWith(9);
+    expect(await screen.findByRole('status')).toHaveTextContent('2 runs cancelled successfully.');
+  });
+
+  it('bulk deletes selected completed runs and reports partial failures', async () => {
+    const failedRun = { ...succeededRun, id: 10, status: 'FAILED' };
+    simulationRunsApi.listRuns
+      .mockResolvedValueOnce(buildPage([succeededRun, failedRun]))
+      .mockResolvedValueOnce(buildPage([failedRun]));
+    simulationRunsApi.deleteRun
+      .mockResolvedValueOnce({ status: 204 })
+      .mockRejectedValueOnce({ response: { data: { message: 'Locked' } } });
+    renderPage();
+
+    await screen.findByText('#7');
+    fireEvent.click(screen.getByLabelText('Select all visible runs'));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Selected' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete runs' }));
+
+    await waitFor(() => expect(simulationRunsApi.deleteRun).toHaveBeenCalledWith(7));
+    expect(simulationRunsApi.deleteRun).toHaveBeenCalledWith(10);
+    expect(await screen.findByRole('status')).toHaveTextContent('1 run deleted successfully; 1 failed.');
+    expect(await screen.findByText(/Failed to delete 1 selected run/)).toBeInTheDocument();
+  });
+
+  it('disables bulk actions for mixed active and completed selections', async () => {
+    simulationRunsApi.listRuns.mockResolvedValue(buildPage([succeededRun, runningRun]));
+    renderPage();
+
+    await screen.findByText('#7');
+    fireEvent.click(screen.getByLabelText('Select run #7'));
+    fireEvent.click(screen.getByLabelText('Select run #8'));
+
+    expect(screen.getByRole('button', { name: 'Cancel Selected' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Delete Selected' })).toBeDisabled();
+    expect(screen.getByText(/Mixed states selected/)).toBeInTheDocument();
   });
 
   it('surfaces an error when deletion fails', async () => {

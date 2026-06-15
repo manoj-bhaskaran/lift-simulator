@@ -18,6 +18,7 @@ This is the frontend admin application for the Lift Simulator system. It provide
 - Monitoring system health
 - Reviewing per-system version counts in the Lift Systems list
 - Maintaining consistent form control alignment across scenario creation screens
+- Managing Simulation Runs with multi-select bulk cancellation for active runs and bulk deletion for completed runs
 
 ## Versioning
 
