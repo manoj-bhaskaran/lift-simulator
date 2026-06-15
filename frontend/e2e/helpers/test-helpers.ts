@@ -206,11 +206,28 @@ export async function navigateToSystemDetail(page: Page, systemKey: string): Pro
 }
 
 /**
- * Helper function to open the inline create-version form.
+ * Helper function to switch the create-version form to the Advanced (JSON)
+ * editor. The guided form is the default experience, so JSON-based flows must
+ * opt into the raw editor first.
  */
-export async function openCreateVersionForm(page: Page): Promise<void> {
+export async function switchToAdvancedJsonMode(page: Page): Promise<void> {
+  await page.locator('.editor-mode-toggle button:has-text("Advanced")').click();
+  await expect(page.locator('#config')).toBeVisible();
+}
+
+/**
+ * Helper function to open the inline create-version form.
+ *
+ * @param mode Which editor to surface once the form is open. Defaults to the
+ *   raw JSON editor ('json') so existing JSON-based flows keep working; pass
+ *   'guided' to remain on the default guided form.
+ */
+export async function openCreateVersionForm(page: Page, mode: 'guided' | 'json' = 'json'): Promise<void> {
   await page.locator('button:has-text("Create New Version")').click();
   await expect(page.locator('.create-version-form')).toBeVisible();
+  if (mode === 'json') {
+    await switchToAdvancedJsonMode(page);
+  }
 }
 
 /**

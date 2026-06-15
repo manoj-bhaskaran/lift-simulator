@@ -93,6 +93,44 @@ test.describe('Configuration Version Management', () => {
     await expect(statusBadge).toHaveText(/DRAFT/i);
   });
 
+  test('Guided form is the default and creates a version', async ({ page }) => {
+    // Navigate to system detail page
+    await navigateToSystemDetail(page, testSystemKey);
+
+    // Open the create form; the guided form is the default experience
+    await openCreateVersionForm(page, 'guided');
+
+    // The guided form is shown and the raw JSON editor is hidden by default
+    await expect(page.locator('.version-config-grid')).toBeVisible();
+    await expect(page.locator('#config')).toBeHidden();
+
+    // Fields are pre-filled with sensible defaults; adjust the number of lifts
+    const liftsInput = page.locator('#vcf-lifts');
+    await expect(liftsInput).toBeVisible();
+    await liftsInput.fill('3');
+
+    // Switching to Advanced (JSON) preserves the entered data
+    await page.locator('.editor-mode-toggle button:has-text("Advanced")').click();
+    const jsonValue = await page.locator('#config').inputValue();
+    expect(jsonValue).toContain('"lifts": 3');
+
+    // Switching back to the guided form retains the value
+    await page.locator('.editor-mode-toggle button:has-text("Guided")').click();
+    await expect(page.locator('#vcf-lifts')).toHaveValue('3');
+
+    // Validate and create the version from the guided form
+    await page.locator('.create-version-form button:has-text("Validate")').click();
+    await expect(page.locator('.validation-success-banner')).toBeVisible({ timeout: 5000 });
+    await page.locator('.create-version-form button:has-text("Create Version")').click();
+    await expect(page.locator('.create-version-form')).toBeHidden({ timeout: 5000 });
+
+    // Verify the version appears with status DRAFT
+    await page.waitForTimeout(1000);
+    const versionCard = page.locator('.version-card').filter({ hasText: 'Version 1' });
+    await expect(versionCard).toBeVisible();
+    await expect(versionCard.locator('.status-badge')).toHaveText(/DRAFT/i);
+  });
+
   test('TC_0006: Reject Invalid Configuration Version', async ({ page }) => {
     // Navigate to system detail page
     await navigateToSystemDetail(page, testSystemKey);

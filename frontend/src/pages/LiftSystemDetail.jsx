@@ -6,9 +6,16 @@ import VersionActions from '../components/VersionActions';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 import EditSystemModal from '../components/EditSystemModal';
+import VersionConfigForm from '../components/VersionConfigForm';
 import { handleApiError } from '../utils/errorHandlers';
 import { getStatusBadgeClass } from '../utils/statusUtils';
 import { CONFIG_EXAMPLE_JSON, CONFIG_REQUIRED_FIELDS, CONFIG_SCHEMA_DOCS_URL, CONFIG_SCHEMA_HELP_TEXT } from '../utils/configSchemaHelp';
+import {
+  getDefaultVersionFormData,
+  configToFormData,
+  formDataToJson,
+  validateVersionFormData
+} from '../utils/versionConfigSchema';
 import './LiftSystemDetail.css';
 
 /**
@@ -40,7 +47,11 @@ function LiftSystemDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreateVersion, setShowCreateVersion] = useState(false);
-  const [newVersionConfig, setNewVersionConfig] = useState('');
+  // 'guided' renders the structured form (default); 'json' renders the advanced JSON editor.
+  const [editorMode, setEditorMode] = useState('guided');
+  const [versionFormData, setVersionFormData] = useState(() => getDefaultVersionFormData());
+  const [versionFormErrors, setVersionFormErrors] = useState({});
+  const [newVersionConfig, setNewVersionConfig] = useState(() => formDataToJson(getDefaultVersionFormData()));
   const [creating, setCreating] = useState(false);
   const [validatingCreate, setValidatingCreate] = useState(false);
   /** @type {import('../types/models').ValidationResult | null} */
@@ -89,6 +100,87 @@ function LiftSystemDetail() {
     setCreateValidationError(null);
   };
 
+  /**
+   * Handles edits to a single guided form field. Keeps the JSON representation
+   * and client-side validation state in sync, and clears any stale server
+   * validation result so the user re-validates after changes.
+   *
+   * @param {string} name - Configuration field name.
+   * @param {string} value - New field value.
+   */
+  const handleVersionFormChange = (name, value) => {
+    const updated = { ...versionFormData, [name]: value };
+    setVersionFormData(updated);
+    setNewVersionConfig(formDataToJson(updated));
+    setVersionFormErrors(validateVersionFormData(updated));
+    setCreateValidationResult(null);
+    setCreateValidationError(null);
+  };
+
+  /**
+   * Resets the create-version form back to its default guided state.
+   */
+  const resetCreateVersionForm = () => {
+    const defaults = getDefaultVersionFormData();
+    setVersionFormData(defaults);
+    setVersionFormErrors({});
+    setNewVersionConfig(formDataToJson(defaults));
+    setEditorMode('guided');
+    setCreateValidationResult(null);
+    setCreateValidationError(null);
+  };
+
+  /**
+   * Switches to the advanced JSON editor, serializing the current guided form
+   * values so no data is lost when toggling modes.
+   */
+  const switchToJsonMode = () => {
+    setNewVersionConfig(formDataToJson(versionFormData));
+    setEditorMode('json');
+    setCreateValidationResult(null);
+    setCreateValidationError(null);
+  };
+
+  /**
+   * Switches back to the guided form, parsing the current JSON into form fields
+   * where feasible. If the JSON cannot be parsed, the previous guided values are
+   * retained and the user is informed.
+   */
+  const switchToGuidedMode = () => {
+    setCreateValidationResult(null);
+    setCreateValidationError(null);
+    try {
+      const parsed = JSON.parse(newVersionConfig);
+      const formData = configToFormData(parsed);
+      setVersionFormData(formData);
+      setVersionFormErrors(validateVersionFormData(formData));
+    } catch {
+      setCreateValidationError(
+        'The JSON could not be parsed into the guided form, so your last form values are shown. Fix the JSON or continue editing in the form.'
+      );
+    }
+    setEditorMode('guided');
+  };
+
+  /**
+   * Cancels version creation, hiding and resetting the form.
+   */
+  const handleCancelCreateVersion = () => {
+    resetCreateVersionForm();
+    setShowCreateVersion(false);
+  };
+
+  /**
+   * Toggles the create-version form visibility, resetting state when closing.
+   */
+  const toggleCreateVersion = () => {
+    if (showCreateVersion) {
+      handleCancelCreateVersion();
+    } else {
+      setShowCreateVersion(true);
+    }
+  };
+
   useEffect(() => {
     loadSystemData();
   }, [loadSystemData]);
@@ -121,9 +213,7 @@ function LiftSystemDetail() {
       }
       setCreating(true);
       await liftSystemsApi.createVersion(id, { config: newVersionConfig });
-      setNewVersionConfig('');
-      setCreateValidationResult(null);
-      setCreateValidationError(null);
+      resetCreateVersionForm();
       setShowCreateVersion(false);
       await loadSystemData();
     } catch (err) {
@@ -376,7 +466,7 @@ function LiftSystemDetail() {
         <div className="section-header">
           <h3>Versions ({filteredVersions.length} of {versions.length})</h3>
           <button
-            onClick={() => setShowCreateVersion(!showCreateVersion)}
+            onClick={toggleCreateVersion}
             className="btn-primary"
           >
             {showCreateVersion ? 'Cancel' : 'Create New Version'}
@@ -388,29 +478,70 @@ function LiftSystemDetail() {
             <div className="version-number-display">
               <h4>Version {versions.length > 0 ? Math.max(...versions.map(v => v.versionNumber)) + 1 : 1}</h4>
             </div>
-            <div className="config-label-row">
-              <label htmlFor="config">Configuration JSON</label>
-              <a href={CONFIG_SCHEMA_DOCS_URL} target="_blank" rel="noreferrer">
-                View schema docs
-              </a>
+
+            <div className="editor-mode-toggle" role="group" aria-label="Configuration editor mode">
+              <button
+                type="button"
+                className={editorMode === 'guided' ? 'mode-btn active' : 'mode-btn'}
+                onClick={switchToGuidedMode}
+                aria-pressed={editorMode === 'guided'}
+              >
+                Guided Form
+              </button>
+              <button
+                type="button"
+                className={editorMode === 'json' ? 'mode-btn active' : 'mode-btn'}
+                onClick={switchToJsonMode}
+                aria-pressed={editorMode === 'json'}
+              >
+                Advanced (JSON)
+              </button>
             </div>
-            <p id="config-help" className="config-help-text">{CONFIG_SCHEMA_HELP_TEXT}</p>
-            <details className="config-example-help">
-              <summary>Show complete valid example</summary>
-              <pre>{CONFIG_EXAMPLE_JSON}</pre>
-            </details>
-            <textarea
-              id="config"
-              value={newVersionConfig}
-              onChange={handleNewVersionConfigChange}
-              placeholder={CONFIG_EXAMPLE_JSON}
-              rows="14"
-              required
-              aria-describedby="config-help config-required-fields"
-            />
-            <p id="config-required-fields" className="config-required-fields">
-              Required fields: {CONFIG_REQUIRED_FIELDS.map((field) => `\`${field}\``).join(', ')}.
-            </p>
+
+            {editorMode === 'guided' ? (
+              <>
+                <div className="config-label-row">
+                  <label>Version Configuration</label>
+                  <a href={CONFIG_SCHEMA_DOCS_URL} target="_blank" rel="noreferrer">
+                    View schema docs
+                  </a>
+                </div>
+                <p className="config-help-text">
+                  Fill in the parameters below. Switch to Advanced (JSON) to edit the raw configuration directly.
+                </p>
+                <VersionConfigForm
+                  value={versionFormData}
+                  errors={versionFormErrors}
+                  onChange={handleVersionFormChange}
+                />
+              </>
+            ) : (
+              <>
+                <div className="config-label-row">
+                  <label htmlFor="config">Configuration JSON</label>
+                  <a href={CONFIG_SCHEMA_DOCS_URL} target="_blank" rel="noreferrer">
+                    View schema docs
+                  </a>
+                </div>
+                <p id="config-help" className="config-help-text">{CONFIG_SCHEMA_HELP_TEXT}</p>
+                <details className="config-example-help">
+                  <summary>Show complete valid example</summary>
+                  <pre>{CONFIG_EXAMPLE_JSON}</pre>
+                </details>
+                <textarea
+                  id="config"
+                  value={newVersionConfig}
+                  onChange={handleNewVersionConfigChange}
+                  placeholder={CONFIG_EXAMPLE_JSON}
+                  rows="14"
+                  required
+                  aria-describedby="config-help config-required-fields"
+                />
+                <p id="config-required-fields" className="config-required-fields">
+                  Required fields: {CONFIG_REQUIRED_FIELDS.map((field) => `\`${field}\``).join(', ')}.
+                </p>
+              </>
+            )}
             <div className="form-actions">
               <button
                 type="button"
@@ -435,7 +566,7 @@ function LiftSystemDetail() {
               </button>
               <button
                 type="button"
-                onClick={() => setShowCreateVersion(false)}
+                onClick={handleCancelCreateVersion}
                 className="btn-secondary"
               >
                 Cancel

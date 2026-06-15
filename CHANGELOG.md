@@ -16,6 +16,9 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+### Added
+- **Guided Create New Version form**: The Create New Version screen now defaults to a structured, guided form with a labelled input for every configuration parameter, inline help, and client-side validation that mirrors the backend constraints (minimum values, floor-range, home-floor-in-range, and door reopen window rules). The raw JSON editor is retained behind an **Advanced (JSON)** toggle for power users, and switching between modes preserves entered data where the JSON can be parsed. Added shared schema helpers and unit tests covering the form helpers and component.
+
 ## [0.51.0] - 2026-06-14
 
 ### Added
