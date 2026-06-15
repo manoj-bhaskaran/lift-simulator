@@ -16,6 +16,8 @@ The simulation is text-based and designed for clarity over visual appeal.
 
 **Architecture assumption — single lift system per run:** The persistence model can store multiple lift systems and versions, but each simulation run executes exactly one selected lift system/version/scenario combination. This keeps scheduling, artefact capture, and KPI calculations deterministic. To compare buildings or controller strategies, create separate published versions and run them independently.
 
+For a visual overview of the major components (React admin UI, Spring Boot backend, simulation engine, PostgreSQL, and artefact storage) and the main configuration and simulation-run flows, see [docs/architecture.md](docs/architecture.md).
+
 ## Quick Start
 
 **Prerequisites**
@@ -317,17 +319,31 @@ This project ships an `.editorconfig` for consistent formatting across editors a
 
 ## Project Structure
 
+For a visual component-and-flow overview, see [docs/architecture.md](docs/architecture.md).
+
 ```
 src/
 ├── main/java/com/liftsimulator/
-│   ├── Main.java                          # Entry point and demo
-│   ├── admin/                             # Spring Boot admin backend
+│   ├── Main.java                          # Demo entry point (controller strategy via CLI)
+│   ├── admin/                             # Spring Boot admin backend (Lift Config Service)
 │   │   ├── LiftConfigServiceApplication.java  # Spring Boot main class
-│   │   ├── controller/                    # REST controllers
+│   │   ├── config/                        # Security, CORS/CSRF, rate limiting, OpenAPI config
+│   │   ├── security/                      # API-key authentication filter and config
+│   │   ├── controller/                    # REST controllers (/api/v1)
 │   │   ├── service/                       # Business logic services
-│   │   ├── repository/                    # Data access layer
-│   │   ├── domain/                        # Backend domain models
-│   │   └── dto/                           # Data transfer objects
+│   │   │   └── metrics/                   # Run KPI/metrics models
+│   │   ├── repository/                    # Spring Data JPA repositories
+│   │   ├── entity/                        # JPA entities (lift system, version, scenario, run)
+│   │   ├── dto/                           # Data transfer objects
+│   │   └── runner/                        # Startup verification runner
+│   ├── runtime/                           # Lightweight runtime/simulation API
+│   │   ├── LocalSimulationMain.java       # Run a simulation from a config JSON (CLI)
+│   │   ├── controller/                    # Runtime REST controllers
+│   │   ├── service/                       # Runtime simulation services
+│   │   └── dto/                           # Runtime data transfer objects
+│   ├── scenario/                          # Scenario file parsing and scripted runner
+│   │   ├── ScenarioRunnerMain.java        # Scripted scenario runner (CLI)
+│   │   └── ...                            # Parser, definition, context, events
 │   ├── domain/                            # Core domain models
 │   │   ├── Action.java                    # Actions the lift can take
 │   │   ├── Direction.java                 # UP, DOWN, IDLE
@@ -339,10 +355,13 @@ src/
 │   │   └── RequestType.java               # HALL_CALL or CAR_CALL
 │   └── engine/                            # Simulation engine and controllers
 │       ├── LiftController.java            # Controller interface
-│       ├── NaiveLiftController.java       # Simple nearest-floor controller
+│       ├── ControllerFactory.java         # Builds a controller for the selected strategy
+│       ├── NaiveLiftController.java       # Nearest-request routing controller
+│       ├── DirectionalScanLiftController.java  # Directional-scan routing controller
 │       ├── SimulationClock.java           # Deterministic simulation clock
 │       ├── SimulationEngine.java          # Tick-based simulation engine
 │       └── StateTransitionValidator.java  # State machine validator
+├── main/resources/                        # application*.yml, scenarios/, db/migration/ (Flyway)
 └── test/java/com/liftsimulator/           # Unit, integration, and scenario tests
 ```
 
