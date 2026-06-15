@@ -258,6 +258,7 @@ jobs:
         ADMIN_PASSWORD: e2e-admin-password
         API_KEY: e2e-api-key
         CORS_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+        RATE_LIMITING_ENABLED: 'false'
 
     - name: Run Playwright E2E tests
       working-directory: frontend
