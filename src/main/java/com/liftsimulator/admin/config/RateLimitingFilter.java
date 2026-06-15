@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.config;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
@@ -57,6 +58,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private final ConcurrentHashMap<String, Bucket> adminBuckets = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Bucket> runtimeBuckets = new ConcurrentHashMap<>();
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "RateLimitingProperties is a Spring-managed singleton bound via "
+                    + "@ConfigurationProperties. Defensive copying would break the binding.")
     public RateLimitingFilter(RateLimitingProperties properties) {
         this.properties = properties;
     }

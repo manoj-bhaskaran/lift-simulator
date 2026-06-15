@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.config;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -50,18 +51,34 @@ public class RateLimitingProperties {
         this.trustForwardedFor = trustForwardedFor;
     }
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP",
+            justification = "EndpointLimits is a simple value holder bound by Spring's "
+                    + "@ConfigurationProperties; returning it directly is intentional and safe.")
     public EndpointLimits getAdmin() {
         return admin;
     }
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "Spring's @ConfigurationProperties binding requires direct assignment. "
+                    + "Defensive copying would break property binding.")
     public void setAdmin(EndpointLimits admin) {
         this.admin = admin;
     }
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP",
+            justification = "EndpointLimits is a simple value holder bound by Spring's "
+                    + "@ConfigurationProperties; returning it directly is intentional and safe.")
     public EndpointLimits getRuntime() {
         return runtime;
     }
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "Spring's @ConfigurationProperties binding requires direct assignment. "
+                    + "Defensive copying would break property binding.")
     public void setRuntime(EndpointLimits runtime) {
         this.runtime = runtime;
     }
