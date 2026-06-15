@@ -245,16 +245,19 @@ When the limit is exceeded the server responds with **HTTP 429 Too Many Requests
 **Configuration reference** (`application.yml`):
 ```yaml
 rate-limiting:
-  enabled: true          # set to false to disable entirely (e.g. in integration tests)
+  enabled: true               # set to false to disable entirely (e.g. in integration tests)
+  trust-forwarded-for: false  # set to true only behind a trusted reverse proxy
   admin:
-    capacity: 100        # bucket capacity (max burst)
-    refill-tokens: 100   # tokens added per period
+    capacity: 100             # bucket capacity (max burst)
+    refill-tokens: 100        # tokens added per period
     refill-period-seconds: 60
   runtime:
     capacity: 1000
     refill-tokens: 1000
     refill-period-seconds: 60
 ```
+
+**`trust-forwarded-for`** — when `false` (the default), the rate-limiter uses `getRemoteAddr()` as the bucket key, which prevents callers from bypassing limits by spoofing `X-Forwarded-For`. Set to `true` only when the service runs exclusively behind a trusted reverse proxy that controls this header.
 
 Override individual fields per Spring profile to tighten limits in production or loosen them for load testing.
 

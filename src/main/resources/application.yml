@@ -85,6 +85,7 @@ api:
 # Rate Limiting Configuration
 rate-limiting:
   enabled: true
+  trust-forwarded-for: false
   admin:
     capacity: 100
     refill-tokens: 100

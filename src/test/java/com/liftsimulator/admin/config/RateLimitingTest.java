@@ -152,8 +152,28 @@ class RateLimitingTest {
     }
 
     @Test
-    void doFilter_HonoursXForwardedFor() throws Exception {
-        MockHttpServletRequest request = buildRequest("/api/v1/lift-systems", "127.0.0.1");
+    void doFilter_XForwardedFor_IgnoredByDefault() throws Exception {
+        // Two different X-Forwarded-For values from the same remoteAddr should share a bucket
+        // because trust-forwarded-for=false (default) and remoteAddr is "127.0.0.1" for both
+        for (int i = 0; i < 2; i++) {
+            MockHttpServletRequest req = buildRequest("/api/v1/lift-systems", "127.0.0.9");
+            req.addHeader("X-Forwarded-For", "spoofed-ip-" + i);
+            filter.doFilter(req, new MockHttpServletResponse(), filterChain);
+        }
+        // Bucket (capacity=2) should now be exhausted because remoteAddr was reused
+        MockHttpServletRequest req = buildRequest("/api/v1/lift-systems", "127.0.0.9");
+        req.addHeader("X-Forwarded-For", "spoofed-ip-9");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilter(req, response, filterChain);
+
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
+    }
+
+    @Test
+    void doFilter_XForwardedFor_HonouredWhenTrustEnabled() throws Exception {
+        properties.setTrustForwardedFor(true);
+
+        MockHttpServletRequest request = buildRequest("/api/v1/lift-systems", "10.0.0.1");
         request.addHeader("X-Forwarded-For", "203.0.113.5, 10.0.0.1");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -165,10 +185,24 @@ class RateLimitingTest {
 
     @Test
     void doFilter_SimulationRunsUseRuntimeBucket() throws Exception {
-        // simulation-runs paths should use the runtime bucket (capacity = 3)
+        // simulation-runs paths (with subresource) should use the runtime bucket (capacity = 3)
         MockHttpServletResponse lastResponse = null;
         for (int i = 0; i < 4; i++) {
             MockHttpServletRequest request = buildRequest("/api/v1/simulation-runs/123", "10.0.1.1");
+            lastResponse = new MockHttpServletResponse();
+            filter.doFilter(request, lastResponse, filterChain);
+        }
+
+        assertThat(lastResponse).isNotNull();
+        assertThat(lastResponse.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
+    }
+
+    @Test
+    void doFilter_SimulationRunsBasePathUsesRuntimeBucket() throws Exception {
+        // /api/v1/simulation-runs (no trailing slash) must also use the runtime bucket
+        MockHttpServletResponse lastResponse = null;
+        for (int i = 0; i < 4; i++) {
+            MockHttpServletRequest request = buildRequest("/api/v1/simulation-runs", "10.0.1.2");
             lastResponse = new MockHttpServletResponse();
             filter.doFilter(request, lastResponse, filterChain);
         }

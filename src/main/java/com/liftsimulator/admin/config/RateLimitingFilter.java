@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -32,16 +31,24 @@ import java.util.concurrent.ConcurrentHashMap;
  * </ul>
  *
  * <p>Set {@code rate-limiting.enabled=false} to disable rate limiting entirely (e.g., in tests).
+ * Set {@code rate-limiting.trust-forwarded-for=true} only when the service sits behind a
+ * trusted reverse proxy that controls the {@code X-Forwarded-For} header; leaving it false
+ * (the default) uses {@code getRemoteAddr()} and prevents bucket-key spoofing.
+ *
+ * <p>Registered via {@link RateLimitingConfig} as a {@code FilterRegistrationBean} at order
+ * {@code SecurityProperties.DEFAULT_FILTER_ORDER - 1} so it runs before the Spring Security
+ * filter chain and can throttle unauthenticated requests as well as authenticated ones.
  *
  * @see RateLimitingProperties
+ * @see RateLimitingConfig
  */
-@Component
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(RateLimitingFilter.class);
 
     private static final String RUNTIME_PREFIX = "/api/v1/runtime/";
-    private static final String SIMULATION_RUNS_PREFIX = "/api/v1/simulation-runs/";
+    private static final String SIMULATION_RUNS_BASE = "/api/v1/simulation-runs";
+    private static final String SIMULATION_RUNS_PREFIX = SIMULATION_RUNS_BASE + "/";
     private static final String HEADER_RETRY_AFTER = "Retry-After";
     private static final String HEADER_X_RATE_LIMIT_REMAINING = "X-RateLimit-Remaining";
     private static final String HEADER_X_RATE_LIMIT_LIMIT = "X-RateLimit-Limit";
@@ -71,7 +78,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
         String clientIp = resolveClientIp(request);
         String uri = request.getRequestURI();
-        boolean isRuntime = uri.startsWith(RUNTIME_PREFIX) || uri.startsWith(SIMULATION_RUNS_PREFIX);
+        boolean isRuntime = uri.startsWith(RUNTIME_PREFIX)
+            || uri.equals(SIMULATION_RUNS_BASE)
+            || uri.startsWith(SIMULATION_RUNS_PREFIX);
 
         Bucket bucket;
         int limit;
@@ -115,14 +124,17 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Resolves the real client IP, honouring the {@code X-Forwarded-For} header set by
-     * a reverse proxy. Falls back to {@code getRemoteAddr()} when no proxy header is present.
+     * Resolves the client IP used as the rate-limit bucket key.
+     * Honours {@code X-Forwarded-For} only when {@code rate-limiting.trust-forwarded-for=true}
+     * to prevent bucket-key spoofing when the service is reachable directly.
      */
     private String resolveClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            int commaIndex = forwarded.indexOf(',');
-            return commaIndex > 0 ? forwarded.substring(0, commaIndex).trim() : forwarded.trim();
+        if (properties.isTrustForwardedFor()) {
+            String forwarded = request.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                int commaIndex = forwarded.indexOf(',');
+                return commaIndex > 0 ? forwarded.substring(0, commaIndex).trim() : forwarded.trim();
+            }
         }
         return request.getRemoteAddr();
     }

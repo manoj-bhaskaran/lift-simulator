@@ -1,13 +1,14 @@
 package com.liftsimulator.admin.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
 /**
  * Configuration properties for API rate limiting.
  *
  * <p>Configures token-bucket rate limits for admin and runtime API endpoints separately.
  * Each endpoint group has its own bucket with configurable capacity and refill rate.
+ *
+ * <p>Registered via {@link RateLimitingConfig#enableConfigurationProperties}.
  *
  * <p>Example configuration in {@code application.yml}:
  * <pre>
@@ -25,11 +26,11 @@ import org.springframework.stereotype.Component;
  *
  * @see RateLimitingFilter
  */
-@Component
 @ConfigurationProperties(prefix = "rate-limiting")
 public class RateLimitingProperties {
 
     private boolean enabled = true;
+    private boolean trustForwardedFor = false;
     private EndpointLimits admin = new EndpointLimits(100, 100, 60);
     private EndpointLimits runtime = new EndpointLimits(1000, 1000, 60);
 
@@ -39,6 +40,14 @@ public class RateLimitingProperties {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public boolean isTrustForwardedFor() {
+        return trustForwardedFor;
+    }
+
+    public void setTrustForwardedFor(boolean trustForwardedFor) {
+        this.trustForwardedFor = trustForwardedFor;
     }
 
     public EndpointLimits getAdmin() {
