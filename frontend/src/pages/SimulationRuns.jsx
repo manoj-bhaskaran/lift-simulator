@@ -36,8 +36,12 @@ function SimulationRuns() {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [runToDelete, setRunToDelete] = useState(null);
+  const [bulkAction, setBulkAction] = useState(null);
+  const [selectedRunIds, setSelectedRunIds] = useState([]);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const [actionError, setActionError] = useState(null);
+  const [actionErrorTitle, setActionErrorTitle] = useState('Action failed');
   const [actionNotice, setActionNotice] = useState(null);
 
   const [selectedSystemId, setSelectedSystemId] = useState(
@@ -119,6 +123,23 @@ function SimulationRuns() {
 
     return () => clearInterval(intervalId);
   }, [hasActiveRuns, loadRuns]);
+
+  useEffect(() => {
+    setSelectedRunIds((currentIds) =>
+      currentIds.filter((id) => runs.some((run) => run.id === id))
+    );
+  }, [runs]);
+
+  const selectedRuns = useMemo(
+    () => selectedRunIds
+      .map((id) => runs.find((run) => run.id === id))
+      .filter(Boolean),
+    [selectedRunIds, runs]
+  );
+  const allVisibleSelected = runs.length > 0 && selectedRunIds.length === runs.length;
+  const selectedCount = selectedRuns.length;
+  const canBulkCancel = selectedCount > 0 && selectedRuns.every((run) => activeStatuses.has(run.status));
+  const canBulkDelete = selectedCount > 0 && selectedRuns.every((run) => terminalStatuses.has(run.status));
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -213,6 +234,24 @@ function SimulationRuns() {
     loadRuns(false, newPage);
   };
 
+  const handleToggleRunSelection = (runId) => {
+    setSelectedRunIds((currentIds) =>
+      currentIds.includes(runId)
+        ? currentIds.filter((id) => id !== runId)
+        : [...currentIds, runId]
+    );
+  };
+
+  const handleToggleAllVisible = () => {
+    setSelectedRunIds(allVisibleSelected ? [] : runs.map((run) => run.id));
+  };
+
+  const handleRequestBulkAction = (type) => {
+    setActionError(null);
+    setActionNotice(null);
+    setBulkAction(type);
+  };
+
   const handleRequestDelete = (run) => {
     setActionError(null);
     setActionNotice(null);
@@ -236,6 +275,7 @@ function SimulationRuns() {
       const targetPage = emptiesCurrentPage ? currentPage - 1 : currentPage;
       await loadRuns(false, targetPage);
     } catch (err) {
+      setActionErrorTitle('Failed to delete run');
       setActionError(getApiErrorMessage(err, `Failed to delete run #${runId}`));
       console.error(err);
     } finally {
@@ -243,6 +283,47 @@ function SimulationRuns() {
       setRunToDelete(null);
     }
   }, [runToDelete, loadRuns, runs.length, currentPage]);
+
+  const handleConfirmBulkAction = useCallback(async () => {
+    if (!bulkAction || selectedRuns.length === 0) {
+      return;
+    }
+    const runIds = selectedRuns.map((run) => run.id);
+    const actionName = bulkAction === 'cancel' ? 'cancel' : 'delete';
+    const actionPastTense = bulkAction === 'cancel' ? 'cancelled' : 'deleted';
+    const apiAction = bulkAction === 'cancel'
+      ? simulationRunsApi.cancelRun
+      : simulationRunsApi.deleteRun;
+    try {
+      setIsBulkProcessing(true);
+      const outcomes = await Promise.allSettled(runIds.map((id) => apiAction(id)));
+      const successCount = outcomes.filter((outcome) => outcome.status === 'fulfilled').length;
+      const failureCount = outcomes.length - successCount;
+      setActionNotice(
+        `${successCount} run${successCount === 1 ? '' : 's'} ${actionPastTense} successfully`
+        + (failureCount > 0 ? `; ${failureCount} failed.` : '.')
+      );
+      if (failureCount > 0) {
+        setActionErrorTitle(`Failed to ${actionName} selected runs`);
+        setActionError(
+          `Failed to ${actionName} ${failureCount} selected run${failureCount === 1 ? '' : 's'}. `
+          + 'Refresh the list and try again if needed.'
+        );
+      } else {
+        setActionError(null);
+      }
+      setSelectedRunIds([]);
+      const emptiesCurrentPage = bulkAction === 'delete' && successCount >= runs.length && currentPage > 0;
+      await loadRuns(false, emptiesCurrentPage ? currentPage - 1 : currentPage);
+    } catch (err) {
+      setActionErrorTitle(`Failed to ${actionName} selected runs`);
+      setActionError(getApiErrorMessage(err, `Failed to ${actionName} selected runs`));
+      console.error(err);
+    } finally {
+      setIsBulkProcessing(false);
+      setBulkAction(null);
+    }
+  }, [bulkAction, selectedRuns, loadRuns, runs.length, currentPage]);
 
   const hasFilters = selectedSystemId || (selectedStatus && selectedStatus !== 'ALL');
 
@@ -331,9 +412,41 @@ function SimulationRuns() {
               Showing {currentPage * 20 + 1}–{Math.min((currentPage + 1) * 20, totalElements)} of {totalElements} runs
             </p>
           )}
+          <div className="bulk-actions" aria-live="polite">
+            <span>{selectedCount} selected</span>
+            <button
+              type="button"
+              className="btn-small btn-secondary"
+              onClick={() => handleRequestBulkAction('cancel')}
+              disabled={!canBulkCancel || isBulkProcessing}
+              title={selectedCount > 0 && !canBulkCancel ? 'Select only CREATED or RUNNING runs to cancel.' : undefined}
+            >
+              Cancel Selected
+            </button>
+            <button
+              type="button"
+              className="btn-small btn-danger"
+              onClick={() => handleRequestBulkAction('delete')}
+              disabled={!canBulkDelete || isBulkProcessing}
+              title={selectedCount > 0 && !canBulkDelete ? 'Select only completed runs to delete.' : undefined}
+            >
+              Delete Selected
+            </button>
+            {selectedCount > 0 && !(canBulkCancel || canBulkDelete) && (
+              <span className="bulk-actions-hint">Mixed states selected; choose only active or completed runs.</span>
+            )}
+          </div>
           <table className="runs-table">
             <thead>
               <tr>
+                <th className="select-column">
+                  <input
+                    type="checkbox"
+                    aria-label="Select all visible runs"
+                    checked={allVisibleSelected}
+                    onChange={handleToggleAllVisible}
+                  />
+                </th>
                 <th>ID</th>
                 <th>System</th>
                 <th>Version</th>
@@ -348,6 +461,14 @@ function SimulationRuns() {
             <tbody>
               {runs.map((run) => (
                 <tr key={run.id}>
+                  <td className="select-column">
+                    <input
+                      type="checkbox"
+                      aria-label={`Select run #${run.id}`}
+                      checked={selectedRunIds.includes(run.id)}
+                      onChange={() => handleToggleRunSelection(run.id)}
+                    />
+                  </td>
                   <td className="run-id">#{run.id}</td>
                   <td>{run.liftSystemName || `System ${run.liftSystemId}`}</td>
                   <td>v{run.versionNumber || run.versionId}</td>
@@ -391,7 +512,7 @@ function SimulationRuns() {
                           type="button"
                           className="btn-small btn-danger"
                           onClick={() => handleRequestDelete(run)}
-                          disabled={isDeleting}
+                          disabled={isDeleting || isBulkProcessing}
                         >
                           Delete
                         </button>
@@ -443,10 +564,23 @@ function SimulationRuns() {
         confirmStyle="danger"
       />
 
+      <ConfirmModal
+        isOpen={bulkAction !== null}
+        onClose={() => setBulkAction(null)}
+        onConfirm={handleConfirmBulkAction}
+        title={bulkAction === 'cancel' ? 'Cancel selected runs?' : 'Delete selected runs?'}
+        message={bulkAction === 'cancel'
+          ? `This will request cancellation for ${selectedCount} selected active run${selectedCount === 1 ? '' : 's'}.`
+          : `This will permanently delete ${selectedCount} selected completed run${selectedCount === 1 ? '' : 's'}, including history and stored artefacts. This action cannot be undone.`}
+        confirmText={bulkAction === 'cancel' ? 'Cancel runs' : 'Delete runs'}
+        cancelText="Keep runs"
+        confirmStyle={bulkAction === 'delete' ? 'danger' : 'primary'}
+      />
+
       <AlertModal
         isOpen={actionError !== null}
         onClose={() => setActionError(null)}
-        title="Failed to delete run"
+        title={actionErrorTitle}
         message={actionError || ''}
         type="error"
       />
