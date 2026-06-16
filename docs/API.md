@@ -311,101 +311,6 @@ Scenario payloads define passenger flow for UI-driven simulation runs. The scena
     }
     ```
 
-#### Batch Input Generator
-
-The batch input generator converts stored scenario definitions and lift configurations into the legacy `.scenario` file format used by the CLI simulator. This enables backwards compatibility between the modern UI-driven workflow and the existing batch simulation infrastructure.
-
-**Purpose:**
-- Generates `.scenario` files from database-stored configurations
-- Ensures exact format compliance with `ScenarioParser`
-- Maintains backwards compatibility with CLI simulator
-- Stores generated files in run-specific artifact directories
-
-**How it works:**
-
-1. **Input**: Lift system version configuration (from database) + Scenario JSON (passenger flows)
-2. **Processing**: Converts passenger flows to `hall_call` events with proper direction calculation
-3. **Output**: `.scenario` file in the exact format expected by `ScenarioRunnerMain`
-
-**Example conversion:**
-
-Input scenario:
-```json
-{
-  "durationTicks": 30,
-  "passengerFlows": [
-    {
-      "startTick": 0,
-      "originFloor": 0,
-      "destinationFloor": 5,
-      "passengers": 2
-    },
-    {
-      "startTick": 10,
-      "originFloor": 8,
-      "destinationFloor": 2,
-      "passengers": 1
-    }
-  ]
-}
-```
-
-Generated `.scenario` file:
-```
-name: Simulation Run 123 - Morning Rush
-ticks: 30
-min_floor: 0
-max_floor: 10
-initial_floor: 0
-travel_ticks_per_floor: 1
-door_transition_ticks: 2
-door_dwell_ticks: 3
-door_reopen_window_ticks: 2
-home_floor: 0
-idle_timeout_ticks: 5
-controller_strategy: NEAREST_REQUEST_ROUTING
-idle_parking_mode: PARK_TO_HOME_FLOOR
-
-0, hall_call, p1, 0, UP
-0, hall_call, p2, 0, UP
-10, hall_call, p3, 8, DOWN
-```
-
-**Programmatic usage:**
-
-```java
-@Autowired
-private SimulationRunService runService;
-
-// Generate batch input file for a simulation run
-Path inputFile = runService.generateBatchInputFile(runId);
-// Returns: /path/to/artifacts/input.scenario
-```
-
-**Key features:**
-- **Automatic direction calculation**: Determines UP/DOWN based on origin and destination floors
-- **Unique passenger aliases**: Each passenger gets a unique alias (p1, p2, p3...)
-- **Event ordering**: Events are sorted by tick, then by alias
-- **Validation**: Ensures floor values are within configured range and start ticks are valid when generating content or files
-- **Artifact management**: Files are stored in run-specific directories under `artefactBasePath`
-
-**Scenario JSON Structure:**
-
-```json
-{
-  "durationTicks": 60,
-  "passengerFlows": [
-    {
-      "startTick": 0,
-      "originFloor": 0,
-      "destinationFloor": 5,
-      "passengers": 3
-    }
-  ],
-  "seed": 42
-}
-```
-
 **Scenario Validation Rules:**
 
 | Field | Type | Constraints | Description |
@@ -417,6 +322,15 @@ Path inputFile = runService.generateBatchInputFile(runId);
 | `passengerFlows[].destinationFloor` | Integer | Required, ≠ origin | Destination floor for the flow |
 | `passengerFlows[].passengers` | Integer | Required, ≥ 1 | Number of passengers in the flow |
 | `seed` | Integer | Optional, ≥ 0 | Random seed for deterministic runs |
+
+#### Batch Input Generator
+
+The batch input generator converts stored scenario definitions and lift configurations into the legacy `.scenario` file format used by the CLI simulator. It exists as a backwards-compatibility bridge so scenarios authored through the UI/API can be replayed by the existing CLI batch infrastructure without manual conversion. It runs internally as part of starting a simulation run; there is no standalone public endpoint.
+
+| Direction | Format |
+|-----------|--------|
+| Input | Lift system version configuration plus scenario JSON (passenger flows) — see [Scenario Management](#scenario-management) for the scenario schema and field constraints |
+| Output | A `.scenario` file consumed by the CLI runner: a `key: value` configuration header followed by comma-delimited event rows of the form `<tick>, hall_call, <alias>, <originFloor>, <direction>`. See the Scenario Runner section in [Workflows and Troubleshooting](Workflows-and-Troubleshooting.md) for running the generated file. |
 
 ##### Configuration Structure
 
@@ -482,24 +396,7 @@ Validation is automatically performed when:
 - Updating a version's configuration (`PUT /api/v1/lift-systems/{systemId}/versions/{versionNumber}`)
 - Publishing a version (`POST /api/v1/lift-systems/{systemId}/versions/{versionNumber}/publish`)
 
-If validation fails with errors, the operation will be rejected with a 400 Bad Request response containing detailed error information.
-
-**Error Response Format:**
-
-When configuration validation fails:
-```json
-{
-  "valid": false,
-  "errors": [
-    {
-      "field": "homeFloor",
-      "message": "Home floor (15) must be within valid floor range (0 to 9)",
-      "severity": "ERROR"
-    }
-  ],
-  "warnings": []
-}
-```
+If validation fails with errors, the operation will be rejected with a 400 Bad Request response containing detailed error information. The response body uses the same `valid` / `errors` / `warnings` shape shown in the [Configuration Validation](#configuration-validation) examples above.
 
 #### API Key Authentication (Runtime & Simulation Execution)
 
@@ -515,17 +412,11 @@ Runtime and simulation execution endpoints require an API key so they can be inv
 
 **Setting Up API Key:**
 
-Generate a secure random API key:
+Generate a secure random API key (any method producing sufficient entropy is acceptable):
 
 ```bash
-# Using OpenSSL (recommended for 32 bytes of entropy)
+# Using OpenSSL (32 bytes of entropy)
 openssl rand -base64 32
-
-# Using /dev/urandom on Unix-like systems
-head -c 32 /dev/urandom | base64
-
-# Using Python
-python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
 Configure via environment variable:
@@ -701,11 +592,14 @@ All simulation run endpoints require the configured API key header.
 ```
 
 **Status Values:**
-- `CREATED`: Run created but not yet started
-- `RUNNING`: Simulation is currently executing
-- `SUCCEEDED`: Simulation completed successfully
-- `FAILED`: Simulation failed with error
-- `CANCELLED`: Simulation was cancelled
+
+| Status | Description |
+|--------|-------------|
+| `CREATED` | Run created but not yet started |
+| `RUNNING` | Simulation is currently executing |
+| `SUCCEEDED` | Simulation completed successfully |
+| `FAILED` | Simulation failed with error |
+| `CANCELLED` | Simulation was cancelled |
 
 ---
 
@@ -989,19 +883,7 @@ simulation:
     base-path: ./simulation-runs
 ```
 
-**Directory Structure:**
-```
-simulation-runs/
-├── run-1/
-│   ├── input.scenario
-│   ├── results.json
-│   └── simulation.log
-├── run-2/
-│   ├── results.json
-│   └── simulation.log
-└── run-3/
-    └── simulation.log
-```
+For the layout of each run folder and the files it contains, see [Run Artefacts and Results Schema](#run-artefacts-and-results-schema) above.
 
 ---
 
