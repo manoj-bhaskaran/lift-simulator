@@ -72,6 +72,7 @@ Scenario files use a simple text format with metadata and events:
 
 ```
 # Metadata (required)
+ticks: 100
 min_floor: 0
 max_floor: 10
 home_floor: 0
@@ -80,21 +81,25 @@ idle_parking_mode: PARK_TO_HOME_FLOOR
 travel_ticks_per_floor: 1
 door_transition_ticks: 2
 door_dwell_ticks: 3
-door_reopen_window_ticks: -1
+door_reopen_window_ticks: 1
 idle_timeout_ticks: 5
 
-# Events (tick number, event type, parameters)
-0 car_call 0 5           # At tick 0: Car call from floor 0 to floor 5
-5 hall_call 3 UP         # At tick 5: Hall call at floor 3, going UP
-10 hall_call 8 DOWN      # At tick 10: Hall call at floor 8, going DOWN
+# Events: comma-separated fields - "<tick>, <event_type>, <parameters...>"
+# (full-line "#" comments are skipped; inline trailing comments are not supported)
+0, car_call, p1, 5
+5, hall_call, p2, 3, UP
+10, hall_call, p3, 8, DOWN
+20, cancel, p2
 ```
 
+Event rows are comma-delimited, and each request carries a unique alias (`p1`, `p2`, …) that later events (such as `cancel`) refer to.
+
 **Event Types:**
-- `car_call <origin_floor> <destination_floor>` - Passenger inside the lift
-- `hall_call <floor> <direction>` - Passenger waiting (UP/DOWN/NONE)
-- `cancel <floor> <direction>` - Cancel a hall call
-- `out_of_service <lift_id>` - Take a lift out of service
-- `return_to_service <lift_id>` - Return a lift to service
+- `<tick>, car_call, <alias>, <destination_floor>` - Passenger already inside a lift requesting a destination floor
+- `<tick>, hall_call, <alias>, <floor>, <direction>` - Passenger waiting at a floor (direction `UP` or `DOWN`)
+- `<tick>, cancel, <alias>` - Cancel a previously registered request by its alias
+- `<tick>, out_of_service` - Take the lift out of service
+- `<tick>, return_to_service` - Return the lift to service
 
 #### Local Simulation with JSON Config
 
