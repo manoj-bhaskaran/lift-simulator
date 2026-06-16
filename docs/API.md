@@ -330,7 +330,7 @@ The batch input generator converts stored scenario definitions and lift configur
 | Direction | Format |
 |-----------|--------|
 | Input | Lift system version configuration plus scenario JSON (passenger flows) — see [Scenario Management](#scenario-management) for the scenario schema and field constraints |
-| Output | A `.scenario` file in the format consumed by the CLI runner — see the Scenario Runner section in [Workflows and Troubleshooting](Workflows-and-Troubleshooting.md) |
+| Output | A `.scenario` file consumed by the CLI runner: a `key: value` configuration header followed by comma-delimited event rows of the form `<tick>, hall_call, <alias>, <originFloor>, <direction>`. See the Scenario Runner section in [Workflows and Troubleshooting](Workflows-and-Troubleshooting.md) for running the generated file. |
 
 ##### Configuration Structure
 
