@@ -17,7 +17,7 @@ summary is kept under [Earlier history](#earlier-history).
 ## [Unreleased]
 
 ### Added
-- **High-level architecture documentation**: Added `docs/architecture.md` with an embedded Mermaid component diagram and a simulation-run sequence diagram, plus a standalone `docs/architecture-diagram.mermaid` source file. The document describes the major components (React admin UI, Spring Boot backend layers, simulation engine, PostgreSQL, and artefact storage) and the key configuration-management and simulation-run flows, and is linked from the README to aid onboarding and maintainability. Also refreshed the README "Project Structure" section to match the current source layout (added the `runtime`, `scenario`, `config`, `security`, `entity`, and `runner` packages, removed the stale `admin/domain` entry, and listed the directional-scan controller and controller factory).
+- **High-level architecture documentation**: Added `docs/architecture.md` (linked from the README) with a Mermaid component diagram and a simulation-run sequence diagram — plus a standalone `docs/architecture-diagram.mermaid` source — describing the major components (React admin UI, Spring Boot backend layers, simulation engine, PostgreSQL, artefact storage) and the key configuration-management and simulation-run flows. Also refreshed the README "Project Structure" section to match the current source layout.
 - **Simulation Runs bulk actions**: Added multi-select checkboxes, select-all, guarded bulk action controls, confirmation dialogs, and per-operation outcome summaries so active runs can be cancelled together and completed runs can be deleted together from the Simulation Runs list. Updated README, Maven/JAR documentation, backend artifact metadata, and frontend package metadata for the 0.52.0 minor release.
 - **API rate limiting**: Added configurable token-bucket rate limiting (Bucket4j) for admin and runtime API endpoints. Limits are enforced per client IP with separate thresholds for admin (`/api/v1/**`) and runtime/simulation-run paths. Requests exceeding the limit receive HTTP 429 with `Retry-After` and `X-RateLimit-*` response headers. All thresholds are configurable via `rate-limiting.*` properties. Rate limiting can be disabled entirely via `rate-limiting.enabled=false`.
 - **Guided Create New Version form**: The Create New Version screen now defaults to a structured, guided form with a labelled input for every configuration parameter, inline help, and client-side validation that mirrors the backend constraints (minimum values, floor-range, home-floor-in-range, and door reopen window rules). The raw JSON editor is retained behind an **Advanced (JSON)** toggle for power users, and switching between modes preserves entered data where the JSON can be parsed. Added shared schema helpers and unit tests covering the form helpers and component.
@@ -39,7 +39,7 @@ summary is kept under [Earlier history](#earlier-history).
 ## [0.50.0] - 2026-06-14
 
 ### Added
-- **Delete completed simulation runs**: Added the ability to delete completed simulation runs along with their run history and stored artefacts. A new `DELETE /api/v1/simulation-runs/{id}` endpoint removes the run record and recursively deletes its artefact directory (generated input, logs, and result files); only terminal runs (`SUCCEEDED`, `FAILED`, `CANCELLED`) can be deleted, while in-progress runs return `409 Conflict` and unknown runs return `404 Not Found`. Artefacts are removed before the database record so a file-system failure aborts cleanly without leaving an inconsistent state, surfacing a clear `500` error. The Simulation Runs list and run detail screens now expose a guarded **Delete** action with a confirmation dialog warning that history and artefacts will be removed, plus success/failure feedback. Expanded service, artefact, controller, and frontend test coverage, and synchronized README/JAR/package metadata for the 0.50.0 release.
+- **Delete completed simulation runs**: Added `DELETE /api/v1/simulation-runs/{id}` to remove a run record together with its artefact directory (generated input, logs, results). Only terminal runs (`SUCCEEDED`, `FAILED`, `CANCELLED`) can be deleted; in-progress runs return `409 Conflict` and unknown runs `404 Not Found`. Artefacts are removed before the database record so a file-system failure aborts cleanly. The Simulation Runs list and detail screens expose a guarded **Delete** action with a confirmation dialog and success/failure feedback. Synchronized metadata for the 0.50.0 release.
 
 ## [0.49.25] - 2026-06-14
 
@@ -66,80 +66,24 @@ summary is kept under [Earlier history](#earlier-history).
 ### Fixed
 - **Version configuration JSON guidance**: Replaced truncated configuration editor placeholders with complete valid JSON examples, added required-field/schema help and a schema documentation link beside the create/edit version fields, and refreshed API examples to avoid invalid ellipsis placeholders. Updated README, developer/workflow guides, and package metadata for the 0.49.21 patch release.
 
-## [0.49.20] - 2026-06-12
+## [0.49.17–0.49.20] - 2026-06-12
 
 ### Added
-- **Service-layer scenario coverage**: Added `ScenarioValidationServiceTest` and `ScenarioServiceTest` coverage for scenario schema errors, bean/domain rules, version-specific floor-range validation, create/update validation gates, stored JSON serialization, response version metadata, and corrupt stored payload handling. Expanded `SimulationRunServiceTest` to cover scenario association checks and create-and-start execution state transitions.
-
-## [0.49.19] - 2026-06-12
-
-### Added
-- **Service-layer artefact and execution coverage**: Added temporary-directory based `ArtefactServiceTest` cases for nested artefact listing, safe download metadata, missing result/log handling, tail limits, and invalid traversal/absolute/symlink paths. Expanded `SimulationRunExecutionServiceTest` to execute mocked runs asynchronously, verify config/scenario/log/result artefacts, failed missing-scenario results, progress persistence, and cleanup of execution tracking state.
+- **Service- and controller-layer test coverage**: Added MockMvc coverage for scenario CRUD, runtime configuration, simulation-launch, and public health endpoints (API-key success/failure paths, validation errors, 405 handling), and service-layer coverage for scenario validation/storage, version-specific floor-range rules, artefact listing/download safety, and asynchronous run execution and progress persistence.
 
 ### Fixed
 - **Artefact symlink escape protection**: Hardened artefact downloads and listings to reject or skip symbolic links that resolve outside the run artefact directory.
 - **Fast execution cleanup race**: Removed completed run futures and cancellation tokens immediately after submission if a short run finishes before its future is tracked.
-- **Release metadata consistency**: Synchronized developer/workflow guide JAR examples and frontend package metadata with the `0.49.19` backend version.
-
-## [0.49.18] - 2026-06-12
-
-### Added
-- **Runtime and health controller coverage**: Added MockMvc tests for runtime configuration and simulation-launch endpoints, including API-key success/failure paths, response formats, service-not-found errors, and public health endpoint behaviour. The Spring Boot test base now explicitly loads the application class for tests outside the admin package, runtime components are included in application component scanning, and unsupported API methods return 405 responses. Updated README version references for the 0.49.18 patch release.
-
-## [0.49.17] - 2026-06-12
-
-### Added
-- **Controller API test coverage**: Added MockMvc coverage for scenario CRUD, scenario validation failures, and configuration validation error responses, backed by reusable controller API JSON fixtures. Synchronized JAR-version examples across the README, developer guide, and workflow troubleshooting guide for the 0.49.17 patch release.
 
 ## [0.49.16] - 2026-06-12
 
 ### Fixed
 - **Swagger/OpenAPI compatibility**: Upgraded `springdoc-openapi-starter-webmvc-ui` to `2.7.0` so Spring Boot 3.4.13 can generate `/api/v1/api-docs` without the removed `ControllerAdviceBean(Object)` constructor error, restoring Swagger UI at `/api/v1/swagger-ui.html` with the configured `basicAuth` and `apiKey` security schemes.
 
-## [0.49.15] - 2026-06-08
+## [0.49.7–0.49.15] - 2026-06-08
 
 ### Changed
-- **Changelog proportionality cleanup (round 2)**: Condensed the remaining over-detailed mid-history patch entries (0.41.4, 0.36.3, 0.33.5) from nested bullet lists into concise summaries of the user-facing fixes, dropping no-value churn bullets (import/JavaDoc-only changes), to match the proportionality treatment already applied across the rest of the changelog.
-
-## [0.49.14] - 2026-06-08
-
-### Changed
-- **NaiveLiftController test cleanup**: Removed duplicate, incorrect, and low-value controller tests, and corrected the mixed car/hall-call scenario so it starts between pending requests and asserts the lower-floor selection.
-
-## [0.49.13] - 2026-06-08
-
-### Changed
-- **Workflow and troubleshooting guide extraction**: Moved the CLI and UI-run workflow guidance, artefact reproduction steps, Morning Rush walkthrough, and simulation-run troubleshooting scenarios from `docs/API.md` into the new `docs/Workflows-and-Troubleshooting.md`; the API reference now links to the dedicated guide from the Simulation Run APIs section.
-
-## [0.49.12] - 2026-06-08
-
-### Changed
-- **README deduplication and restructure**: Removed in-file duplication left over after the API, troubleshooting, database-backup, and developer-guide extractions, and reorganised the README into a single logical section order (What is this? → Quick Start → Admin Interface → Building → Running the Application → Testing → Quality Checks → Configuration → Authentication → Database Setup → Logging → Development Setup → Project Structure → Architecture Decisions → License). Consolidated the duplicated build and testing sections so each command (notably `mvn test`, Checkstyle, and SpotBugs) appears exactly once; collapsed the standalone Features section into the Admin Interface capability summary; trimmed Authentication to a summary that links to `docs/API.md` and the security ADRs; removed the Scenario Builder UI micro-fix bullets (changelog content); and folded the orphaned Prerequisites, Backend Dependency Baseline, and Commenting Style sections into Quick Start and Development Setup.
-
-## [0.49.11] - 2026-06-08
-
-### Changed
-- **Changelog history archive**: Moved the detailed entries for releases 0.1.0–0.29.0 into a new `docs/CHANGELOG-ARCHIVE.md`, leaving a one-line-per-milestone summary under "Earlier history". Full history is preserved in the archive; the main changelog stays focused on recent and major releases.
-
-## [0.49.10] - 2026-06-08
-
-### Changed
-- **Changelog style normalization**: Standardized entries on the Keep a Changelog category vocabulary and a single bullet style (bold lead-in titles for top-level changes), normalizing sections that mixed bold and plain bullets. Removed the boilerplate "Patch version bump" / "Updated version references" bullets that carried no user-facing information, and deleted the partial, dead footer compare-link block (which defined links only for `0.1.0`–`0.6.0` and linked none of the version headings).
-
-## [0.49.9] - 2026-06-08
-
-### Changed
-- **Changelog de-duplication and ordering cleanup**: Merged the near-identical consecutive patch entries `0.41.2`/`0.41.3` (duplicate SPA index.html 404 fix) and `0.17.1`/`0.17.2` (duplicate directional-scan furthest-stop behavior) into single range entries matching the existing range pattern, and documented that entry dates reflect authoring order rather than a strict release sequence so the version/date ordering inversions no longer read as errors.
-
-## [0.49.8] - 2026-06-08
-
-### Changed
-- **Changelog proportionality cleanup**: Condensed over-detailed mid-history entries for 0.42.0, 0.29.0, 0.27.0, 0.26.0, 0.25.0, 0.24.0, 0.22.0, 0.20.0, and 0.19.0 to one-line summaries with no more than five high-value bullets each, while preserving user-facing behavior notes and confirming no breaking-change or security notes were present in those entries.
-
-## [0.49.7] - 2026-06-08
-
-### Fixed
-- **Changelog structure cleanup**: Relocated the empty `Unreleased` placeholder to the top of the changelog, migrated already-shipped entries into `0.49.6`, removed the phantom maintenance-version reference and outdated current-version claims, and normalized section headings to Keep a Changelog categories.
+- **Documentation and changelog restructuring**: Extracted the CLI/UI workflow and troubleshooting guidance into `docs/Workflows-and-Troubleshooting.md`, deduplicated and reorganised the README into a single logical section order, and archived the detailed 0.1.0–0.29.0 history into `docs/CHANGELOG-ARCHIVE.md` (a one-line-per-milestone summary remains under "Earlier history"). Normalised the changelog to Keep a Changelog conventions — consistent category vocabulary and bullet style, range-merged duplicate entries, proportionality cleanup of over-detailed mid-history entries, and removal of boilerplate version-bump bullets. Also removed duplicate and low-value `NaiveLiftController` tests.
 
 ## [0.49.6] - 2026-06-08
 
@@ -147,9 +91,8 @@ summary is kept under [Earlier history](#earlier-history).
 - **Configurable OpenAPI/Swagger access**: Added `security.openapi.public-access` / `SECURITY_OPENAPI_PUBLIC_ACCESS` so Swagger UI and OpenAPI JSON can either remain public (default, preserving existing behavior) or require ADMIN-role HTTP Basic authentication.
 - **CI coverage artifacts**: The backend CI job now uploads the JaCoCo HTML report from `target/site/jacoco/` on every run.
 - **Testcontainers-backed integration tests**: Integration and repository tests now provision a throwaway `postgres:15-alpine` instance on demand via Testcontainers, so `mvn test` runs without a pre-existing PostgreSQL database (a running Docker daemon is the only prerequisite). A single container is shared across the suite via a globally-registered Spring `ContextCustomizerFactory`, covering both `@SpringBootTest` and `@DataJpaTest` slices.
-- **Flyway migrations exercised by tests**: The test profile now runs the real `db/migration` scripts at startup and Hibernate runs in `validate` mode (instead of `ddl-auto: update`), so migration bugs and entity/schema drift are caught by the test suite.
-- **Migration verification test**: Added `FlywayMigrationIntegrationTest`, which asserts the Flyway schema history is populated, all migrations succeeded, and migrated tables exist.
-- **Unit tests for RunMetrics**: Added `RunMetricsTest` covering KPI computation (completed/cancelled counts, average and max wait ticks, utilisation), per-floor passenger flows and lift visits, per-lift config output, and idempotency of `recordTerminalRequests`.
+- **Flyway migrations exercised by tests**: The test profile now runs the real `db/migration` scripts at startup with Hibernate in `validate` mode (instead of `ddl-auto: update`), so migration bugs and entity/schema drift are caught; `FlywayMigrationIntegrationTest` asserts the schema history is populated and migrated tables exist.
+- **Unit tests for RunMetrics**: Added `RunMetricsTest` covering KPI computation (completed/cancelled counts, wait ticks, utilisation), per-floor flows and lift visits, per-lift config output, and `recordTerminalRequests` idempotency.
 
 ### Changed
 - **Developer guide extraction**: Moved simulation engine internals, request modeling, lift state machine, and JPA entity/repository reference material from `README.md` into the new `docs/DEVELOPER-GUIDE.md`; the README now links to the dedicated developer reference.
@@ -157,46 +100,18 @@ summary is kept under [Earlier history](#earlier-history).
 - **README configuration documentation**: Documented the single-lift-system-per-simulation-run architecture assumption, profile setup, YAML configuration files, current 0.49.6 package version, and configurable Swagger/OpenAPI access.
 - **Simulation run performance optimization**: Replaced O(n²) log tail buffering with an `ArrayDeque` ring buffer, cached shared `RunMetrics` KPI values across result serializers, and avoided allocating passenger-flow tick maps for empty scenarios. Added large-file tail coverage for 12K and 100K line logs.
 - **Backend dependency refresh**: Updated backend package metadata to 0.49.6, upgraded Spring Boot from 3.2.1 to 3.4.13, added the Spring Boot-managed Flyway PostgreSQL database module required by the newer Flyway baseline, and verified the PostgreSQL JDBC driver remains on the latest 42.7.11 release.
-- **CI Playwright E2E coverage**: Moved frontend Playwright execution into a dedicated `e2e-playwright` GitHub Actions job that provisions PostgreSQL, packages and starts the Spring Boot backend, waits for `/api/v1/health`, and runs the browser suite against the live API. The job publishes the Playwright HTML report and failure artifacts, including backend logs, so feature-test failures are visible in CI.
-- **Playwright-only E2E auth configuration**: Added optional Playwright environment variables for admin Basic auth and runtime API-key headers so local and CI E2E runs can exercise authenticated backend endpoints without exposing credentials in browser bundles.
-- **Backend-backed E2E stabilization**: Updated Playwright tests and helpers to use the inline Create Version validation flow, unique retry-safe system data, scoped assertions, backend response waits, route-aware system creation waits, current alert modal selectors, the current health-check UI payload, and Vite dev-proxy auth header injection so the new CI E2E job exercises the live backend reliably.
-- **Decoupled simulation run execution wiring**: Removed the lazy circular dependency between `SimulationRunService` and `SimulationRunExecutionService`; the execution service now updates run lifecycle state and progress through `SimulationRunRepository` directly.
-- **Extract RunMetrics to `metrics` sub-package**: Decomposed `SimulationRunExecutionService` by moving `RunMetrics`, `FloorMetrics`, and `RequestLifecycle` inner classes into a new `com.liftsimulator.admin.service.metrics` package. The execution service is reduced from ~711 lines to ~450 lines and the metrics classes are now independently testable. No public API or behaviour changes.
+- **Live-backend Playwright E2E in CI**: Added a dedicated `e2e-playwright` GitHub Actions job that provisions PostgreSQL, packages and starts the backend, waits for `/api/v1/health`, and runs the browser suite against the live API (publishing the HTML report and failure artifacts). Added optional Playwright auth env vars for admin Basic and runtime API-key headers, and stabilised the tests and helpers (retry-safe data, backend response waits, current selectors, dev-proxy auth injection) so the suite exercises the live backend reliably.
+- **Execution-service refactor**: Removed the lazy circular dependency between `SimulationRunService` and `SimulationRunExecutionService` (the execution service now goes through `SimulationRunRepository` directly), and extracted `RunMetrics`, `FloorMetrics`, and `RequestLifecycle` into a new `com.liftsimulator.admin.service.metrics` package — reducing the execution service from ~711 to ~450 lines with no public API or behaviour changes.
 
 ### Fixed
-- **Hibernate 6.6 cascade delete tests**: Cleared managed child entities before repository cascade-delete assertions so tests rely on the PostgreSQL `ON DELETE CASCADE` constraints without Hibernate transient-reference flush errors.
-- **CI deployable JAR packaging**: GitHub Actions backend and E2E packaging steps now activate the Maven `frontend` profile, log profile activation, install a Vite-compatible Node.js 20.19.0 runtime, verify the produced Spring Boot JAR contains React assets under `BOOT-INF/classes/static/`, and confirm the packaged app serves the React root page during E2E startup.
-- **NPE prevention in scenario execution**: Added null check for `scenario.durationTicks()` in `SimulationRunExecutionService.runSimulation()`. The method now fails cleanly with a clear error message if the scenario has a null duration, preventing NullPointerException during unboxing to primitive int.
-- **Removed dead code**: Eliminated duplicate `SimulationRunService.getAllRuns()` method which was superseded by the more efficient `getAllRunsWithDetails()` that eagerly loads related entities (lift system, version, scenario).
-- **Unified artefact path configuration**: Removed the duplicate `simulation.runs.artefacts-root` config key from `SimulationRunExecutionService`. All artefact storage now uses the single `simulation.artefacts.base-path` property (default: `./simulation-runs`) that was already present in `application.properties`.
-- **Directory orphaning eliminated**: `SimulationRunExecutionService.executeRun()` no longer creates a second run directory and overwrites the persisted path. The execution service now reads `artefactBasePath` from the run entity (set once by `SimulationRunService`) and writes all artefacts to that directory.
-- **Artefact storage documentation and tests**: Added `simulation.artefacts.base-path` to `application-dev.yml.template`, updated README documentation for the single artefact storage configuration key, and added `SimulationRunDirectoryIntegrationTest` coverage verifying that exactly one artefact directory is created per run and that it matches the persisted `artefactBasePath`.
+- **CI deployable JAR packaging**: GitHub Actions backend and E2E packaging steps now activate the Maven `frontend` profile, install a Vite-compatible Node.js 20.19.0 runtime, and verify the produced Spring Boot JAR contains and serves the React assets under `BOOT-INF/classes/static/`.
+- **Unified artefact storage**: Consolidated artefact storage onto the single `simulation.artefacts.base-path` property (default `./simulation-runs`), removing the duplicate `simulation.runs.artefacts-root` key and the second run directory that orphaned artefacts; the execution service now writes everything to the path persisted by `SimulationRunService`, backed by new directory-integration coverage.
+- **Robustness fixes**: Added a null check for `scenario.durationTicks()` to fail cleanly instead of throwing `NullPointerException`, removed the duplicate `SimulationRunService.getAllRuns()` method superseded by `getAllRunsWithDetails()`, and cleared managed child entities before cascade-delete assertions to avoid Hibernate 6.6 transient-reference flush errors.
 
-## [0.49.5] - 2026-06-08
+## [0.49.1–0.49.5] - 2026-06-07
 
 ### Changed
-- **Changelog compaction**: Collapsed narrow historical patch series into range entries, folded related patch fixes into their base minor entries, and replaced verbose test-case/method listings with concise test-suite scope summaries.
-
-## [0.49.4] - 2026-06-08
-
-### Changed
-- **Troubleshooting guide extraction**: Moved the Quick Troubleshooting section and Database Troubleshooting content from `README.md` into a new `docs/TROUBLESHOOTING.md`; the README Quick Troubleshooting section is now a short list of the four most common issues with a link to the full guide.
-- **Database backup extraction**: Moved the Database Backup and Restore section from `README.md` into a new `docs/DATABASE-BACKUP.md`; the README Database Setup section now links to the dedicated file.
-
-## [0.49.3] - 2026-06-08
-
-### Changed
-- **Changelog cleanup**: Removed boilerplate `### Technical Details`, `### Design Decisions`, `### Documentation`, and `### Migration Notes` sub-sections from pre-0.30.0 entries (0.5.0–0.29.0); stripped redundant "Version bumped from X to Y" and "Frontend package version updated to X.Y.Z" bullets from entries 0.22.0–0.43.0.
-
-## [0.49.2] - 2026-06-07
-
-### Changed
-- **Changelog maintenance**: Condensed selected historical entries from 0.30.0 through 0.46.0 by removing boilerplate implementation, benefit, documentation, and notes sub-sections while preserving user-facing changes and breaking-change summaries.
-
-## [0.49.1] - 2026-06-07
-
-### Changed
-- **REST API reference extraction**: Moved the detailed REST API reference, batch input generator notes, simulation run workflow documentation, runtime configuration API, and health endpoint reference out of `README.md` into `docs/API.md`; the README now keeps a concise API summary with links to the dedicated reference and Swagger UI.
+- **Documentation extraction and changelog compaction**: Moved the REST API reference, batch-input generator notes, simulation-run workflow, and runtime/health endpoint documentation into `docs/API.md`, and the troubleshooting and database-backup guides into `docs/TROUBLESHOOTING.md` and `docs/DATABASE-BACKUP.md`; the README now keeps concise summaries that link to the dedicated references. Compacted the changelog by range-merging narrow patch series, folding patch fixes into their base minor entries, and removing boilerplate sub-sections and version-bump bullets.
 
 ## [0.49.0] - 2026-06-07
 
@@ -276,18 +191,11 @@ UI consistency release for configuration-version workflows, lift-system editing,
 ### Fixed
 - **Draft version validation**: ConfigEditor now sends validation requests as `{ config: "..." }` (raw string) rather than a parsed object, resolving the spurious "Unknown property 'floors' is not allowed" error when validating DRAFT versions; create and update flows now validate consistently.
 - **Create Version modal**: Display the next version number (max existing + 1) prominently at the top of the form, and surface descriptive backend validation feedback inline when the configuration JSON fails validation.
-- **React hooks/linting**: Memoized `loadData`/`loadSystemData` with `useCallback` and removed unused `configObject` variables, clearing all exhaustive-deps and no-unused-vars warnings.
 
-## [0.41.2–0.41.3] - 2026-01-17
-
-### Fixed
-- Return a helpful 404 response when the SPA index.html asset is missing, avoiding noisy stack traces when the frontend is not built.
-- Ensure SPA forwarding uses explicit return types so Spring MVC applies the correct view/response handling.
-
-## [0.41.1] - 2026-01-17
+## [0.41.1–0.41.3] - 2026-01-17
 
 ### Fixed
-- **SPA Forwarding Recursion**: Prevented recursive forwarding when requesting `/index.html`, avoiding StackOverflowError logs during HTML route handling
+- Hardened SPA route forwarding: prevented recursive forwarding on `/index.html` (avoiding `StackOverflowError`), returned a helpful 404 when the index.html asset is missing instead of a noisy stack trace, and used explicit return types so Spring MVC applies the correct view/response handling.
 
 ## [0.41.0] - 2026-01-17
 
@@ -360,30 +268,14 @@ UI consistency release for configuration-version workflows, lift-system editing,
 ### Changed
 - Lift Systems list now filters results case-insensitively based on the search query
 
-## [0.36.3] - 2026-01-16
-
-### Changed
-- **Auto-validate on save**: ConfigEditor now runs validation automatically before saving, blocking invalid configurations from being saved until errors are fixed and displaying validation errors immediately.
-
-### Fixed
-- LiftSystems no longer re-throws after showing an error in AlertModal, preventing duplicate error handling.
-
-## [0.36.2] - 2026-01-16
+## [0.36.1–0.36.3] - 2026-01-16
 
 ### Added
-- Shared Modal component to centralize overlay, header, and focus/keyboard handling for modal variants
-- Shared Modal CSS for consistent base modal styling across the UI
+- Shared `Modal` component (and base CSS) centralising overlay, header, and focus/keyboard handling, with `AlertModal`/`ConfirmModal` rendering through it to reduce duplication.
+- Frontend API client support for an environment-configured base URL and request timeout via Vite env variables (default Axios timeout 10s to prevent hanging requests).
 
 ### Changed
-- AlertModal and ConfirmModal now render via the shared Modal component to reduce duplication
-
-## [0.36.1] - 2026-01-16
-
-### Added
-- Frontend API client now supports environment-configured base URL and request timeout via Vite env variables
-
-### Changed
-- Default Axios request timeout set to 10 seconds to prevent hanging requests
+- **Auto-validate on save**: ConfigEditor now validates automatically before saving, blocking invalid configurations until errors are fixed; LiftSystems no longer re-throws after showing an `AlertModal` error, preventing duplicate error handling.
 
 ## [0.36.0] - 2026-01-16
 
@@ -394,17 +286,10 @@ UI consistency release for configuration-version workflows, lift-system editing,
 ### Changed
 - README now documents responsive design capabilities.
 
-## [0.35.2] - 2026-02-12
-
-### Fixed
-- **Versions anchor scroll**: Ensure the Versions anchor scroll runs after loading completes, including systems with zero versions
-
-## [0.35.1] - 2026-02-12
+## [0.35.1–0.35.2] - 2026-02-12
 
 ### Changed
-- Lift systems list now routes the Manage Versions action to the versions section instead of duplicating the view details navigation
-- Admin UI version details page scrolls to the versions section when linked with a `#versions` anchor
-- Documentation refreshed for updated version numbers and UI navigation guidance
+- Routed the Manage Versions action to the versions section (instead of duplicating view-details navigation) and made the version details page scroll to the versions section when linked with a `#versions` anchor, ensuring the scroll runs after loading completes even for systems with zero versions.
 
 ## [0.35.0] - 2026-01-16
 
@@ -415,16 +300,10 @@ UI consistency release for configuration-version workflows, lift-system editing,
 ### Changed
 - `ConfigValidationService`, production/test ObjectMapper configuration, and `LocalSimulationMain` now enforce strict schema validation consistently.
 
-## [0.34.2] - 2026-02-10
+## [0.34.1–0.34.2] - 2026-02-10
 
 ### Fixed
-- Avoid null dereference warnings when detecting packaged JARs by using a path string check
-
-## [0.34.1] - 2026-02-10
-
-### Fixed
-- Guard runtime simulator process tracking against PID reuse by removing entries only when the same process exits
-- Avoid null dereference when detecting packaged JARs and use executor execute to avoid ignored submit results
+- Guard runtime simulator process tracking against PID reuse by removing entries only when the same process exits, avoid null dereference when detecting packaged JARs (path string check), and use executor `execute` to avoid ignored submit results.
 
 ## [0.34.0] - 2026-02-10
 
@@ -447,20 +326,10 @@ UI consistency release for configuration-version workflows, lift-system editing,
 - **Database Backup and Restore Documentation**: Added cross-platform PostgreSQL backup, restore, verification, and periodic restore-testing guidance to README.
 - **ADR-0012**: Documented backup/restore strategy, tooling choices, automation integration, alternatives, and operational considerations.
 
-## [0.33.3] - 2026-02-01
+## [0.33.1–0.33.3] - 2026-02-01
 
 ### Fixed
-- Excluded runtime controller constructor injection from SpotBugs EI_EXPOSE_REP2 reporting
-
-## [0.33.2] - 2026-02-01
-
-### Fixed
-- Replaced SpotBugs suppression annotation with a compiler-safe suppression to restore build success
-
-## [0.33.1] - 2026-02-01
-
-### Fixed
-- Suppressed SpotBugs false-positive for Spring controller dependency injection
+- Suppressed the SpotBugs `EI_EXPOSE_REP2` false-positive for Spring controller constructor injection using a compiler-safe suppression that restores build success.
 
 ## [0.33.0] - 2026-02-01
 
