@@ -309,6 +309,8 @@
                 <version>9.0.9</version>
                 <configuration>
                     <failBuildOnCVSS>7.0</failBuildOnCVSS>
+                    <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
+                    <dataDirectory>${user.home}/.m2/repository/org/owasp/dependency-check-data</dataDirectory>
                 </configuration>
                 <executions>
                     <execution>

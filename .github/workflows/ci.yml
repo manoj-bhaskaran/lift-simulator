@@ -90,9 +90,18 @@ jobs:
     - name: Build project
       run: mvn -q clean compile
 
+    - name: Cache OWASP Dependency-Check data
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository/org/owasp/dependency-check-data
+        key: dependency-check-${{ runner.os }}-${{ hashFiles('pom.xml') }}
+        restore-keys: |
+          dependency-check-${{ runner.os }}-
+
     - name: Verify tests, coverage gate, and dependency CVE scan
       run: mvn -q verify
       env:
+        NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/lift_simulator_test?currentSchema=lift_simulator
         SPRING_DATASOURCE_USERNAME: lift_admin
         SPRING_DATASOURCE_PASSWORD: liftpassword
