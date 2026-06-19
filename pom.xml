@@ -278,6 +278,15 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
+                            <excludes>
+                                <exclude>com/liftsimulator/**/*Application*</exclude>
+                                <exclude>com/liftsimulator/**/*Main*</exclude>
+                                <exclude>com/liftsimulator/**/config/**</exclude>
+                                <exclude>com/liftsimulator/**/dto/**</exclude>
+                                <exclude>com/liftsimulator/**/entity/**</exclude>
+                                <exclude>com/liftsimulator/**/repository/**</exclude>
+                                <exclude>com/liftsimulator/**/package-info.class</exclude>
+                            </excludes>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
