@@ -69,9 +69,11 @@
     <logger name="org.springframework.web" level="INFO"/>
     <logger name="org.springframework.boot" level="INFO"/>
 
-    <!-- Hibernate SQL logging - use level from application.yml/application-dev.yml -->
-    <logger name="org.hibernate.SQL" level="DEBUG"/>
-    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+    <!-- Hibernate SQL logging - WARN by default so persisted values are never written
+         to logs in a default deployment. Verbose SQL/bind-parameter logging is opt-in
+         and only enabled inside the 'dev' springProfile block below. -->
+    <logger name="org.hibernate.SQL" level="WARN"/>
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="WARN"/>
 
     <!-- Flyway -->
     <logger name="org.flywaydb" level="INFO"/>
@@ -91,12 +93,19 @@
 
     <!-- Profile-specific configuration -->
     <springProfile name="dev">
-        <!-- In development, keep console output verbose -->
+        <!-- In development, keep console output verbose and enable SQL/bind-parameter
+             tracing. This is the only place where persisted values may reach the logs. -->
         <logger name="com.liftsimulator" level="DEBUG"/>
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+        <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
     </springProfile>
 
     <springProfile name="prod">
-        <!-- In production, reduce console noise but keep detailed file logs -->
+        <!-- In production, reduce console noise but keep detailed file logs.
+             Re-assert the safe WARN level for Hibernate SQL/bind-parameter logging
+             so that a combined 'prod,dev' activation cannot leave the verbose 'dev'
+             levels attached to the shared appenders (this block is parsed after the
+             'dev' block, so its levels win). -->
         <logger name="com.liftsimulator" level="INFO"/>
         <logger name="org.hibernate.SQL" level="WARN"/>
         <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="WARN"/>
