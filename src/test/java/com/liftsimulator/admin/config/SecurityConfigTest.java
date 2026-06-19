@@ -53,6 +53,31 @@ public class SecurityConfigTest extends LocalIntegrationTest {
             .andExpect(jsonPath("$.status").value("UP"));
     }
 
+
+    @Test
+    void actuatorHealth_NoAuth_Returns401() throws Exception {
+        mockMvc.perform(get("/actuator/health"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(header().string("WWW-Authenticate", containsString("Basic realm=\"Lift Simulator Admin\"")))
+            .andExpect(jsonPath("$.status", is(401)));
+    }
+
+    @Test
+    void actuatorHealth_ViewerRole_Returns403() throws Exception {
+        mockMvc.perform(get("/actuator/health")
+                .with(httpBasic(TEST_VIEWER_USER, TEST_VIEWER_PASSWORD)))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.status", is(403)));
+    }
+
+    @Test
+    void actuatorHealth_AdminRole_ReturnsOk() throws Exception {
+        mockMvc.perform(get("/actuator/health")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("UP"));
+    }
+
     // ========== CORS Tests ==========
 
     @Test
@@ -289,20 +314,6 @@ public class SecurityConfigTest extends LocalIntegrationTest {
         mockMvc.perform(get("/api/v1/runtime/systems/test-system/config")
                 .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD)))
             .andExpect(status().isUnauthorized());
-    }
-
-    // ========== Actuator Endpoint Tests ==========
-
-    @Test
-    void actuatorHealth_NoAuth_ReturnsOk() throws Exception {
-        mockMvc.perform(get("/actuator/health"))
-            .andExpect(status().isOk());
-    }
-
-    @Test
-    void actuatorInfo_NoAuth_ReturnsOk() throws Exception {
-        mockMvc.perform(get("/actuator/info"))
-            .andExpect(status().isOk());
     }
 
     // ========== Error Response Format Tests ==========

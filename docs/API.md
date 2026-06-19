@@ -979,6 +979,8 @@ curl -H "X-API-Key: replace-with-secure-key" \\
 - **Custom Health Check**: `GET /api/v1/health`
   - Returns custom health status with service name and timestamp
 - **Actuator Health**: `GET /actuator/health`
-  - Returns detailed Spring Boot actuator health information
+  - Requires ADMIN-role HTTP Basic authentication
+  - Returns Spring Boot actuator health information with details only when authorized
 - **Actuator Info**: `GET /actuator/info`
+  - Requires ADMIN-role HTTP Basic authentication
   - Returns application information
