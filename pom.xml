@@ -306,10 +306,13 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>9.0.9</version>
+                <version>12.2.2</version>
                 <configuration>
                     <failBuildOnCVSS>7.0</failBuildOnCVSS>
                     <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
+                    <nvdApiDelay>6000</nvdApiDelay>
+                    <nvdMaxRetryCount>20</nvdMaxRetryCount>
+                    <nvdValidForHours>24</nvdValidForHours>
                     <dataDirectory>${user.home}/.m2/repository/org/owasp/dependency-check-data</dataDirectory>
                 </configuration>
                 <executions>
