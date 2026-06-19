@@ -67,7 +67,7 @@ import java.util.Locale;
  *   <li>{@code /api/v1/health} - Application health check</li>
  *   <li>{@code /api/v1/api-docs/**} and Swagger UI when {@code security.openapi.public-access}
  *       is enabled (default)</li>
- *   <li>{@code /actuator/**} - Spring Boot Actuator endpoints</li>
+ *   <li>{@code /actuator/**} - Spring Boot Actuator endpoints (ADMIN role required)</li>
  *   <li>Static resources - Frontend assets</li>
  * </ul>
  *
@@ -261,19 +261,42 @@ public class SecurityConfig {
     }
 
     /**
-     * Security filter chain for public endpoints and static resources.
-     * Permits unauthenticated access to actuator, static files, and frontend routes.
-     * Processed last (Order 3) as the default filter chain.
+     * Security filter chain for Spring Boot Actuator endpoints.
+     * Requires ADMIN-role HTTP Basic authentication before exposing operational state.
      */
     @Bean
     @Order(3)
+    public SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/actuator/**")
+            .cors(Customizer.withDefaults())
+            .csrf(csrf -> configureCsrf(csrf))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint(adminAuthenticationEntryPoint())
+                .accessDeniedHandler(accessDeniedHandler()))
+            .httpBasic(httpBasic -> httpBasic
+                .realmName("Lift Simulator Admin")
+                .authenticationEntryPoint(adminAuthenticationEntryPoint()))
+            .authorizeHttpRequests(auth -> auth
+                .anyRequest().hasRole("ADMIN"));
+
+        return http.build();
+    }
+
+    /**
+     * Security filter chain for public endpoints and static resources.
+     * Permits unauthenticated access to static files and frontend routes.
+     * Processed last (Order 4) as the default filter chain.
+     */
+    @Bean
+    @Order(4)
     public SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(Customizer.withDefaults())
             .csrf(csrf -> configureCsrf(csrf))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/", "/index.html", "/assets/**", "/favicon.ico").permitAll()
                 // Allow frontend SPA routes
                 .requestMatchers("/lift-systems/**", "/versions/**", "/health/**",

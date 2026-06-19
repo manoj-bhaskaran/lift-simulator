@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>Rate limits are configurable via {@link RateLimitingProperties}:
  * <ul>
- *   <li>{@code rate-limiting.admin.*}  — admin API paths ({@code /api/v1/**} excluding runtime)</li>
+ *   <li>{@code rate-limiting.admin.*}  — admin API paths ({@code /api/v1/**} excluding runtime) and actuator paths</li>
  *   <li>{@code rate-limiting.runtime.*} — runtime and simulation-run paths</li>
  * </ul>
  *
@@ -72,7 +72,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             return true;
         }
         String uri = request.getRequestURI();
-        return !uri.startsWith("/api/v1/");
+        return !uri.startsWith("/api/v1/") && !uri.startsWith("/actuator/");
     }
 
     @Override

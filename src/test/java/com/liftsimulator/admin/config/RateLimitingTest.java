@@ -20,7 +20,7 @@ import static org.mockito.Mockito.verify;
  * Unit tests for {@link RateLimitingFilter}.
  * Verifies that the token-bucket rate limiter enforces configured limits,
  * returns HTTP 429 with appropriate headers when exhausted, and is skipped
- * when disabled or for non-API paths.
+ * when disabled or for non-API/non-actuator paths.
  */
 @ExtendWith(MockitoExtension.class)
 class RateLimitingTest {
@@ -142,13 +142,29 @@ class RateLimitingTest {
     }
 
     @Test
-    void doFilter_NonApiPath_SkipsRateLimiting() throws Exception {
-        MockHttpServletRequest request = buildRequest("/actuator/health", "10.0.0.6");
+    void doFilter_NonApiOrActuatorPath_SkipsRateLimiting() throws Exception {
+        MockHttpServletRequest request = buildRequest("/", "10.0.0.6");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         filter.doFilter(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
+    }
+
+
+    @Test
+    void doFilter_ActuatorPathUsesAdminBucket() throws Exception {
+        MockHttpServletResponse lastResponse = null;
+
+        for (int i = 0; i < 3; i++) {
+            MockHttpServletRequest request = buildRequest("/actuator/health", "10.0.0.7");
+            lastResponse = new MockHttpServletResponse();
+            filter.doFilter(request, lastResponse, filterChain);
+        }
+
+        assertThat(lastResponse).isNotNull();
+        assertThat(lastResponse.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
+        assertThat(lastResponse.getHeader("X-RateLimit-Limit")).isEqualTo("2");
     }
 
     @Test

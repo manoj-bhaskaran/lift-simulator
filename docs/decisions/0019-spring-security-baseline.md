@@ -70,8 +70,9 @@ http
 
 The following endpoints remain accessible without authentication:
 - `/api/health` - Health check for monitoring
-- `/actuator/**` - Spring Boot Actuator endpoints
 - Static assets and frontend routes
+
+Spring Boot Actuator endpoints (`/actuator/**`) require ADMIN-role HTTP Basic authentication to avoid anonymous operational-state disclosure.
 
 ### 4. Error Handling
 
@@ -97,7 +98,8 @@ Three ordered security filter chains handle different request patterns:
 |-------|---------|----------------|------|
 | 1 | `/api/runtime/**` | API Key | RUNTIME |
 | 2 | `/api/**` | HTTP Basic | ADMIN |
-| 3 | Default | None | N/A |
+| 3 | `/actuator/**` | HTTP Basic | ADMIN |
+| 4 | Default | None | N/A |
 
 ### Configuration Properties
 
@@ -113,7 +115,7 @@ security.api-key=${API_KEY:}
 ### Key Classes
 
 1. **SecurityConfig** (`com.liftsimulator.admin.config.SecurityConfig`)
-   - Configures three `SecurityFilterChain` beans with ordering
+   - Configures ordered `SecurityFilterChain` beans
    - Defines `UserDetailsService` with in-memory admin user
    - Uses `BCryptPasswordEncoder` for password hashing
 

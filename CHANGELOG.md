@@ -25,6 +25,9 @@ summary is kept under [Earlier history](#earlier-history).
 ### Changed
 - **Condensed API reference**: Trimmed `docs/API.md` to remove duplication and internal implementation detail without dropping any consumer-facing information. The `results.json` schema, artefact directory structure, and scenario field table now each appear exactly once; the Batch Input Generator section no longer documents internal Java service mechanics (processing steps, programmatic usage, key features, and the worked conversion example) and instead describes the backwards-compatibility bridge with an input/output format summary; simulation run status values are consolidated into a single table next to the Create Run endpoint; the standalone configuration validation error block was removed in favour of the existing validation examples; and the API key generation guidance now shows a single OpenSSL example. Synchronised package metadata for the 0.52.1 patch release.
 
+### Fixed
+- **Actuator endpoint disclosure**: Restricted `/actuator/**` to ADMIN-role HTTP Basic authentication, changed health detail exposure to `when-authorized`, and included actuator paths in the admin rate-limiting bucket so operational health and info endpoints are no longer anonymously exposed or unthrottled. Updated README, API/security documentation, and package metadata for the 0.52.2 patch release.
+
 ## [0.51.0] - 2026-06-14
 
 ### Added
