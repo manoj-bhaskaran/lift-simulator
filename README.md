@@ -179,7 +179,7 @@ mvn test -Dtest=ControllerScenarioTest
 mvn test -Dtest=ControllerScenarioTest#testDirectionalScan_CanonicalScenario_FromReadme
 ```
 
-The project enforces a minimum **80% line coverage** through JaCoCo during `mvn verify` for production business logic, excluding Spring wiring, DTO/entity/repository boilerplate, package descriptors, and CLI/application entrypoints. CI runs the same Maven phase so pull requests fail if the scoped coverage gate drops below the threshold or the OWASP dependency CVE scan finds blocking vulnerabilities. Generate only the coverage report (available at `target/site/jacoco/index.html`) with:
+The project enforces a minimum **80% line coverage** through JaCoCo during `mvn verify` for production business logic, excluding Spring wiring, DTO/entity/repository boilerplate, package descriptors, and CLI/application entrypoints. CI runs the same Maven phase so pull requests fail if the scoped coverage gate drops below the threshold or the OWASP dependency CVE scan finds vulnerabilities at **CVSS 7.0 or higher**. Generate only the coverage report (available at `target/site/jacoco/index.html`) with:
 ```bash
 mvn jacoco:report
 ```
@@ -201,7 +201,7 @@ In CI, the `e2e-playwright` job packages the backend with `mvn -Pfrontend packag
 ```bash
 mvn checkstyle:check        # code style
 mvn spotbugs:check          # static analysis
-mvn verify                  # tests, JaCoCo coverage gate, and OWASP dependency CVE scan
+mvn verify                  # tests, JaCoCo coverage gate, and OWASP CVSS >= 7.0 dependency CVE scan
 ```
 
 SpotBugs suppressions are limited to Spring-managed dependency injection in service constructors.
