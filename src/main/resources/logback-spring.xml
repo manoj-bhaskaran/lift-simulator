@@ -102,8 +102,13 @@
 
     <springProfile name="prod">
         <!-- In production, reduce console noise but keep detailed file logs.
-             Hibernate SQL/bind-parameter logging stays at the safe WARN default. -->
+             Re-assert the safe WARN level for Hibernate SQL/bind-parameter logging
+             so that a combined 'prod,dev' activation cannot leave the verbose 'dev'
+             levels attached to the shared appenders (this block is parsed after the
+             'dev' block, so its levels win). -->
         <logger name="com.liftsimulator" level="INFO"/>
+        <logger name="org.hibernate.SQL" level="WARN"/>
+        <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="WARN"/>
     </springProfile>
 
 </configuration>
