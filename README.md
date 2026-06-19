@@ -179,7 +179,7 @@ mvn test -Dtest=ControllerScenarioTest
 mvn test -Dtest=ControllerScenarioTest#testDirectionalScan_CanonicalScenario_FromReadme
 ```
 
-The project enforces a minimum **80% line coverage** through JaCoCo during `mvn verify` for production business logic, excluding Spring wiring, DTO/entity/repository boilerplate, package descriptors, and CLI/application entrypoints. CI runs the same Maven phase so pull requests fail if the scoped coverage gate drops below the threshold or the OWASP dependency CVE scan finds vulnerabilities at **CVSS 7.0 or higher**. Generate only the coverage report (available at `target/site/jacoco/index.html`) with:
+The project enforces a minimum **50% line coverage baseline** through JaCoCo during `mvn verify` for production business logic, excluding Spring wiring, DTO/entity/repository boilerplate, package descriptors, and CLI/application entrypoints. CI runs the same Maven phase so pull requests fail if the scoped coverage baseline drops below the threshold or the OWASP dependency CVE scan finds vulnerabilities at **CVSS 7.0 or higher**. Generate only the coverage report (available at `target/site/jacoco/index.html`) with:
 ```bash
 mvn jacoco:report
 ```

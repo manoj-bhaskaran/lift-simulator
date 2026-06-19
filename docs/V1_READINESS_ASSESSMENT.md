@@ -69,7 +69,7 @@ The lift-simulator project demonstrates excellent software engineering practices
 **Strengths:**
 - 380 test methods across 29 test files
 - Excellent test-to-code ratio (~1:1 with 9,036 test LOC vs 9,961 source LOC)
-- 80% minimum coverage enforced via JaCoCo
+- 50% minimum coverage baseline enforced via JaCoCo
 - Comprehensive domain/state machine testing
 - Playwright E2E tests for frontend (25+ automated tests)
 - Integration tests using Testcontainers
