@@ -9,6 +9,7 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -138,6 +139,7 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
     - name: Checkout code
@@ -169,6 +171,7 @@ jobs:
   e2e-playwright:
     name: Playwright E2E with backend
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [backend, frontend]
 
     services:
