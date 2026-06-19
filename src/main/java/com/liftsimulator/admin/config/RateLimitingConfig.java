@@ -27,7 +27,7 @@ public class RateLimitingConfig {
             RateLimitingProperties properties) {
         FilterRegistrationBean<RateLimitingFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(new RateLimitingFilter(properties));
-        registration.addUrlPatterns("/api/v1/*");
+        registration.addUrlPatterns("/api/v1/*", "/actuator/*");
         registration.setOrder(SecurityProperties.DEFAULT_FILTER_ORDER - 1);
         registration.setName("rateLimitingFilter");
         return registration;
