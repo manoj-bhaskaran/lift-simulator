@@ -9,7 +9,7 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 25
 
     services:
       postgres:
@@ -91,95 +91,18 @@ jobs:
     - name: Build project
       run: mvn -q clean compile
 
-    - name: Cache OWASP Dependency-Check data
-      uses: actions/cache@v4
-      with:
-        path: ~/.m2/repository/org/owasp/dependency-check-data
-        # Rotate the key every run so each run persists the NVD data it downloaded.
-        # A fixed key is immutable once written, which previously froze a partial
-        # (watchdog-killed) NVD database in the cache: every later run restored the
-        # same incomplete data and could never save a completed copy. The layered
-        # restore-keys load the most recent prior cache so downloads accumulate
-        # across runs until one completes the initial sync.
-        key: dependency-check-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
-        restore-keys: |
-          dependency-check-${{ runner.os }}-
-
-    - name: Verify tests, coverage gate, and dependency CVE scan
-      run: |
-        mkdir -p thread-dumps
-        # jstack -l includes lock ownership, so JVM-level deadlocks are flagged.
-        dump_jvms() {
-          for pid in $(pgrep -f '[j]ava'); do
-            jstack -l "$pid" > "thread-dumps/$1_pid${pid}.txt" 2>&1 || true
-          done
-        }
-        dump_db() {
-          psql -h localhost -U lift_admin -d lift_simulator_test -c \
-            "select pid,state,wait_event_type,wait_event,pg_blocking_pids(pid) blocked_by,left(query,200) q \
-             from pg_stat_activity where datname='lift_simulator_test' order by state;" \
-            > "thread-dumps/$1_db.txt" 2>&1 || true
-        }
-        # Watchdog: snapshot every JVM (and the DB lock graph) the moment a backend
-        # statement starts waiting on a lock, so we capture the live deadlock before
-        # lock_timeout aborts it. If the build stalls past the deadline, capture a
-        # final set and abort so the artifact uploads before the job-level timeout.
-        (
-          watchdog_deadline=$((SECONDS + 2700))   # abort the build after 45 minutes
-          while true; do
-            sleep 10
-            blocked=$(psql -tA -h localhost -U lift_admin -d lift_simulator_test \
-              -c "select count(*) from pg_stat_activity where wait_event_type='Lock' and datname='lift_simulator_test';" \
-              2>/dev/null || echo 0)
-            if [ "${blocked:-0}" -ge 1 ]; then
-              ts=$(date -u +%H%M%S)
-              echo "::warning::Detected ${blocked} statement(s) waiting on a database lock; capturing dumps (lockwait_${ts})."
-              dump_db "lockwait_${ts}"
-              dump_jvms "lockwait_${ts}"
-            fi
-            if [ "$SECONDS" -ge "$watchdog_deadline" ]; then
-              echo "::error::Build exceeded watchdog deadline (45m); capturing final dumps and aborting."
-              ts=$(date -u +%H%M%S)
-              dump_db "FINAL_${ts}"
-              dump_jvms "FINAL_${ts}"
-              pkill -f surefirebooter || true
-              pkill -f 'org.codehaus.plexus.classworlds.launcher.Launcher' || true
-              break
-            fi
-          done
-        ) &
-        WATCHDOG_PID=$!
-        # With an NVD API key the OWASP scan can poll NVD quickly; without one, keep the
-        # plugin's safe no-key throttle (the pom default) to avoid 403/rate-limit hangs.
-        # The keyed path is required for the scan to finish inside the watchdog window.
-        if [ -n "$NVD_API_KEY" ]; then
-          echo "NVD_API_KEY is set; running the OWASP scan on the fast keyed path (nvd.api.delay=2000)."
-          NVD_DELAY_ARG="-Dnvd.api.delay=2000"
-        else
-          echo "::warning::NVD_API_KEY is NOT set. The OWASP NVD update will use the slow anonymous rate limit (~20 min) and will likely hit the watchdog deadline. Add the NVD_API_KEY repository secret to fix this."
-          NVD_DELAY_ARG=""
-        fi
-        mvn -q verify $NVD_DELAY_ARG
-        RC=$?
-        kill "$WATCHDOG_PID" 2>/dev/null || true
-        exit $RC
+    - name: Verify tests and coverage gate
+      # The OWASP dependency CVE scan runs in the separate, non-blocking
+      # "security-scan" job so a slow/flaky NVD update can never hang or block
+      # the test build. Skip it here.
+      run: mvn -q verify -Ddependency-check.skip=true
       env:
-        NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/lift_simulator_test?currentSchema=lift_simulator
         SPRING_DATASOURCE_USERNAME: lift_admin
         SPRING_DATASOURCE_PASSWORD: liftpassword
         PGPASSWORD: liftpassword
         SPRING_JPA_HIBERNATE_DDL_AUTO: update
         SPRING_JPA_PROPERTIES_HIBERNATE_HBM2DDL_CREATE_NAMESPACES: 'false'
-
-    - name: Upload thread dumps
-      uses: actions/upload-artifact@v4
-      if: failure()
-      with:
-        name: backend-thread-dumps
-        path: thread-dumps/
-        if-no-files-found: ignore
-        retention-days: 30
 
     - name: Upload JaCoCo HTML report
       uses: actions/upload-artifact@v4
@@ -368,4 +291,60 @@ jobs:
           frontend/test-results/
           frontend/playwright-report/
           backend-e2e.log
+        retention-days: 30
+
+  security-scan:
+    name: OWASP dependency CVE scan (advisory)
+    runs-on: ubuntu-latest
+    # Advisory: this scan depends on the external NVD service, whose first-time
+    # database sync is slow and occasionally unreliable. continue-on-error keeps a
+    # slow/failed scan from blocking the workflow (and therefore PRs); it still
+    # surfaces real CVEs as a non-blocking red check. Flip this off to make the
+    # scan blocking again once the NVD cache is warm and the keyed sync is fast.
+    continue-on-error: true
+    timeout-minutes: 50
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    - name: Cache OWASP Dependency-Check data
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository/org/owasp/dependency-check-data
+        # Rotate the key every run so each run persists the NVD data it downloaded.
+        # A fixed key is immutable once written, which would freeze a partial NVD
+        # database in the cache and never let a completed copy be saved. The layered
+        # restore-keys load the most recent prior cache so downloads accumulate
+        # across runs until one completes the initial sync.
+        key: dependency-check-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: |
+          dependency-check-${{ runner.os }}-
+
+    - name: Run OWASP dependency-check
+      run: |
+        if [ -n "$NVD_API_KEY" ]; then
+          echo "NVD_API_KEY is set; using the fast keyed path (nvd.api.delay=2000)."
+          mvn -q compile org.owasp:dependency-check-maven:check -Dnvd.api.delay=2000
+        else
+          echo "::warning::NVD_API_KEY is not set; using the slow anonymous NVD throttle."
+          mvn -q compile org.owasp:dependency-check-maven:check
+        fi
+      env:
+        NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+
+    - name: Upload dependency-check report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: dependency-check-report
+        path: target/dependency-check-report.*
+        if-no-files-found: ignore
         retention-days: 30
