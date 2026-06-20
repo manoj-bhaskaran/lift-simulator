@@ -13,6 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -73,6 +74,10 @@ public class SimulationRun {
 
     @Column(name = "artefact_base_path", length = 500)
     private String artefactBasePath;
+
+    @Version
+    @Column(name = "lock_version", nullable = false)
+    private Long lockVersion;
 
     public SimulationRun() {
     }
@@ -281,6 +286,14 @@ public class SimulationRun {
 
     public String getArtefactBasePath() {
         return artefactBasePath;
+    }
+
+    public Long getLockVersion() {
+        return lockVersion;
+    }
+
+    public void setLockVersion(Long lockVersion) {
+        this.lockVersion = lockVersion;
     }
 
     public void setArtefactBasePath(String artefactBasePath) {

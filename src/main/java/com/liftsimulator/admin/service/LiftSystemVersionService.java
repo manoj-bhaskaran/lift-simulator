@@ -44,7 +44,7 @@ public class LiftSystemVersionService {
      */
     @Transactional
     public VersionResponse createVersion(Long systemId, CreateVersionRequest request) {
-        LiftSystem liftSystem = liftSystemRepository.findById(systemId)
+        LiftSystem liftSystem = liftSystemRepository.findByIdForUpdate(systemId)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Lift system not found with id: " + systemId
             ));
@@ -93,6 +93,11 @@ public class LiftSystemVersionService {
     @Transactional
     public VersionResponse updateVersionConfig(
             Long systemId, Integer versionNumber, UpdateVersionConfigRequest request) {
+        liftSystemRepository.findByIdForUpdate(systemId)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Lift system not found with id: " + systemId
+            ));
+
         LiftSystemVersion version = versionRepository
             .findByLiftSystemIdAndVersionNumber(systemId, versionNumber)
             .orElseThrow(() -> new ResourceNotFoundException(
@@ -164,6 +169,11 @@ public class LiftSystemVersionService {
      */
     @Transactional
     public VersionResponse publishVersion(Long systemId, Integer versionNumber) {
+        liftSystemRepository.findByIdForUpdate(systemId)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Lift system not found with id: " + systemId
+            ));
+
         LiftSystemVersion version = versionRepository
             .findByLiftSystemIdAndVersionNumber(systemId, versionNumber)
             .orElseThrow(() -> new ResourceNotFoundException(
