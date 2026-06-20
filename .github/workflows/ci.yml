@@ -100,7 +100,53 @@ jobs:
           dependency-check-${{ runner.os }}-
 
     - name: Verify tests, coverage gate, and dependency CVE scan
-      run: mvn -q verify
+      run: |
+        mkdir -p thread-dumps
+        # jstack -l includes lock ownership, so JVM-level deadlocks are flagged.
+        dump_jvms() {
+          for pid in $(pgrep -f '[j]ava'); do
+            jstack -l "$pid" > "thread-dumps/$1_pid${pid}.txt" 2>&1 || true
+          done
+        }
+        dump_db() {
+          psql -h localhost -U lift_admin -d lift_simulator_test -c \
+            "select pid,state,wait_event_type,wait_event,pg_blocking_pids(pid) blocked_by,left(query,200) q \
+             from pg_stat_activity where datname='lift_simulator_test' order by state;" \
+            > "thread-dumps/$1_db.txt" 2>&1 || true
+        }
+        # Watchdog: snapshot every JVM (and the DB lock graph) the moment a backend
+        # statement starts waiting on a lock, so we capture the live deadlock before
+        # lock_timeout aborts it. If the build stalls past the deadline, capture a
+        # final set and abort so the artifact uploads before the job-level timeout.
+        (
+          watchdog_deadline=$((SECONDS + 1200))   # abort the build after 20 minutes
+          while true; do
+            sleep 10
+            blocked=$(psql -tA -h localhost -U lift_admin -d lift_simulator_test \
+              -c "select count(*) from pg_stat_activity where wait_event_type='Lock' and datname='lift_simulator_test';" \
+              2>/dev/null || echo 0)
+            if [ "${blocked:-0}" -ge 1 ]; then
+              ts=$(date -u +%H%M%S)
+              echo "::warning::Detected ${blocked} statement(s) waiting on a database lock; capturing dumps (lockwait_${ts})."
+              dump_db "lockwait_${ts}"
+              dump_jvms "lockwait_${ts}"
+            fi
+            if [ "$SECONDS" -ge "$watchdog_deadline" ]; then
+              echo "::error::Build exceeded watchdog deadline (20m); capturing final dumps and aborting."
+              ts=$(date -u +%H%M%S)
+              dump_db "FINAL_${ts}"
+              dump_jvms "FINAL_${ts}"
+              pkill -f surefirebooter || true
+              pkill -f 'org.codehaus.plexus.classworlds.launcher.Launcher' || true
+              break
+            fi
+          done
+        ) &
+        WATCHDOG_PID=$!
+        mvn -q verify
+        RC=$?
+        kill "$WATCHDOG_PID" 2>/dev/null || true
+        exit $RC
       env:
         NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/lift_simulator_test?currentSchema=lift_simulator
@@ -109,6 +155,15 @@ jobs:
         PGPASSWORD: liftpassword
         SPRING_JPA_HIBERNATE_DDL_AUTO: update
         SPRING_JPA_PROPERTIES_HIBERNATE_HBM2DDL_CREATE_NAMESPACES: 'false'
+
+    - name: Upload thread dumps
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: backend-thread-dumps
+        path: thread-dumps/
+        if-no-files-found: ignore
+        retention-days: 30
 
     - name: Upload JaCoCo HTML report
       uses: actions/upload-artifact@v4
