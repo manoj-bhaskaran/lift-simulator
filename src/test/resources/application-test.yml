@@ -12,6 +12,11 @@ spring:
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
+      # Fail fast on database lock waits / runaway statements instead of hanging the
+      # whole CI job indefinitely. A blocked statement aborts with a clear PostgreSQL
+      # error (and stack trace) after the timeout, which both unblocks CI and pinpoints
+      # the contended statement. Thresholds are far above any legitimate test operation.
+      connection-init-sql: "DO $$ BEGIN PERFORM set_config('lock_timeout','20s',false); PERFORM set_config('statement_timeout','120s',false); END $$;"
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect

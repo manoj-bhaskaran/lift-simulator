@@ -114,6 +114,21 @@ public class SimulationRunExecutionService {
         return run;
     }
 
+    /**
+     * Indicates whether any simulation run is currently submitted or executing.
+     *
+     * <p>Runs are tracked from submission until their asynchronous execution
+     * completes (including artefact writing and lifecycle finalisation). This is
+     * primarily used to let integration tests wait for background executions to
+     * drain before they reset shared database state, preventing a concurrent
+     * {@code UPDATE} from the runner thread from colliding with cleanup deletes.</p>
+     *
+     * @return {@code true} if at least one run is in flight
+     */
+    public boolean hasActiveRuns() {
+        return !runningTasks.isEmpty();
+    }
+
     private void executeRun(RunExecutionRequest request) {
         CancellationToken cancelToken = cancellationTokens.computeIfAbsent(request.runId(), id -> new CancellationToken());
         boolean started = false;

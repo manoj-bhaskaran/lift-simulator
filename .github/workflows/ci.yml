@@ -9,6 +9,7 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     services:
       postgres:
@@ -90,8 +91,11 @@ jobs:
     - name: Build project
       run: mvn -q clean compile
 
-    - name: Run tests with coverage
-      run: mvn -q test jacoco:report
+    - name: Verify tests and coverage gate
+      # The OWASP dependency CVE scan runs in the separate, non-blocking
+      # "security-scan" job so a slow/flaky NVD update can never hang or block
+      # the test build. Skip it here.
+      run: mvn -q verify -Ddependency-check.skip=true
       env:
         SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/lift_simulator_test?currentSchema=lift_simulator
         SPRING_DATASOURCE_USERNAME: lift_admin
@@ -129,6 +133,7 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
     - name: Checkout code
@@ -160,6 +165,7 @@ jobs:
   e2e-playwright:
     name: Playwright E2E with backend
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [backend, frontend]
 
     services:
@@ -285,4 +291,60 @@ jobs:
           frontend/test-results/
           frontend/playwright-report/
           backend-e2e.log
+        retention-days: 30
+
+  security-scan:
+    name: OWASP dependency CVE scan (advisory)
+    runs-on: ubuntu-latest
+    # Advisory: this scan depends on the external NVD service, whose first-time
+    # database sync is slow and occasionally unreliable. continue-on-error keeps a
+    # slow/failed scan from blocking the workflow (and therefore PRs); it still
+    # surfaces real CVEs as a non-blocking red check. Flip this off to make the
+    # scan blocking again once the NVD cache is warm and the keyed sync is fast.
+    continue-on-error: true
+    timeout-minutes: 50
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    - name: Cache OWASP Dependency-Check data
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository/org/owasp/dependency-check-data
+        # Rotate the key every run so each run persists the NVD data it downloaded.
+        # A fixed key is immutable once written, which would freeze a partial NVD
+        # database in the cache and never let a completed copy be saved. The layered
+        # restore-keys load the most recent prior cache so downloads accumulate
+        # across runs until one completes the initial sync.
+        key: dependency-check-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: |
+          dependency-check-${{ runner.os }}-
+
+    - name: Run OWASP dependency-check
+      run: |
+        if [ -n "$NVD_API_KEY" ]; then
+          echo "NVD_API_KEY is set; using the fast keyed path (nvd.api.delay=2000)."
+          mvn -q compile org.owasp:dependency-check-maven:check -Dnvd.api.delay=2000
+        else
+          echo "::warning::NVD_API_KEY is not set; using the slow anonymous NVD throttle."
+          mvn -q compile org.owasp:dependency-check-maven:check
+        fi
+      env:
+        NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+
+    - name: Upload dependency-check report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: dependency-check-report
+        path: target/dependency-check-report.*
+        if-no-files-found: ignore
         retention-days: 30
