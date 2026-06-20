@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -284,7 +285,7 @@ public class SimulationRunRepositoryTest {
         entityManager.flush();
         entityManager.clear();
 
-        OffsetDateTime recoveredAt = OffsetDateTime.now();
+        OffsetDateTime recoveredAt = OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS);
         int failedRunning = runRepository.failOrphanedRunningRuns("Recovered after restart", recoveredAt);
         int cancelledCreated = runRepository.cancelOrphanedCreatedRuns(recoveredAt);
         entityManager.flush();
