@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -166,7 +167,7 @@ public class SimulationRunExecutionServiceTest {
 
         waitForExecutionToFinish(storedRun, SimulationRun.RunStatus.FAILED);
         assertEquals("Missing scenario payload for run.", storedRun.get().getErrorMessage());
-        assertTrue(Files.exists(runDir.resolve("config.json")));
+        assertFalse(Files.exists(runDir.resolve("config.json")));
         assertFalse(Files.exists(runDir.resolve("scenario.json")));
         assertTrue(Files.readString(runDir.resolve("run.log")).contains("Missing scenario payload for run 2"));
 
@@ -195,6 +196,43 @@ public class SimulationRunExecutionServiceTest {
         assertEquals("FAILED", results.at("/runSummary/status").asText());
         assertEquals("Invalid scenario payload.", results.at("/runSummary/message").asText());
         assertInternalStateCleared(3L);
+    }
+
+    @Test
+    public void submitRunForExecutionDoesNotWriteInputArtefactsWhenScenarioValidationFails() throws Exception {
+        Path runDir = tempDir.resolve("run-validation-fails");
+        Files.createDirectories(runDir);
+        SimulationRun run = runWithArtefactDirectory(13L, runDir, SHORT_SCENARIO);
+        AtomicReference<SimulationRun> storedRun = prepareRepository(run);
+        when(configValidationService.validate(VALID_CONFIG)).thenReturn(validConfigResponse());
+        when(scenarioValidationService.validate(any(JsonNode.class))).thenReturn(invalidScenarioResponse());
+
+        executionService.submitRunForExecution(13L);
+
+        waitForExecutionToFinish(storedRun, SimulationRun.RunStatus.FAILED);
+        assertFalse(Files.exists(runDir.resolve("config.json")));
+        assertFalse(Files.exists(runDir.resolve("scenario.json")));
+        assertFalse(Files.exists(runDir.resolve("input.scenario")));
+        verify(batchInputGenerator, never()).generateBatchInputFile(any(), any(), any(), any());
+        assertInternalStateCleared(13L);
+    }
+
+    @Test
+    public void submitRunForExecutionDoesNotWriteInputArtefactsWhenConfigValidationFails() throws Exception {
+        Path runDir = tempDir.resolve("run-config-validation-fails");
+        Files.createDirectories(runDir);
+        SimulationRun run = runWithArtefactDirectory(14L, runDir, SHORT_SCENARIO);
+        AtomicReference<SimulationRun> storedRun = prepareRepository(run);
+        when(configValidationService.validate(VALID_CONFIG)).thenReturn(invalidConfigResponse());
+
+        executionService.submitRunForExecution(14L);
+
+        waitForExecutionToFinish(storedRun, SimulationRun.RunStatus.FAILED);
+        assertFalse(Files.exists(runDir.resolve("config.json")));
+        assertFalse(Files.exists(runDir.resolve("scenario.json")));
+        assertFalse(Files.exists(runDir.resolve("input.scenario")));
+        verify(batchInputGenerator, never()).generateBatchInputFile(any(), any(), any(), any());
+        assertInternalStateCleared(14L);
     }
 
 
@@ -256,6 +294,18 @@ public class SimulationRunExecutionServiceTest {
 
     private ScenarioValidationResponse validScenarioResponse() {
         return new ScenarioValidationResponse(true, List.of(), List.of());
+    }
+
+    private ConfigValidationResponse invalidConfigResponse() {
+        return new ConfigValidationResponse(
+                false,
+                List.of(new ValidationIssue(
+                        "maxFloor",
+                        "maxFloor must be greater than or equal to minFloor",
+                        ValidationIssue.Severity.ERROR
+                )),
+                List.of()
+        );
     }
 
     private ScenarioValidationResponse invalidScenarioResponse() {

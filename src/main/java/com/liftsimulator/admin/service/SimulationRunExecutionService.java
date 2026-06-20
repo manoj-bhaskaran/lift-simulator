@@ -154,7 +154,6 @@ public class SimulationRunExecutionService {
 
         try (BufferedWriter logWriter = Files.newBufferedWriter(logPath, StandardCharsets.UTF_8)) {
             log(logWriter, "Run directory: " + runDir.toAbsolutePath());
-            writeInputFiles(request, runDir, logWriter);
 
             if (request.scenarioJson() == null) {
                 log(logWriter, "Missing scenario payload for run " + request.runId());
@@ -192,6 +191,8 @@ public class SimulationRunExecutionService {
                 writeResults(request.runId(), runDir, null, null, null, "FAILED", "Scenario must have a valid durationTicks value.");
                 return;
             }
+
+            writeInputFiles(request, runDir, logWriter);
 
             configureRun(
                 request.runId(),
