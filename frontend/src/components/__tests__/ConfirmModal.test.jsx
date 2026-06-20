@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ConfirmModal from '../ConfirmModal';
 
 describe('ConfirmModal', () => {
@@ -34,13 +34,13 @@ describe('ConfirmModal', () => {
     expect(screen.getByText('No, Keep')).toBeInTheDocument();
   });
 
-  it('calls onConfirm and onClose when confirm button clicked', () => {
+  it('calls onConfirm and onClose when confirm button clicked', async () => {
     const onClose = vi.fn();
     const onConfirm = vi.fn();
     render(<ConfirmModal {...defaultProps} onClose={onClose} onConfirm={onConfirm} />);
     fireEvent.click(screen.getByText('Confirm'));
     expect(onConfirm).toHaveBeenCalledTimes(1);
-    expect(onClose).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
 
   it('calls onClose when cancel button clicked', () => {

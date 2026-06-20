@@ -289,7 +289,7 @@ function ConfigEditor() {
             <button
               className="btn-primary"
               onClick={handleSaveDraft}
-              disabled={saving || !hasUnsavedChanges || version?.status !== 'DRAFT'}
+              disabled={saving || validating || version?.status !== 'DRAFT'}
             >
               {saving ? 'Saving...' : 'Save Draft'}
             </button>
