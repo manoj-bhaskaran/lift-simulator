@@ -206,6 +206,8 @@ mvn verify                  # tests, JaCoCo coverage gate, and OWASP CVSS >= 7.0
 
 SpotBugs suppressions are limited to Spring-managed dependency injection in service constructors.
 
+The OWASP dependency CVE scan retrieves vulnerability data from the National Vulnerability Database (NVD) API. This product uses the NVD API but is not endorsed or certified by the NVD.
+
 ## Configuration
 
 The backend is configured via YAML files under `src/main/resources/`:
@@ -400,3 +402,7 @@ See [docs/decisions](docs/decisions) for the full Architecture Decision Records 
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
+
+## Acknowledgements
+
+This product uses the NVD API but is not endorsed or certified by the NVD.
