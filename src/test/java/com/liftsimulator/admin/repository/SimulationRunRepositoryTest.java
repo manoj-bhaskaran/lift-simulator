@@ -12,6 +12,8 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -266,6 +268,43 @@ public class SimulationRunRepositoryTest {
         assertTrue(activeRuns.size() >= 2);
         assertTrue(activeRuns.stream().allMatch(
                 r -> r.getStatus() == RunStatus.CREATED || r.getStatus() == RunStatus.RUNNING));
+    }
+
+    @Test
+    public void testStartupRecoveryBulkUpdatesActiveRunsOnly() {
+        SimulationRun createdRun = new SimulationRun(liftSystem, version);
+        SimulationRun runningRun = new SimulationRun(liftSystem, version);
+        runningRun.start();
+        SimulationRun succeededRun = new SimulationRun(liftSystem, version);
+        succeededRun.start();
+        succeededRun.succeed();
+
+        entityManager.persist(createdRun);
+        entityManager.persist(runningRun);
+        entityManager.persist(succeededRun);
+        entityManager.flush();
+        entityManager.clear();
+
+        OffsetDateTime recoveredAt = OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS);
+        int failedRunning = runRepository.failOrphanedRunningRuns("Recovered after restart", recoveredAt);
+        int cancelledCreated = runRepository.cancelOrphanedCreatedRuns(recoveredAt);
+        entityManager.flush();
+        entityManager.clear();
+
+        assertEquals(1, failedRunning);
+        assertEquals(1, cancelledCreated);
+
+        SimulationRun recoveredRunning = runRepository.findById(runningRun.getId()).orElseThrow();
+        assertEquals(RunStatus.FAILED, recoveredRunning.getStatus());
+        assertEquals("Recovered after restart", recoveredRunning.getErrorMessage());
+        assertEquals(recoveredAt, recoveredRunning.getEndedAt());
+
+        SimulationRun recoveredCreated = runRepository.findById(createdRun.getId()).orElseThrow();
+        assertEquals(RunStatus.CANCELLED, recoveredCreated.getStatus());
+        assertEquals(recoveredAt, recoveredCreated.getEndedAt());
+
+        SimulationRun untouchedSucceeded = runRepository.findById(succeededRun.getId()).orElseThrow();
+        assertEquals(RunStatus.SUCCEEDED, untouchedSucceeded.getStatus());
     }
 
     @Test

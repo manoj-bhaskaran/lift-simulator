@@ -241,4 +241,30 @@ public interface SimulationRunRepository extends JpaRepository<SimulationRun, Lo
             @Param("id") Long id,
             @Param("errorMessage") String errorMessage,
             @Param("endedAt") OffsetDateTime endedAt);
+
+    /**
+     * Mark all orphaned RUNNING runs as FAILED during application startup recovery.
+     *
+     * @param errorMessage the recovery failure message
+     * @param endedAt recovery timestamp
+     * @return number of rows updated
+     */
+    @Transactional
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE SimulationRun r SET r.status = 'FAILED', r.errorMessage = :errorMessage, "
+            + "r.endedAt = :endedAt WHERE r.status = 'RUNNING'")
+    int failOrphanedRunningRuns(
+            @Param("errorMessage") String errorMessage,
+            @Param("endedAt") OffsetDateTime endedAt);
+
+    /**
+     * Mark all orphaned CREATED runs as CANCELLED during application startup recovery.
+     *
+     * @param endedAt recovery timestamp
+     * @return number of rows updated
+     */
+    @Transactional
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE SimulationRun r SET r.status = 'CANCELLED', r.endedAt = :endedAt WHERE r.status = 'CREATED'")
+    int cancelOrphanedCreatedRuns(@Param("endedAt") OffsetDateTime endedAt);
 }
