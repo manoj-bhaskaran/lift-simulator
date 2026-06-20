@@ -119,7 +119,7 @@ jobs:
         # lock_timeout aborts it. If the build stalls past the deadline, capture a
         # final set and abort so the artifact uploads before the job-level timeout.
         (
-          watchdog_deadline=$((SECONDS + 1200))   # abort the build after 20 minutes
+          watchdog_deadline=$((SECONDS + 900))   # abort the build after 15 minutes
           while true; do
             sleep 10
             blocked=$(psql -tA -h localhost -U lift_admin -d lift_simulator_test \
@@ -132,7 +132,7 @@ jobs:
               dump_jvms "lockwait_${ts}"
             fi
             if [ "$SECONDS" -ge "$watchdog_deadline" ]; then
-              echo "::error::Build exceeded watchdog deadline (20m); capturing final dumps and aborting."
+              echo "::error::Build exceeded watchdog deadline (15m); capturing final dumps and aborting."
               ts=$(date -u +%H%M%S)
               dump_db "FINAL_${ts}"
               dump_jvms "FINAL_${ts}"
@@ -145,9 +145,12 @@ jobs:
         WATCHDOG_PID=$!
         # With an NVD API key the OWASP scan can poll NVD quickly; without one, keep the
         # plugin's safe no-key throttle (the pom default) to avoid 403/rate-limit hangs.
+        # The keyed path is required for the scan to finish inside the watchdog window.
         if [ -n "$NVD_API_KEY" ]; then
+          echo "NVD_API_KEY is set; running the OWASP scan on the fast keyed path (nvd.api.delay=2000)."
           NVD_DELAY_ARG="-Dnvd.api.delay=2000"
         else
+          echo "::warning::NVD_API_KEY is NOT set. The OWASP NVD update will use the slow anonymous rate limit (~20 min) and will likely hit the watchdog deadline. Add the NVD_API_KEY repository secret to fix this."
           NVD_DELAY_ARG=""
         fi
         mvn -q verify $NVD_DELAY_ARG
