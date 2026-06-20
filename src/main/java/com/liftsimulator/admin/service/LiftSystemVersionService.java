@@ -44,10 +44,7 @@ public class LiftSystemVersionService {
      */
     @Transactional
     public VersionResponse createVersion(Long systemId, CreateVersionRequest request) {
-        LiftSystem liftSystem = liftSystemRepository.findById(systemId)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "Lift system not found with id: " + systemId
-            ));
+        LiftSystem liftSystem = getLiftSystemForVersionMutation(systemId);
 
         // Determine the config to use
         String config;
@@ -164,6 +161,8 @@ public class LiftSystemVersionService {
      */
     @Transactional
     public VersionResponse publishVersion(Long systemId, Integer versionNumber) {
+        getLiftSystemForVersionMutation(systemId);
+
         LiftSystemVersion version = versionRepository
             .findByLiftSystemIdAndVersionNumber(systemId, versionNumber)
             .orElseThrow(() -> new ResourceNotFoundException(
@@ -193,12 +192,28 @@ public class LiftSystemVersionService {
             publishedVersion.archive();
             versionRepository.save(publishedVersion);
         }
+        if (!publishedVersions.isEmpty()) {
+            versionRepository.flush();
+        }
 
         // Publish the version
         version.publish();
         LiftSystemVersion publishedVersion = versionRepository.save(version);
 
         return VersionResponse.fromEntity(publishedVersion);
+    }
+
+    /**
+     * Loads and write-locks a lift system before version allocation or publish/archive mutations.
+     *
+     * @param systemId the lift system ID
+     * @return the locked lift system
+     */
+    private LiftSystem getLiftSystemForVersionMutation(Long systemId) {
+        return liftSystemRepository.findByIdForUpdate(systemId)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Lift system not found with id: " + systemId
+            ));
     }
 
     /**

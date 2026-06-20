@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -84,7 +85,7 @@ public class LiftSystemVersionServiceTest {
         String config = "{\"minFloor\": 0, \"maxFloor\": 9, \"lifts\": 2}";
         CreateVersionRequest request = new CreateVersionRequest(config, null);
 
-        when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(configValidationService.validate(anyString())).thenReturn(validValidationResponse);
         when(versionRepository.findMaxVersionNumberByLiftSystemId(1L)).thenReturn(null);
         when(versionRepository.save(any(LiftSystemVersion.class))).thenReturn(mockVersion);
@@ -93,7 +94,7 @@ public class LiftSystemVersionServiceTest {
 
         assertNotNull(response);
         assertEquals(1, response.versionNumber());
-        verify(liftSystemRepository).findById(1L);
+        verify(liftSystemRepository).findByIdForUpdate(1L);
         verify(configValidationService).validate(config);
         verify(versionRepository).findMaxVersionNumberByLiftSystemId(1L);
         verify(versionRepository).save(any(LiftSystemVersion.class));
@@ -107,7 +108,7 @@ public class LiftSystemVersionServiceTest {
 
         CreateVersionRequest request = new CreateVersionRequest("{}", 1);
 
-        when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1))
             .thenReturn(Optional.of(sourceVersion));
         when(configValidationService.validate(originalConfig)).thenReturn(validValidationResponse);
@@ -126,7 +127,7 @@ public class LiftSystemVersionServiceTest {
     public void testCreateVersion_LiftSystemNotFound() {
         CreateVersionRequest request = new CreateVersionRequest("{\"minFloor\": 0, \"maxFloor\": 9}", null);
 
-        when(liftSystemRepository.findById(999L)).thenReturn(Optional.empty());
+        when(liftSystemRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
 
         ResourceNotFoundException exception = assertThrows(
             ResourceNotFoundException.class,
@@ -134,14 +135,14 @@ public class LiftSystemVersionServiceTest {
         );
 
         assertEquals("Lift system not found with id: 999", exception.getMessage());
-        verify(liftSystemRepository).findById(999L);
+        verify(liftSystemRepository).findByIdForUpdate(999L);
     }
 
     @Test
     public void testCreateVersion_CloneSourceNotFound() {
         CreateVersionRequest request = new CreateVersionRequest("{}", 999);
 
-        when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 999))
             .thenReturn(Optional.empty());
 
@@ -158,7 +159,7 @@ public class LiftSystemVersionServiceTest {
     public void testCreateVersion_VersionNumberIncrement() {
         CreateVersionRequest request = new CreateVersionRequest("{\"minFloor\": 0, \"maxFloor\": 14}", null);
 
-        when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(configValidationService.validate(anyString())).thenReturn(validValidationResponse);
         when(versionRepository.findMaxVersionNumberByLiftSystemId(1L)).thenReturn(5);
 
@@ -273,6 +274,7 @@ public class LiftSystemVersionServiceTest {
 
     @Test
     public void testPublishVersion_Success() {
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1))
             .thenReturn(Optional.of(mockVersion));
         when(configValidationService.validate(anyString())).thenReturn(validValidationResponse);
@@ -286,11 +288,13 @@ public class LiftSystemVersionServiceTest {
         verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 1);
         verify(configValidationService).validate(mockVersion.getConfig());
         verify(versionRepository).findByLiftSystemIdAndIsPublishedTrue(1L);
+        verify(versionRepository, never()).flush();
         verify(versionRepository).save(mockVersion);
     }
 
     @Test
     public void testPublishVersion_ArchivesPreviouslyPublishedVersion() {
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
         // Create previously published version
         LiftSystemVersion previousVersion = new LiftSystemVersion();
         previousVersion.setId(2L);
@@ -321,15 +325,18 @@ public class LiftSystemVersionServiceTest {
 
         assertNotNull(response);
         assertEquals(VersionStatus.ARCHIVED, previousVersion.getStatus());
+        assertEquals(false, previousVersion.getIsPublished());
         verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 3);
         verify(configValidationService).validate(newVersion.getConfig());
         verify(versionRepository).findByLiftSystemIdAndIsPublishedTrue(1L);
         verify(versionRepository).save(previousVersion);
+        verify(versionRepository).flush();
         verify(versionRepository).save(newVersion);
     }
 
     @Test
     public void testPublishVersion_AlreadyPublished() {
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
         mockVersion.setIsPublished(true);
 
         when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1))
@@ -346,6 +353,7 @@ public class LiftSystemVersionServiceTest {
 
     @Test
     public void testPublishVersion_ValidationFails() {
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
         ConfigValidationResponse invalidResponse = new ConfigValidationResponse(
             false,
             List.of(new com.liftsimulator.admin.dto.ValidationIssue(
@@ -386,7 +394,7 @@ public class LiftSystemVersionServiceTest {
             Collections.emptyList()
         );
 
-        when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(configValidationService.validate(invalidConfig)).thenReturn(invalidResponse);
 
         ConfigValidationException exception = assertThrows(
@@ -396,7 +404,7 @@ public class LiftSystemVersionServiceTest {
 
         assertEquals("Configuration validation failed", exception.getMessage());
         assertTrue(exception.getValidationResponse().hasErrors());
-        verify(liftSystemRepository).findById(1L);
+        verify(liftSystemRepository).findByIdForUpdate(1L);
         verify(configValidationService).validate(invalidConfig);
     }
 

@@ -16,6 +16,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -72,6 +73,10 @@ public class LiftSystemVersion {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Version
+    @Column(name = "lock_version", nullable = false)
+    private Long lockVersion;
+
     public LiftSystemVersion() {
     }
 
@@ -106,6 +111,7 @@ public class LiftSystemVersion {
 
     public void archive() {
         this.status = VersionStatus.ARCHIVED;
+        this.isPublished = false;
     }
 
     public Long getId() {
@@ -184,6 +190,14 @@ public class LiftSystemVersion {
 
     public OffsetDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public Long getLockVersion() {
+        return lockVersion;
+    }
+
+    public void setLockVersion(Long lockVersion) {
+        this.lockVersion = lockVersion;
     }
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {

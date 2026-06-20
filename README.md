@@ -2,7 +2,7 @@
 
 A Java-based simulation of lift (elevator) controllers with a focus on correctness and design clarity.
 
-Current version: **0.52.5**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
+Current version: **0.52.6**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## What is this?
 
@@ -88,7 +88,7 @@ The project ships a Spring Boot backend (`Lift Config Service`) and a React sing
 The **frontend admin UI** provides:
 - **Dashboard** — overview of lift systems with quick statistics
 - **Lift Systems Management** — full CRUD with list and detail views
-- **Version Management** — create, publish, and archive versioned configurations with pagination, sorting, filtering, complete JSON examples, and schema guidance in the configuration editor
+- **Version Management** — create, publish, and archive versioned configurations with optimistic locking, single-published-version enforcement, pagination, sorting, filtering, complete JSON examples, and schema guidance in the configuration editor
 - **Scenario Builder** — template-based or custom passenger-flow scenarios with server-side validation, validated copy-to-version reuse, and an advanced JSON editor
 - **Simulator Runs** — launch published versions with scenarios, poll status, recover orphaned active runs after restarts, bulk-cancel active runs, bulk-delete completed runs, and review KPI results with artefact downloads and CLI reproduction hints
 - **Configuration Editor & Validator** — edit and validate configuration JSON before publishing
@@ -113,12 +113,12 @@ mvn clean package
 Build a deployable Spring Boot JAR that also serves the React admin UI from `/` (activates the Maven `frontend` profile):
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.52.5.jar
+java -jar target/lift-simulator-0.52.6.jar
 ```
 
 The `frontend` profile installs Node.js 20.19.0 (for Vite 7 compatibility), runs `npm ci`, builds the Vite bundle, and packages it under `BOOT-INF/classes/static/`. CI uses this profile so downloaded JAR artifacts include the frontend assets. Verify the packaged UI with:
 ```bash
-jar tf target/lift-simulator-0.52.5.jar | grep '^BOOT-INF/classes/static/'
+jar tf target/lift-simulator-0.52.6.jar | grep '^BOOT-INF/classes/static/'
 ```
 
 ## Running the Application
@@ -130,21 +130,21 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 
 Or run the built JAR. The demo selects a controller strategy via command-line arguments:
 ```bash
-java -cp target/lift-simulator-0.52.5.jar com.liftsimulator.Main --help
-java -cp target/lift-simulator-0.52.5.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.52.6.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.52.6.jar com.liftsimulator.Main --strategy=directional-scan
 ```
 `--strategy` accepts `nearest-request` (default) or `directional-scan`. The demo runs a pre-configured scenario and prints the simulation state at each tick.
 
 Run a lightweight simulation from a published configuration JSON:
 ```bash
-java -cp target/lift-simulator-0.52.5.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.52.6.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 Optional flags: `--ticks=<count>` (default 25) and `-h, --help`.
 
 Run scripted scenarios with the scenario runner — either the bundled demo or a custom file:
 ```bash
 mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
-java -cp target/lift-simulator-0.52.5.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.52.6.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 Scenario files are plain text with metadata and tick-based event lines (parsing enforces limits of 1,000,000 ticks and 10,000 events per file); the controller strategy and idle-parking mode are taken from the scenario file. For the scenario file format and metadata keys, see the [CLI run workflows guide](docs/Workflows-and-Troubleshooting.md#cli-usage-unchanged). For simulation engine internals, controller strategy behaviour, out-of-service handling, request modelling, and the lift state machine, see [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md).
@@ -216,7 +216,7 @@ The backend is configured via YAML files under `src/main/resources/`:
 - `application-dev.yml` — development secrets and database settings (copy from `application-dev.yml.template`)
 - `application-local.yml` — optional local-only overrides such as log paths or ports (copy from `application-local.yml.template`)
 
-No profile is active in the checked-in base configuration, so launches must set `SPRING_PROFILES_ACTIVE` explicitly — for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for development, `SPRING_PROFILES_ACTIVE=dev,local` to add local overrides (your `application-local.yml` is git-ignored, so `git pull` will not overwrite it), or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.52.5.jar` for production. This prevents a development profile from masking production configuration mistakes.
+No profile is active in the checked-in base configuration, so launches must set `SPRING_PROFILES_ACTIVE` explicitly — for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for development, `SPRING_PROFILES_ACTIVE=dev,local` to add local overrides (your `application-local.yml` is git-ignored, so `git pull` will not overwrite it), or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.52.6.jar` for production. This prevents a development profile from masking production configuration mistakes.
 
 OpenAPI/Swagger access is controlled by `security.openapi.public-access` (`SECURITY_OPENAPI_PUBLIC_ACCESS`). It defaults to `true` to preserve local development behaviour; set it to `false` to require ADMIN-role authentication for the documentation endpoints.
 
@@ -287,7 +287,7 @@ The backend uses PostgreSQL with Flyway for schema migrations (PostgreSQL 12+ re
 
 On startup the application runs Flyway automatically: it creates the `lift_simulator` schema and the `flyway_schema_history` table, then applies all pending migrations from `src/main/resources/db/migration/`.
 
-The schema includes `lift_system` and `lift_system_version` (versioned JSONB configurations), `scenario` (reusable test scenarios), and `simulation_run`, which tracks run status (CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED) with referential integrity to lift systems and versions. See [ADR-0007](docs/decisions/0007-postgresql-flyway-integration.md) and [ADR-0008](docs/decisions/0008-jpa-entities-and-jsonb-mapping.md) for the persistence design.
+The schema includes `lift_system` and `lift_system_version` (versioned JSONB configurations), `scenario` (reusable test scenarios), and `simulation_run`, which tracks run status (CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED) with optimistic locking and referential integrity to lift systems and versions. See [ADR-0007](docs/decisions/0007-postgresql-flyway-integration.md) and [ADR-0008](docs/decisions/0008-jpa-entities-and-jsonb-mapping.md) for the persistence design.
 
 For JPA entities, repositories, and verification-runner usage, see [docs/DEVELOPER-GUIDE.md#jpa-entities-and-repositories](docs/DEVELOPER-GUIDE.md#jpa-entities-and-repositories). For connection, permission, and migration errors, see [docs/TROUBLESHOOTING.md#database-troubleshooting](docs/TROUBLESHOOTING.md#database-troubleshooting). For backup and restore procedures, see [docs/DATABASE-BACKUP.md](docs/DATABASE-BACKUP.md).
 

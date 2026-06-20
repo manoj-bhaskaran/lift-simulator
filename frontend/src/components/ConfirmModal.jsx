@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import Modal from './Modal';
 import './ConfirmModal.css';
 
@@ -28,13 +28,20 @@ function ConfirmModal({
   confirmStyle = 'primary'
 }) {
   const confirmButtonRef = useRef(null);
+  const [confirming, setConfirming] = useState(false);
 
   /**
-   * Handles the confirm action by calling both onConfirm and onClose callbacks.
+   * Handles the confirm action by waiting for the confirm callback to finish
+   * before closing the modal.
    */
-  const handleConfirm = () => {
-    onConfirm();
-    onClose();
+  const handleConfirm = async () => {
+    setConfirming(true);
+    try {
+      await onConfirm();
+      onClose();
+    } finally {
+      setConfirming(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -53,15 +60,16 @@ function ConfirmModal({
       </div>
 
       <div className="modal-actions">
-        <button onClick={onClose} className="btn-secondary">
+        <button onClick={onClose} className="btn-secondary" disabled={confirming}>
           {cancelText}
         </button>
         <button
           ref={confirmButtonRef}
           onClick={handleConfirm}
           className={`btn-${confirmStyle}`}
+          disabled={confirming}
         >
-          {confirmText}
+          {confirming ? `${confirmText}...` : confirmText}
         </button>
       </div>
     </Modal>
