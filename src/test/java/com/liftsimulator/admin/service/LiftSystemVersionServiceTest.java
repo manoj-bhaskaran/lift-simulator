@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -287,6 +288,7 @@ public class LiftSystemVersionServiceTest {
         verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 1);
         verify(configValidationService).validate(mockVersion.getConfig());
         verify(versionRepository).findByLiftSystemIdAndIsPublishedTrue(1L);
+        verify(versionRepository, never()).flush();
         verify(versionRepository).save(mockVersion);
     }
 
@@ -328,6 +330,7 @@ public class LiftSystemVersionServiceTest {
         verify(configValidationService).validate(newVersion.getConfig());
         verify(versionRepository).findByLiftSystemIdAndIsPublishedTrue(1L);
         verify(versionRepository).save(previousVersion);
+        verify(versionRepository).flush();
         verify(versionRepository).save(newVersion);
     }
 

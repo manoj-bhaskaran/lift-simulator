@@ -192,6 +192,9 @@ public class LiftSystemVersionService {
             publishedVersion.archive();
             versionRepository.save(publishedVersion);
         }
+        if (!publishedVersions.isEmpty()) {
+            versionRepository.flush();
+        }
 
         // Publish the version
         version.publish();
