@@ -9,7 +9,7 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 50
 
     services:
       postgres:
@@ -95,7 +95,13 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.m2/repository/org/owasp/dependency-check-data
-        key: dependency-check-${{ runner.os }}-${{ hashFiles('pom.xml') }}
+        # Rotate the key every run so each run persists the NVD data it downloaded.
+        # A fixed key is immutable once written, which previously froze a partial
+        # (watchdog-killed) NVD database in the cache: every later run restored the
+        # same incomplete data and could never save a completed copy. The layered
+        # restore-keys load the most recent prior cache so downloads accumulate
+        # across runs until one completes the initial sync.
+        key: dependency-check-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
         restore-keys: |
           dependency-check-${{ runner.os }}-
 
@@ -119,7 +125,7 @@ jobs:
         # lock_timeout aborts it. If the build stalls past the deadline, capture a
         # final set and abort so the artifact uploads before the job-level timeout.
         (
-          watchdog_deadline=$((SECONDS + 1800))   # abort the build after 30 minutes
+          watchdog_deadline=$((SECONDS + 2700))   # abort the build after 45 minutes
           while true; do
             sleep 10
             blocked=$(psql -tA -h localhost -U lift_admin -d lift_simulator_test \
@@ -132,7 +138,7 @@ jobs:
               dump_jvms "lockwait_${ts}"
             fi
             if [ "$SECONDS" -ge "$watchdog_deadline" ]; then
-              echo "::error::Build exceeded watchdog deadline (30m); capturing final dumps and aborting."
+              echo "::error::Build exceeded watchdog deadline (45m); capturing final dumps and aborting."
               ts=$(date -u +%H%M%S)
               dump_db "FINAL_${ts}"
               dump_jvms "FINAL_${ts}"
