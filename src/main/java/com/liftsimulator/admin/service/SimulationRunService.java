@@ -12,23 +12,26 @@ import com.liftsimulator.admin.repository.SimulationRunRepository;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
 /**
  * Service for managing simulation runs.
@@ -36,6 +39,12 @@ import org.springframework.data.domain.Sort;
 @Service
 @Transactional(readOnly = true)
 public class SimulationRunService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SimulationRunService.class);
+
+    private static final String STARTUP_RECOVERY_ERROR_MESSAGE =
+            "Run was still RUNNING when the application started; marking it FAILED because no in-memory "
+                    + "executor task can survive a JVM restart.";
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -419,6 +428,43 @@ public class SimulationRunService {
             run.setArtefactBasePath(artefactBasePath);
         }
         return runRepository.save(run);
+    }
+
+    /**
+     * Reconciles non-terminal runs that cannot have a live executor task after application startup.
+     * RUNNING runs are marked FAILED because their in-memory worker was lost with the previous JVM,
+     * while never-submitted CREATED runs are marked CANCELLED so they can be cleaned up.
+     *
+     * @return counts of recovered RUNNING and CREATED runs
+     */
+    @Transactional
+    public StartupRecoveryResult recoverOrphanedRunsOnStartup() {
+        OffsetDateTime recoveredAt = OffsetDateTime.now();
+        int failedRunningRuns = runRepository.failOrphanedRunningRuns(
+                STARTUP_RECOVERY_ERROR_MESSAGE,
+                recoveredAt
+        );
+        int cancelledCreatedRuns = runRepository.cancelOrphanedCreatedRuns(recoveredAt);
+
+        if (failedRunningRuns > 0 || cancelledCreatedRuns > 0) {
+            LOGGER.warn(
+                    "Recovered orphaned simulation runs on startup: {} RUNNING marked FAILED, "
+                            + "{} CREATED marked CANCELLED",
+                    failedRunningRuns,
+                    cancelledCreatedRuns
+            );
+        }
+
+        return new StartupRecoveryResult(failedRunningRuns, cancelledCreatedRuns);
+    }
+
+    /**
+     * Result counts for startup reconciliation of orphaned simulation runs.
+     *
+     * @param failedRunningRuns number of RUNNING rows marked FAILED
+     * @param cancelledCreatedRuns number of CREATED rows marked CANCELLED
+     */
+    public record StartupRecoveryResult(int failedRunningRuns, int cancelledCreatedRuns) {
     }
 
     /**

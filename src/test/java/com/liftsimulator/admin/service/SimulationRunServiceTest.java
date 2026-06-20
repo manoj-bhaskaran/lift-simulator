@@ -494,6 +494,32 @@ public class SimulationRunServiceTest {
     }
 
     @Test
+    public void testRecoverOrphanedRunsOnStartup_MarksActiveRunsTerminal() {
+        when(runRepository.failOrphanedRunningRuns(any(String.class), any(OffsetDateTime.class))).thenReturn(2);
+        when(runRepository.cancelOrphanedCreatedRuns(any(OffsetDateTime.class))).thenReturn(1);
+
+        SimulationRunService.StartupRecoveryResult result = runService.recoverOrphanedRunsOnStartup();
+
+        assertEquals(2, result.failedRunningRuns());
+        assertEquals(1, result.cancelledCreatedRuns());
+        verify(runRepository).failOrphanedRunningRuns(any(String.class), any(OffsetDateTime.class));
+        verify(runRepository).cancelOrphanedCreatedRuns(any(OffsetDateTime.class));
+    }
+
+    @Test
+    public void testRecoverOrphanedRunsOnStartup_UsesSameRecoveryTimestamp() {
+        when(runRepository.failOrphanedRunningRuns(any(String.class), any(OffsetDateTime.class))).thenReturn(0);
+        when(runRepository.cancelOrphanedCreatedRuns(any(OffsetDateTime.class))).thenReturn(0);
+
+        runService.recoverOrphanedRunsOnStartup();
+
+        ArgumentCaptor<OffsetDateTime> timestampCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+        verify(runRepository).failOrphanedRunningRuns(any(String.class), timestampCaptor.capture());
+        verify(runRepository).cancelOrphanedCreatedRuns(timestampCaptor.capture());
+        assertEquals(timestampCaptor.getAllValues().get(0), timestampCaptor.getAllValues().get(1));
+    }
+
+    @Test
     public void testDeleteRun_Success() throws Exception {
         mockRun.setStatus(RunStatus.SUCCEEDED);
         when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
