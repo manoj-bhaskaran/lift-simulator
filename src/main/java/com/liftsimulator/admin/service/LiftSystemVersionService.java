@@ -44,10 +44,7 @@ public class LiftSystemVersionService {
      */
     @Transactional
     public VersionResponse createVersion(Long systemId, CreateVersionRequest request) {
-        LiftSystem liftSystem = liftSystemRepository.findByIdForUpdate(systemId)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "Lift system not found with id: " + systemId
-            ));
+        LiftSystem liftSystem = getLiftSystemForVersionMutation(systemId);
 
         // Determine the config to use
         String config;
@@ -93,11 +90,6 @@ public class LiftSystemVersionService {
     @Transactional
     public VersionResponse updateVersionConfig(
             Long systemId, Integer versionNumber, UpdateVersionConfigRequest request) {
-        liftSystemRepository.findByIdForUpdate(systemId)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "Lift system not found with id: " + systemId
-            ));
-
         LiftSystemVersion version = versionRepository
             .findByLiftSystemIdAndVersionNumber(systemId, versionNumber)
             .orElseThrow(() -> new ResourceNotFoundException(
@@ -169,10 +161,7 @@ public class LiftSystemVersionService {
      */
     @Transactional
     public VersionResponse publishVersion(Long systemId, Integer versionNumber) {
-        liftSystemRepository.findByIdForUpdate(systemId)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "Lift system not found with id: " + systemId
-            ));
+        getLiftSystemForVersionMutation(systemId);
 
         LiftSystemVersion version = versionRepository
             .findByLiftSystemIdAndVersionNumber(systemId, versionNumber)
@@ -209,6 +198,19 @@ public class LiftSystemVersionService {
         LiftSystemVersion publishedVersion = versionRepository.save(version);
 
         return VersionResponse.fromEntity(publishedVersion);
+    }
+
+    /**
+     * Loads and write-locks a lift system before version allocation or publish/archive mutations.
+     *
+     * @param systemId the lift system ID
+     * @return the locked lift system
+     */
+    private LiftSystem getLiftSystemForVersionMutation(Long systemId) {
+        return liftSystemRepository.findByIdForUpdate(systemId)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Lift system not found with id: " + systemId
+            ));
     }
 
     /**
