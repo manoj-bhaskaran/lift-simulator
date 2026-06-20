@@ -143,7 +143,14 @@ jobs:
           done
         ) &
         WATCHDOG_PID=$!
-        mvn -q verify
+        # With an NVD API key the OWASP scan can poll NVD quickly; without one, keep the
+        # plugin's safe no-key throttle (the pom default) to avoid 403/rate-limit hangs.
+        if [ -n "$NVD_API_KEY" ]; then
+          NVD_DELAY_ARG="-Dnvd.api.delay=2000"
+        else
+          NVD_DELAY_ARG=""
+        fi
+        mvn -q verify $NVD_DELAY_ARG
         RC=$?
         kill "$WATCHDOG_PID" 2>/dev/null || true
         exit $RC

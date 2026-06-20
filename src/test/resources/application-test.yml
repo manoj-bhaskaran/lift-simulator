@@ -7,11 +7,7 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:liftpassword}
     driver-class-name: org.postgresql.Driver
     hikari:
-      # Integration tests exercise several concurrent database actors at once: the
-      # MockMvc request thread, the asynchronous simulation-runner thread(s), and
-      # REQUIRES_NEW progress updates (which need a second connection while the first
-      # is held). A pool of 5 is easily starved on slower CI hardware, so give it room.
-      maximum-pool-size: 15
+      maximum-pool-size: 5
       minimum-idle: 1
       connection-timeout: 30000
       idle-timeout: 600000

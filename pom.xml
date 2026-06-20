@@ -26,6 +26,13 @@
         <junit-jupiter.version>5.10.1</junit-jupiter.version>
         <frontend.dir>${project.basedir}/frontend</frontend.dir>
         <frontend.build.dir>${frontend.dir}/dist</frontend.build.dir>
+        <!--
+            OWASP dependency-check NVD API throttle. Defaults to the plugin's no-key
+            value (10s) so anonymous runs (forked PRs, local builds without a key) stay
+            within NVD's anonymous rate limit. CI overrides this to a small value when an
+            NVD_API_KEY is present so the keyed scan completes quickly.
+        -->
+        <nvd.api.delay>10000</nvd.api.delay>
     </properties>
 
     <dependencies>
@@ -311,12 +318,11 @@
                     <failBuildOnCVSS>7.0</failBuildOnCVSS>
                     <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
                     <!--
-                        Match the plugin's no-key throttle (10s). A smaller delay only helps when an
-                        NVD API key is present, but anonymous runs (forked PRs, repos without the
-                        secret) would then be more aggressive than NVD allows and fail verify with
-                        403/rate-limit errors. 10s is safe for the keyed path too (well within limits).
+                        Throttle between NVD API calls. Property-driven so the keyed CI path
+                        can use a small delay (fast scan) while the default stays at the
+                        plugin's no-key value (10s); see the nvd.api.delay property above.
                     -->
-                    <nvdApiDelay>10000</nvdApiDelay>
+                    <nvdApiDelay>${nvd.api.delay}</nvdApiDelay>
                     <nvdMaxRetryCount>20</nvdMaxRetryCount>
                     <nvdValidForHours>24</nvdValidForHours>
                     <dataDirectory>${user.home}/.m2/repository/org/owasp/dependency-check-data</dataDirectory>
