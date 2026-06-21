@@ -130,7 +130,7 @@ class ArtefactServiceTest {
 
     @Test
     void readResultsRejectsOversizedResultsFile() throws IOException {
-        Files.writeString(tempDir.resolve("results.json"), "{"data":"" + "x".repeat(1_048_577) + ""}");
+        Files.writeString(tempDir.resolve("results.json"), "{\"data\":\"" + "x".repeat(1_048_577) + "\"}");
 
         IOException exception = assertThrows(
             IOException.class,
