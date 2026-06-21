@@ -53,14 +53,15 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles IllegalArgumentException with 400 status.
+     * Returns generic client-facing message; logs full details server-side.
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
-        logger.info("Illegal argument: {}", ex.getMessage());
+        logger.warn("Illegal argument error: {}", ex.getMessage(), ex);
 
         ErrorResponse error = new ErrorResponse(
             HttpStatus.BAD_REQUEST.value(),
-            ex.getMessage(),
+            "Invalid request: the provided input was malformed or invalid",
             OffsetDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -68,14 +69,15 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles IllegalStateException with 409 status.
+     * Returns generic client-facing message; logs full details server-side.
      */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
-        logger.info("Illegal state: {}", ex.getMessage());
+        logger.warn("Illegal state error: {}", ex.getMessage(), ex);
 
         ErrorResponse error = new ErrorResponse(
             HttpStatus.CONFLICT.value(),
-            ex.getMessage(),
+            "The requested operation cannot be performed in the current state",
             OffsetDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
