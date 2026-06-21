@@ -2,7 +2,7 @@
 
 A Java-based simulation of lift (elevator) controllers with a focus on correctness and design clarity.
 
-Current version: **0.52.11**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
+Current version: **0.52.12**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## What is this?
 
@@ -113,12 +113,12 @@ mvn clean package
 Build a deployable Spring Boot JAR that also serves the React admin UI from `/` (activates the Maven `frontend` profile):
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.52.11.jar
+java -jar target/lift-simulator-0.52.12.jar
 ```
 
 The `frontend` profile installs Node.js 20.19.0 (for Vite 7 compatibility), runs `npm ci`, builds the Vite bundle, and packages it under `BOOT-INF/classes/static/`. CI uses this profile so downloaded JAR artifacts include the frontend assets. Verify the packaged UI with:
 ```bash
-jar tf target/lift-simulator-0.52.11.jar | grep '^BOOT-INF/classes/static/'
+jar tf target/lift-simulator-0.52.12.jar | grep '^BOOT-INF/classes/static/'
 ```
 
 ## Running the Application
@@ -130,21 +130,21 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 
 Or run the built JAR. The demo selects a controller strategy via command-line arguments:
 ```bash
-java -cp target/lift-simulator-0.52.11.jar com.liftsimulator.Main --help
-java -cp target/lift-simulator-0.52.11.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.52.12.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.52.12.jar com.liftsimulator.Main --strategy=directional-scan
 ```
 `--strategy` accepts `nearest-request` (default) or `directional-scan`. The demo runs a pre-configured scenario and prints the simulation state at each tick.
 
 Run a lightweight simulation from a published configuration JSON:
 ```bash
-java -cp target/lift-simulator-0.52.11.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
+java -cp target/lift-simulator-0.52.12.jar com.liftsimulator.runtime.LocalSimulationMain --config=path/to/config.json
 ```
 Optional flags: `--ticks=<count>` (default 25) and `-h, --help`.
 
 Run scripted scenarios with the scenario runner — either the bundled demo or a custom file:
 ```bash
 mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
-java -cp target/lift-simulator-0.52.11.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.52.12.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 Scenario files are plain text with metadata and tick-based event lines (parsing enforces limits of 1,000,000 ticks and 10,000 events per file); the controller strategy and idle-parking mode are taken from the scenario file. For the scenario file format and metadata keys, see the [CLI run workflows guide](docs/Workflows-and-Troubleshooting.md#cli-usage-unchanged). For simulation engine internals, controller strategy behaviour, out-of-service handling, request modelling, and the lift state machine, see [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md).
@@ -216,7 +216,7 @@ The backend is configured via YAML files under `src/main/resources/`:
 - `application-dev.yml` — development secrets and database settings (copy from `application-dev.yml.template`)
 - `application-local.yml` — optional local-only overrides such as log paths or ports (copy from `application-local.yml.template`)
 
-No profile is active in the checked-in base configuration, so launches must set `SPRING_PROFILES_ACTIVE` explicitly — for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for development, `SPRING_PROFILES_ACTIVE=dev,local` to add local overrides (your `application-local.yml` is git-ignored, so `git pull` will not overwrite it), or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.52.11.jar` for production. This prevents a development profile from masking production configuration mistakes.
+No profile is active in the checked-in base configuration, so launches must set `SPRING_PROFILES_ACTIVE` explicitly — for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for development, `SPRING_PROFILES_ACTIVE=dev,local` to add local overrides (your `application-local.yml` is git-ignored, so `git pull` will not overwrite it), or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.52.12.jar` for production. This prevents a development profile from masking production configuration mistakes.
 
 OpenAPI/Swagger access is controlled by `security.openapi.public-access` (`SECURITY_OPENAPI_PUBLIC_ACCESS`). It defaults to `true` to preserve local development behaviour; set it to `false` to require ADMIN-role authentication for the documentation endpoints.
 
@@ -234,6 +234,10 @@ Public endpoints requiring no authentication are `/api/v1/health` and static/fro
 Admin APIs support role-based access control with two roles: **ADMIN** (read and write) and **VIEWER** (read-only). Write methods (POST, PUT, PATCH, DELETE) require ADMIN; configure multiple users under `security.users` in `application-dev.yml`. Always keep credentials out of version control, prefer environment variables in production, and use HTTPS so HTTP Basic credentials are not exposed.
 
 For runtime API-key setup and request/response examples, see [docs/API.md](docs/API.md). The security baseline, RBAC, and CORS/CSRF policies are documented in [ADR-0019](docs/decisions/0019-spring-security-baseline.md), [ADR-0021](docs/decisions/0021-role-based-access-control-rbac.md), and [ADR-0022](docs/decisions/0022-explicit-cors-csrf-policy.md).
+
+## Frontend timeout retry behavior
+
+The admin UI keeps the default Axios request timeout at 10 seconds, but automatically retries one timed-out safe read request after a short delay. This helps first-use backend cold starts complete while the existing page or action loading indicator remains visible; a user-facing error is shown only if the retry also fails.
 
 ## Rate Limiting
 

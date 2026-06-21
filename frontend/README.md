@@ -445,7 +445,7 @@ The API client can be configured at build time via Vite environment variables:
 | Variable | Description | Default |
 | --- | --- | --- |
 | `VITE_API_BASE_URL` | Base URL for API requests (e.g., `https://api.example.com/api/v1`) | `/api/v1` |
-| `VITE_API_TIMEOUT_MS` | Axios request timeout in milliseconds | `10000` |
+| `VITE_API_TIMEOUT_MS` | Axios request timeout in milliseconds. Timed-out safe read requests are retried once after a short delay so cold-started backends can continue showing the current loading indicator before an error is displayed. | `10000` |
 | `VITE_ADMIN_USERNAME` | Optional admin username used with `VITE_ADMIN_PASSWORD` to build an HTTP Basic `Authorization` header | unset |
 | `VITE_ADMIN_PASSWORD` | Optional admin password used with `VITE_ADMIN_USERNAME` to build an HTTP Basic `Authorization` header | unset |
 | `VITE_API_KEY` | Optional runtime/simulation API key sent as `X-API-Key` | unset |
