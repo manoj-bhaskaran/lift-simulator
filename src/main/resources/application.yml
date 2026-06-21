@@ -72,7 +72,7 @@ security:
   csrf:
     enabled: false
   openapi:
-    public-access: true
+    public-access: ${SECURITY_OPENAPI_PUBLIC_ACCESS:false}
 
 # API Authentication (runtime/simulation execution)
 # SECURITY NOTE: Generate a secure random key for production!
