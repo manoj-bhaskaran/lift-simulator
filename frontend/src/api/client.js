@@ -31,6 +31,7 @@ const apiClient = axios.create({
 const TIMEOUT_RETRY_DELAY_MS = 500;
 const TIMEOUT_RETRY_LIMIT = 1;
 const RETRY_COUNT_KEY = '__timeoutRetryCount';
+const RETRYABLE_METHODS = new Set(['get', 'head', 'options']);
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -38,10 +39,15 @@ function isTimeoutError(error) {
   return error?.code === 'ECONNABORTED' || /timeout/i.test(error?.message || '');
 }
 
+function isRetryableRequest(config) {
+  const method = (config?.method || 'get').toLowerCase();
+  return RETRYABLE_METHODS.has(method);
+}
+
 async function retryTimedOutRequest(error) {
   const config = error?.config;
 
-  if (!config || !isTimeoutError(error)) {
+  if (!config || !isTimeoutError(error) || !isRetryableRequest(config)) {
     return Promise.reject(error);
   }
 

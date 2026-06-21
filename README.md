@@ -237,7 +237,7 @@ For runtime API-key setup and request/response examples, see [docs/API.md](docs/
 
 ## Frontend timeout retry behavior
 
-The admin UI keeps the default Axios request timeout at 10 seconds, but automatically retries one timed-out request after a short delay. This helps first-use backend cold starts complete while the existing page or action loading indicator remains visible; a user-facing error is shown only if the retry also fails.
+The admin UI keeps the default Axios request timeout at 10 seconds, but automatically retries one timed-out safe read request after a short delay. This helps first-use backend cold starts complete while the existing page or action loading indicator remains visible; a user-facing error is shown only if the retry also fails.
 
 ## Rate Limiting
 

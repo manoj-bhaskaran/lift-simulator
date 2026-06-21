@@ -72,7 +72,7 @@ describe('api client', () => {
     expect(config.headers).toHaveProperty('X-API-Key', 'local-api-key');
   });
 
-  it('retries a timed-out request once so cold starts can keep showing loading UI', async () => {
+  it('retries a safe timed-out request once so cold starts can keep showing loading UI', async () => {
     vi.useFakeTimers();
     await importClient();
     const [, onRejected] = axiosMock.client.interceptors.response.use.mock.calls.at(-1);
@@ -95,6 +95,21 @@ describe('api client', () => {
         __timeoutRetryCount: 1,
       })
     );
+  });
+
+
+
+  it('does not retry a timed-out mutating request because the first attempt may have committed', async () => {
+    await importClient();
+    const [, onRejected] = axiosMock.client.interceptors.response.use.mock.calls.at(-1);
+    const timeoutError = {
+      code: 'ECONNABORTED',
+      message: 'timeout of 10000ms exceeded',
+      config: { url: '/lift-systems', method: 'post' },
+    };
+
+    await expect(onRejected(timeoutError)).rejects.toBe(timeoutError);
+    expect(axiosMock.client.request).not.toHaveBeenCalled();
   });
 
   it('does not retry a request after the timeout retry has already been used', async () => {
