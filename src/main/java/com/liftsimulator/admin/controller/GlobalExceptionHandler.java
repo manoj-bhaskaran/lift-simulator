@@ -6,7 +6,9 @@ import com.liftsimulator.admin.dto.ErrorResponse;
 import com.liftsimulator.admin.dto.ScenarioValidationResponse;
 import com.liftsimulator.admin.dto.ValidationErrorResponse;
 import com.liftsimulator.admin.service.ArtefactDeletionException;
+import com.liftsimulator.admin.service.ArtefactStateException;
 import com.liftsimulator.admin.service.ConfigValidationException;
+import com.liftsimulator.admin.service.InvalidArtefactPathException;
 import com.liftsimulator.admin.service.ResourceNotFoundException;
 import com.liftsimulator.admin.service.ScenarioValidationException;
 import org.slf4j.Logger;
@@ -52,6 +54,22 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles invalid artefact paths with 400 status.
+     * Returns generic client-facing message; logs full details server-side.
+     */
+    @ExceptionHandler(InvalidArtefactPathException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidArtefactPath(InvalidArtefactPathException ex) {
+        logger.warn("Invalid artefact path: {}", ex.getMessage(), ex);
+
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            "Invalid artefact path",
+            OffsetDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
      * Handles IllegalArgumentException with 400 status.
      */
     @ExceptionHandler(IllegalArgumentException.class)
@@ -64,6 +82,22 @@ public class GlobalExceptionHandler {
             OffsetDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
+     * Handles artefact state errors with 409 status.
+     * Returns generic client-facing message; logs full details server-side.
+     */
+    @ExceptionHandler(ArtefactStateException.class)
+    public ResponseEntity<ErrorResponse> handleArtefactState(ArtefactStateException ex) {
+        logger.warn("Artefact state error: {}", ex.getMessage(), ex);
+
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.CONFLICT.value(),
+            "Artefacts are not available for this run",
+            OffsetDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     /**
