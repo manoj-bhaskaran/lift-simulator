@@ -14,6 +14,29 @@
  * // Returns: "Something went wrong"
  * getApiErrorMessage({}, 'Something went wrong');
  */
+
+const BACKEND_UNREACHABLE_MESSAGE = 'Cannot reach the server. Please check it is running and try again.';
+const BACKEND_UNREACHABLE_STATUSES = new Set([502, 503, 504]);
+
+function isBackendUnreachableError(error) {
+  const status = error?.response?.status;
+  const code = error?.code;
+  const message = error?.message || '';
+
+  const hasTransportFailureSignal = Boolean(
+    code || error?.request || message === 'Network Error' || message.includes('ECONNREFUSED')
+  );
+
+  return (
+    BACKEND_UNREACHABLE_STATUSES.has(status) ||
+    code === 'ECONNABORTED' ||
+    code === 'ERR_NETWORK' ||
+    message === 'Network Error' ||
+    message.includes('ECONNREFUSED') ||
+    (!error?.response && hasTransportFailureSignal)
+  );
+}
+
 function formatValidationIssues(issues) {
   if (!Array.isArray(issues) || issues.length === 0) {
     return null;
@@ -45,6 +68,12 @@ function formatFieldErrors(fieldErrors) {
 }
 
 export function getApiErrorMessage(error, fallbackMessage = 'Something went wrong') {
+  if (isBackendUnreachableError(error)) {
+    return fallbackMessage
+      ? `${fallbackMessage}: ${BACKEND_UNREACHABLE_MESSAGE}`
+      : BACKEND_UNREACHABLE_MESSAGE;
+  }
+
   const responseData = error?.response?.data;
   const validationDetail =
     formatValidationIssues(responseData?.errors) ||

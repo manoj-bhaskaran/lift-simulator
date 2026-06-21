@@ -15,9 +15,27 @@ describe('getApiErrorMessage', () => {
     expect(getApiErrorMessage(error, 'Failed to load')).toBe('Failed to load: Not found');
   });
 
-  it('returns fallback + error.message when no response data', () => {
+  it('maps network errors to a friendly backend-unreachable message', () => {
     const error = { message: 'Network Error' };
-    expect(getApiErrorMessage(error, 'Request failed')).toBe('Request failed: Network Error');
+    expect(getApiErrorMessage(error, 'Request failed')).toBe(
+      'Request failed: Cannot reach the server. Please check it is running and try again.'
+    );
+  });
+
+  it('maps proxy and gateway errors to a friendly backend-unreachable message', () => {
+    const error = {
+      response: { status: 502, data: { message: 'Request failed with status code 502' } },
+    };
+    expect(getApiErrorMessage(error, 'Failed to load lift systems')).toBe(
+      'Failed to load lift systems: Cannot reach the server. Please check it is running and try again.'
+    );
+  });
+
+  it('maps timeout errors to a friendly backend-unreachable message', () => {
+    const error = { code: 'ECONNABORTED', message: 'timeout of 10000ms exceeded' };
+    expect(getApiErrorMessage(error, '')).toBe(
+      'Cannot reach the server. Please check it is running and try again.'
+    );
   });
 
   it('returns detail alone when fallbackMessage is empty string', () => {
