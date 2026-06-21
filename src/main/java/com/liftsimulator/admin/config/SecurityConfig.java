@@ -97,6 +97,7 @@ public class SecurityConfig {
         "/api/v1/swagger-ui/**",
         "/api/v1/swagger-ui.html"
     };
+    private static final String PLACEHOLDER_SECRET = "CHANGE_ME";
 
     @Value("${security.admin.username:admin}")
     private String adminUsername;
@@ -113,8 +114,6 @@ public class SecurityConfig {
     @Value("${security.openapi.public-access:true}")
     private boolean openApiPublicAccess;
 
-    private static final String PLACEHOLDER_SECRET = "CHANGE_ME";
-
     /**
      * Initialize API key validation at startup.
      * Ensures API key is configured before the application starts serving requests.
@@ -128,7 +127,6 @@ public class SecurityConfig {
                 "Example: export API_KEY=$(openssl rand -base64 32)");
         }
     }
-
 
     private boolean isMissingOrPlaceholderSecret(String secret) {
         return secret == null || secret.isBlank() || PLACEHOLDER_SECRET.equalsIgnoreCase(secret.trim());
