@@ -183,7 +183,7 @@ public class LiftSystemServiceTest {
 
     @Test
     public void testDeleteLiftSystem_Success() {
-        when(liftSystemRepository.existsById(1L)).thenReturn(true);
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(scenarioRepository.countByLiftSystemId(1L)).thenReturn(0L);
         when(simulationRunRepository.countActiveRunsByLiftSystemId(1L)).thenReturn(0L);
         when(simulationRunRepository.findByLiftSystemIdOrderByCreatedAtDesc(1L))
@@ -191,7 +191,7 @@ public class LiftSystemServiceTest {
 
         liftSystemService.deleteLiftSystem(1L);
 
-        verify(liftSystemRepository).existsById(1L);
+        verify(liftSystemRepository).findByIdForUpdate(1L);
         verify(scenarioRepository).countByLiftSystemId(1L);
         verify(simulationRunRepository).countActiveRunsByLiftSystemId(1L);
         verify(liftSystemRepository).deleteById(1L);
@@ -199,7 +199,7 @@ public class LiftSystemServiceTest {
 
     @Test
     public void testDeleteLiftSystem_BlockedByActiveRuns() {
-        when(liftSystemRepository.existsById(1L)).thenReturn(true);
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(scenarioRepository.countByLiftSystemId(1L)).thenReturn(0L);
         when(simulationRunRepository.countActiveRunsByLiftSystemId(1L)).thenReturn(2L);
 
@@ -219,7 +219,7 @@ public class LiftSystemServiceTest {
 
     @Test
     public void testDeleteLiftSystem_NotFound() {
-        when(liftSystemRepository.existsById(999L)).thenReturn(false);
+        when(liftSystemRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
 
         ResourceNotFoundException exception = assertThrows(
             ResourceNotFoundException.class,
@@ -227,6 +227,6 @@ public class LiftSystemServiceTest {
         );
 
         assertEquals("Lift system not found with id: 999", exception.getMessage());
-        verify(liftSystemRepository).existsById(999L);
+        verify(liftSystemRepository).findByIdForUpdate(999L);
     }
 }

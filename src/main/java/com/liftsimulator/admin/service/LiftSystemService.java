@@ -9,6 +9,7 @@ import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.ScenarioRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -32,6 +33,10 @@ public class LiftSystemService {
     private final SimulationRunRepository simulationRunRepository;
     private final ArtefactService artefactService;
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "Spring-managed services are injected and treated as shared dependencies."
+    )
     public LiftSystemService(
             LiftSystemRepository liftSystemRepository,
             LiftSystemVersionRepository liftSystemVersionRepository,
@@ -134,17 +139,23 @@ public class LiftSystemService {
      * on-disk artefacts of the (terminal) runs that cascade away are removed after
      * the transaction commits to avoid leaking artefact directories.</p>
      *
+     * <p>The lift system row is write-locked up front so that the active-run check
+     * and the delete are serialized against concurrent run creation: a run insert
+     * takes a {@code FOR KEY SHARE} lock on the parent row, which conflicts with
+     * this {@code FOR UPDATE} lock. This closes the window where a run could be
+     * created and started after the count returns zero but before the delete
+     * commits, leaving the cascade to remove a freshly active run.</p>
+     *
      * @param id the system ID
      * @throws ResourceNotFoundException if not found
      * @throws IllegalStateException if scenarios or active runs exist
      */
     @Transactional
     public void deleteLiftSystem(Long id) {
-        if (!liftSystemRepository.existsById(id)) {
-            throw new ResourceNotFoundException(
+        liftSystemRepository.findByIdForUpdate(id)
+            .orElseThrow(() -> new ResourceNotFoundException(
                 "Lift system not found with id: " + id
-            );
-        }
+            ));
         long scenarioCount = scenarioRepository.countByLiftSystemId(id);
         if (scenarioCount > 0) {
             throw new IllegalStateException(
