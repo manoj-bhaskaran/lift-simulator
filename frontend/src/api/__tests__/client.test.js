@@ -8,6 +8,7 @@ const axiosMock = vi.hoisted(() => ({
         use: vi.fn(),
       },
     },
+    request: vi.fn(),
   },
 }));
 
@@ -28,7 +29,9 @@ describe('api client', () => {
     vi.unstubAllEnvs();
     axiosMock.create.mockReset();
     axiosMock.client.interceptors.response.use.mockReset();
+    axiosMock.client.request.mockReset();
     axiosMock.create.mockReturnValue(axiosMock.client);
+    vi.useRealTimers();
   });
 
   it('creates axios client with JSON defaults when auth env vars are absent', async () => {
@@ -67,5 +70,43 @@ describe('api client', () => {
 
     expect(config.headers).not.toHaveProperty('Authorization');
     expect(config.headers).toHaveProperty('X-API-Key', 'local-api-key');
+  });
+
+  it('retries a timed-out request once so cold starts can keep showing loading UI', async () => {
+    vi.useFakeTimers();
+    await importClient();
+    const [, onRejected] = axiosMock.client.interceptors.response.use.mock.calls.at(-1);
+    const retryResponse = { data: { status: 'ok' } };
+    axiosMock.client.request.mockResolvedValue(retryResponse);
+
+    const retryPromise = onRejected({
+      code: 'ECONNABORTED',
+      message: 'timeout of 10000ms exceeded',
+      config: { url: '/health', method: 'get' },
+    });
+
+    await vi.advanceTimersByTimeAsync(500);
+
+    await expect(retryPromise).resolves.toBe(retryResponse);
+    expect(axiosMock.client.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: '/health',
+        method: 'get',
+        __timeoutRetryCount: 1,
+      })
+    );
+  });
+
+  it('does not retry a request after the timeout retry has already been used', async () => {
+    await importClient();
+    const [, onRejected] = axiosMock.client.interceptors.response.use.mock.calls.at(-1);
+    const timeoutError = {
+      code: 'ECONNABORTED',
+      message: 'timeout of 10000ms exceeded',
+      config: { url: '/health', method: 'get', __timeoutRetryCount: 1 },
+    };
+
+    await expect(onRejected(timeoutError)).rejects.toBe(timeoutError);
+    expect(axiosMock.client.request).not.toHaveBeenCalled();
   });
 });
