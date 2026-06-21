@@ -101,7 +101,7 @@ jobs:
         SPRING_DATASOURCE_USERNAME: lift_admin
         SPRING_DATASOURCE_PASSWORD: liftpassword
         PGPASSWORD: liftpassword
-        SPRING_JPA_HIBERNATE_DDL_AUTO: update
+        SPRING_JPA_HIBERNATE_DDL_AUTO: validate
         SPRING_JPA_PROPERTIES_HIBERNATE_HBM2DDL_CREATE_NAMESPACES: 'false'
 
     - name: Upload JaCoCo HTML report
