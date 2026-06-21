@@ -59,6 +59,25 @@ public class SecurityConfigValidationTest {
             });
     }
 
+
+    @Test
+    void startupFails_WhenAdminPasswordUsesPlaceholder() {
+        contextRunner
+            .withPropertyValues(
+                "security.admin.username=admin",
+                "security.admin.password=CHANGE_ME",
+                "api.auth.key=secure-api-key-1234567890abcdef"
+            )
+            .run(context -> {
+                assertThat(context).hasFailed();
+                assertThat(context.getStartupFailure())
+                    .isInstanceOf(BeanCreationException.class)
+                    .rootCause()
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Admin password must be configured with a non-placeholder value");
+            });
+    }
+
     @Test
     void startupFails_WhenAdminPasswordNotSet() {
         contextRunner
@@ -125,6 +144,25 @@ public class SecurityConfigValidationTest {
                     .rootCause()
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("API key must be configured");
+            });
+    }
+
+
+    @Test
+    void startupFails_WhenApiKeyUsesPlaceholder() {
+        contextRunner
+            .withPropertyValues(
+                "security.admin.username=admin",
+                "security.admin.password=securepassword123",
+                "api.auth.key=CHANGE_ME"
+            )
+            .run(context -> {
+                assertThat(context).hasFailed();
+                assertThat(context.getStartupFailure())
+                    .isInstanceOf(BeanCreationException.class)
+                    .rootCause()
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("API key must be configured with a non-placeholder value");
             });
     }
 
