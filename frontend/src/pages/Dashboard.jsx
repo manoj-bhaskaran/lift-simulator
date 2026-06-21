@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { liftSystemsApi } from '../api/liftSystemsApi';
+import { logApiError } from '../utils/errorHandlers';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -19,7 +20,7 @@ function Dashboard() {
       setError(null);
     } catch (err) {
       setError('Failed to load lift systems');
-      console.error(err);
+      logApiError(err, 'Failed to load lift systems');
     } finally {
       setLoading(false);
     }

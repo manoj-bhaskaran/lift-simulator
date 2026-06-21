@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { liftSystemsApi } from '../api/liftSystemsApi';
+import { logApiError } from '../utils/errorHandlers';
 import './HealthCheck.css';
 
 function HealthCheck() {
@@ -21,7 +22,7 @@ function HealthCheck() {
       setLastChecked(new Date());
     } catch (err) {
       setError('Failed to check health status');
-      console.error(err);
+      logApiError(err, 'Failed to check health status');
     } finally {
       setLoading(false);
     }

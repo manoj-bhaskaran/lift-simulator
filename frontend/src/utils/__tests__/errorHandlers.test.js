@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { getApiErrorMessage, handleApiError } from '../errorHandlers';
+import { getApiErrorMessage, handleApiError, logApiError } from '../errorHandlers';
 
 describe('getApiErrorMessage', () => {
   it('returns fallback message when error has no detail', () => {
@@ -107,7 +107,9 @@ describe('handleApiError', () => {
     handleApiError(error, setError, 'Access denied');
 
     expect(setError).toHaveBeenCalledWith('Access denied: Unauthorized');
-    expect(consoleSpy).toHaveBeenCalledWith(error);
+    expect(consoleSpy).toHaveBeenCalledWith('Access denied', {
+      responseData: { message: 'Unauthorized' },
+    });
 
     consoleSpy.mockRestore();
   });
@@ -119,5 +121,33 @@ describe('handleApiError', () => {
     handleApiError({}, setError, 'Default message');
 
     expect(setError).toHaveBeenCalledWith('Default message');
+  });
+});
+
+describe('logApiError', () => {
+  it('logs only safe axios error details without config headers', () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const error = {
+      message: 'Request failed with status code 401',
+      response: { status: 401, data: { message: 'Unauthorized' } },
+      config: {
+        headers: {
+          Authorization: 'Basic leaked',
+          'X-API-Key': 'leaked-key',
+        },
+      },
+    };
+
+    logApiError(error, 'Load failed');
+
+    expect(consoleSpy).toHaveBeenCalledWith('Load failed', {
+      message: 'Request failed with status code 401',
+      status: 401,
+      responseData: { message: 'Unauthorized' },
+    });
+    expect(JSON.stringify(consoleSpy.mock.calls)).not.toContain('Basic leaked');
+    expect(JSON.stringify(consoleSpy.mock.calls)).not.toContain('leaked-key');
+
+    consoleSpy.mockRestore();
   });
 });
