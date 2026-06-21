@@ -6,7 +6,9 @@ import com.liftsimulator.admin.dto.ErrorResponse;
 import com.liftsimulator.admin.dto.ScenarioValidationResponse;
 import com.liftsimulator.admin.dto.ValidationErrorResponse;
 import com.liftsimulator.admin.service.ArtefactDeletionException;
+import com.liftsimulator.admin.service.ArtefactStateException;
 import com.liftsimulator.admin.service.ConfigValidationException;
+import com.liftsimulator.admin.service.InvalidArtefactPathException;
 import com.liftsimulator.admin.service.ResourceNotFoundException;
 import com.liftsimulator.admin.service.ScenarioValidationException;
 import org.slf4j.Logger;
@@ -52,32 +54,62 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles IllegalArgumentException with 400 status.
+     * Handles invalid artefact paths with 400 status.
      * Returns generic client-facing message; logs full details server-side.
      */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
-        logger.warn("Illegal argument error: {}", ex.getMessage(), ex);
+    @ExceptionHandler(InvalidArtefactPathException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidArtefactPath(InvalidArtefactPathException ex) {
+        logger.warn("Invalid artefact path: {}", ex.getMessage(), ex);
 
         ErrorResponse error = new ErrorResponse(
             HttpStatus.BAD_REQUEST.value(),
-            "Invalid request: the provided input was malformed or invalid",
+            "Invalid artefact path",
             OffsetDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     /**
-     * Handles IllegalStateException with 409 status.
+     * Handles IllegalArgumentException with 400 status.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        logger.info("Illegal argument: {}", ex.getMessage());
+
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            ex.getMessage(),
+            OffsetDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
+     * Handles artefact state errors with 409 status.
      * Returns generic client-facing message; logs full details server-side.
      */
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
-        logger.warn("Illegal state error: {}", ex.getMessage(), ex);
+    @ExceptionHandler(ArtefactStateException.class)
+    public ResponseEntity<ErrorResponse> handleArtefactState(ArtefactStateException ex) {
+        logger.warn("Artefact state error: {}", ex.getMessage(), ex);
 
         ErrorResponse error = new ErrorResponse(
             HttpStatus.CONFLICT.value(),
-            "The requested operation cannot be performed in the current state",
+            "Artefacts are not available for this run",
+            OffsetDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    /**
+     * Handles IllegalStateException with 409 status.
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
+        logger.info("Illegal state: {}", ex.getMessage());
+
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.CONFLICT.value(),
+            ex.getMessage(),
             OffsetDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);

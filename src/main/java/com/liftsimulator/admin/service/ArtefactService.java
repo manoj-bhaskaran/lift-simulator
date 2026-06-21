@@ -60,7 +60,7 @@ public class ArtefactService {
     public List<ArtefactInfo> listArtefacts(SimulationRun run) throws IOException {
         String basePath = run.getArtefactBasePath();
         if (basePath == null || basePath.isBlank()) {
-            throw new IllegalStateException("Artefact base path is not set for run " + run.getId());
+            throw new ArtefactStateException("Artefact base path is not set for run " + run.getId());
         }
 
         Path directory = validateAndResolvePath(basePath, null);
@@ -70,7 +70,7 @@ public class ArtefactService {
         }
 
         if (!Files.isDirectory(directory)) {
-            throw new IllegalStateException("Artefact base path is not a directory: " + basePath);
+            throw new ArtefactStateException("Artefact base path is not a directory: " + basePath);
         }
 
         Path realDirectory = directory.toRealPath();
@@ -110,17 +110,17 @@ public class ArtefactService {
     public ArtefactDownload getArtefact(SimulationRun run, String relativePath) throws IOException {
         String basePath = run.getArtefactBasePath();
         if (basePath == null || basePath.isBlank()) {
-            throw new IllegalStateException("Artefact base path is not set for run " + run.getId());
+            throw new ArtefactStateException("Artefact base path is not set for run " + run.getId());
         }
         if (relativePath == null || relativePath.isBlank()) {
-            throw new IllegalArgumentException("Artefact path must be provided");
+            throw new InvalidArtefactPathException("Artefact path must be provided");
         }
 
         Path artefactPath;
         try {
             artefactPath = validateAndResolvePath(basePath, relativePath);
         } catch (SecurityException e) {
-            throw new IllegalArgumentException("Invalid artefact path: " + relativePath, e);
+            throw new InvalidArtefactPathException("Invalid artefact path: " + relativePath, e);
         }
 
         if (!Files.exists(artefactPath) || Files.isDirectory(artefactPath)) {
@@ -130,7 +130,7 @@ public class ArtefactService {
         try {
             ensureExistingPathStaysWithinBase(Paths.get(basePath), artefactPath);
         } catch (SecurityException e) {
-            throw new IllegalArgumentException("Invalid artefact path: " + relativePath, e);
+            throw new InvalidArtefactPathException("Invalid artefact path: " + relativePath, e);
         }
 
         Path fileNamePath = artefactPath.getFileName();
@@ -169,7 +169,7 @@ public class ArtefactService {
         }
 
         if (!Files.isDirectory(directory)) {
-            throw new IllegalStateException("Artefact base path is not a directory: " + basePath);
+            throw new ArtefactStateException("Artefact base path is not a directory: " + basePath);
         }
 
         // Walk the tree and delete children before parents by sorting paths in
@@ -197,7 +197,7 @@ public class ArtefactService {
     public String readLogs(SimulationRun run, Integer tail) throws IOException {
         String basePath = run.getArtefactBasePath();
         if (basePath == null || basePath.isBlank()) {
-            throw new IOException("Artefact base path is not set for run " + run.getId());
+            throw new ArtefactStateException("Artefact base path is not set for run " + run.getId());
         }
 
         // Try common log file names
@@ -238,7 +238,7 @@ public class ArtefactService {
     public JsonNode readResults(SimulationRun run) throws IOException {
         String basePath = run.getArtefactBasePath();
         if (basePath == null || basePath.isBlank()) {
-            throw new IllegalStateException("Artefact base path is not set for run " + run.getId());
+            throw new ArtefactStateException("Artefact base path is not set for run " + run.getId());
         }
 
         // Try common result file names

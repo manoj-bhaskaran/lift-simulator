@@ -85,7 +85,7 @@ public class LiftSystemControllerTest extends LocalIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value("Invalid request: the provided input was malformed or invalid"));
+            .andExpect(jsonPath("$.message").value("Lift system with key 'existing-system' already exists"));
     }
 
     @Test
