@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logApiError } from '../utils/errorHandlers';
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '/api/v1').trim() || '/api/v1';
 const timeoutFromEnv = Number(import.meta.env.VITE_API_TIMEOUT_MS);
@@ -71,7 +72,7 @@ apiClient.interceptors.response.use(
     try {
       return await retryTimedOutRequest(error);
     } catch (retryError) {
-      console.error('API Error:', retryError.response?.data || retryError.message);
+      logApiError(retryError);
       return Promise.reject(retryError);
     }
   }

@@ -81,7 +81,7 @@ VITE_ADMIN_PASSWORD=local-admin-password
 VITE_API_KEY=local-api-key
 ```
 
-The Axios client sends `Authorization: Basic ...` when both admin values are set and sends `X-API-Key` when `VITE_API_KEY` is set. Vite exposes `VITE_*` values in the browser bundle, so use environment-scoped credentials and never commit this file.
+The Axios client sends `Authorization: Basic ...` when both admin values are set and sends `X-API-Key` when `VITE_API_KEY` is set. Vite exposes `VITE_*` values in the browser bundle, so use these credentials only for local development or disposable environments. Anyone who can load a built SPA can inspect `VITE_ADMIN_PASSWORD` and `VITE_API_KEY`; do not deploy a hosted frontend bundle with real backend credentials. For hosted use, move authentication behind a backend/session proxy or another server-side auth layer, and never commit this file.
 
 ### 3. Start Development Server
 
@@ -460,7 +460,7 @@ VITE_ADMIN_PASSWORD=local-admin-password
 VITE_API_KEY=local-api-key
 ```
 
-If `VITE_API_BASE_URL` is left unset, the app will continue to use `/api/v1`, which works with the Vite proxy in local development. The backend ignores whichever auth header does not apply to a specific endpoint, so sending both the Basic auth and API-key headers from the shared Axios client is safe.
+If `VITE_API_BASE_URL` is left unset, the app will continue to use `/api/v1`, which works with the Vite proxy in local development. The backend ignores whichever auth header does not apply to a specific endpoint, so sending both the Basic auth and API-key headers from the shared Axios client works for local development. Do not rely on bundled `VITE_ADMIN_PASSWORD` or `VITE_API_KEY` values for hosted deployments; keep real credentials server-side behind a backend/session proxy.
 
 ### Playwright E2E Environment Variables
 

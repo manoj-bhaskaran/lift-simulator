@@ -101,7 +101,39 @@ export function getApiErrorMessage(error, fallbackMessage = 'Something went wron
  *   handleApiError(err, setError, 'Failed to load data');
  * }
  */
+
+function getSafeErrorLogDetails(error) {
+  const responseData = error?.response?.data;
+  const responseStatus = error?.response?.status;
+  const message = error?.message;
+
+  return {
+    ...(message ? { message } : {}),
+    ...(responseStatus ? { status: responseStatus } : {}),
+    ...(responseData ? { responseData } : {}),
+  };
+}
+
+/**
+ * Logs API errors without including the raw Axios error/config object.
+ * Axios errors include request configuration and default headers, which can
+ * contain browser-bundled Authorization or X-API-Key values.
+ *
+ * @param {Error|Object} error - Error object from API call
+ * @param {string} [context='API Error'] - Context prefix for the console entry
+ */
+export function logApiError(error, context = 'API Error') {
+  const details = getSafeErrorLogDetails(error);
+
+  if (Object.keys(details).length > 0) {
+    console.error(context, details);
+    return;
+  }
+
+  console.error(context);
+}
+
 export function handleApiError(error, setError, fallbackMessage) {
   setError(getApiErrorMessage(error, fallbackMessage));
-  console.error(error);
+  logApiError(error, fallbackMessage);
 }

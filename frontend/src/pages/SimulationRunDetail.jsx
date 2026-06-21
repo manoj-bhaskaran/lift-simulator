@@ -5,7 +5,7 @@ import { authHeaders } from '../api/client';
 import { simulationRunsApi } from '../api/simulationRunsApi';
 import AlertModal from '../components/AlertModal';
 import ConfirmModal from '../components/ConfirmModal';
-import { getApiErrorMessage, handleApiError } from '../utils/errorHandlers';
+import { getApiErrorMessage, handleApiError, logApiError } from '../utils/errorHandlers';
 import './SimulationRunDetail.css';
 
 const terminalStatuses = new Set(['SUCCEEDED', 'FAILED', 'CANCELLED']);
@@ -91,7 +91,7 @@ function SimulationRunDetail() {
       });
     } catch (err) {
       setDeleteError(getApiErrorMessage(err, `Failed to delete run #${runId}`));
-      console.error(err);
+      logApiError(err, `Failed to delete run #${runId}`);
     } finally {
       setIsDeleting(false);
     }

@@ -5,7 +5,7 @@ import { liftSystemsApi } from '../api/liftSystemsApi';
 import { simulationRunsApi } from '../api/simulationRunsApi';
 import AlertModal from '../components/AlertModal';
 import ConfirmModal from '../components/ConfirmModal';
-import { getApiErrorMessage, handleApiError } from '../utils/errorHandlers';
+import { getApiErrorMessage, handleApiError, logApiError } from '../utils/errorHandlers';
 import './SimulationRuns.css';
 
 const statusOptions = ['ALL', 'SUCCEEDED', 'FAILED', 'RUNNING', 'CREATED', 'CANCELLED'];
@@ -277,7 +277,7 @@ function SimulationRuns() {
     } catch (err) {
       setActionErrorTitle('Failed to delete run');
       setActionError(getApiErrorMessage(err, `Failed to delete run #${runId}`));
-      console.error(err);
+      logApiError(err, `Failed to delete run #${runId}`);
     } finally {
       setIsDeleting(false);
       setRunToDelete(null);
@@ -318,7 +318,7 @@ function SimulationRuns() {
     } catch (err) {
       setActionErrorTitle(`Failed to ${actionName} selected runs`);
       setActionError(getApiErrorMessage(err, `Failed to ${actionName} selected runs`));
-      console.error(err);
+      logApiError(err, `Failed to ${actionName} selected runs`);
     } finally {
       setIsBulkProcessing(false);
       setBulkAction(null);
