@@ -113,17 +113,25 @@ public class SecurityConfig {
     @Value("${security.openapi.public-access:true}")
     private boolean openApiPublicAccess;
 
+    private static final String PLACEHOLDER_SECRET = "CHANGE_ME";
+
     /**
      * Initialize API key validation at startup.
      * Ensures API key is configured before the application starts serving requests.
      */
     @PostConstruct
     public void validateApiKey() {
-        if (apiKey == null || apiKey.isBlank()) {
+        if (isMissingOrPlaceholderSecret(apiKey)) {
             throw new IllegalStateException(
-                "API key must be configured. Set api.auth.key property or API_KEY environment variable. " +
+                "API key must be configured with a non-placeholder value. " +
+                "Set api.auth.key property or API_KEY environment variable. " +
                 "Example: export API_KEY=$(openssl rand -base64 32)");
         }
+    }
+
+
+    private boolean isMissingOrPlaceholderSecret(String secret) {
+        return secret == null || secret.isBlank() || PLACEHOLDER_SECRET.equalsIgnoreCase(secret.trim());
     }
 
     private final SecurityUsersProperties securityUsersProperties;
@@ -385,9 +393,10 @@ public class SecurityConfig {
                 if (userProps.getUsername() == null || userProps.getUsername().isBlank()) {
                     throw new IllegalStateException("Username must be configured for each user in security.users");
                 }
-                if (userProps.getPassword() == null || userProps.getPassword().isBlank()) {
+                if (isMissingOrPlaceholderSecret(userProps.getPassword())) {
                     throw new IllegalStateException(
-                        "Password must be configured for user: " + userProps.getUsername());
+                        "Password must be configured with a non-placeholder value for user: "
+                            + userProps.getUsername());
                 }
                 String role = userProps.getRole();
                 if (role == null || role.isBlank()) {
@@ -406,10 +415,11 @@ public class SecurityConfig {
             }
         } else {
             // Fall back to legacy single admin user configuration
-            if (adminPassword == null || adminPassword.isBlank()) {
+            if (isMissingOrPlaceholderSecret(adminPassword)) {
                 throw new IllegalStateException(
-                    "Admin password must be configured. Set security.admin.password property, " +
-                    "ADMIN_PASSWORD environment variable, or configure users via security.users.");
+                    "Admin password must be configured with a non-placeholder value. " +
+                    "Set security.admin.password property, ADMIN_PASSWORD environment variable, " +
+                    "or configure users via security.users.");
             }
             UserDetails admin = User.builder()
                 .username(adminUsername)
