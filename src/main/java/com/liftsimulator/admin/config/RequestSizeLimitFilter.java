@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.config;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletException;
@@ -27,6 +28,10 @@ public class RequestSizeLimitFilter extends OncePerRequestFilter {
 
     private final RequestSizeLimitProperties properties;
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "RequestSizeLimitProperties is a Spring-managed singleton bound via "
+                    + "@ConfigurationProperties. Defensive copying would break property binding.")
     public RequestSizeLimitFilter(RequestSizeLimitProperties properties) {
         this.properties = properties;
     }
