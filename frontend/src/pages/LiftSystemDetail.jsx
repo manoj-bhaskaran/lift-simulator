@@ -18,6 +18,19 @@ import {
 } from '../utils/versionConfigSchema';
 import './LiftSystemDetail.css';
 
+function formatVersionConfig(config) {
+  if (typeof config !== 'string') {
+    return JSON.stringify(config, null, 2);
+  }
+
+  try {
+    return JSON.stringify(JSON.parse(config), null, 2);
+  } catch (err) {
+    console.warn('Version configuration is not valid JSON; showing raw value instead', err);
+    return config;
+  }
+}
+
 /**
  * Detailed view page for a specific lift system.
  * Displays system information, version management, and provides version filtering, sorting, and pagination.
@@ -740,7 +753,7 @@ function LiftSystemDetail() {
                   )}
                   <details className="config-details">
                     <summary>View Configuration</summary>
-                    <pre className="config-preview">{JSON.stringify(JSON.parse(version.config), null, 2)}</pre>
+                    <pre className="config-preview">{formatVersionConfig(version.config)}</pre>
                   </details>
                 </div>
               </div>

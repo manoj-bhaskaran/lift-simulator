@@ -78,7 +78,7 @@ function ConfigValidator() {
             <div className="result-error">
               <h4>Validation Errors</h4>
               <ul>
-                {result.errors.map((error, index) => (
+                {(result.errors ?? []).map((error, index) => (
                   <li key={index}>
                     <strong>{error.field}:</strong> {error.message}
                   </li>
