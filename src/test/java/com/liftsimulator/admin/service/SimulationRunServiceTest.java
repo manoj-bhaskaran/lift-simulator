@@ -527,8 +527,30 @@ public class SimulationRunServiceTest {
         runService.deleteRun(1L);
 
         verify(runRepository).findById(1L);
-        verify(artefactService).deleteArtefacts(mockRun);
         verify(runRepository).deleteById(1L);
+        verify(artefactService).deleteArtefacts(mockRun);
+    }
+
+    @Test
+    public void testDeleteRun_DefersArtefactDeletionUntilAfterCommit() throws Exception {
+        mockRun.setStatus(RunStatus.SUCCEEDED);
+        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            runService.deleteRun(1L);
+
+            verify(runRepository).deleteById(1L);
+            verify(artefactService, never()).deleteArtefacts(any());
+
+            for (TransactionSynchronization synchronization : TransactionSynchronizationManager.getSynchronizations()) {
+                synchronization.afterCommit();
+            }
+
+            verify(artefactService).deleteArtefacts(mockRun);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 
     @Test
@@ -561,19 +583,26 @@ public class SimulationRunServiceTest {
     }
 
     @Test
-    public void testDeleteRun_ArtefactDeletionFailureLeavesRunIntact() throws Exception {
+    public void testDeleteRun_ArtefactDeletionFailureAfterCommitIsReported() throws Exception {
         mockRun.setStatus(RunStatus.FAILED);
         when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
         doThrow(new java.io.IOException("disk error")).when(artefactService).deleteArtefacts(mockRun);
 
-        ArtefactDeletionException exception = assertThrows(
-            ArtefactDeletionException.class,
-            () -> runService.deleteRun(1L)
-        );
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            runService.deleteRun(1L);
+            TransactionSynchronization synchronization = TransactionSynchronizationManager.getSynchronizations().get(0);
 
-        assertTrue(exception.getMessage().contains("disk error"));
-        // The database record must not be removed when artefact cleanup fails.
-        verify(runRepository, never()).deleteById(any());
+            ArtefactDeletionException exception = assertThrows(
+                ArtefactDeletionException.class,
+                synchronization::afterCommit
+            );
+
+            assertTrue(exception.getMessage().contains("disk error"));
+            verify(runRepository).deleteById(1L);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 
     @Test

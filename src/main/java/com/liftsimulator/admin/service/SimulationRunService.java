@@ -475,9 +475,9 @@ public class SimulationRunService {
      * attempting to delete an in-progress run (CREATED or RUNNING) fails fast so that
      * an active execution is never orphaned.</p>
      *
-     * <p>Artefacts are removed before the database record so that a file system
-     * failure aborts the operation without deleting the run history, keeping the
-     * stored state consistent.</p>
+     * <p>The database record is deleted first, and artefacts are removed only after
+     * the surrounding transaction commits. This prevents a rollback or commit
+     * failure from leaving a surviving run row with permanently deleted files.</p>
      *
      * @param id the run id
      * @throws ResourceNotFoundException if the run is not found
@@ -494,13 +494,30 @@ public class SimulationRunService {
                             + "Only completed runs (SUCCEEDED, FAILED, CANCELLED) can be deleted.");
         }
 
+        runRepository.deleteById(id);
+        deleteArtefactsAfterCommit(run, id);
+    }
+
+    private void deleteArtefactsAfterCommit(SimulationRun run, Long id) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            deleteArtefacts(run, id);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                deleteArtefacts(run, id);
+            }
+        });
+    }
+
+    private void deleteArtefacts(SimulationRun run, Long id) {
         try {
             artefactService.deleteArtefacts(run);
         } catch (IOException e) {
             throw new ArtefactDeletionException(
                     "Failed to delete artefacts for simulation run " + id + ": " + e.getMessage(), e);
         }
-
-        runRepository.deleteById(id);
     }
 }
