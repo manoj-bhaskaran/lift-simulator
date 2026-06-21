@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
@@ -357,6 +358,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
     }
 
     @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void testDeleteSimulationRun_Success() throws Exception {
         SimulationRun run = new SimulationRun(testSystem, testVersion);
         run.setArtefactBasePath("./simulation-runs/run-delete");
@@ -386,6 +388,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
     }
 
     @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void testDeleteSimulationRun_RemovesArtefactsAndReturns404Afterwards() throws Exception {
         SimulationRun run = new SimulationRun(testSystem, testVersion);
         run.setArtefactBasePath("./simulation-runs/run-delete-artefacts");
