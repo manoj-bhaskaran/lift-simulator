@@ -358,6 +358,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
     }
 
     @Test
+    // Run outside the class-level rollback transaction so afterCommit artefact cleanup executes.
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void testDeleteSimulationRun_Success() throws Exception {
         SimulationRun run = new SimulationRun(testSystem, testVersion);
@@ -388,6 +389,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
     }
 
     @Test
+    // Run outside the class-level rollback transaction so afterCommit artefact cleanup executes.
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void testDeleteSimulationRun_RemovesArtefactsAndReturns404Afterwards() throws Exception {
         SimulationRun run = new SimulationRun(testSystem, testVersion);
