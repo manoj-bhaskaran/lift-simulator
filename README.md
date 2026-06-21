@@ -194,7 +194,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 # Terminal 2: frontend/
 E2E_ADMIN_USERNAME=admin E2E_ADMIN_PASSWORD=local-admin-password E2E_API_KEY=local-api-key npm test
 ```
-In CI, the `e2e-playwright` job packages the backend with `mvn -Pfrontend package -DskipTests`, starts the packaged application, waits for `/api/v1/health` and the React root page, and runs `npm test` in `frontend/`.
+In CI, the backend test job runs with `SPRING_JPA_HIBERNATE_DDL_AUTO=validate`, matching the checked-in test and runtime profile strategy so Flyway migrations remain the only source of schema changes and mapping drift fails the build. The `e2e-playwright` job packages the backend with `mvn -Pfrontend package -DskipTests`, starts the packaged application, waits for `/api/v1/health` and the React root page, and runs `npm test` in `frontend/`.
 
 ## Quality Checks
 
