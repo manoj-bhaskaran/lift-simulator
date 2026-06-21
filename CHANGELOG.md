@@ -16,6 +16,9 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+### Fixed
+- **Frontend white-screen recovery**: Added a top-level React error boundary with reload/dashboard recovery actions, guarded lift-system version configuration previews against malformed or already-parsed JSON, and made Config Validator error rendering tolerate missing `errors` arrays. Updated README and package metadata for the 0.52.8 patch release.
+
 ### Added
 - **High-level architecture documentation**: Added `docs/architecture.md` (linked from the README) with a Mermaid component diagram and a simulation-run sequence diagram — plus a standalone `docs/architecture-diagram.mermaid` source — describing the major components (React admin UI, Spring Boot backend layers, simulation engine, PostgreSQL, artefact storage) and the key configuration-management and simulation-run flows. Also refreshed the README "Project Structure" section to match the current source layout.
 - **Simulation Runs bulk actions**: Added multi-select checkboxes, select-all, guarded bulk action controls, confirmation dialogs, and per-operation outcome summaries so active runs can be cancelled together and completed runs can be deleted together from the Simulation Runs list. Updated README, Maven/JAR documentation, backend artifact metadata, and frontend package metadata for the 0.52.0 minor release.

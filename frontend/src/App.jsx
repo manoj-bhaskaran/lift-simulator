@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import LiftSystems from './pages/LiftSystems';
 import LiftSystemDetail from './pages/LiftSystemDetail';
@@ -17,23 +18,25 @@ import './App.css';
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="systems" element={<LiftSystems />} />
-          <Route path="systems/:id" element={<LiftSystemDetail />} />
-          <Route path="systems/:systemId/versions/:versionNumber/edit" element={<ConfigEditor />} />
-          <Route path="scenarios" element={<Scenarios />} />
-          <Route path="scenarios/new" element={<ScenarioForm />} />
-          <Route path="scenarios/:id/edit" element={<ScenarioForm />} />
-          <Route path="simulator" element={<SimulatorLanding />} />
-          <Route path="simulator/run" element={<Simulator />} />
-          <Route path="simulation-runs" element={<SimulationRuns />} />
-          <Route path="simulation-runs/:id" element={<SimulationRunDetail />} />
-          <Route path="config-validator" element={<ConfigValidator />} />
-          <Route path="health" element={<HealthCheck />} />
-        </Route>
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="systems" element={<LiftSystems />} />
+            <Route path="systems/:id" element={<LiftSystemDetail />} />
+            <Route path="systems/:systemId/versions/:versionNumber/edit" element={<ConfigEditor />} />
+            <Route path="scenarios" element={<Scenarios />} />
+            <Route path="scenarios/new" element={<ScenarioForm />} />
+            <Route path="scenarios/:id/edit" element={<ScenarioForm />} />
+            <Route path="simulator" element={<SimulatorLanding />} />
+            <Route path="simulator/run" element={<Simulator />} />
+            <Route path="simulation-runs" element={<SimulationRuns />} />
+            <Route path="simulation-runs/:id" element={<SimulationRunDetail />} />
+            <Route path="config-validator" element={<ConfigValidator />} />
+            <Route path="health" element={<HealthCheck />} />
+          </Route>
+        </Routes>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }
