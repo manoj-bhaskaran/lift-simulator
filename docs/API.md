@@ -257,11 +257,13 @@ Scenario payloads define passenger flow for UI-driven simulation runs. The scena
       "updatedAt": "2026-01-11T10:00:00Z"
     }
     ```
+  - Error (409 Conflict): If a scenario with the same `name` already exists for the target lift system version. Scenario names must be unique within a lift system version.
 
 - **Update Scenario**: `PUT /api/v1/scenarios/{id}`
   - Updates an existing scenario payload after validation
   - Request body: same as create
   - Response (200 OK): Updated scenario details
+  - Error (409 Conflict): If renaming the scenario would collide with another scenario's `name` in the same lift system version
 
 - **Get Scenario**: `GET /api/v1/scenarios/{id}`
   - Returns a stored scenario by ID

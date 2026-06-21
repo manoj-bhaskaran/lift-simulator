@@ -28,6 +28,7 @@ public class ScenarioService {
 
     private static final int SCENARIO_NAME_MAX_LENGTH = 200;
     private static final String COPY_NAME_PREFIX = "Copy of ";
+    private static final int MAX_COPY_NAME_ATTEMPTS = 100;
 
     private final ScenarioRepository scenarioRepository;
     private final LiftSystemVersionRepository versionRepository;
@@ -66,6 +67,12 @@ public class ScenarioService {
                 "Lift system version not found with id: " + request.liftSystemVersionId()
             ));
 
+        // Reject duplicate names within the same version before validating/saving
+        if (scenarioRepository.existsByLiftSystemVersionIdAndName(
+                request.liftSystemVersionId(), request.name())) {
+            throw new IllegalStateException(duplicateNameMessage(request.name()));
+        }
+
         // Validate scenario JSON with floor range validation
         validateScenarioJson(request.scenarioJson(), request.liftSystemVersionId());
 
@@ -100,6 +107,12 @@ public class ScenarioService {
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Lift system version not found with id: " + request.liftSystemVersionId()
             ));
+
+        // Reject duplicate names within the same version, allowing this scenario to keep its name
+        if (scenarioRepository.existsByLiftSystemVersionIdAndNameAndIdNot(
+                request.liftSystemVersionId(), request.name(), id)) {
+            throw new IllegalStateException(duplicateNameMessage(request.name()));
+        }
 
         // Validate scenario JSON with floor range validation
         validateScenarioJson(request.scenarioJson(), request.liftSystemVersionId());
@@ -138,7 +151,7 @@ public class ScenarioService {
         validateScenarioJson(scenarioJson, targetLiftSystemVersionId);
 
         Scenario copiedScenario = new Scenario(
-            copiedScenarioName(sourceScenario.getName()),
+            uniqueCopyName(sourceScenario.getName(), targetLiftSystemVersionId),
             serializeScenarioJson(scenarioJson),
             targetVersion
         );
@@ -210,6 +223,41 @@ public class ScenarioService {
             ? sourceName.substring(0, sourceNameLimit)
             : sourceName;
         return COPY_NAME_PREFIX + boundedSourceName;
+    }
+
+    /**
+     * Generates a copy name that does not collide with an existing scenario name in the target
+     * version. Falls back to numbered suffixes (e.g. "Copy of X (2)") when the base name is taken,
+     * keeping the unique constraint on (lift_system_version_id, name) satisfied.
+     */
+    private String uniqueCopyName(String sourceName, Long targetLiftSystemVersionId) {
+        String baseName = copiedScenarioName(sourceName);
+        if (!scenarioRepository.existsByLiftSystemVersionIdAndName(targetLiftSystemVersionId, baseName)) {
+            return baseName;
+        }
+        for (int suffix = 2; suffix <= MAX_COPY_NAME_ATTEMPTS; suffix++) {
+            String candidate = withNumericSuffix(baseName, suffix);
+            if (!scenarioRepository.existsByLiftSystemVersionIdAndName(targetLiftSystemVersionId, candidate)) {
+                return candidate;
+            }
+        }
+        throw new IllegalStateException(
+            "Unable to generate a unique name for the copied scenario; "
+                + "please rename existing copies and try again"
+        );
+    }
+
+    private String withNumericSuffix(String baseName, int suffix) {
+        String suffixText = " (" + suffix + ")";
+        int baseLimit = SCENARIO_NAME_MAX_LENGTH - suffixText.length();
+        String boundedBase = baseName.length() > baseLimit
+            ? baseName.substring(0, baseLimit)
+            : baseName;
+        return boundedBase + suffixText;
+    }
+
+    private String duplicateNameMessage(String name) {
+        return "A scenario named '" + name + "' already exists for this lift system version";
     }
 
     private String serializeScenarioJson(JsonNode scenarioJson) {
