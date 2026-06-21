@@ -271,6 +271,25 @@ public class SimulationRunRepositoryTest {
     }
 
     @Test
+    public void testCountActiveRunsByLiftSystemId() {
+        SimulationRun createdRun = new SimulationRun(liftSystem, version);
+        SimulationRun runningRun = new SimulationRun(liftSystem, version);
+        runningRun.start();
+        SimulationRun succeededRun = new SimulationRun(liftSystem, version);
+        succeededRun.start();
+        succeededRun.succeed();
+
+        entityManager.persist(createdRun);
+        entityManager.persist(runningRun);
+        entityManager.persist(succeededRun);
+        entityManager.flush();
+
+        long activeCount = runRepository.countActiveRunsByLiftSystemId(liftSystem.getId());
+
+        assertEquals(2, activeCount);
+    }
+
+    @Test
     public void testStartupRecoveryBulkUpdatesActiveRunsOnly() {
         SimulationRun createdRun = new SimulationRun(liftSystem, version);
         SimulationRun runningRun = new SimulationRun(liftSystem, version);

@@ -7,6 +7,7 @@ import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.ScenarioRepository;
+import com.liftsimulator.admin.repository.SimulationRunRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,6 +41,12 @@ public class LiftSystemServiceTest {
 
     @Mock
     private ScenarioRepository scenarioRepository;
+
+    @Mock
+    private SimulationRunRepository simulationRunRepository;
+
+    @Mock
+    private ArtefactService artefactService;
 
     @InjectMocks
     private LiftSystemService liftSystemService;
@@ -175,19 +183,43 @@ public class LiftSystemServiceTest {
 
     @Test
     public void testDeleteLiftSystem_Success() {
-        when(liftSystemRepository.existsById(1L)).thenReturn(true);
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(scenarioRepository.countByLiftSystemId(1L)).thenReturn(0L);
+        when(simulationRunRepository.countActiveRunsByLiftSystemId(1L)).thenReturn(0L);
+        when(simulationRunRepository.findByLiftSystemIdOrderByCreatedAtDesc(1L))
+            .thenReturn(List.of());
 
         liftSystemService.deleteLiftSystem(1L);
 
-        verify(liftSystemRepository).existsById(1L);
+        verify(liftSystemRepository).findByIdForUpdate(1L);
         verify(scenarioRepository).countByLiftSystemId(1L);
+        verify(simulationRunRepository).countActiveRunsByLiftSystemId(1L);
         verify(liftSystemRepository).deleteById(1L);
     }
 
     @Test
+    public void testDeleteLiftSystem_BlockedByActiveRuns() {
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(scenarioRepository.countByLiftSystemId(1L)).thenReturn(0L);
+        when(simulationRunRepository.countActiveRunsByLiftSystemId(1L)).thenReturn(2L);
+
+        IllegalStateException exception = assertThrows(
+            IllegalStateException.class,
+            () -> liftSystemService.deleteLiftSystem(1L)
+        );
+
+        assertEquals(
+            "Cannot delete lift system because 2 active simulation run(s) "
+                + "(CREATED/RUNNING) exist. Wait for them to complete or cancel them first.",
+            exception.getMessage()
+        );
+        verify(simulationRunRepository).countActiveRunsByLiftSystemId(1L);
+        verify(liftSystemRepository, never()).deleteById(1L);
+    }
+
+    @Test
     public void testDeleteLiftSystem_NotFound() {
-        when(liftSystemRepository.existsById(999L)).thenReturn(false);
+        when(liftSystemRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
 
         ResourceNotFoundException exception = assertThrows(
             ResourceNotFoundException.class,
@@ -195,6 +227,6 @@ public class LiftSystemServiceTest {
         );
 
         assertEquals("Lift system not found with id: 999", exception.getMessage());
-        verify(liftSystemRepository).existsById(999L);
+        verify(liftSystemRepository).findByIdForUpdate(999L);
     }
 }

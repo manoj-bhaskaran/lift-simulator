@@ -195,6 +195,16 @@ public interface SimulationRunRepository extends JpaRepository<SimulationRun, Lo
     List<SimulationRun> findActiveRunsByLiftSystemId(@Param("liftSystemId") Long liftSystemId);
 
     /**
+     * Count active (CREATED or RUNNING) runs for a lift system.
+     *
+     * @param liftSystemId the lift system id
+     * @return number of active runs
+     */
+    @Query("SELECT count(r) FROM SimulationRun r WHERE r.liftSystem.id = :liftSystemId "
+            + "AND r.status IN ('CREATED', 'RUNNING')")
+    long countActiveRunsByLiftSystemId(@Param("liftSystemId") Long liftSystemId);
+
+    /**
      * Count runs for a specific lift system.
      *
      * @param liftSystemId the lift system id
