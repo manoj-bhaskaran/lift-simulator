@@ -17,6 +17,7 @@ summary is kept under [Earlier history](#earlier-history).
 ## [Unreleased]
 
 ### Fixed
+- **Private OpenAPI default**: The base `application.yml` and `SecurityConfig` code fallback now default `security.openapi.public-access` to private access (`false`), keeping Swagger UI and `/api-docs` ADMIN-only unless an environment or profile explicitly opts into public documentation access. Updated README guidance and synchronized package metadata for the 0.52.15 patch release.
 - **Placeholder startup secrets**: Backend startup validation now rejects the template `CHANGE_ME` placeholder for the runtime API key and legacy admin password, preventing copied development templates from starting with predictable credentials. Updated README guidance and synchronized package metadata for the 0.52.14 patch release.
 - **Friendly backend-unreachable errors**: Frontend API error formatting now maps network failures, Vite proxy gateway errors (`502`/`503`/`504`), connection refusals, and timeouts to a plain-language server-reachability message while keeping the original technical error in the console for debugging. Updated README and package metadata for the 0.52.13 patch release.
 - **Frontend cold-start API timeouts**: The admin UI now retries one safe Axios read timeout automatically after a short delay, allowing first-use backend cold starts to keep existing page/action loading indicators visible instead of immediately surfacing a blocking error. Updated README and package metadata for the 0.52.12 patch release.
