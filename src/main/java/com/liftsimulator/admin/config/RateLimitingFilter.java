@@ -91,11 +91,11 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         int limit;
         if (isRuntime) {
             RateLimitingProperties.EndpointLimits runtimeLimits = properties.getRuntime();
-            bucket = runtimeBuckets.computeIfAbsent(clientIp, k -> buildBucket(runtimeLimits));
+            bucket = bucketFor(runtimeBuckets, clientIp, runtimeLimits);
             limit = runtimeLimits.getCapacity();
         } else {
             RateLimitingProperties.EndpointLimits adminLimits = properties.getAdmin();
-            bucket = adminBuckets.computeIfAbsent(clientIp, k -> buildBucket(adminLimits));
+            bucket = bucketFor(adminBuckets, clientIp, adminLimits);
             limit = adminLimits.getCapacity();
         }
 
@@ -118,6 +118,23 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 + "\"retryAfterSeconds\":%d}",
                 retryAfterSeconds, retryAfterSeconds));
         }
+    }
+
+    private Bucket bucketFor(ConcurrentHashMap<String, Bucket> buckets, String clientIp,
+            RateLimitingProperties.EndpointLimits limits) {
+        int maxBuckets = properties.getMaxBucketsPerGroup();
+        if (!buckets.containsKey(clientIp) && maxBuckets > 0 && buckets.size() >= maxBuckets) {
+            buckets.keySet().stream().findAny().ifPresent(buckets::remove);
+        }
+        return buckets.computeIfAbsent(clientIp, k -> buildBucket(limits));
+    }
+
+    int adminBucketCount() {
+        return adminBuckets.size();
+    }
+
+    int runtimeBucketCount() {
+        return runtimeBuckets.size();
     }
 
     private Bucket buildBucket(RateLimitingProperties.EndpointLimits limits) {

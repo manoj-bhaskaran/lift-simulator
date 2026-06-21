@@ -9,6 +9,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RateLimitingConfigTest {
 
     @Test
+    void requestSizeLimitFilterRegistration_IncludesApiAndActuatorUrlPatternsBeforeRateLimit() {
+        RateLimitingConfig config = new RateLimitingConfig();
+        RequestSizeLimitProperties properties = new RequestSizeLimitProperties();
+
+        FilterRegistrationBean<RequestSizeLimitFilter> registration =
+            config.requestSizeLimitFilterRegistration(properties);
+
+        assertThat(registration.getUrlPatterns())
+            .containsExactlyInAnyOrder("/api/v1/*", "/actuator/*");
+        assertThat(registration.getOrder()).isEqualTo(SecurityProperties.DEFAULT_FILTER_ORDER - 2);
+        assertThat(registration.getFilter()).isInstanceOf(RequestSizeLimitFilter.class);
+    }
+
+    @Test
     void rateLimitingFilterRegistration_IncludesApiAndActuatorUrlPatterns() {
         RateLimitingConfig config = new RateLimitingConfig();
         RateLimitingProperties properties = new RateLimitingProperties();
