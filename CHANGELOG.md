@@ -17,6 +17,7 @@ summary is kept under [Earlier history](#earlier-history).
 ## [Unreleased]
 
 ### Fixed
+- **Duplicate scenario names**: Scenario names are now unique within a lift system version, matching the uniqueness already enforced for `lift_system.system_key` and `lift_system_version(lift_system_id, version_number)`. Added a Flyway migration (`V11`) that deduplicates any existing same-named scenarios and creates a unique index on `scenario(lift_system_version_id, name)`, plus service-layer pre-checks on create and update that return HTTP 409 with an actionable message before hitting the database constraint. Scenario copy now auto-resolves name collisions (e.g. `Copy of X (2)`) so the new constraint stays satisfied. Updated API documentation and package metadata for the 0.52.9 patch release.
 - **Frontend white-screen recovery**: Added a top-level React error boundary with reload/dashboard recovery actions, guarded lift-system version configuration previews against malformed or already-parsed JSON, and made Config Validator error rendering tolerate missing `errors` arrays. Updated README and package metadata for the 0.52.8 patch release.
 
 ### Added

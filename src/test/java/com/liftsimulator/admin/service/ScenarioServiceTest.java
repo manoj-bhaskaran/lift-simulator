@@ -139,6 +139,70 @@ public class ScenarioServiceTest {
     }
 
     @Test
+    public void createScenarioThrowsConflictAndDoesNotSaveWhenDuplicateNameExists() throws Exception {
+        ScenarioRequest request = new ScenarioRequest("Morning rush", json(validScenario()), 20L);
+        when(versionRepository.findById(20L)).thenReturn(Optional.of(version));
+        when(scenarioRepository.existsByLiftSystemVersionIdAndName(20L, "Morning rush")).thenReturn(true);
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> scenarioService.createScenario(request)
+        );
+
+        assertTrue(exception.getMessage().contains("Morning rush"));
+        assertTrue(exception.getMessage().contains("already exists"));
+        verify(scenarioValidationService, never()).validate(any(), any());
+        verify(scenarioRepository, never()).save(any(Scenario.class));
+    }
+
+    @Test
+    public void updateScenarioThrowsConflictWhenAnotherScenarioHasSameName() throws Exception {
+        Scenario existing = new Scenario("Original", validScenario(), version);
+        existing.setId(30L);
+        ScenarioRequest request = new ScenarioRequest("Taken name", json(updatedScenario()), 20L);
+        when(scenarioRepository.findById(30L)).thenReturn(Optional.of(existing));
+        when(versionRepository.findById(20L)).thenReturn(Optional.of(version));
+        when(scenarioRepository.existsByLiftSystemVersionIdAndNameAndIdNot(20L, "Taken name", 30L))
+                .thenReturn(true);
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> scenarioService.updateScenario(30L, request)
+        );
+
+        assertTrue(exception.getMessage().contains("Taken name"));
+        verify(scenarioValidationService, never()).validate(any(), any());
+        verify(scenarioRepository, never()).save(any(Scenario.class));
+    }
+
+    @Test
+    public void copyScenarioGeneratesNumberedSuffixWhenBaseCopyNameIsTaken() throws Exception {
+        Scenario source = new Scenario("Morning rush", validScenario(), version);
+        source.setId(30L);
+        LiftSystemVersion targetVersion = version(22L);
+        when(scenarioRepository.findById(30L)).thenReturn(Optional.of(source));
+        when(versionRepository.findById(22L)).thenReturn(Optional.of(targetVersion));
+        when(scenarioValidationService.validate(objectMapper.readTree(validScenario()), 22L))
+                .thenReturn(validValidationResponse());
+        when(scenarioRepository.existsByLiftSystemVersionIdAndName(22L, "Copy of Morning rush"))
+                .thenReturn(true);
+        when(scenarioRepository.existsByLiftSystemVersionIdAndName(22L, "Copy of Morning rush (2)"))
+                .thenReturn(false);
+        when(scenarioRepository.save(any(Scenario.class))).thenAnswer(invocation -> {
+            Scenario saved = invocation.getArgument(0);
+            saved.setId(31L);
+            return saved;
+        });
+
+        ScenarioResponse response = scenarioService.copyScenario(30L, 22L);
+
+        assertEquals("Copy of Morning rush (2)", response.name());
+        ArgumentCaptor<Scenario> scenarioCaptor = ArgumentCaptor.forClass(Scenario.class);
+        verify(scenarioRepository).save(scenarioCaptor.capture());
+        assertEquals("Copy of Morning rush (2)", scenarioCaptor.getValue().getName());
+    }
+
+    @Test
     public void updateScenarioValidatesMutatesExistingScenarioAndReturnsUpdatedResponse() throws Exception {
         Scenario existing = new Scenario("Original", validScenario(), version);
         existing.setId(30L);
