@@ -260,6 +260,7 @@ When the limit is exceeded the server responds with **HTTP 429 Too Many Requests
 rate-limiting:
   enabled: true               # set to false to disable entirely (e.g. in integration tests)
   trust-forwarded-for: false  # set to true only behind a trusted reverse proxy
+  max-buckets-per-group: 10000 # caps retained client-IP buckets per API group
   admin:
     capacity: 100             # bucket capacity (max burst)
     refill-tokens: 100        # tokens added per period
@@ -273,6 +274,18 @@ rate-limiting:
 **`trust-forwarded-for`** — when `false` (the default), the rate-limiter uses `getRemoteAddr()` as the bucket key, which prevents callers from bypassing limits by spoofing `X-Forwarded-For`. Set to `true` only when the service runs exclusively behind a trusted reverse proxy that controls this header.
 
 Override individual fields per Spring profile to tighten limits in production or loosen them for load testing.
+
+## Request and Artefact Size Limits
+
+The backend rejects oversized API request bodies before JSON deserialization and constrains Jackson JSON nesting/string sizes to reduce denial-of-service risk from very large or deeply nested JSON payloads. By default, `/api/v1/**` and `/actuator/**` request bodies are capped at **1 MiB** and oversized requests receive **HTTP 413 Payload Too Large**.
+
+```yaml
+request-size-limits:
+  enabled: true
+  max-body-bytes: 1048576
+```
+
+Simulation artefact reads are also bounded: full log reads and `results.json` parsing are capped at **1 MiB** each. Prefer the existing `tail` query parameter for large logs; tailed log reads remain capped by line count and do not materialize the entire file in memory.
 
 ## Database Setup
 

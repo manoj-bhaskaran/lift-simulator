@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
  * and available as a bean in all Spring contexts, including {@code @WebMvcTest} slices.
  */
 @Configuration
-@EnableConfigurationProperties(RateLimitingProperties.class)
+@EnableConfigurationProperties({RateLimitingProperties.class, RequestSizeLimitProperties.class})
 public class RateLimitingConfig {
 
     /**
@@ -22,6 +22,17 @@ public class RateLimitingConfig {
      * ({@code SecurityProperties.DEFAULT_FILTER_ORDER - 1}) so it runs before authentication
      * and can throttle all traffic including unauthenticated brute-force or flood requests.
      */
+    @Bean
+    public FilterRegistrationBean<RequestSizeLimitFilter> requestSizeLimitFilterRegistration(
+            RequestSizeLimitProperties properties) {
+        FilterRegistrationBean<RequestSizeLimitFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new RequestSizeLimitFilter(properties));
+        registration.addUrlPatterns("/api/v1/*", "/actuator/*");
+        registration.setOrder(SecurityProperties.DEFAULT_FILTER_ORDER - 2);
+        registration.setName("requestSizeLimitFilter");
+        return registration;
+    }
+
     @Bean
     public FilterRegistrationBean<RateLimitingFilter> rateLimitingFilterRegistration(
             RateLimitingProperties properties) {

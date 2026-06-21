@@ -32,6 +32,7 @@ public class RateLimitingProperties {
 
     private boolean enabled = true;
     private boolean trustForwardedFor = false;
+    private int maxBucketsPerGroup = 10_000;
     private EndpointLimits admin = new EndpointLimits(100, 100, 60);
     private EndpointLimits runtime = new EndpointLimits(1000, 1000, 60);
 
@@ -49,6 +50,14 @@ public class RateLimitingProperties {
 
     public void setTrustForwardedFor(boolean trustForwardedFor) {
         this.trustForwardedFor = trustForwardedFor;
+    }
+
+    public int getMaxBucketsPerGroup() {
+        return maxBucketsPerGroup;
+    }
+
+    public void setMaxBucketsPerGroup(int maxBucketsPerGroup) {
+        this.maxBucketsPerGroup = maxBucketsPerGroup;
     }
 
     @SuppressFBWarnings(

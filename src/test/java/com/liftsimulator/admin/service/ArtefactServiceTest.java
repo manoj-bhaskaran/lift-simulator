@@ -129,6 +129,18 @@ class ArtefactServiceTest {
     }
 
     @Test
+    void readResultsRejectsOversizedResultsFile() throws IOException {
+        Files.writeString(tempDir.resolve("results.json"), "{\"data\":\"" + "x".repeat(1_048_577) + "\"}");
+
+        IOException exception = assertThrows(
+            IOException.class,
+            () -> artefactService.readResults(runForTempDir())
+        );
+
+        assertTrue(exception.getMessage().contains("Results file exceeds"));
+    }
+
+    @Test
     void readResultsThrowsWhenResultsFileIsMissing() {
         IOException exception = assertThrows(
             IOException.class,
@@ -143,6 +155,18 @@ class ArtefactServiceTest {
         String logs = artefactService.readLogs(runForTempDir(), 25);
 
         assertEquals("No log file found for simulation run 1", logs);
+    }
+
+    @Test
+    void readLogsRejectsOversizedFullLogRead() throws IOException {
+        Files.writeString(tempDir.resolve("simulation.log"), "x".repeat(1_048_577));
+
+        IOException exception = assertThrows(
+            IOException.class,
+            () -> artefactService.readLogs(runForTempDir(), null)
+        );
+
+        assertTrue(exception.getMessage().contains("Log file exceeds"));
     }
 
     @Test

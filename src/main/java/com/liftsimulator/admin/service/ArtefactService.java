@@ -32,6 +32,8 @@ public class ArtefactService {
     private static final Logger logger = LoggerFactory.getLogger(ArtefactService.class);
     private static final int DEFAULT_TAIL_LINES = 100;
     private static final int MAX_TAIL_LINES = 10000;
+    private static final long MAX_LOG_BYTES = 1_048_576L;
+    private static final long MAX_RESULTS_BYTES = 1_048_576L;
 
     private final ObjectMapper objectMapper;
 
@@ -218,7 +220,7 @@ public class ArtefactService {
         int linesToRead = tail != null ? Math.min(tail, MAX_TAIL_LINES) : -1;
 
         if (linesToRead < 0) {
-            // Read entire file
+            ensureFileSizeWithinLimit(logPath, MAX_LOG_BYTES, "Log file");
             return Files.readString(logPath);
         } else {
             // Read last N lines
@@ -255,7 +257,15 @@ public class ArtefactService {
             throw new IOException("No results file found for simulation run " + run.getId());
         }
 
+        ensureFileSizeWithinLimit(resultsPath, MAX_RESULTS_BYTES, "Results file");
         return objectMapper.readTree(resultsPath.toFile());
+    }
+
+    private void ensureFileSizeWithinLimit(Path path, long maxBytes, String label) throws IOException {
+        long size = Files.size(path);
+        if (size > maxBytes) {
+            throw new IOException(label + " exceeds the " + maxBytes + " byte read limit: " + path.getFileName());
+        }
     }
 
     private boolean isSafeRegularFile(Path path, Path realDirectory) {

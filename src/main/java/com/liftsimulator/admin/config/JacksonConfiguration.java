@@ -1,5 +1,7 @@
 package com.liftsimulator.admin.config;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +13,9 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class JacksonConfiguration {
+
+    private static final int MAX_JSON_NESTING_DEPTH = 100;
+    private static final int MAX_JSON_STRING_LENGTH = 1_048_576;
 
     /**
      * Customizes the auto-configured ObjectMapper with strict validation settings.
@@ -25,6 +30,16 @@ public class JacksonConfiguration {
      */
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer jsonCustomizer() {
-        return builder -> builder.featuresToEnable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        StreamReadConstraints readConstraints = StreamReadConstraints.builder()
+            .maxNestingDepth(MAX_JSON_NESTING_DEPTH)
+            .maxStringLength(MAX_JSON_STRING_LENGTH)
+            .build();
+        JsonFactory jsonFactory = JsonFactory.builder()
+            .streamReadConstraints(readConstraints)
+            .build();
+
+        return builder -> builder
+            .factory(jsonFactory)
+            .featuresToEnable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 }

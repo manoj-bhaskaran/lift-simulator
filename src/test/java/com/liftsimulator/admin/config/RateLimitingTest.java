@@ -228,6 +228,30 @@ class RateLimitingTest {
     }
 
     @Test
+    void doFilter_EvictsBucketsWhenGroupLimitIsReached() throws Exception {
+        properties.setMaxBucketsPerGroup(2);
+
+        for (int i = 0; i < 4; i++) {
+            MockHttpServletRequest request = buildRequest("/api/v1/lift-systems", "198.51.100." + i);
+            filter.doFilter(request, new MockHttpServletResponse(), filterChain);
+        }
+
+        assertThat(filter.adminBucketCount()).isLessThanOrEqualTo(2);
+    }
+
+    @Test
+    void doFilter_EvictsRuntimeBucketsWhenGroupLimitIsReached() throws Exception {
+        properties.setMaxBucketsPerGroup(2);
+
+        for (int i = 0; i < 4; i++) {
+            MockHttpServletRequest request = buildRequest("/api/v1/runtime/systems/test/config", "203.0.113." + i);
+            filter.doFilter(request, new MockHttpServletResponse(), filterChain);
+        }
+
+        assertThat(filter.runtimeBucketCount()).isLessThanOrEqualTo(2);
+    }
+
+    @Test
     void doFilter_AdminAndRuntimeBuckets_AreIndependent() throws Exception {
         // Exhaust admin bucket for this IP
         for (int i = 0; i < 2; i++) {
