@@ -197,6 +197,16 @@ public class ScenarioValidationService {
         }
 
         int duration = scenario.durationTicks();
+
+        if (duration > 1000000) {
+            errors.add(new ValidationIssue(
+                "durationTicks",
+                "durationTicks must not exceed 1,000,000",
+                ValidationIssue.Severity.ERROR
+            ));
+            return;
+        }
+
         List<PassengerFlowDTO> flows = scenario.passengerFlows();
         for (int i = 0; i < flows.size(); i++) {
             PassengerFlowDTO flow = flows.get(i);
