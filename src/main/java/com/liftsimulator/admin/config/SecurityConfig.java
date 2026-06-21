@@ -66,7 +66,7 @@ import java.util.Locale;
  * <ul>
  *   <li>{@code /api/v1/health} - Application health check</li>
  *   <li>{@code /api/v1/api-docs/**} and Swagger UI when {@code security.openapi.public-access}
- *       is enabled (default)</li>
+ *       is explicitly enabled</li>
  *   <li>{@code /actuator/**} - Spring Boot Actuator endpoints (ADMIN role required)</li>
  *   <li>Static resources - Frontend assets</li>
  * </ul>
@@ -111,7 +111,7 @@ public class SecurityConfig {
     @Value("${api.auth.header:X-API-Key}")
     private String apiKeyHeader;
 
-    @Value("${security.openapi.public-access:true}")
+    @Value("${security.openapi.public-access:false}")
     private boolean openApiPublicAccess;
 
     /**

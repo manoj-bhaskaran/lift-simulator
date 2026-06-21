@@ -218,7 +218,7 @@ The backend is configured via YAML files under `src/main/resources/`:
 
 No profile is active in the checked-in base configuration, so launches must set `SPRING_PROFILES_ACTIVE` explicitly — for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for development, `SPRING_PROFILES_ACTIVE=dev,local` to add local overrides (your `application-local.yml` is git-ignored, so `git pull` will not overwrite it), or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.52.15.jar` for production. This prevents a development profile from masking production configuration mistakes.
 
-OpenAPI/Swagger access is controlled by `security.openapi.public-access` (`SECURITY_OPENAPI_PUBLIC_ACCESS`). The checked-in base configuration defaults to `false`, so `/api/v1/api-docs` and `/api/v1/swagger-ui.html` require ADMIN-role authentication unless an environment or profile override explicitly enables public access. The development template keeps `${SECURITY_OPENAPI_PUBLIC_ACCESS:true}` for local convenience; set `SECURITY_OPENAPI_PUBLIC_ACCESS=false` in any shared or production environment.
+OpenAPI/Swagger access is controlled by `security.openapi.public-access` (`SECURITY_OPENAPI_PUBLIC_ACCESS`). The checked-in base configuration and the code fallback both default to `false`, so `/api/v1/api-docs` and `/api/v1/swagger-ui.html` require ADMIN-role authentication unless an environment or profile override explicitly enables public access. The development template keeps `${SECURITY_OPENAPI_PUBLIC_ACCESS:true}` for local convenience; set `SECURITY_OPENAPI_PUBLIC_ACCESS=false` in any shared or production environment.
 
 ## Authentication
 
