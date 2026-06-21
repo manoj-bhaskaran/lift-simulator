@@ -263,9 +263,8 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
 
         mockMvc.perform(get("/api/v1/simulation-runs/" + run.getId() + "/logs")
                 .header(API_KEY_HEADER, API_KEY_VALUE))
-            .andExpect(status().isInternalServerError())
-            .andExpect(jsonPath("$.error").value("Failed to read logs: Artefact base path is not set for run "
-                    + run.getId()));
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.error").value("Artefacts are not available for this run"));
     }
 
     @Test
