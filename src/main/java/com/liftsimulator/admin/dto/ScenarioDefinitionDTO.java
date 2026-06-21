@@ -1,6 +1,7 @@
 package com.liftsimulator.admin.dto;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -15,6 +16,7 @@ import java.util.List;
 public record ScenarioDefinitionDTO(
     @NotNull(message = "durationTicks is required")
     @Min(value = 1, message = "durationTicks must be at least 1")
+    @Max(value = 1000000, message = "durationTicks must not exceed 1,000,000")
     Integer durationTicks,
 
     @NotNull(message = "passengerFlows is required")
