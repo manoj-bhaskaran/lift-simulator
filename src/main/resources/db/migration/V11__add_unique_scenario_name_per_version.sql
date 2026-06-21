@@ -8,22 +8,50 @@ SET search_path TO lift_simulator;
 
 -- Existing databases may already contain duplicate scenario names within a version.
 -- Keep the earliest scenario (lowest id) untouched and rename later duplicates with a
--- " (#<id>)" suffix, truncating the base name so the result fits the 200-char column.
-WITH ranked_scenarios AS (
-    SELECT
-        id,
-        name,
-        ROW_NUMBER() OVER (
-            PARTITION BY lift_system_version_id, name
-            ORDER BY id
-        ) AS name_rank
-    FROM scenario
-)
-UPDATE scenario AS s
-SET name = LEFT(s.name, 200 - LENGTH(' (#' || s.id || ')')) || ' (#' || s.id || ')'
-FROM ranked_scenarios AS ranked
-WHERE s.id = ranked.id
-  AND ranked.name_rank > 1;
+-- " (#<n>)" suffix, truncating the base name so the result fits the 200-char column.
+-- The generated name is checked against ALL existing names in the same version (not just
+-- the duplicate group), incrementing the suffix until it is unique, so a pre-existing
+-- row such as "Morning (#2)" cannot collide with a renamed duplicate before the unique
+-- index is created.
+DO $$
+DECLARE
+    dup RECORD;
+    candidate TEXT;
+    suffix BIGINT;
+BEGIN
+    LOOP
+        -- Pick one row that shares its (version, name) with an earlier row (lower id).
+        SELECT s.id, s.name, s.lift_system_version_id
+        INTO dup
+        FROM scenario s
+        WHERE EXISTS (
+            SELECT 1
+            FROM scenario o
+            WHERE o.lift_system_version_id = s.lift_system_version_id
+              AND o.name = s.name
+              AND o.id < s.id
+        )
+        ORDER BY s.lift_system_version_id, s.name, s.id
+        LIMIT 1;
+
+        EXIT WHEN NOT FOUND;
+
+        -- Find a suffix that yields a name unique within the version.
+        suffix := dup.id;
+        LOOP
+            candidate := LEFT(dup.name, 200 - LENGTH(' (#' || suffix || ')')) || ' (#' || suffix || ')';
+            EXIT WHEN NOT EXISTS (
+                SELECT 1
+                FROM scenario o
+                WHERE o.lift_system_version_id = dup.lift_system_version_id
+                  AND o.name = candidate
+            );
+            suffix := suffix + 1;
+        END LOOP;
+
+        UPDATE scenario SET name = candidate WHERE id = dup.id;
+    END LOOP;
+END $$;
 
 -- Replace the non-unique index from V6 with a unique index on (version, name).
 DROP INDEX IF EXISTS idx_scenario_version;
