@@ -41,7 +41,7 @@ public class ScenarioServiceTest {
         {
             "minFloor": 0,
             "maxFloor": 9,
-            "lifts": 2,
+            "lifts": 1,
             "travelTicksPerFloor": 1,
             "doorTransitionTicks": 2,
             "doorDwellTicks": 3,

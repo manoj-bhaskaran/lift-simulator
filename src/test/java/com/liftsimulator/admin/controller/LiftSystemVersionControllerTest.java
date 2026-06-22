@@ -66,7 +66,7 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
             {
                 "minFloor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -87,7 +87,7 @@ public class LiftSystemVersionControllerTest extends LocalIntegrationTest {
             {
                 "minFloor": %d,
                 "maxFloor": %d,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,

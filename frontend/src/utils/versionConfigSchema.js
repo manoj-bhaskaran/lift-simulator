@@ -38,6 +38,7 @@ export const IDLE_PARKING_MODE_OPTIONS = [
  * @property {'number'|'select'} type - Input control type.
  * @property {string} help - Inline help text describing the field.
  * @property {number} [min] - Minimum allowed value for numeric fields.
+ * @property {number} [max] - Maximum allowed value for numeric fields.
  * @property {Array<{value: string, label: string}>} [options] - Select options.
  */
 
@@ -66,7 +67,8 @@ export const VERSION_CONFIG_FIELDS = [
     label: 'Number of Lifts',
     type: FIELD_TYPE_NUMBER,
     min: 1,
-    help: 'How many lift cars the system has (at least 1).'
+    max: 1,
+    help: 'Number of lifts (v1.0.0 supports exactly 1 lift; multi-lift support coming in future versions).'
   },
   {
     name: 'travelTicksPerFloor',
@@ -225,6 +227,10 @@ export function validateVersionFormData(formData) {
     const value = Number(trimmed);
     if (field.min !== undefined && value < field.min) {
       errors[field.name] = `${field.label} must be at least ${field.min}.`;
+      continue;
+    }
+    if (field.max !== undefined && value > field.max) {
+      errors[field.name] = `${field.label} must be at most ${field.max}.`;
       continue;
     }
     numbers[field.name] = value;

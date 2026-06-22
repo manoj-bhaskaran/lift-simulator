@@ -37,7 +37,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -89,7 +89,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": 0,
                 "maxFloor": 0,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -143,7 +143,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -171,7 +171,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -199,7 +199,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -223,7 +223,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -251,7 +251,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 1,
@@ -274,12 +274,12 @@ public class ConfigValidationServiceTest {
     }
 
     @Test
-    public void testValidate_WarningForMoreLiftsThanFloors() {
+    public void testValidate_ErrorForMultipleLifts() {
         String config = """
             {
                 "minFloor": 0,
                 "maxFloor": 4,
-                "lifts": 10,
+                "lifts": 2,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -293,12 +293,13 @@ public class ConfigValidationServiceTest {
 
         ConfigValidationResponse response = validationService.validate(config);
 
-        assertTrue(response.valid());
-        assertTrue(response.hasWarnings());
-        boolean hasLiftsWarning = response.warnings().stream()
+        assertFalse(response.valid());
+        assertTrue(response.hasErrors());
+        boolean hasLiftsError = response.errors().stream()
             .anyMatch(issue -> issue.field().equals("lifts")
-                && issue.severity() == ValidationIssue.Severity.WARNING);
-        assertTrue(hasLiftsWarning);
+                && issue.message().contains("must be 1")
+                && issue.severity() == ValidationIssue.Severity.ERROR);
+        assertTrue(hasLiftsError);
     }
 
     @Test
@@ -307,7 +308,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -360,7 +361,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -386,7 +387,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -416,7 +417,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFlor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -444,7 +445,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -475,7 +476,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 5,
                 "doorTransitionTicks": 3,
                 "doorDwellTicks": 4,
@@ -503,7 +504,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": "A",
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -587,7 +588,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": true,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -615,7 +616,7 @@ public class ConfigValidationServiceTest {
             {
                 "minFloor": -2,
                 "maxFloor": 5,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
