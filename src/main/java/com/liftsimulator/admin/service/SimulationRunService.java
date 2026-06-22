@@ -1,5 +1,7 @@
 package com.liftsimulator.admin.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liftsimulator.admin.dto.ScenarioDefinitionDTO;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.Scenario;
@@ -66,6 +68,7 @@ public class SimulationRunService {
     private final String artefactsBasePath;
     private final SimulationRunExecutionService executionService;
     private final ArtefactService artefactService;
+    private final ObjectMapper objectMapper;
 
     @SuppressFBWarnings(
             value = "EI_EXPOSE_REP2",
@@ -78,6 +81,7 @@ public class SimulationRunService {
             ScenarioRepository scenarioRepository,
             SimulationRunExecutionService executionService,
             ArtefactService artefactService,
+            ObjectMapper objectMapper,
             @Value("${simulation.artefacts.base-path:./simulation-runs}") String artefactsBasePath) {
         this.runRepository = runRepository;
         this.liftSystemRepository = liftSystemRepository;
@@ -85,6 +89,7 @@ public class SimulationRunService {
         this.scenarioRepository = scenarioRepository;
         this.executionService = executionService;
         this.artefactService = artefactService;
+        this.objectMapper = objectMapper;
         this.artefactsBasePath = artefactsBasePath;
     }
 
@@ -160,8 +165,16 @@ public class SimulationRunService {
         // Set up artefact directory
         String artefactPath = setupArtefactDirectory(run.getId());
 
-        // Configure the run with default total ticks (this can be updated later)
-        run.setTotalTicks(10000L); // Default value, can be configured
+        // Derive total ticks from scenario duration if scenario is provided
+        Long totalTicks = null;
+        if (scenarioId != null) {
+            totalTicks = extractTotalTicksFromScenario(run.getScenario());
+        }
+
+        // Configure the run
+        if (totalTicks != null) {
+            run.setTotalTicks(totalTicks);
+        }
         run.setSeed(runSeed);
         run.setArtefactBasePath(artefactPath);
 
@@ -192,6 +205,23 @@ public class SimulationRunService {
                 executionService.submitRunForExecution(runId);
             }
         });
+    }
+
+    private Long extractTotalTicksFromScenario(Scenario scenario) {
+        if (scenario == null || scenario.getScenarioJson() == null) {
+            return null;
+        }
+
+        try {
+            ScenarioDefinitionDTO scenarioDefinition = objectMapper.readValue(
+                    scenario.getScenarioJson(), ScenarioDefinitionDTO.class);
+            if (scenarioDefinition.durationTicks() != null) {
+                return scenarioDefinition.durationTicks().longValue();
+            }
+        } catch (IOException ex) {
+            LOGGER.warn("Failed to extract durationTicks from scenario {}: {}", scenario.getId(), ex.getMessage());
+        }
+        return null;
     }
 
     /**
