@@ -500,6 +500,8 @@ Run artefacts are stored on disk using the configured `simulation.artefacts.base
     "requestsTotal": 12,
     "pickupRequestsServed": 12,
     "pickupRequestsCancelled": 0,
+    "passengersServed": 12,
+    "passengersCancelled": 0,
     "avgPickupWaitTicks": 4.5,
     "maxPickupWaitTicks": 11,
     "idleTicks": 30,

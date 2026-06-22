@@ -237,15 +237,26 @@ public class ScenarioParser {
     }
 
     private ScenarioEvent parseHallCall(long tick, String[] tokens, String sourceName, int lineNumber) {
-        if (tokens.length != 5) {
-            throw new IllegalArgumentException(errorMessage(sourceName, lineNumber, "hall_call requires tick, alias, floor, direction"));
+        if (tokens.length != 5 && tokens.length != 6) {
+            throw new IllegalArgumentException(errorMessage(sourceName, lineNumber, "hall_call requires: alias, floor, direction [, passengers]"));
         }
         String alias = tokens[2];
         int floor = Integer.parseInt(tokens[3]);
         Direction direction = Direction.valueOf(tokens[4].toUpperCase(Locale.ROOT));
-        String description = String.format("Hall call %s at %d %s", alias, floor, direction);
+        int passengers;
+        if (tokens.length == 6) {
+            passengers = Integer.parseInt(tokens[5]);
+            if (passengers < 1) {
+                throw new IllegalArgumentException(errorMessage(sourceName, lineNumber, "hall_call passengers must be >= 1"));
+            }
+        } else {
+            passengers = 1;
+        }
+        String description = passengers > 1
+            ? String.format("Hall call %s at %d %s (%d pax)", alias, floor, direction, passengers)
+            : String.format("Hall call %s at %d %s", alias, floor, direction);
         return new ScenarioEvent(tick, description, context -> {
-            LiftRequest request = LiftRequest.hallCall(floor, direction);
+            LiftRequest request = LiftRequest.hallCall(floor, direction, passengers);
             context.addRequest(request);
             context.registerAlias(alias, request.getId());
         });

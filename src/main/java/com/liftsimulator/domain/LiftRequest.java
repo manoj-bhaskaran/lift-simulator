@@ -16,6 +16,7 @@ public class LiftRequest {
     private final Integer originFloor;
     private final Integer destinationFloor;
     private final Direction direction;
+    private final int passengerCount;
     private RequestState state;
 
     /**
@@ -27,27 +28,43 @@ public class LiftRequest {
         RequestState.CANCELLED
     );
 
-    private LiftRequest(long id, RequestType type, Integer originFloor, Integer destinationFloor, Direction direction) {
+    private LiftRequest(long id, RequestType type, Integer originFloor, Integer destinationFloor, Direction direction, int passengerCount) {
         this.id = id;
         this.type = type;
         this.originFloor = originFloor;
         this.destinationFloor = destinationFloor;
         this.direction = direction;
+        this.passengerCount = passengerCount;
         this.state = RequestState.CREATED;
     }
 
     /**
-     * Creates a hall call request.
+     * Creates a hall call request for a single passenger.
      *
      * @param floor     The floor where the call was made
      * @param direction The direction the passenger wants to travel
      * @return A new LiftRequest for the hall call
      */
     public static LiftRequest hallCall(int floor, Direction direction) {
+        return hallCall(floor, direction, 1);
+    }
+
+    /**
+     * Creates a hall call request representing one or more passengers.
+     *
+     * @param floor          The floor where the call was made
+     * @param direction      The direction the passengers want to travel
+     * @param passengerCount The number of passengers represented by this request
+     * @return A new LiftRequest for the hall call
+     */
+    public static LiftRequest hallCall(int floor, Direction direction, int passengerCount) {
         if (direction == Direction.IDLE) {
             throw new IllegalArgumentException("Hall call direction cannot be IDLE");
         }
-        return new LiftRequest(ID_GENERATOR.incrementAndGet(), RequestType.HALL_CALL, floor, null, direction);
+        if (passengerCount < 1) {
+            throw new IllegalArgumentException("Passenger count must be at least 1");
+        }
+        return new LiftRequest(ID_GENERATOR.incrementAndGet(), RequestType.HALL_CALL, floor, null, direction, passengerCount);
     }
 
     /**
@@ -64,7 +81,7 @@ public class LiftRequest {
      * @return A new LiftRequest for the car call
      */
     public static LiftRequest carCall(int destinationFloor) {
-        return new LiftRequest(ID_GENERATOR.incrementAndGet(), RequestType.CAR_CALL, null, destinationFloor, null);
+        return new LiftRequest(ID_GENERATOR.incrementAndGet(), RequestType.CAR_CALL, null, destinationFloor, null, 1);
     }
 
     /**
@@ -77,7 +94,7 @@ public class LiftRequest {
     public static LiftRequest carCall(int originFloor, int destinationFloor) {
         Direction direction = originFloor < destinationFloor ? Direction.UP :
                             originFloor > destinationFloor ? Direction.DOWN : Direction.IDLE;
-        return new LiftRequest(ID_GENERATOR.incrementAndGet(), RequestType.CAR_CALL, originFloor, destinationFloor, direction);
+        return new LiftRequest(ID_GENERATOR.incrementAndGet(), RequestType.CAR_CALL, originFloor, destinationFloor, direction, 1);
     }
 
     /**
@@ -162,6 +179,10 @@ public class LiftRequest {
      */
     public int getTargetFloor() {
         return type == RequestType.HALL_CALL ? originFloor : destinationFloor;
+    }
+
+    public int getPassengerCount() {
+        return passengerCount;
     }
 
     public long getId() {

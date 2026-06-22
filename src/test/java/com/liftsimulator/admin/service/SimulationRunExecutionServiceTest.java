@@ -77,6 +77,21 @@ public class SimulationRunExecutionServiceTest {
         }
         """.trim();
 
+    private static final String MULTI_PASSENGER_SCENARIO = """
+        {
+            "durationTicks": 20,
+            "seed": 42,
+            "passengerFlows": [
+                {
+                    "startTick": 0,
+                    "originFloor": 0,
+                    "destinationFloor": 3,
+                    "passengers": 5
+                }
+            ]
+        }
+        """.trim();
+
     @Mock
     private SimulationRunRepository runRepository;
 
@@ -235,6 +250,28 @@ public class SimulationRunExecutionServiceTest {
         assertInternalStateCleared(14L);
     }
 
+
+    @Test
+    public void multiPassengerFlowProducesOneRequestButCorrectPassengerKpis() throws Exception {
+        Path runDir = tempDir.resolve("run-mp");
+        Files.createDirectories(runDir);
+        SimulationRun run = runWithArtefactDirectory(20L, runDir, MULTI_PASSENGER_SCENARIO);
+        AtomicReference<SimulationRun> storedRun = prepareRepository(run);
+        when(configValidationService.validate(VALID_CONFIG)).thenReturn(validConfigResponse());
+        when(scenarioValidationService.validate(any(JsonNode.class))).thenReturn(validScenarioResponse());
+
+        executionService.submitRunForExecution(20L);
+
+        waitForExecutionToFinish(storedRun, SimulationRun.RunStatus.SUCCEEDED);
+        JsonNode results = objectMapper.readTree(runDir.resolve("results.json").toFile());
+        JsonNode kpis = results.get("kpis");
+        // One hall call for the 5-passenger flow → 1 request lifecycle
+        assertEquals(1, kpis.get("pickupRequestsServed").asInt());
+        // But 5 passengers represented → passengersServed must be 5
+        assertEquals(5, kpis.get("passengersServed").asInt());
+        assertEquals(0, kpis.get("passengersCancelled").asInt());
+        assertInternalStateCleared(20L);
+    }
 
     @Test
     public void failRunWithMessageUsesDirectFailedUpdateWhenLifecycleTransitionRaces() throws Exception {
