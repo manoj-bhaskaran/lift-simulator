@@ -11,6 +11,7 @@ import com.liftsimulator.admin.service.ConfigValidationException;
 import com.liftsimulator.admin.service.InvalidArtefactPathException;
 import com.liftsimulator.admin.service.ResourceNotFoundException;
 import com.liftsimulator.admin.service.ScenarioValidationException;
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -207,6 +208,35 @@ public class GlobalExceptionHandler {
         });
 
         logger.debug("Validation failed for {} field(s): {}", fieldErrors.size(), fieldErrors.keySet());
+
+        ValidationErrorResponse error = new ValidationErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            "Validation failed",
+            fieldErrors,
+            OffsetDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
+     * Handles method parameter validation errors with 400 status.
+     * This covers constraints declared on path variables and request parameters.
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ValidationErrorResponse> handleConstraintViolation(
+        ConstraintViolationException ex
+    ) {
+        Map<String, String> fieldErrors = new HashMap<>();
+        ex.getConstraintViolations().forEach(violation -> {
+            String propertyPath = violation.getPropertyPath().toString();
+            String fieldName = propertyPath.contains(".")
+                ? propertyPath.substring(propertyPath.lastIndexOf('.') + 1)
+                : propertyPath;
+            fieldErrors.put(fieldName, violation.getMessage());
+        });
+
+        logger.debug("Parameter validation failed for {} field(s): {}",
+            fieldErrors.size(), fieldErrors.keySet());
 
         ValidationErrorResponse error = new ValidationErrorResponse(
             HttpStatus.BAD_REQUEST.value(),

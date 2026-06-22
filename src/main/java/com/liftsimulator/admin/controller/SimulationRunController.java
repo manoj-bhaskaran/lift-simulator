@@ -19,6 +19,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -32,6 +34,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
@@ -45,6 +48,7 @@ import org.springframework.data.web.PageableDefault;
  * REST controller for managing simulation runs.
  */
 @RestController
+@Validated
 @RequestMapping("/api/v1/simulation-runs")
 @Tag(name = "Simulation Runs", description = "Simulation run management and execution endpoints")
 @SecurityRequirement(name = "apiKey")
@@ -232,7 +236,10 @@ public class SimulationRunController {
     @GetMapping("/{id}/logs")
     public ResponseEntity<SimulationLogResponse> getSimulationLogs(
             @PathVariable Long id,
-            @RequestParam(required = false) Integer tail
+            @RequestParam(required = false)
+            @Min(value = 1, message = "tail must be greater than or equal to 1")
+            @Max(value = 10000, message = "tail must be less than or equal to 10000")
+            Integer tail
     ) {
         SimulationRun run = simulationRunService.getRunById(id);
 

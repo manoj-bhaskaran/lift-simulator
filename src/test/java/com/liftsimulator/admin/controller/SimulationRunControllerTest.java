@@ -288,6 +288,48 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
     }
 
     @Test
+    public void testGetSimulationLogs_RejectsNegativeTailParameter() throws Exception {
+        SimulationRun run = new SimulationRun(testSystem, testVersion);
+        run.setArtefactBasePath("./simulation-runs/run-negative-tail");
+        run = runRepository.save(run);
+
+        mockMvc.perform(get("/api/v1/simulation-runs/" + run.getId() + "/logs?tail=-1")
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value("Validation failed"))
+            .andExpect(jsonPath("$.fieldErrors.tail").value("tail must be greater than or equal to 1"));
+    }
+
+    @Test
+    public void testGetSimulationLogs_RejectsZeroTailParameter() throws Exception {
+        SimulationRun run = new SimulationRun(testSystem, testVersion);
+        run.setArtefactBasePath("./simulation-runs/run-zero-tail");
+        run = runRepository.save(run);
+
+        mockMvc.perform(get("/api/v1/simulation-runs/" + run.getId() + "/logs?tail=0")
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value("Validation failed"))
+            .andExpect(jsonPath("$.fieldErrors.tail").value("tail must be greater than or equal to 1"));
+    }
+
+    @Test
+    public void testGetSimulationLogs_RejectsExcessiveTailParameter() throws Exception {
+        SimulationRun run = new SimulationRun(testSystem, testVersion);
+        run.setArtefactBasePath("./simulation-runs/run-excessive-tail");
+        run = runRepository.save(run);
+
+        mockMvc.perform(get("/api/v1/simulation-runs/" + run.getId() + "/logs?tail=10001")
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value("Validation failed"))
+            .andExpect(jsonPath("$.fieldErrors.tail").value("tail must be less than or equal to 10000"));
+    }
+
+    @Test
     public void testListSimulationArtefacts_EmptyDirectory() throws Exception {
         SimulationRun run = new SimulationRun(testSystem, testVersion);
         run.setArtefactBasePath("./simulation-runs/run-empty");
