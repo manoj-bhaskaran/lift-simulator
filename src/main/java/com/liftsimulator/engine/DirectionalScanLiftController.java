@@ -198,15 +198,20 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
      * @return the nearest requested floor, or empty if no requests
      */
     private Optional<Integer> findNearestRequestedFloor(int currentFloor) {
-        Set<Integer> requestedFloors = new TreeSet<>();
-
-        // Collect all requested floors from active requests.
-        for (LiftRequest request : getActiveRequests()) {
-            requestedFloors.add(request.getTargetFloor());
-        }
-
-        // Find the nearest one.
-        return requestedFloors.stream()
+        // Only include a request's target floor if the request is eligible for the
+        // direction of travel required to reach it, so the chosen bootstrap direction
+        // is never immediately wrong on arrival.
+        return getActiveRequests().stream()
+                .filter(request -> {
+                    int target = request.getTargetFloor();
+                    if (target > currentFloor) {
+                        return isEligibleForDirection(request, Direction.UP);
+                    } else if (target < currentFloor) {
+                        return isEligibleForDirection(request, Direction.DOWN);
+                    }
+                    return true;
+                })
+                .map(LiftRequest::getTargetFloor)
                 .min((f1, f2) -> {
                     int dist1 = Math.abs(f1 - currentFloor);
                     int dist2 = Math.abs(f2 - currentFloor);

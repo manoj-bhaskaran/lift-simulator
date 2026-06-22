@@ -31,7 +31,6 @@ public final class RunMetrics {
     }
 
     public void recordPassengerFlow(PassengerFlowDTO flow, int passengers) {
-        invalidateCachedKpis();
         if (flow.originFloor() != null) {
             floorMetrics.computeIfAbsent(flow.originFloor(), FloorMetrics::new)
                 .addOrigins(passengers);
