@@ -504,6 +504,43 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
     }
 
     @Test
+    public void testListSimulationRuns_Pagination_AllowsDocumentedSortProperties() throws Exception {
+        SimulationRun run = new SimulationRun(testSystem, testVersion);
+        runRepository.save(run);
+
+        mockMvc.perform(get("/api/v1/simulation-runs"
+                        + "?page=0&size=20&sort=startedAt,asc"
+                        + "&sort=endedAt,desc&sort=status,asc&sort=id,desc")
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content").isArray())
+            .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    public void testListSimulationRuns_Pagination_RejectsUnsupportedSortProperty() throws Exception {
+        mockMvc.perform(get("/api/v1/simulation-runs?page=0&size=20&sort=liftSystem.name,asc")
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value(
+                    "Unsupported simulation run sort property: liftSystem.name. "
+                            + "Allowed sort properties: createdAt, endedAt, id, startedAt, status"));
+    }
+
+    @Test
+    public void testListSimulationRuns_Pagination_RejectsIgnoreCaseSortModifier() throws Exception {
+        mockMvc.perform(get("/api/v1/simulation-runs?page=0&size=20&sort=status,asc,ignorecase")
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value(
+                    "Unsupported ignore-case simulation run sort modifier for: status. "
+                            + "Allowed sort properties: createdAt, endedAt, id, startedAt, status; "
+                            + "ignore-case sorting is not supported."));
+    }
+
+    @Test
     public void testListSimulationRuns_Pagination_MaxSizeEnforced() throws Exception {
         // Requesting size=200 should be capped at 100
         mockMvc.perform(get("/api/v1/simulation-runs?page=0&size=200")

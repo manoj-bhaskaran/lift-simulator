@@ -75,15 +75,19 @@ public class SimulationRunController {
      * @param systemId optional filter by lift system ID
      * @param status optional filter by run status (CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED)
      * @param pageable pagination parameters: page (0-based), size (default 20, max 100), sort
+     *                 (allowed properties: createdAt, startedAt, endedAt, status, id)
      * @return paginated simulation runs with totalElements and totalPages metadata
      */
     @Operation(
         summary = "List simulation runs",
         description = "Retrieves simulation runs with optional filtering by system ID or status. "
             + "Supports pagination via ?page=0&size=20&sort=createdAt,desc. "
+            + "Allowed sort properties are createdAt, startedAt, endedAt, status, and id; "
+            + "ignore-case sort modifiers are rejected. "
             + "Default page size is 20; maximum is 100."
     )
     @ApiResponse(responseCode = "200", description = "Successfully retrieved simulation runs")
+    @ApiResponse(responseCode = "400", description = "Invalid pagination or sort parameter")
     @ApiResponse(responseCode = "401", description = "Unauthorized - valid API key required")
     @GetMapping
     public ResponseEntity<Page<SimulationRunListResponse>> listSimulationRuns(

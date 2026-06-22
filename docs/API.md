@@ -554,6 +554,22 @@ Run artefacts are stored on disk using the configured `simulation.artefacts.base
 
 ---
 
+##### List Simulation Runs
+
+**Endpoint:** `GET /api/v1/simulation-runs`
+
+Lists simulation runs with optional `systemId` and `status` filters. The endpoint returns a Spring Data `Page` envelope and supports capped pagination with `page` (0-based) and `size` (default `20`, maximum `100`).
+
+**Sorting:** pass one or more `sort` query parameters in the Spring Data format, for example `sort=createdAt,desc` or `sort=status,asc&sort=id,desc`. Supported sort properties are allowlisted to `createdAt`, `startedAt`, `endedAt`, `status`, and `id`. Unsupported properties or `ignorecase` sort modifiers return `400 Bad Request` with the allowed property list.
+
+**Example:**
+```http
+GET /api/v1/simulation-runs?page=0&size=20&sort=createdAt,desc
+X-API-Key: <api-key>
+```
+
+---
+
 ##### Create and Start Simulation Run
 
 **Endpoint:** `POST /api/v1/simulation-runs`
