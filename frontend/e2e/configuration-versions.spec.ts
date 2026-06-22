@@ -104,19 +104,20 @@ test.describe('Configuration Version Management', () => {
     await expect(page.locator('.version-config-grid')).toBeVisible();
     await expect(page.locator('#config')).toBeHidden();
 
-    // Fields are pre-filled with sensible defaults; adjust the number of lifts
+    // Fields are pre-filled with sensible defaults
     const liftsInput = page.locator('#vcf-lifts');
     await expect(liftsInput).toBeVisible();
-    await liftsInput.fill('3');
+    // v1.0.0 supports only 1 lift
+    await expect(liftsInput).toHaveValue('1');
 
     // Switching to Advanced (JSON) preserves the entered data
     await page.locator('.editor-mode-toggle button:has-text("Advanced")').click();
     const jsonValue = await page.locator('#config').inputValue();
-    expect(jsonValue).toContain('"lifts": 3');
+    expect(jsonValue).toContain('"lifts": 1');
 
     // Switching back to the guided form retains the value
     await page.locator('.editor-mode-toggle button:has-text("Guided")').click();
-    await expect(page.locator('#vcf-lifts')).toHaveValue('3');
+    await expect(page.locator('#vcf-lifts')).toHaveValue('1');
 
     // Validate and create the version from the guided form
     await page.locator('.create-version-form button:has-text("Validate")').click();
