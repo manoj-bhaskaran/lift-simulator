@@ -95,7 +95,7 @@ The **frontend admin UI** provides:
 - **Health Check** — monitor backend service status
 
 
-> **KPI scope:** The current simulator models the passenger pickup leg for each scenario flow. Result KPIs therefore report pickup-request completions, wait-to-pickup latency, and pickup-leg lift utilisation; destination floors are retained for per-floor demand reporting but destination travel is not simulated yet.
+> **KPI scope:** The current simulator models the passenger pickup leg for each scenario flow. Result KPIs therefore report pickup-request completions, wait-to-pickup latency, and pickup-leg lift utilisation; destination floors are retained for per-floor demand reporting but destination travel is not simulated yet. Stored historical artefacts that use the previous `utilisation` name are still rendered as pickup-leg utilisation in the UI.
 
 Run the UI in dev mode with `cd frontend && npm install && npm run dev`; it proxies API requests to the backend on port 8080. See [frontend/README.md](frontend/README.md) for setup, environment variables, and the type-definition (JSDoc) workflow.
 
