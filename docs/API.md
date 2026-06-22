@@ -779,7 +779,9 @@ Retrieves simulation logs with optional tail functionality.
 **Query Parameters:**
 - `tail` (optional): Number of lines to retrieve from end of log
   - Default: All lines
+  - Minimum: 1 line
   - Maximum: 10,000 lines
+  - Values below 1 or above 10,000 return HTTP 400 with a validation error response
   - Large tails are buffered with fixed-size deque storage, so reading the last lines of large logs uses bounded memory and linear time.
 
 **Response (200 OK):**
