@@ -239,7 +239,6 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
 
         return getActiveRequests().stream()
                 .filter(request -> !request.isTerminal())
-                .filter(request -> isEligibleForDirection(request, direction))
                 .map(LiftRequest::getTargetFloor)
                 .filter(targetFloor -> direction == Direction.UP
                         ? targetFloor > currentFloor
@@ -253,7 +252,7 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
         if (currentDirection == Direction.IDLE) {
             return false;
         }
-        if (findTurnaroundFloorInDirection(currentFloor, currentDirection).isPresent()) {
+        if (findNextRequestedFloorInDirection(currentFloor, currentDirection).isPresent()) {
             return false;
         }
         Direction oppositeDirection = currentDirection == Direction.UP ? Direction.DOWN : Direction.UP;
