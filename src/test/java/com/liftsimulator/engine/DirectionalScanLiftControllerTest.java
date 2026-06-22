@@ -138,6 +138,27 @@ public class DirectionalScanLiftControllerTest {
     }
 
     @Test
+    public void testIgnoresOppositeHallCallAsTurnaroundFloorWhileTravelingUp() {
+        controller.addCarCall(new CarCall(1));
+        controller.addHallCall(new HallCall(2, Direction.DOWN));
+
+        LiftState idleAtZero = new LiftState(0, LiftStatus.IDLE);
+        assertEquals(Action.MOVE_UP, controller.decideNextAction(idleAtZero, 0));
+
+        LiftState arrivingAtOne = new LiftState(1, LiftStatus.MOVING_UP);
+        assertEquals(Action.IDLE, controller.decideNextAction(arrivingAtOne, 1));
+
+        LiftState idleAtOne = new LiftState(1, LiftStatus.IDLE);
+        assertEquals(Action.OPEN_DOOR, controller.decideNextAction(idleAtOne, 2));
+
+        LiftState doorsOpenAtOne = new LiftState(1, LiftStatus.DOORS_OPEN);
+        assertEquals(Action.IDLE, controller.decideNextAction(doorsOpenAtOne, 3));
+
+        LiftState leavingOne = new LiftState(1, LiftStatus.IDLE);
+        assertEquals(Action.IDLE, controller.decideNextAction(leavingOne, 4));
+    }
+
+    @Test
     public void testCarCallsRemainEligibleWhileTravelingUp() {
         controller.addHallCall(new HallCall(1, Direction.UP));
         controller.addCarCall(new CarCall(3));

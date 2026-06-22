@@ -239,6 +239,7 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
 
         return getActiveRequests().stream()
                 .filter(request -> !request.isTerminal())
+                .filter(request -> isEligibleForDirection(request, direction))
                 .map(LiftRequest::getTargetFloor)
                 .filter(targetFloor -> direction == Direction.UP
                         ? targetFloor > currentFloor
