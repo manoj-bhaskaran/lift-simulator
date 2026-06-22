@@ -302,9 +302,9 @@ public class SimulationRunExecutionService {
                 controller.addRequest(request);
             }
 
-            metrics.recordLiftState(engine.getCurrentState());
             metrics.recordActiveRequests(controller.getRequests(), currentTick);
             engine.tick();
+            metrics.recordLiftState(engine.getCurrentState());
             metrics.recordTerminalRequests(engine.getCurrentTick());
 
             long progressTick = tick + 1L;
@@ -313,7 +313,6 @@ public class SimulationRunExecutionService {
             }
         }
 
-        metrics.recordLiftState(engine.getCurrentState());
         updateProgress(runId, (long) scenario.durationTicks());
         log(logWriter, "Simulation completed at tick " + engine.getCurrentTick());
         metrics.recordTerminalRequests(engine.getCurrentTick());

@@ -304,10 +304,10 @@ public class SimulationRunExecutionServiceTest {
 
         waitForExecutionToFinish(storedRun, SimulationRun.RunStatus.SUCCEEDED);
         JsonNode results = objectMapper.readTree(runDir.resolve("results.json").toFile());
-        // durationTicks=6 iterations + 1 post-loop state → 7 recorded ticks
+        // recordLiftState fires after engine.tick() inside the loop, so totalTicks == durationTicks
         long perLiftTotalTicks = results.at("/perLift/0/totalTicks").asLong();
-        assertEquals(7L, perLiftTotalTicks,
-            "totalTicks must equal durationTicks + 1 to include the post-final-tick lift state");
+        assertEquals(6L, perLiftTotalTicks,
+            "totalTicks must equal durationTicks so metrics and run record stay consistent");
     }
 
     @Test
