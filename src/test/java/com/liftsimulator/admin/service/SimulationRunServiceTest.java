@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.Scenario;
@@ -62,6 +63,9 @@ public class SimulationRunServiceTest {
     private ArtefactService artefactService;
 
     @Mock
+    private ObjectMapper objectMapper;
+
+    @Mock
     private EntityManager entityManager;
 
     private SimulationRunService runService;
@@ -82,6 +86,7 @@ public class SimulationRunServiceTest {
                 scenarioRepository,
                 executionService,
                 artefactService,
+                objectMapper,
                 tempDir.toString()
         );
 
@@ -229,7 +234,8 @@ public class SimulationRunServiceTest {
 
         assertEquals(42L, result.getId());
         assertEquals(RunStatus.RUNNING, result.getStatus());
-        assertEquals(10000L, result.getTotalTicks());
+        // totalTicks is null when no scenario is provided (will be set during execution)
+        assertEquals(null, result.getTotalTicks());
         assertEquals(12345L, result.getSeed());
         assertNotNull(result.getArtefactBasePath());
         assertTrue(Files.isDirectory(Path.of(result.getArtefactBasePath())));
@@ -264,6 +270,40 @@ public class SimulationRunServiceTest {
         } finally {
             TransactionSynchronizationManager.clearSynchronization();
         }
+    }
+
+    @Test
+    public void testCreateAndStartRun_DerivesTotalTicksFromScenario() throws Exception {
+        Scenario mockScenario = new Scenario();
+        mockScenario.setId(5L);
+        mockScenario.setName("Test Scenario");
+        mockScenario.setScenarioJson("{\"durationTicks\": 5000, \"passengerFlows\": []}");
+        mockScenario.setLiftSystemVersion(mockVersion);
+
+        when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(versionRepository.findById(1L)).thenReturn(Optional.of(mockVersion));
+        when(scenarioRepository.findById(5L)).thenReturn(Optional.of(mockScenario));
+        when(objectMapper.readValue(
+            "{\"durationTicks\": 5000, \"passengerFlows\": []}",
+            com.liftsimulator.admin.dto.ScenarioDefinitionDTO.class
+        )).thenReturn(new com.liftsimulator.admin.dto.ScenarioDefinitionDTO(5000, List.of(), null));
+        when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> {
+            SimulationRun savedRun = invocation.getArgument(0);
+            if (savedRun.getId() == null) {
+                savedRun.setId(42L);
+            }
+            return savedRun;
+        });
+
+        SimulationRun result = runService.createAndStartRun(1L, 1L, 5L, 12345L);
+
+        assertEquals(42L, result.getId());
+        assertEquals(RunStatus.RUNNING, result.getStatus());
+        assertEquals(5000L, result.getTotalTicks());
+        assertEquals(12345L, result.getSeed());
+        assertNotNull(result.getArtefactBasePath());
+        assertTrue(Files.isDirectory(Path.of(result.getArtefactBasePath())));
+        verify(executionService).submitRunForExecution(42L);
     }
 
     @Test
