@@ -17,6 +17,7 @@ summary is kept under [Earlier history](#earlier-history).
 ## [Unreleased]
 
 ### Fixed
+- **Archived stale v1 readiness assessment**: Moved the outdated `docs/V1_READINESS_ASSESSMENT.md` into `docs/archive/` so the active documentation set no longer presents stale pre-1.0.0 status, version, Spring Boot, security, or API-readiness findings.
 - **CI backend schema validation parity**: Changed the backend CI verify job to use Hibernate `ddl-auto=validate` instead of `update`, keeping CI aligned with the test profile and Flyway-owned schema management documented elsewhere. Updated README CI testing guidance.
 - **Frontend credential exposure hardening**: Replaced raw Axios error console logging with sanitized API-error details that omit request config and auth headers, documented that Vite-bundled credentials are local-development conveniences only and must not be used as a hosted SPA security boundary, refreshed JAR examples in the developer/workflow docs, and synchronized package metadata for the 0.52.16 patch release.
 - **DoS hardening for request and artefact reads**: Capped retained per-IP rate-limit buckets, added a configurable API request-body limit that rejects oversized JSON payloads with HTTP 413, constrained Jackson JSON nesting/string sizes, and bounded full simulation log/results artefact reads to prevent unbounded memory use. Updated README operational guidance for the new limits.
