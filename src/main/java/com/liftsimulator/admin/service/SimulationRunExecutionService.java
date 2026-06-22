@@ -296,12 +296,10 @@ public class SimulationRunExecutionService {
                     continue;
                 }
 
-                // Create hall calls (not car calls) to properly model passenger pickup
-                for (int i = 0; i < passengers; i++) {
-                    LiftRequest request = LiftRequest.hallCall(flow.originFloor(), direction);
-                    metrics.recordRequestCreation(request, currentTick);
-                    controller.addRequest(request);
-                }
+                // One hall call per flow; passenger count is carried on the request for KPI accounting
+                LiftRequest request = LiftRequest.hallCall(flow.originFloor(), direction, passengers);
+                metrics.recordRequestCreation(request, currentTick);
+                controller.addRequest(request);
             }
 
             metrics.recordLiftState(engine.getCurrentState());
