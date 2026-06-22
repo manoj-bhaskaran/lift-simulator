@@ -498,14 +498,14 @@ Run artefacts are stored on disk using the configured `simulation.artefacts.base
   },
   "kpis": {
     "requestsTotal": 12,
-    "passengersServed": 12,
-    "passengersCancelled": 0,
-    "avgWaitTicks": 4.5,
-    "maxWaitTicks": 11,
+    "pickupRequestsServed": 12,
+    "pickupRequestsCancelled": 0,
+    "avgPickupWaitTicks": 4.5,
+    "maxPickupWaitTicks": 11,
     "idleTicks": 30,
     "movingTicks": 50,
     "doorTicks": 40,
-    "utilisation": 0.75
+    "pickupLegUtilisation": 0.75
   },
   "perLift": [
     {
@@ -531,7 +531,7 @@ Run artefacts are stored on disk using the configured `simulation.artefacts.base
       "idleTicks": 30,
       "movingTicks": 50,
       "doorTicks": 40,
-      "utilisation": 0.75
+      "pickupLegUtilisation": 0.75
     }
   ],
   "perFloor": [
@@ -546,7 +546,7 @@ Run artefacts are stored on disk using the configured `simulation.artefacts.base
 ```
 
 - `runSummary` includes tick counts, duration, seed, and lift system/version references.
-- `kpis` includes available wait-time metrics and utilisation from the simulation run.
+- `kpis` includes pickup-request counts, wait-to-pickup latency, and pickup-leg utilisation from the simulation run; passenger destinations are counted in per-floor totals but destination travel is not simulated yet.
 - `perLift` contains single-lift state counts and configuration metadata (one entry for now).
 - `perFloor` aggregates passenger origins/destinations and lift visit counts per floor (counted on floor changes).
 

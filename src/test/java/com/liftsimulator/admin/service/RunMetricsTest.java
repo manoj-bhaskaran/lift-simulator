@@ -49,9 +49,9 @@ class RunMetricsTest {
         ObjectNode kpis = metrics.toKpisNode(objectMapper);
 
         assertEquals(0, kpis.get("requestsTotal").asInt());
-        assertEquals(0, kpis.get("passengersServed").asInt());
-        assertEquals(0.0, kpis.get("avgWaitTicks").asDouble(), 1e-9);
-        assertEquals(0L, kpis.get("maxWaitTicks").asLong());
+        assertEquals(0, kpis.get("pickupRequestsServed").asInt());
+        assertEquals(0.0, kpis.get("avgPickupWaitTicks").asDouble(), 1e-9);
+        assertEquals(0L, kpis.get("maxPickupWaitTicks").asLong());
     }
 
     @Test
@@ -62,9 +62,9 @@ class RunMetricsTest {
         metrics.recordTerminalRequests(10L);
 
         ObjectNode kpis = metrics.toKpisNode(objectMapper);
-        assertEquals(1, kpis.get("passengersServed").asInt());
-        assertEquals(10L, kpis.get("maxWaitTicks").asLong());
-        assertEquals(10.0, kpis.get("avgWaitTicks").asDouble(), 1e-9);
+        assertEquals(1, kpis.get("pickupRequestsServed").asInt());
+        assertEquals(10L, kpis.get("maxPickupWaitTicks").asLong());
+        assertEquals(10.0, kpis.get("avgPickupWaitTicks").asDouble(), 1e-9);
     }
 
     @Test
@@ -76,25 +76,25 @@ class RunMetricsTest {
         metrics.recordTerminalRequests(15L);
 
         ObjectNode kpis = metrics.toKpisNode(objectMapper);
-        assertEquals(1, kpis.get("passengersCancelled").asInt());
-        assertEquals(0, kpis.get("passengersServed").asInt());
+        assertEquals(1, kpis.get("pickupRequestsCancelled").asInt());
+        assertEquals(0, kpis.get("pickupRequestsServed").asInt());
     }
 
     @Test
-    void utilisationIsZeroWhenNoTicks() {
+    void pickupLegUtilisationIsZeroWhenNoTicks() {
         ObjectNode kpis = metrics.toKpisNode(objectMapper);
-        assertEquals(0.0, kpis.get("utilisation").asDouble(), 1e-9);
+        assertEquals(0.0, kpis.get("pickupLegUtilisation").asDouble(), 1e-9);
     }
 
     @Test
-    void utilisationAccountsForMovingAndDoorTicks() {
+    void pickupLegUtilisationAccountsForMovingAndDoorTicks() {
         metrics.recordLiftState(new LiftState(1, LiftStatus.MOVING_UP));
         metrics.recordLiftState(new LiftState(2, LiftStatus.MOVING_UP));
         metrics.recordLiftState(new LiftState(2, LiftStatus.DOORS_OPEN));
         metrics.recordLiftState(new LiftState(2, LiftStatus.IDLE));
         // 3 active ticks out of 4 total
         ObjectNode kpis = metrics.toKpisNode(objectMapper);
-        assertEquals(0.75, kpis.get("utilisation").asDouble(), 1e-9);
+        assertEquals(0.75, kpis.get("pickupLegUtilisation").asDouble(), 1e-9);
     }
 
     @Test
@@ -108,7 +108,7 @@ class RunMetricsTest {
 
         assertEquals(1L, updatedKpis.get("idleTicks").asLong());
         assertEquals(1L, updatedKpis.get("movingTicks").asLong());
-        assertEquals(0.5, updatedKpis.get("utilisation").asDouble(), 1e-9);
+        assertEquals(0.5, updatedKpis.get("pickupLegUtilisation").asDouble(), 1e-9);
     }
 
     @Test
@@ -122,7 +122,7 @@ class RunMetricsTest {
         ObjectNode kpis = metrics.toKpisNode(objectMapper);
         assertEquals(1, kpis.get("requestsTotal").asInt());
         // wait should be 8 - 0 = 8, not 8 - 5
-        assertEquals(8L, kpis.get("maxWaitTicks").asLong());
+        assertEquals(8L, kpis.get("maxPickupWaitTicks").asLong());
     }
 
     @Test
@@ -185,6 +185,6 @@ class RunMetricsTest {
         metrics.recordTerminalRequests(20L); // second call should not overwrite
 
         ObjectNode kpis = metrics.toKpisNode(objectMapper);
-        assertEquals(10L, kpis.get("maxWaitTicks").asLong());
+        assertEquals(10L, kpis.get("maxPickupWaitTicks").asLong());
     }
 }

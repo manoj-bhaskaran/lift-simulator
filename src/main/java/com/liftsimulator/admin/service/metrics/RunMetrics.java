@@ -88,14 +88,14 @@ public final class RunMetrics {
         CachedKpis kpiValues = getCachedKpis();
         ObjectNode kpis = objectMapper.createObjectNode();
         kpis.put("requestsTotal", kpiValues.requestsTotal());
-        kpis.put("passengersServed", kpiValues.passengersServed());
-        kpis.put("passengersCancelled", kpiValues.passengersCancelled());
-        kpis.put("avgWaitTicks", kpiValues.avgWaitTicks());
-        kpis.put("maxWaitTicks", kpiValues.maxWaitTicks());
+        kpis.put("pickupRequestsServed", kpiValues.pickupRequestsServed());
+        kpis.put("pickupRequestsCancelled", kpiValues.pickupRequestsCancelled());
+        kpis.put("avgPickupWaitTicks", kpiValues.avgPickupWaitTicks());
+        kpis.put("maxPickupWaitTicks", kpiValues.maxPickupWaitTicks());
         kpis.put("idleTicks", kpiValues.idleTicks());
         kpis.put("movingTicks", kpiValues.movingTicks());
         kpis.put("doorTicks", kpiValues.doorTicks());
-        kpis.put("utilisation", kpiValues.utilisation());
+        kpis.put("pickupLegUtilisation", kpiValues.pickupLegUtilisation());
         return kpis;
     }
 
@@ -124,7 +124,7 @@ public final class RunMetrics {
         lift.put("idleTicks", kpiValues.idleTicks());
         lift.put("movingTicks", kpiValues.movingTicks());
         lift.put("doorTicks", kpiValues.doorTicks());
-        lift.put("utilisation", kpiValues.utilisation());
+        lift.put("pickupLegUtilisation", kpiValues.pickupLegUtilisation());
 
         lifts.add(lift);
         return lifts;
@@ -162,7 +162,7 @@ public final class RunMetrics {
         long doorTicks = statusCounts.getOrDefault(LiftStatus.DOORS_OPENING, 0L)
             + statusCounts.getOrDefault(LiftStatus.DOORS_OPEN, 0L)
             + statusCounts.getOrDefault(LiftStatus.DOORS_CLOSING, 0L);
-        double utilisation = totalTicks == 0 ? 0.0 : (double) (movingTicks + doorTicks) / (double) totalTicks;
+        double pickupLegUtilisation = totalTicks == 0 ? 0.0 : (double) (movingTicks + doorTicks) / (double) totalTicks;
 
         return new CachedKpis(
             lifecycles.size(),
@@ -173,7 +173,7 @@ public final class RunMetrics {
             idleTicks,
             movingTicks,
             doorTicks,
-            utilisation
+            pickupLegUtilisation
         );
     }
 
@@ -183,14 +183,14 @@ public final class RunMetrics {
 
     private record CachedKpis(
         int requestsTotal,
-        long passengersServed,
-        long passengersCancelled,
-        double avgWaitTicks,
-        long maxWaitTicks,
+        long pickupRequestsServed,
+        long pickupRequestsCancelled,
+        double avgPickupWaitTicks,
+        long maxPickupWaitTicks,
         long idleTicks,
         long movingTicks,
         long doorTicks,
-        double utilisation
+        double pickupLegUtilisation
     ) {
     }
 

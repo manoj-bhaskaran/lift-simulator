@@ -14,14 +14,15 @@ const normalizedApiBaseUrl = apiBaseUrl.replace(/\/$/, '');
 
 const kpiLabels = {
   requestsTotal: 'Requests',
-  passengersServed: 'Passengers Served',
-  passengersCancelled: 'Passengers Cancelled',
-  avgWaitTicks: 'Avg Wait (ticks)',
-  maxWaitTicks: 'Max Wait (ticks)',
+  pickupRequestsServed: 'Pickup Requests Served',
+  pickupRequestsCancelled: 'Pickup Requests Cancelled',
+  avgPickupWaitTicks: 'Avg Wait to Pickup (ticks)',
+  maxPickupWaitTicks: 'Max Wait to Pickup (ticks)',
   idleTicks: 'Idle Ticks',
   movingTicks: 'Moving Ticks',
   doorTicks: 'Door Ticks',
-  utilisation: 'Utilisation',
+  pickupLegUtilisation: 'Pickup-leg Utilisation',
+  utilisation: 'Pickup-leg Utilisation',
 };
 
 /**
@@ -236,11 +237,13 @@ function SimulationRunDetail() {
   };
 
   const formatKpiValue = (key, value) => {
-    if (key === 'utilisation' && typeof value === 'number') {
+    if ((key === 'pickupLegUtilisation' || key === 'utilisation') && typeof value === 'number') {
       return `${(value * 100).toFixed(1)}%`;
     }
     return formatNumber(value);
   };
+
+  const getPickupLegUtilisation = (lift) => lift?.pickupLegUtilisation ?? lift?.utilisation;
 
   const formatBytes = (bytes) => {
     if (!bytes && bytes !== 0) return '—';
@@ -468,7 +471,7 @@ function SimulationRunDetail() {
                           <th>Lift</th>
                           <th>Controller</th>
                           <th>Parking</th>
-                          <th>Utilisation</th>
+                          <th>Pickup-leg Utilisation</th>
                           <th>Idle</th>
                           <th>Moving</th>
                           <th>Door</th>
@@ -481,7 +484,7 @@ function SimulationRunDetail() {
                             <td>{lift.liftId}</td>
                             <td>{lift.controllerStrategy || '—'}</td>
                             <td>{lift.idleParkingMode || '—'}</td>
-                            <td>{formatKpiValue('utilisation', lift.utilisation)}</td>
+                            <td>{formatKpiValue('pickupLegUtilisation', getPickupLegUtilisation(lift))}</td>
                             <td>{formatNumber(lift.idleTicks)}</td>
                             <td>{formatNumber(lift.movingTicks)}</td>
                             <td>{formatNumber(lift.doorTicks)}</td>

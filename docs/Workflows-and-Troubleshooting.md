@@ -180,7 +180,7 @@ The web UI provides a streamlined workflow for running simulations with managed 
    - Elapsed time displayed
 
 8. **View Results**
-   - KPI cards (wait times, utilization, passengers served)
+   - KPI cards (pickup-request completions, pickup wait times, pickup-leg utilisation)
    - Per-lift metrics table
    - Per-floor metrics table
    - Download artefacts (logs, results, input files)
@@ -329,14 +329,14 @@ Comprehensive results with KPIs and metrics:
   },
   "kpis": {
     "requestsTotal": 150,
-    "passengersServed": 145,
-    "passengersCancelled": 5,
-    "avgWaitTicks": 25.5,
-    "maxWaitTicks": 85,
+    "pickupRequestsServed": 145,
+    "pickupRequestsCancelled": 5,
+    "avgPickupWaitTicks": 25.5,
+    "maxPickupWaitTicks": 85,
     "idleTicks": 200,
     "movingTicks": 500,
     "doorTicks": 300,
-    "utilisation": 0.80
+    "pickupLegUtilisation": 0.80
   },
   "perLift": [
     {
@@ -350,7 +350,7 @@ Comprehensive results with KPIs and metrics:
       "idleTicks": 200,
       "movingTicks": 500,
       "doorTicks": 300,
-      "utilisation": 0.80,
+      "pickupLegUtilisation": 0.80,
       "statusCounts": {
         "IDLE": 200,
         "MOVING_UP": 250,
@@ -465,8 +465,8 @@ The CLI will produce the same simulation results as the UI run (given the same s
 To verify the reproduction matches the original run:
 
 1. Compare tick counts: Should match `durationTicks` in scenario
-2. Compare KPIs: Should match `kpis` in `results.json` (wait times, utilization, etc.)
-3. Compare passenger counts: Should match `requestsTotal`, `passengersServed`, etc.
+2. Compare KPIs: Should match `kpis` in `results.json` (pickup wait times, pickup-leg utilisation, etc.)
+3. Compare passenger counts: Should match `requestsTotal`, `pickupRequestsServed`, etc.
 
 **Note:** Results are deterministic when using the same seed value.
 
@@ -508,10 +508,10 @@ This example demonstrates a complete workflow from UI run to CLI reproduction.
 
 4. **View Results (after completion):**
    - Status: SUCCEEDED
-   - Passengers Served: 35 / 35
-   - Avg Wait Time: 18 ticks
-   - Max Wait Time: 45 ticks
-   - Lift Utilization: 85%
+   - Pickup Requests Served: 35 / 35
+   - Avg Wait to Pickup: 18 ticks
+   - Max Wait to Pickup: 45 ticks
+   - Pickup-leg Lift Utilisation: 85%
 
 #### Download Artefacts
 
