@@ -3,6 +3,7 @@ package com.liftsimulator.admin.controller;
 import com.liftsimulator.admin.dto.CopyScenarioRequest;
 import com.liftsimulator.admin.dto.ScenarioRequest;
 import com.liftsimulator.admin.dto.ScenarioResponse;
+import com.liftsimulator.admin.dto.ScenarioValidateRequest;
 import com.liftsimulator.admin.dto.ScenarioValidationResponse;
 import com.liftsimulator.admin.service.ScenarioService;
 import com.liftsimulator.admin.service.ScenarioValidationService;
@@ -165,7 +166,7 @@ public class ScenarioController {
      */
     @PostMapping("/validate")
     public ResponseEntity<ScenarioValidationResponse> validateScenario(
-        @Valid @RequestBody ScenarioRequest request
+        @Valid @RequestBody ScenarioValidateRequest request
     ) {
         ScenarioValidationResponse response = scenarioValidationService.validate(
             request.scenarioJson(),
