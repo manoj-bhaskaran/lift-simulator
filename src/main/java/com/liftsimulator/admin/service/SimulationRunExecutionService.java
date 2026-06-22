@@ -302,10 +302,10 @@ public class SimulationRunExecutionService {
                 controller.addRequest(request);
             }
 
-            metrics.recordLiftState(engine.getCurrentState());
             metrics.recordActiveRequests(controller.getRequests(), currentTick);
             engine.tick();
-            metrics.recordTerminalRequests(currentTick);
+            metrics.recordLiftState(engine.getCurrentState());
+            metrics.recordTerminalRequests(engine.getCurrentTick());
 
             long progressTick = tick + 1L;
             if (tick % PROGRESS_UPDATE_INTERVAL == 0) {
