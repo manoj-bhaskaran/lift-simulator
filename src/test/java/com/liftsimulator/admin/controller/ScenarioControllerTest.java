@@ -195,6 +195,33 @@ public class ScenarioControllerTest extends LocalIntegrationTest {
     }
 
     @Test
+    public void testCreateScenario_BlankName_ReturnsBadRequest() throws Exception {
+        ScenarioRequest request = scenarioRequest("   ", ControllerApiFixtures.validScenario());
+
+        mockMvc.perform(post("/api/v1/scenarios")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value("Validation failed"))
+            .andExpect(jsonPath("$.fieldErrors.name").value("Name is required"));
+    }
+
+    @Test
+    public void testCreateScenario_NameExceedsMaxLength_ReturnsBadRequest() throws Exception {
+        String longName = "A".repeat(201);
+        ScenarioRequest request = scenarioRequest(longName, ControllerApiFixtures.validScenario());
+
+        mockMvc.perform(post("/api/v1/scenarios")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value("Validation failed"))
+            .andExpect(jsonPath("$.fieldErrors.name").value("Name must not exceed 200 characters"));
+    }
+
+    @Test
     public void testCreateScenario_MissingRequiredRequestFields() throws Exception {
         mockMvc.perform(post("/api/v1/scenarios")
                 .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
