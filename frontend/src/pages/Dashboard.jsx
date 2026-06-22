@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import { logApiError } from '../utils/errorHandlers';
 import './Dashboard.css';
@@ -59,12 +60,12 @@ function Dashboard() {
         <div className="card">
           <h3>Quick Actions</h3>
           <div className="actions">
-            <a href="/systems" className="action-button">
+            <Link to="/systems" className="action-button">
               Manage Lift Systems
-            </a>
-            <a href="/config-validator" className="action-button">
+            </Link>
+            <Link to="/config-validator" className="action-button">
               Validate Configuration
-            </a>
+            </Link>
           </div>
         </div>
       </div>

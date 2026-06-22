@@ -120,12 +120,45 @@ class ArtefactServiceTest {
     }
 
     @Test
-    void readResultsParsesFirstKnownResultsFile() throws IOException {
+    void readResultsParsesCanonicalResultsFile() throws IOException {
         Files.writeString(tempDir.resolve("results.json"), "{\"runSummary\":{\"status\":\"SUCCEEDED\"}}");
 
         JsonNode results = artefactService.readResults(runForTempDir());
 
         assertEquals("SUCCEEDED", results.at("/runSummary/status").asText());
+    }
+
+    @Test
+    void readResultsIgnoresLegacyResultFileNames() throws IOException {
+        Files.writeString(tempDir.resolve("output.json"), "{\"runSummary\":{\"status\":\"SUCCEEDED\"}}");
+
+        IOException exception = assertThrows(
+            IOException.class,
+            () -> artefactService.readResults(runForTempDir())
+        );
+
+        assertTrue(exception.getMessage().contains("No results file found"));
+    }
+
+    @Test
+    void readLogsRejectsNegativeTail() throws IOException {
+        writeRunLog(10);
+
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> artefactService.readLogs(runForTempDir(), -1)
+        );
+
+        assertEquals("tail must be greater than or equal to 0", exception.getMessage());
+    }
+
+    @Test
+    void readLogsIgnoresLegacyLogFileNames() throws IOException {
+        Files.writeString(tempDir.resolve("simulation.log"), "legacy log");
+
+        String logs = artefactService.readLogs(runForTempDir(), 25);
+
+        assertEquals("No log file found for simulation run 1", logs);
     }
 
     @Test
@@ -159,7 +192,7 @@ class ArtefactServiceTest {
 
     @Test
     void readLogsRejectsOversizedFullLogRead() throws IOException {
-        Files.writeString(tempDir.resolve("simulation.log"), "x".repeat(1_048_577));
+        Files.writeString(tempDir.resolve("run.log"), "x".repeat(1_048_577));
 
         IOException exception = assertThrows(
             IOException.class,
@@ -246,7 +279,7 @@ class ArtefactServiceTest {
         for (int line = 1; line <= lines; line++) {
             content.add("line-" + line);
         }
-        Files.write(tempDir.resolve("simulation.log"), content);
+        Files.write(tempDir.resolve("run.log"), content);
     }
 
     private SimulationRun runForTempDir() {
