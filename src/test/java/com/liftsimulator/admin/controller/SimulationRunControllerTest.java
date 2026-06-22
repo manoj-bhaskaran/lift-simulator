@@ -276,7 +276,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         // Create test log file
         Path artefactDir = Paths.get(run.getArtefactBasePath());
         Files.createDirectories(artefactDir);
-        Path logFile = artefactDir.resolve("simulation.log");
+        Path logFile = artefactDir.resolve("run.log");
         Files.writeString(logFile, "Line 1\nLine 2\nLine 3\n");
 
         mockMvc.perform(get("/api/v1/simulation-runs/" + run.getId() + "/logs?tail=2")
@@ -313,7 +313,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Path artefactDir = Paths.get(run.getArtefactBasePath());
         Files.createDirectories(artefactDir);
         Files.writeString(artefactDir.resolve("results.json"), "{\"test\": \"data\"}");
-        Files.writeString(artefactDir.resolve("simulation.log"), "Log content");
+        Files.writeString(artefactDir.resolve("run.log"), "Log content");
 
         mockMvc.perform(get("/api/v1/simulation-runs/" + run.getId() + "/artefacts")
                 .header(API_KEY_HEADER, API_KEY_VALUE))
@@ -370,7 +370,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
         Path artefactDir = Paths.get(run.getArtefactBasePath());
         Files.createDirectories(artefactDir);
         Files.writeString(artefactDir.resolve("results.json"), "{\"ok\": true}");
-        Files.writeString(artefactDir.resolve("simulation.log"), "Log content");
+        Files.writeString(artefactDir.resolve("run.log"), "Log content");
 
         Long runId = run.getId();
 

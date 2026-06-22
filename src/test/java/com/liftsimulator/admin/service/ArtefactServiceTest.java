@@ -154,7 +154,7 @@ class ArtefactServiceTest {
 
     @Test
     void readLogsIgnoresLegacyLogFileNames() throws IOException {
-        Files.writeString(tempDir.resolve("run.log"), "legacy log");
+        Files.writeString(tempDir.resolve("simulation.log"), "legacy log");
 
         String logs = artefactService.readLogs(runForTempDir(), 25);
 
@@ -192,7 +192,7 @@ class ArtefactServiceTest {
 
     @Test
     void readLogsRejectsOversizedFullLogRead() throws IOException {
-        Files.writeString(tempDir.resolve("simulation.log"), "x".repeat(1_048_577));
+        Files.writeString(tempDir.resolve("run.log"), "x".repeat(1_048_577));
 
         IOException exception = assertThrows(
             IOException.class,
@@ -279,7 +279,7 @@ class ArtefactServiceTest {
         for (int line = 1; line <= lines; line++) {
             content.add("line-" + line);
         }
-        Files.write(tempDir.resolve("simulation.log"), content);
+        Files.write(tempDir.resolve("run.log"), content);
     }
 
     private SimulationRun runForTempDir() {

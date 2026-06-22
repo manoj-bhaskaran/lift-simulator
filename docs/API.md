@@ -774,9 +774,7 @@ Retrieves simulation logs with optional tail functionality.
 }
 ```
 
-**Common Log Files (searched in order):**
-- `simulation.log`
-- `output.log`
+**Log File:**
 - `run.log`
 
 **Error Response (500 Internal Server Error):**
@@ -816,8 +814,8 @@ Lists all artefacts (downloadable files) associated with a simulation run.
     "mimeType": "application/json"
   },
   {
-    "name": "simulation.log",
-    "path": "simulation.log",
+    "name": "run.log",
+    "path": "run.log",
     "size": 5120,
     "mimeType": "text/plain"
   },

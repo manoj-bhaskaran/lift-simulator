@@ -694,7 +694,12 @@ function ScenarioForm() {
             <div className="form-group">
               <textarea
                 value={jsonText}
-                onChange={(e) => setJsonText(e.target.value)}
+                onChange={(e) => {
+                  setJsonText(e.target.value);
+                  if (formErrors.durationTicks) {
+                    setFormErrors(prev => ({ ...prev, durationTicks: '' }));
+                  }
+                }}
                 rows={20}
                 className="json-editor"
                 placeholder="Enter scenario JSON..."
@@ -702,6 +707,9 @@ function ScenarioForm() {
               <p className="help-text">
                 Edit the scenario JSON directly. Valid fields: durationTicks, passengerFlows, seed (optional)
               </p>
+              {formErrors.durationTicks && (
+                <span className="error-message">{formErrors.durationTicks}</span>
+              )}
             </div>
           </div>
         ) : (

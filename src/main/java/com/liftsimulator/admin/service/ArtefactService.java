@@ -34,7 +34,7 @@ public class ArtefactService {
     private static final int MAX_TAIL_LINES = 10000;
     private static final long MAX_LOG_BYTES = 1_048_576L;
     private static final long MAX_RESULTS_BYTES = 1_048_576L;
-    private static final String CANONICAL_LOG_FILE = "simulation.log";
+    private static final String CANONICAL_LOG_FILE = "run.log";
     private static final String CANONICAL_RESULTS_FILE = "results.json";
 
     private final ObjectMapper objectMapper;
