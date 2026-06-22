@@ -13,6 +13,7 @@ import com.liftsimulator.domain.RequestState;
 import com.liftsimulator.domain.RequestType;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -198,23 +199,37 @@ public final class DirectionalScanLiftController implements RequestManagingLiftC
      * @return the nearest requested floor, or empty if no requests
      */
     private Optional<Integer> findNearestRequestedFloor(int currentFloor) {
-        Set<Integer> requestedFloors = new TreeSet<>();
-
-        // Collect all requested floors from active requests.
-        for (LiftRequest request : getActiveRequests()) {
-            requestedFloors.add(request.getTargetFloor());
-        }
-
-        // Find the nearest one.
-        return requestedFloors.stream()
-                .min((f1, f2) -> {
-                    int dist1 = Math.abs(f1 - currentFloor);
-                    int dist2 = Math.abs(f2 - currentFloor);
-                    if (dist1 != dist2) {
-                        return Integer.compare(dist1, dist2);
+        // Phase 1: prefer the nearest floor whose request is eligible for the direction
+        // required to reach it (immediately serviceable on arrival).
+        Comparator<Integer> byDistance = (f1, f2) -> {
+            int dist1 = Math.abs(f1 - currentFloor);
+            int dist2 = Math.abs(f2 - currentFloor);
+            if (dist1 != dist2) {
+                return Integer.compare(dist1, dist2);
+            }
+            return Integer.compare(f1, f2);
+        };
+        Optional<Integer> directlyServiceable = getActiveRequests().stream()
+                .filter(request -> {
+                    int target = request.getTargetFloor();
+                    if (target > currentFloor) {
+                        return isEligibleForDirection(request, Direction.UP);
+                    } else if (target < currentFloor) {
+                        return isEligibleForDirection(request, Direction.DOWN);
                     }
-                    return Integer.compare(f1, f2);
-                });
+                    return true;
+                })
+                .map(LiftRequest::getTargetFloor)
+                .min(byDistance);
+        if (directlyServiceable.isPresent()) {
+            return directlyServiceable;
+        }
+        // Phase 2: no directly serviceable request exists (e.g. only an opposite-direction
+        // hall call on the far side). Fall back to nearest regardless of eligibility so
+        // the lift still travels toward it and self-corrects on arrival via reversal.
+        return getActiveRequests().stream()
+                .map(LiftRequest::getTargetFloor)
+                .min(byDistance);
     }
 
     private Optional<Integer> findNextRequestedFloorInDirection(int currentFloor, Direction direction) {

@@ -283,7 +283,6 @@ public class SimulationRunExecutionService {
             List<PassengerFlowDTO> flows = flowsByTick.getOrDefault((int) currentTick, List.of());
             for (PassengerFlowDTO flow : flows) {
                 int passengers = flow.passengers() != null ? flow.passengers() : 1;
-                metrics.recordPassengerFlow(flow, passengers);
 
                 // Determine direction based on origin and destination floors
                 Direction direction;
@@ -295,6 +294,8 @@ public class SimulationRunExecutionService {
                     // Same floor - skip this flow as it doesn't require lift movement
                     continue;
                 }
+
+                metrics.recordPassengerFlow(flow, passengers);
 
                 // One hall call per flow; passenger count is carried on the request for KPI accounting
                 LiftRequest request = LiftRequest.hallCall(flow.originFloor(), direction, passengers);
