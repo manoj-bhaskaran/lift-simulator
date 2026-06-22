@@ -90,7 +90,7 @@ The **frontend admin UI** provides:
 - **Lift Systems Management** — full CRUD with list and detail views
 - **Version Management** — create, publish, and archive versioned configurations with optimistic locking, single-published-version enforcement, pagination, sorting, filtering, complete JSON examples, and schema guidance in the configuration editor
 - **Scenario Builder** — template-based or custom passenger-flow scenarios with server-side validation, validated copy-to-version reuse, and an advanced JSON editor
-- **Simulator Runs** — launch published versions with scenarios, poll status, recover orphaned active runs after restarts, list runs with capped pagination and documented sorting (`createdAt`, `startedAt`, `endedAt`, `status`, `id`), bulk-cancel active runs, bulk-delete completed runs with post-commit artefact cleanup, and review pickup-latency KPI results with artefact downloads and CLI reproduction hints
+- **Simulator Runs** — launch published versions with scenarios, poll status, recover orphaned active runs after restarts, list runs with capped pagination and documented sorting (`createdAt`, `startedAt`, `endedAt`, `status`, `id`; ignore-case modifiers rejected), bulk-cancel active runs, bulk-delete completed runs with post-commit artefact cleanup, and review pickup-latency KPI results with artefact downloads and CLI reproduction hints
 - **Configuration Editor & Validator** — edit and validate configuration JSON before publishing
 - **Health Check** — monitor backend service status
 

@@ -529,6 +529,18 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
     }
 
     @Test
+    public void testListSimulationRuns_Pagination_RejectsIgnoreCaseSortModifier() throws Exception {
+        mockMvc.perform(get("/api/v1/simulation-runs?page=0&size=20&sort=status,asc,ignorecase")
+                .header(API_KEY_HEADER, API_KEY_VALUE))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value(
+                    "Unsupported ignore-case simulation run sort modifier for: status. "
+                            + "Allowed sort properties: createdAt, endedAt, id, startedAt, status; "
+                            + "ignore-case sorting is not supported."));
+    }
+
+    @Test
     public void testListSimulationRuns_Pagination_MaxSizeEnforced() throws Exception {
         // Requesting size=200 should be capped at 100
         mockMvc.perform(get("/api/v1/simulation-runs?page=0&size=200")

@@ -82,7 +82,8 @@ public class SimulationRunController {
         summary = "List simulation runs",
         description = "Retrieves simulation runs with optional filtering by system ID or status. "
             + "Supports pagination via ?page=0&size=20&sort=createdAt,desc. "
-            + "Allowed sort properties are createdAt, startedAt, endedAt, status, and id. "
+            + "Allowed sort properties are createdAt, startedAt, endedAt, status, and id; "
+            + "ignore-case sort modifiers are rejected. "
             + "Default page size is 20; maximum is 100."
     )
     @ApiResponse(responseCode = "200", description = "Successfully retrieved simulation runs")

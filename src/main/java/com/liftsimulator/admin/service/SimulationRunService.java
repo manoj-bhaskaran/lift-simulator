@@ -274,7 +274,8 @@ public class SimulationRunService {
      * Returns a {@link Pageable} that is identical to the input but with the page size
      * capped at {@value #MAX_PAGE_SIZE}. Falls back to default sort (createdAt DESC)
      * when the caller provides no sort criteria. Rejects sort properties outside the
-     * documented allowlist before they reach Spring Data query construction.
+     * documented allowlist and ignore-case sort modifiers before they reach Spring Data
+     * query construction.
      */
     private Pageable capPageSize(Pageable pageable) {
         Sort sort = pageable.getSort().isSorted()
@@ -285,20 +286,36 @@ public class SimulationRunService {
     }
 
     private Sort validateSort(Sort sort) {
+        String allowedProperties = allowedSortPropertiesMessage();
         List<String> invalidProperties = sort.stream()
                 .map(Sort.Order::getProperty)
                 .filter(property -> !ALLOWED_SORT_PROPERTIES.contains(property))
                 .distinct()
                 .toList();
         if (!invalidProperties.isEmpty()) {
-            String allowedProperties = ALLOWED_SORT_PROPERTIES.stream()
-                    .sorted()
-                    .collect(Collectors.joining(", "));
             throw new IllegalArgumentException("Unsupported simulation run sort property: "
                     + String.join(", ", invalidProperties)
                     + ". Allowed sort properties: " + allowedProperties);
         }
+
+        List<String> ignoreCaseProperties = sort.stream()
+                .filter(Sort.Order::isIgnoreCase)
+                .map(Sort.Order::getProperty)
+                .distinct()
+                .toList();
+        if (!ignoreCaseProperties.isEmpty()) {
+            throw new IllegalArgumentException("Unsupported ignore-case simulation run sort modifier for: "
+                    + String.join(", ", ignoreCaseProperties)
+                    + ". Allowed sort properties: " + allowedProperties
+                    + "; ignore-case sorting is not supported.");
+        }
         return sort;
+    }
+
+    private String allowedSortPropertiesMessage() {
+        return ALLOWED_SORT_PROPERTIES.stream()
+                .sorted()
+                .collect(Collectors.joining(", "));
     }
 
     /**
