@@ -408,7 +408,6 @@ function ScenarioForm() {
       }
 
       const response = await scenariosApi.validateScenario({
-        name: scenarioName,
         scenarioJson: scenarioJson,
         liftSystemVersionId: parseInt(selectedVersionId, 10)
       });

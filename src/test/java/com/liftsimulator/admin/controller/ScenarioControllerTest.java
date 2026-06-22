@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.LocalIntegrationTest;
 import com.liftsimulator.admin.controller.fixtures.ControllerApiFixtures;
 import com.liftsimulator.admin.dto.ScenarioRequest;
+import com.liftsimulator.admin.dto.ScenarioValidateRequest;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
@@ -161,10 +162,7 @@ public class ScenarioControllerTest extends LocalIntegrationTest {
 
     @Test
     public void testValidateScenario_UnknownProperty_ReturnsValidationResponse() throws Exception {
-        ScenarioRequest request = scenarioRequest(
-            "Unsupported Scenario",
-            ControllerApiFixtures.scenarioWithUnknownProperty()
-        );
+        ScenarioValidateRequest request = validateRequest(ControllerApiFixtures.scenarioWithUnknownProperty());
 
         mockMvc.perform(post("/api/v1/scenarios/validate")
                 .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
@@ -176,6 +174,31 @@ public class ScenarioControllerTest extends LocalIntegrationTest {
             .andExpect(jsonPath("$.errors[0].field").value("unsupportedMode"))
             .andExpect(jsonPath("$.errors[0].message")
                 .value("Unknown property 'unsupportedMode' is not allowed in scenario schema"));
+    }
+
+    @Test
+    public void testValidateScenario_WithoutName_Succeeds() throws Exception {
+        ScenarioValidateRequest request = validateRequest(ControllerApiFixtures.validScenario());
+
+        mockMvc.perform(post("/api/v1/scenarios/validate")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.valid").value(true));
+    }
+
+    @Test
+    public void testValidateScenario_MissingRequiredFields_ReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/v1/scenarios/validate")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value("Validation failed"))
+            .andExpect(jsonPath("$.fieldErrors.scenarioJson").value("Scenario JSON is required"))
+            .andExpect(jsonPath("$.fieldErrors.liftSystemVersionId")
+                .value("Lift system version ID is required"));
     }
 
 
@@ -251,5 +274,9 @@ public class ScenarioControllerTest extends LocalIntegrationTest {
 
     private ScenarioRequest scenarioRequest(String name, String scenarioJson) throws Exception {
         return new ScenarioRequest(name, objectMapper.readTree(scenarioJson), version.getId());
+    }
+
+    private ScenarioValidateRequest validateRequest(String scenarioJson) throws Exception {
+        return new ScenarioValidateRequest(objectMapper.readTree(scenarioJson), version.getId());
     }
 }
