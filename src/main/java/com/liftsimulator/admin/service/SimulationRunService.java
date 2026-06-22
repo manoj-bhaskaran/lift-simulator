@@ -218,7 +218,7 @@ public class SimulationRunService {
             if (scenarioDefinition.durationTicks() != null) {
                 return scenarioDefinition.durationTicks().longValue();
             }
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             LOGGER.warn("Failed to extract durationTicks from scenario {}: {}", scenario.getId(), ex.getMessage());
         }
         return null;
