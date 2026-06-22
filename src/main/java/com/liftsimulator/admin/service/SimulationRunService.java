@@ -31,7 +31,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 /**
  * Service for managing simulation runs.
@@ -45,6 +47,14 @@ public class SimulationRunService {
     private static final String STARTUP_RECOVERY_ERROR_MESSAGE =
             "Run was still RUNNING when the application started; marking it FAILED because no in-memory "
                     + "executor task can survive a JVM restart.";
+
+    private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
+            "createdAt",
+            "startedAt",
+            "endedAt",
+            "status",
+            "id"
+    );
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -239,7 +249,8 @@ public class SimulationRunService {
      * Get a page of runs with optional filtering by lift system ID and status.
      * Enforces a maximum page size of {@value #MAX_PAGE_SIZE}. Requests with a larger
      * page size are silently capped. Defaults to sorting by {@code createdAt} descending
-     * when the caller does not supply an explicit sort.
+     * when the caller does not supply an explicit sort. Sort properties are restricted
+     * to {@code createdAt}, {@code startedAt}, {@code endedAt}, {@code status}, and {@code id}.
      *
      * @param liftSystemId optional lift system ID filter
      * @param status optional status filter
@@ -262,14 +273,32 @@ public class SimulationRunService {
     /**
      * Returns a {@link Pageable} that is identical to the input but with the page size
      * capped at {@value #MAX_PAGE_SIZE}. Falls back to default sort (createdAt DESC)
-     * when the caller provides no sort criteria.
+     * when the caller provides no sort criteria. Rejects sort properties outside the
+     * documented allowlist before they reach Spring Data query construction.
      */
     private Pageable capPageSize(Pageable pageable) {
         Sort sort = pageable.getSort().isSorted()
-                ? pageable.getSort()
+                ? validateSort(pageable.getSort())
                 : Sort.by(Sort.Direction.DESC, "createdAt");
         int size = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
         return PageRequest.of(pageable.getPageNumber(), size, sort);
+    }
+
+    private Sort validateSort(Sort sort) {
+        List<String> invalidProperties = sort.stream()
+                .map(Sort.Order::getProperty)
+                .filter(property -> !ALLOWED_SORT_PROPERTIES.contains(property))
+                .distinct()
+                .toList();
+        if (!invalidProperties.isEmpty()) {
+            String allowedProperties = ALLOWED_SORT_PROPERTIES.stream()
+                    .sorted()
+                    .collect(Collectors.joining(", "));
+            throw new IllegalArgumentException("Unsupported simulation run sort property: "
+                    + String.join(", ", invalidProperties)
+                    + ". Allowed sort properties: " + allowedProperties);
+        }
+        return sort;
     }
 
     /**
