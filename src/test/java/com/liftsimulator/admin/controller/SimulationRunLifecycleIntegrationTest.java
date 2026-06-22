@@ -89,7 +89,7 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
         testSystem = liftSystemRepository.save(testSystem);
 
         testVersion = new LiftSystemVersion(testSystem, 1,
-            "{\"minFloor\": 0, \"maxFloor\": 10, \"lifts\": 2, \"travelTicksPerFloor\": 1, " +
+            "{\"minFloor\": 0, \"maxFloor\": 10, \"lifts\": 1, \"travelTicksPerFloor\": 1, " +
             "\"doorTransitionTicks\": 2, \"doorDwellTicks\": 3, \"doorReopenWindowTicks\": 2, " +
             "\"homeFloor\": 0, \"idleTimeoutTicks\": 5, \"controllerStrategy\": \"NEAREST_REQUEST_ROUTING\", " +
             "\"idleParkingMode\": \"PARK_TO_HOME_FLOOR\"}");

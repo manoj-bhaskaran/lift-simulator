@@ -12,7 +12,7 @@ export const VALID_CONFIGS = {
   basicOffice: {
     minFloor: 0,
     maxFloor: 9,
-    lifts: 2,
+    lifts: 1,
     travelTicksPerFloor: 1,
     doorTransitionTicks: 2,
     doorDwellTicks: 3,
@@ -25,7 +25,7 @@ export const VALID_CONFIGS = {
   highRiseResidential: {
     minFloor: 0,
     maxFloor: 29,
-    lifts: 4,
+    lifts: 1,
     travelTicksPerFloor: 2,
     doorTransitionTicks: 3,
     doorDwellTicks: 5,
@@ -51,7 +51,7 @@ export const VALID_CONFIGS = {
   large: {
     minFloor: 0,
     maxFloor: 99,
-    lifts: 8,
+    lifts: 1,
     travelTicksPerFloor: 3,
     doorTransitionTicks: 4,
     doorDwellTicks: 6,
@@ -96,7 +96,7 @@ export const INVALID_CONFIGS = {
   homeFloorOutOfBounds: {
     minFloor: 0,
     maxFloor: 9,
-    lifts: 2,
+    lifts: 1,
     travelTicksPerFloor: 1,
     doorTransitionTicks: 2,
     doorDwellTicks: 3,

@@ -13,7 +13,7 @@ public final class ControllerApiFixtures {
             {
                 "minFloor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -98,7 +98,7 @@ public final class ControllerApiFixtures {
             {
                 "minFloor": 5,
                 "maxFloor": 5,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,
@@ -116,7 +116,7 @@ public final class ControllerApiFixtures {
             {
                 "minFloor": 0,
                 "maxFloor": 9,
-                "lifts": 2,
+                "lifts": 1,
                 "travelTicksPerFloor": 1,
                 "doorTransitionTicks": 2,
                 "doorDwellTicks": 3,

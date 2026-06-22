@@ -1,7 +1,7 @@
 {
   "minFloor": 0,
   "maxFloor": 29,
-  "lifts": 4,
+  "lifts": 1,
   "travelTicksPerFloor": 2,
   "doorTransitionTicks": 3,
   "doorDwellTicks": 5,
