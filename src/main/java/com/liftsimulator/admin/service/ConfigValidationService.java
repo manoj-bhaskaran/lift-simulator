@@ -212,6 +212,15 @@ public class ConfigValidationService {
             ));
         }
 
+        // Validate that lifts == 1 (multi-lift simulation not supported in v1.0.0)
+        if (config.lifts() != 1) {
+            errors.add(new ValidationIssue(
+                "lifts",
+                "Number of lifts must be 1. Multi-lift simulation is not supported in v1.0.0.",
+                ValidationIssue.Severity.ERROR
+            ));
+        }
+
         // Warning: If number of lifts is greater than number of floors
         if (config.maxFloor() > config.minFloor()) {
             int floorCount = config.maxFloor() - config.minFloor() + 1;
