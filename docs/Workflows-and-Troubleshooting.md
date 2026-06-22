@@ -96,7 +96,7 @@ Event rows are comma-delimited, and each request carries a unique alias (`p1`, `
 
 **Event Types:**
 - `<tick>, car_call, <alias>, <destination_floor>` - Passenger already inside a lift requesting a destination floor
-- `<tick>, hall_call, <alias>, <floor>, <direction>` - Passenger waiting at a floor (direction `UP` or `DOWN`)
+- `<tick>, hall_call, <alias>, <floor>, <direction>[, <passengers>]` - Passenger(s) waiting at a floor (direction `UP` or `DOWN`; optional `passengers` count, default 1)
 - `<tick>, cancel, <alias>` - Cancel a previously registered request by its alias
 - `<tick>, out_of_service` - Take the lift out of service
 - `<tick>, return_to_service` - Return the lift to service
@@ -331,6 +331,8 @@ Comprehensive results with KPIs and metrics:
     "requestsTotal": 150,
     "pickupRequestsServed": 145,
     "pickupRequestsCancelled": 5,
+    "passengersServed": 145,
+    "passengersCancelled": 5,
     "avgPickupWaitTicks": 25.5,
     "maxPickupWaitTicks": 85,
     "idleTicks": 200,

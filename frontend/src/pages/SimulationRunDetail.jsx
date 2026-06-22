@@ -16,6 +16,8 @@ const kpiLabels = {
   requestsTotal: 'Requests',
   pickupRequestsServed: 'Pickup Requests Served',
   pickupRequestsCancelled: 'Pickup Requests Cancelled',
+  passengersServed: 'Passengers Served',
+  passengersCancelled: 'Passengers Cancelled',
   avgPickupWaitTicks: 'Avg Wait to Pickup (ticks)',
   maxPickupWaitTicks: 'Max Wait to Pickup (ticks)',
   idleTicks: 'Idle Ticks',

@@ -50,6 +50,7 @@ class RunMetricsTest {
 
         assertEquals(0, kpis.get("requestsTotal").asInt());
         assertEquals(0, kpis.get("pickupRequestsServed").asInt());
+        assertEquals(0, kpis.get("passengersServed").asInt());
         assertEquals(0.0, kpis.get("avgPickupWaitTicks").asDouble(), 1e-9);
         assertEquals(0L, kpis.get("maxPickupWaitTicks").asLong());
     }
@@ -63,6 +64,7 @@ class RunMetricsTest {
 
         ObjectNode kpis = metrics.toKpisNode(objectMapper);
         assertEquals(1, kpis.get("pickupRequestsServed").asInt());
+        assertEquals(1, kpis.get("passengersServed").asInt());
         assertEquals(10L, kpis.get("maxPickupWaitTicks").asLong());
         assertEquals(10.0, kpis.get("avgPickupWaitTicks").asDouble(), 1e-9);
     }
@@ -77,7 +79,34 @@ class RunMetricsTest {
 
         ObjectNode kpis = metrics.toKpisNode(objectMapper);
         assertEquals(1, kpis.get("pickupRequestsCancelled").asInt());
+        assertEquals(1, kpis.get("passengersCancelled").asInt());
         assertEquals(0, kpis.get("pickupRequestsServed").asInt());
+        assertEquals(0, kpis.get("passengersServed").asInt());
+    }
+
+    @Test
+    void toKpisNodePassengersServedSumsPassengerCount() {
+        LiftRequest req = LiftRequest.hallCall(1, Direction.UP, 5);
+        metrics.recordRequestCreation(req, 0L);
+        req.completeRequest();
+        metrics.recordTerminalRequests(10L);
+
+        ObjectNode kpis = metrics.toKpisNode(objectMapper);
+        assertEquals(1, kpis.get("pickupRequestsServed").asInt());
+        assertEquals(5, kpis.get("passengersServed").asInt());
+    }
+
+    @Test
+    void toKpisNodePassengersCancelledSumsPassengerCount() {
+        LiftRequest req = LiftRequest.hallCall(2, Direction.DOWN, 3);
+        metrics.recordRequestCreation(req, 5L);
+        req.transitionTo(RequestState.QUEUED);
+        req.transitionTo(RequestState.CANCELLED);
+        metrics.recordTerminalRequests(15L);
+
+        ObjectNode kpis = metrics.toKpisNode(objectMapper);
+        assertEquals(1, kpis.get("pickupRequestsCancelled").asInt());
+        assertEquals(3, kpis.get("passengersCancelled").asInt());
     }
 
     @Test

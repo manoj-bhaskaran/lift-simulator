@@ -90,6 +90,8 @@ public final class RunMetrics {
         kpis.put("requestsTotal", kpiValues.requestsTotal());
         kpis.put("pickupRequestsServed", kpiValues.pickupRequestsServed());
         kpis.put("pickupRequestsCancelled", kpiValues.pickupRequestsCancelled());
+        kpis.put("passengersServed", kpiValues.passengersServed());
+        kpis.put("passengersCancelled", kpiValues.passengersCancelled());
         kpis.put("avgPickupWaitTicks", kpiValues.avgPickupWaitTicks());
         kpis.put("maxPickupWaitTicks", kpiValues.maxPickupWaitTicks());
         kpis.put("idleTicks", kpiValues.idleTicks());
@@ -140,17 +142,21 @@ public final class RunMetrics {
     private CachedKpis computeKpis() {
         long completed = 0L;
         long cancelled = 0L;
+        long passengersServed = 0L;
+        long passengersCancelled = 0L;
         long maxWait = 0L;
         long totalWait = 0L;
 
         for (RequestLifecycle lifecycle : lifecycles.values()) {
             if (lifecycle.terminalState() == RequestState.COMPLETED) {
                 completed++;
+                passengersServed += lifecycle.request().getPassengerCount();
                 long waitTicks = lifecycle.waitTicks();
                 totalWait += waitTicks;
                 maxWait = Math.max(maxWait, waitTicks);
             } else if (lifecycle.terminalState() == RequestState.CANCELLED) {
                 cancelled++;
+                passengersCancelled += lifecycle.request().getPassengerCount();
             }
         }
 
@@ -168,6 +174,8 @@ public final class RunMetrics {
             lifecycles.size(),
             completed,
             cancelled,
+            passengersServed,
+            passengersCancelled,
             avgWait,
             maxWait,
             idleTicks,
@@ -185,6 +193,8 @@ public final class RunMetrics {
         int requestsTotal,
         long pickupRequestsServed,
         long pickupRequestsCancelled,
+        long passengersServed,
+        long passengersCancelled,
         double avgPickupWaitTicks,
         long maxPickupWaitTicks,
         long idleTicks,
