@@ -274,6 +274,43 @@ public class SimulationRunExecutionServiceTest {
     }
 
     @Test
+    public void sameTickRequestReportsAtLeastOneTickWait() throws Exception {
+        Path runDir = tempDir.resolve("run-wait");
+        Files.createDirectories(runDir);
+        SimulationRun run = runWithArtefactDirectory(21L, runDir, SHORT_SCENARIO);
+        AtomicReference<SimulationRun> storedRun = prepareRepository(run);
+        when(configValidationService.validate(VALID_CONFIG)).thenReturn(validConfigResponse());
+        when(scenarioValidationService.validate(any(JsonNode.class))).thenReturn(validScenarioResponse());
+
+        executionService.submitRunForExecution(21L);
+
+        waitForExecutionToFinish(storedRun, SimulationRun.RunStatus.SUCCEEDED);
+        JsonNode results = objectMapper.readTree(runDir.resolve("results.json").toFile());
+        double avgWait = results.at("/kpis/avgPickupWaitTicks").asDouble();
+        assertTrue(avgWait >= 1.0,
+            "A request created and served within the simulation must report at least 1 tick wait, got " + avgWait);
+    }
+
+    @Test
+    public void finalPostTickLiftStateIsRecorded() throws Exception {
+        Path runDir = tempDir.resolve("run-final-state");
+        Files.createDirectories(runDir);
+        SimulationRun run = runWithArtefactDirectory(22L, runDir, SHORT_SCENARIO);
+        AtomicReference<SimulationRun> storedRun = prepareRepository(run);
+        when(configValidationService.validate(VALID_CONFIG)).thenReturn(validConfigResponse());
+        when(scenarioValidationService.validate(any(JsonNode.class))).thenReturn(validScenarioResponse());
+
+        executionService.submitRunForExecution(22L);
+
+        waitForExecutionToFinish(storedRun, SimulationRun.RunStatus.SUCCEEDED);
+        JsonNode results = objectMapper.readTree(runDir.resolve("results.json").toFile());
+        // durationTicks=6 iterations + 1 post-loop state → 7 recorded ticks
+        long perLiftTotalTicks = results.at("/perLift/0/totalTicks").asLong();
+        assertEquals(7L, perLiftTotalTicks,
+            "totalTicks must equal durationTicks + 1 to include the post-final-tick lift state");
+    }
+
+    @Test
     public void failRunWithMessageUsesDirectFailedUpdateWhenLifecycleTransitionRaces() throws Exception {
         SimulationRun run = new SimulationRun();
         run.setId(9L);
