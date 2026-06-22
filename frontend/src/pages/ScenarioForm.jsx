@@ -312,6 +312,17 @@ function ScenarioForm() {
    * @returns {Object} The scenario JSON
    * @throws {Error} If JSON text is invalid when in Advanced JSON Mode
    */
+
+  const validateScenarioJsonClientSide = (scenarioJson) => {
+    const duration = Number(scenarioJson?.durationTicks);
+
+    if (!Number.isInteger(duration) || duration < 1) {
+      return { durationTicks: 'Duration ticks must be at least 1' };
+    }
+
+    return {};
+  };
+
   const buildScenarioJson = () => {
     // If in Advanced JSON Mode, parse and return the JSON text
     if (showAdvancedJson) {
@@ -389,6 +400,13 @@ function ScenarioForm() {
         return;
       }
 
+      const clientErrors = validateScenarioJsonClientSide(scenarioJson);
+      if (Object.keys(clientErrors).length > 0) {
+        setFormErrors(clientErrors);
+        setValidating(false);
+        return;
+      }
+
       const response = await scenariosApi.validateScenario({
         name: scenarioName,
         scenarioJson: scenarioJson,
@@ -448,6 +466,13 @@ function ScenarioForm() {
       } catch (error) {
         console.error('JSON parsing error during save:', error);
         setAlertMessage('Invalid JSON format. Please fix the JSON before saving.');
+        setSaving(false);
+        return;
+      }
+
+      const clientErrors = validateScenarioJsonClientSide(scenarioJson);
+      if (Object.keys(clientErrors).length > 0) {
+        setFormErrors(clientErrors);
         setSaving(false);
         return;
       }
@@ -693,10 +718,19 @@ function ScenarioForm() {
                   type="number"
                   id="durationTicks"
                   value={durationTicks}
-                  onChange={(e) => setDurationTicks(e.target.value)}
+                  onChange={(e) => {
+                    setDurationTicks(e.target.value);
+                    if (formErrors.durationTicks) {
+                      setFormErrors(prev => ({ ...prev, durationTicks: '' }));
+                    }
+                  }}
+                  className={formErrors.durationTicks ? 'error' : ''}
                   min="1"
                   placeholder="e.g., 100"
                 />
+                {formErrors.durationTicks && (
+                  <span className="error-message">{formErrors.durationTicks}</span>
+                )}
                 <p className="help-text">
                   How long the simulation will run (each tick represents one time unit)
                 </p>

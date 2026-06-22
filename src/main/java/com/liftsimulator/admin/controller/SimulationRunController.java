@@ -235,6 +235,9 @@ public class SimulationRunController {
         try {
             String logs = artefactService.readLogs(run, tail);
             return ResponseEntity.ok(SimulationLogResponse.success(id, logs, tail));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(SimulationLogResponse.failure(id, e.getMessage()));
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(SimulationLogResponse.failure(id, "Failed to read logs: " + e.getMessage()));

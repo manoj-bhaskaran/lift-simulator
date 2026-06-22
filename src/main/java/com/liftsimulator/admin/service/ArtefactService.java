@@ -34,6 +34,8 @@ public class ArtefactService {
     private static final int MAX_TAIL_LINES = 10000;
     private static final long MAX_LOG_BYTES = 1_048_576L;
     private static final long MAX_RESULTS_BYTES = 1_048_576L;
+    private static final String CANONICAL_LOG_FILE = "simulation.log";
+    private static final String CANONICAL_RESULTS_FILE = "results.json";
 
     private final ObjectMapper objectMapper;
 
@@ -200,23 +202,16 @@ public class ArtefactService {
             throw new ArtefactStateException("Artefact base path is not set for run " + run.getId());
         }
 
-        // Try common log file names
-        String[] logFileNames = {"simulation.log", "output.log", "run.log"};
-        Path logPath = null;
+        Path logPath = validateAndResolvePath(basePath, CANONICAL_LOG_FILE);
 
-        for (String logFileName : logFileNames) {
-            Path candidatePath = validateAndResolvePath(basePath, logFileName);
-            if (Files.exists(candidatePath)) {
-                logPath = candidatePath;
-                break;
-            }
-        }
-
-        if (logPath == null || !Files.exists(logPath)) {
+        if (!Files.exists(logPath)) {
             return "No log file found for simulation run " + run.getId();
         }
 
-        // Validate tail parameter
+        if (tail != null && tail < 0) {
+            throw new IllegalArgumentException("tail must be greater than or equal to 0");
+        }
+
         int linesToRead = tail != null ? Math.min(tail, MAX_TAIL_LINES) : -1;
 
         if (linesToRead < 0) {
@@ -241,19 +236,9 @@ public class ArtefactService {
             throw new ArtefactStateException("Artefact base path is not set for run " + run.getId());
         }
 
-        // Try common result file names
-        String[] resultFileNames = {"results.json", "output.json", "simulation-results.json"};
-        Path resultsPath = null;
+        Path resultsPath = validateAndResolvePath(basePath, CANONICAL_RESULTS_FILE);
 
-        for (String resultFileName : resultFileNames) {
-            Path candidatePath = validateAndResolvePath(basePath, resultFileName);
-            if (Files.exists(candidatePath)) {
-                resultsPath = candidatePath;
-                break;
-            }
-        }
-
-        if (resultsPath == null || !Files.exists(resultsPath)) {
+        if (!Files.exists(resultsPath)) {
             throw new IOException("No results file found for simulation run " + run.getId());
         }
 

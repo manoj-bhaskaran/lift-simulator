@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { liftSystemsApi } from '../api/liftSystemsApi';
+import { getApiErrorMessage } from '../utils/errorHandlers';
 import './ConfigValidator.css';
 
 function ConfigValidator() {
@@ -23,7 +24,7 @@ function ConfigValidator() {
       if (err.name === 'SyntaxError') {
         setError('Invalid JSON format');
       } else {
-        setError(err.response?.data?.message || 'Validation failed');
+        setError(getApiErrorMessage(err, 'Validation failed'));
       }
     } finally {
       setValidating(false);
