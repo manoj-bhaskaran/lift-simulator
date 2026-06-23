@@ -50,7 +50,7 @@ function Simulator() {
   const [runInfo, setRunInfo] = useState(null);
   const [results, setResults] = useState(null);
   const [artefacts, setArtefacts] = useState([]);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [isStarting, setIsStarting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -213,7 +213,7 @@ function Simulator() {
     } catch (err) {
       handleApiError(err, setRunError, 'Failed to refresh run status');
     }
-  }, [runInfo?.id]);
+  }, [runInfo]);
 
   useEffect(() => {
     if (!runInfo?.id || isTerminal) {
@@ -316,7 +316,7 @@ function Simulator() {
       return null;
     }
     return Math.min(100, (runInfo.currentTick / runInfo.totalTicks) * 100);
-  }, [runInfo?.currentTick, runInfo?.totalTicks]);
+  }, [runInfo]);
 
   const artefactDownloadUrl = useCallback((path) => {
     if (!runInfo?.id || !path) {
@@ -328,7 +328,7 @@ function Simulator() {
       .map((segment) => encodeURIComponent(segment))
       .join('/');
     return `${normalizedApiBaseUrl}/simulation-runs/${runInfo.id}/artefacts/${encodedPath}`;
-  }, [runInfo?.id]);
+  }, [runInfo]);
 
   const handleArtefactDownload = useCallback(
     async (event, artefact) => {

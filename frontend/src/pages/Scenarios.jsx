@@ -36,10 +36,6 @@ function Scenarios() {
   const [targetVersionId, setTargetVersionId] = useState('');
   const [copying, setCopying] = useState(false);
 
-  useEffect(() => {
-    loadScenarios();
-  }, []);
-
   /**
    * Loads all scenarios from the API.
    * Sets loading state and handles errors appropriately.
@@ -56,6 +52,10 @@ function Scenarios() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadScenarios();
+  }, []);
 
   /**
    * Navigates to the scenario create form.
