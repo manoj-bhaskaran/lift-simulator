@@ -13,7 +13,7 @@ function SimulatorLanding() {
   const [error, setError] = useState(null);
   const [versionsError, setVersionsError] = useState(null);
   const [selectedSystemId, setSelectedSystemId] = useState('');
-  const [selectedVersionId, setSelectedVersionId] = useState('');
+  const [selectedVersionNumber, setSelectedVersionNumber] = useState('');
   const [versions, setVersions] = useState([]);
   const [isLoadingVersions, setIsLoadingVersions] = useState(false);
   const versionsRequestId = useRef(0);
@@ -38,7 +38,7 @@ function SimulatorLanding() {
   useEffect(() => {
     if (!selectedSystemId) {
       setVersions([]);
-      setSelectedVersionId('');
+      setSelectedVersionNumber('');
       return;
     }
 
@@ -58,7 +58,7 @@ function SimulatorLanding() {
           return;
         }
         setVersions([]);
-        setSelectedVersionId('');
+        setSelectedVersionNumber('');
         handleApiError(err, setVersionsError, 'Failed to load versions');
       } finally {
         if (versionsRequestId.current === requestId) {
@@ -80,11 +80,11 @@ function SimulatorLanding() {
   );
 
   const handleProceed = () => {
-    if (!selectedSystemId || !selectedVersionId) {
+    if (!selectedSystemId || !selectedVersionNumber) {
       return;
     }
 
-    navigate(`/simulator/run?systemId=${selectedSystemId}&versionId=${selectedVersionId}`);
+    navigate(`/simulator/run?systemId=${selectedSystemId}&versionNumber=${selectedVersionNumber}`);
   };
 
   return (
@@ -129,7 +129,7 @@ function SimulatorLanding() {
                       className={isSelected ? 'btn-secondary' : 'btn-primary'}
                       onClick={() => {
                         setSelectedSystemId(String(system.id));
-                        setSelectedVersionId('');
+                        setSelectedVersionNumber('');
                       }}
                     >
                       {isSelected ? 'Selected' : 'Select System'}
@@ -164,13 +164,13 @@ function SimulatorLanding() {
             <label className="field">
               <span>Published Version</span>
               <select
-                value={selectedVersionId}
-                onChange={(event) => setSelectedVersionId(event.target.value)}
+                value={selectedVersionNumber}
+                onChange={(event) => setSelectedVersionNumber(event.target.value)}
                 disabled={!selectedSystemId || isLoadingVersions}
               >
                 <option value="">Select a published version</option>
                 {publishedVersions.map((version) => (
-                  <option key={version.id} value={version.id}>
+                  <option key={version.versionNumber} value={version.versionNumber}>
                     Version {version.versionNumber}
                   </option>
                 ))}
@@ -186,7 +186,7 @@ function SimulatorLanding() {
             <button
               className="btn-primary"
               onClick={handleProceed}
-              disabled={!selectedSystemId || !selectedVersionId}
+              disabled={!selectedSystemId || !selectedVersionNumber}
             >
               Continue to Simulation Setup
             </button>

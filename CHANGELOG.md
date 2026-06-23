@@ -16,6 +16,13 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+
+## [0.53.0] - 2026-06-23
+
+### Changed
+- **Simulation run version identifier alignment**: Changed `POST /api/v1/simulation-runs` to accept `versionNumber` scoped to `liftSystemId` instead of the surrogate `versionId`, and updated simulation run status/result payloads, frontend simulator navigation, README/API/workflow documentation, and package metadata for the 0.53.0 minor release.
+
+
 ### Fixed
 - **Simulation log tail validation**: Added controller-level validation for `GET /api/v1/simulation-runs/{id}/logs?tail=N` so non-positive or greater-than-10,000 tail values return HTTP 400 before log access, and added global `ConstraintViolationException` handling so request-parameter constraint failures no longer fall through as HTTP 500 responses. Updated README/API documentation and package metadata for the 0.52.20 patch release.
 - **Simulation run sort allowlist**: Restricted `GET /api/v1/simulation-runs` sorting to documented properties (`createdAt`, `startedAt`, `endedAt`, `status`, and `id`) and now returns HTTP 400 for unsupported sort fields or ignore-case sort modifiers instead of allowing Spring Data property lookup or non-string `lower(...)` failures to surface as HTTP 500. Updated README/API documentation and package metadata for the 0.52.19 patch release.

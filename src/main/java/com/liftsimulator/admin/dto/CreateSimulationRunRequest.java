@@ -11,9 +11,9 @@ public record CreateSimulationRunRequest(
     @JsonProperty("liftSystemId")
     Long liftSystemId,
 
-    @NotNull(message = "versionId is required")
-    @JsonProperty("versionId")
-    Long versionId,
+    @NotNull(message = "versionNumber is required")
+    @JsonProperty("versionNumber")
+    Integer versionNumber,
 
     @JsonProperty("scenarioId")
     Long scenarioId,

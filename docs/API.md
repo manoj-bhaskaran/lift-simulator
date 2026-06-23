@@ -440,7 +440,7 @@ api:
 ```bash
 curl -H "X-API-Key: <your-api-key>" \\
   -H "Content-Type: application/json" \\
-  -d '{"liftSystemId":1,"versionId":2,"scenarioId":3,"seed":12345}' \\
+  -d '{"liftSystemId":1,"versionNumber":2,"scenarioId":3,"seed":12345}' \\
   http://localhost:8080/api/v1/simulation-runs
 ```
 
@@ -493,7 +493,7 @@ Run artefacts are stored on disk using the configured `simulation.artefacts.base
     "durationTicks": 120,
     "seed": 123,
     "liftSystemId": 1,
-    "versionId": 3,
+    "versionNumber": 3,
     "scenarioId": 5
   },
   "kpis": {
@@ -581,7 +581,7 @@ All simulation run endpoints require the configured API key header.
 ```json
 {
   "liftSystemId": 1,
-  "versionId": 2,
+  "versionNumber": 2,
   "scenarioId": 3,
   "seed": 12345
 }
@@ -589,7 +589,7 @@ All simulation run endpoints require the configured API key header.
 
 **Request Fields:**
 - `liftSystemId` (required): ID of the lift system to simulate
-- `versionId` (required): ID of the version to use
+- `versionNumber` (required): version number to use within the selected lift system
 - `scenarioId` (optional): ID of the scenario to run (null for ad-hoc runs)
 - `seed` (optional): Random seed for reproducibility (auto-generated if not provided)
 
@@ -598,7 +598,7 @@ All simulation run endpoints require the configured API key header.
 {
   "id": 1,
   "liftSystemId": 1,
-  "versionId": 2,
+  "versionNumber": 2,
   "scenarioId": 3,
   "status": "RUNNING",
   "createdAt": "2026-01-23T10:00:00Z",
@@ -634,7 +634,7 @@ Retrieves the current status and details of a simulation run, including progress
 {
   "id": 1,
   "liftSystemId": 1,
-  "versionId": 2,
+  "versionNumber": 2,
   "scenarioId": 3,
   "status": "RUNNING",
   "createdAt": "2026-01-23T10:00:00Z",
@@ -673,7 +673,7 @@ Cancels a running simulation run and transitions it to a terminal `CANCELLED` st
 {
   "id": 1,
   "liftSystemId": 1,
-  "versionId": 2,
+  "versionNumber": 2,
   "scenarioId": 3,
   "status": "CANCELLED",
   "createdAt": "2026-01-23T10:00:00Z",

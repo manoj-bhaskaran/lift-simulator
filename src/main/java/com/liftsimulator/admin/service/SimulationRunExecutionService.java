@@ -506,7 +506,7 @@ public class SimulationRunExecutionService {
         try {
             SimulationRun run = getRunById(runId);
             runSummary.put("liftSystemId", run.getLiftSystem().getId());
-            runSummary.put("versionId", run.getVersion().getId());
+            runSummary.put("versionNumber", run.getVersion().getVersionNumber());
         } catch (Exception ex) {
             logger.warn("Failed to resolve run summary metadata for run {}", runId, ex);
         }

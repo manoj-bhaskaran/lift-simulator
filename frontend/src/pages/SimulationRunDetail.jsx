@@ -359,7 +359,7 @@ function SimulationRunDetail() {
           </div>
           <div>
             <span className="label">Version</span>
-            <p>{runInfo.versionId}</p>
+            <p>{runInfo.versionNumber}</p>
           </div>
           <div>
             <span className="label">Scenario</span>

@@ -89,7 +89,7 @@ public class SimulationRunDirectoryIntegrationTest extends LocalIntegrationTest 
 
     @Test
     void createAndStartRun_createsExactlyOneDirectory() throws Exception {
-        SimulationRun run = runService.createAndStartRun(testSystem.getId(), testVersion.getId(), null, 1L);
+        SimulationRun run = runService.createAndStartRun(testSystem.getId(), testVersion.getVersionNumber(), null, 1L);
         awaitTerminalRun(run.getId());
 
         // The persisted path must be inside artefactsRoot
@@ -115,7 +115,7 @@ public class SimulationRunDirectoryIntegrationTest extends LocalIntegrationTest 
 
     @Test
     void createAndStartRun_directoryNameMatchesRunId() throws Exception {
-        SimulationRun run = runService.createAndStartRun(testSystem.getId(), testVersion.getId(), null, 2L);
+        SimulationRun run = runService.createAndStartRun(testSystem.getId(), testVersion.getVersionNumber(), null, 2L);
         awaitTerminalRun(run.getId());
 
         Path runDir = Path.of(run.getArtefactBasePath());

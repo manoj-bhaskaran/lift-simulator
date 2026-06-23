@@ -42,8 +42,8 @@ function Simulator() {
   const [selectedSystemId, setSelectedSystemId] = useState(
     searchParams.get('systemId') || ''
   );
-  const [selectedVersionId, setSelectedVersionId] = useState(
-    searchParams.get('versionId') || ''
+  const [selectedVersionNumber, setSelectedVersionNumber] = useState(
+    searchParams.get('versionNumber') || ''
   );
   const [selectedScenarioId, setSelectedScenarioId] = useState('');
   const [seed, setSeed] = useState('');
@@ -83,14 +83,14 @@ function Simulator() {
     }
 
     const incomingSystemId = searchParams.get('systemId');
-    const incomingVersionId = searchParams.get('versionId');
+    const incomingVersionNumber = searchParams.get('versionNumber');
 
     if (incomingSystemId) {
       setSelectedSystemId(incomingSystemId);
     }
 
-    if (incomingVersionId) {
-      setSelectedVersionId(incomingVersionId);
+    if (incomingVersionNumber) {
+      setSelectedVersionNumber(incomingVersionNumber);
     }
 
     hasSyncedFromParams.current = true;
@@ -99,7 +99,7 @@ function Simulator() {
   const loadVersions = useCallback(async () => {
     if (!selectedSystemId) {
       setVersions([]);
-      setSelectedVersionId('');
+      setSelectedVersionNumber('');
       return;
     }
 
@@ -123,48 +123,51 @@ function Simulator() {
 
   useEffect(() => {
     if (!publishedVersions.length) {
-      setSelectedVersionId('');
+      setSelectedVersionNumber('');
       return;
     }
 
-    if (selectedVersionId) {
+    if (selectedVersionNumber) {
       const match = publishedVersions.find(
-        (version) => String(version.id) === String(selectedVersionId)
+        (version) => String(version.versionNumber) === String(selectedVersionNumber)
       );
       if (!match) {
-        setSelectedVersionId('');
+        setSelectedVersionNumber('');
       }
       return;
     }
 
-    const preferredVersionId = searchParams.get('versionId');
-    const resolvedVersion = preferredVersionId
+    const querySystemId = searchParams.get('systemId');
+    const preferredVersionNumber = searchParams.get('versionNumber');
+    const queryMatchesSelectedSystem =
+      querySystemId && String(querySystemId) === String(selectedSystemId);
+    const resolvedVersion = queryMatchesSelectedSystem && preferredVersionNumber
       ? publishedVersions.find(
-          (version) => String(version.id) === String(preferredVersionId)
+          (version) => String(version.versionNumber) === String(preferredVersionNumber)
         )
       : null;
 
     if (resolvedVersion) {
-      setSelectedVersionId(String(resolvedVersion.id));
+      setSelectedVersionNumber(String(resolvedVersion.versionNumber));
     }
-  }, [publishedVersions, searchParams, selectedVersionId]);
+  }, [publishedVersions, searchParams, selectedSystemId, selectedVersionNumber]);
 
   const selectedSystem = systems.find(
     (system) => String(system.id) === String(selectedSystemId)
   );
   const selectedVersion = publishedVersions.find(
-    (version) => String(version.id) === String(selectedVersionId)
+    (version) => String(version.versionNumber) === String(selectedVersionNumber)
   );
 
   // Filter scenarios to only show those belonging to the selected version
   const filteredScenarios = useMemo(() => {
-    if (!selectedVersionId) {
+    if (!selectedVersionNumber) {
       return [];
     }
     return scenarios.filter(
-      (scenario) => String(scenario.liftSystemVersionId) === String(selectedVersionId)
+      (scenario) => selectedVersion && String(scenario.liftSystemVersionId) === String(selectedVersion.id)
     );
-  }, [scenarios, selectedVersionId]);
+  }, [scenarios, selectedVersion, selectedVersionNumber]);
 
   const selectedScenario = scenarios.find(
     (scenario) => String(scenario.id) === String(selectedScenarioId)
@@ -175,7 +178,7 @@ function Simulator() {
 
   // Clear selected scenario when version changes if it's not compatible
   useEffect(() => {
-    if (selectedScenarioId && selectedVersionId) {
+    if (selectedScenarioId && selectedVersionNumber) {
       const isScenarioCompatible = filteredScenarios.some(
         (scenario) => String(scenario.id) === String(selectedScenarioId)
       );
@@ -184,7 +187,7 @@ function Simulator() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVersionId, filteredScenarios]);
+  }, [selectedVersionNumber, filteredScenarios]);
 
   useEffect(() => {
     if (!runInfo || isTerminal) {
@@ -256,7 +259,7 @@ function Simulator() {
   }, [isTerminal, runInfo?.id, runStatus]);
 
   const handleStartRun = async () => {
-    if (!selectedSystemId || !selectedVersionId || !selectedScenarioId) {
+    if (!selectedSystemId || !selectedVersionNumber || !selectedScenarioId) {
       setFormError('Select a lift system, published version, and scenario to continue.');
       return;
     }
@@ -265,7 +268,7 @@ function Simulator() {
       setIsStarting(true);
       const payload = {
         liftSystemId: Number(selectedSystemId),
-        versionId: Number(selectedVersionId),
+        versionNumber: Number(selectedVersionNumber),
         scenarioId: Number(selectedScenarioId),
         seed: seed ? Number(seed) : null,
       };
@@ -456,7 +459,7 @@ function Simulator() {
                 value={selectedSystemId}
                 onChange={(event) => {
                   setSelectedSystemId(event.target.value);
-                  setSelectedVersionId('');
+                  setSelectedVersionNumber('');
                 }}
               >
                 <option value="">Select a lift system</option>
@@ -471,8 +474,8 @@ function Simulator() {
             <label className="field">
               <span>Published Version</span>
               <select
-                value={selectedVersionId}
-                onChange={(event) => setSelectedVersionId(event.target.value)}
+                value={selectedVersionNumber}
+                onChange={(event) => setSelectedVersionNumber(event.target.value)}
                 disabled={!selectedSystemId || publishedVersions.length === 0}
               >
                 <option value="">Select a published version</option>
@@ -497,7 +500,7 @@ function Simulator() {
               <select
                 value={selectedScenarioId}
                 onChange={(event) => setSelectedScenarioId(event.target.value)}
-                disabled={!selectedVersionId || filteredScenarios.length === 0}
+                disabled={!selectedVersionNumber || filteredScenarios.length === 0}
               >
                 <option value="">Select a scenario</option>
                 {filteredScenarios.map((scenario) => (
@@ -506,10 +509,10 @@ function Simulator() {
                   </option>
                 ))}
               </select>
-              {!selectedVersionId && (
+              {!selectedVersionNumber && (
                 <small>Select a version to view compatible scenarios.</small>
               )}
-              {selectedVersionId && filteredScenarios.length === 0 && (
+              {selectedVersionNumber && filteredScenarios.length === 0 && (
                 <small className="warning">
                   No scenarios available for this version. Create one from the Scenarios page.
                 </small>
@@ -534,7 +537,7 @@ function Simulator() {
                   isStarting ||
                   (runInfo && !isTerminal) ||
                   !selectedSystemId ||
-                  !selectedVersionId ||
+                  !selectedVersionNumber ||
                   !selectedScenarioId
                 }
               >
@@ -588,7 +591,7 @@ function Simulator() {
             </div>
             <div>
               <span className="label">Version</span>
-              <p>{selectedVersion ? `Version ${selectedVersion.versionNumber}` : runInfo.versionId}</p>
+              <p>{selectedVersion ? `Version ${selectedVersion.versionNumber}` : runInfo.versionNumber}</p>
             </div>
             <div>
               <span className="label">Scenario</span>

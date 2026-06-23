@@ -471,7 +471,7 @@ function SimulationRuns() {
                   </td>
                   <td className="run-id">#{run.id}</td>
                   <td>{run.liftSystemName || `System ${run.liftSystemId}`}</td>
-                  <td>v{run.versionNumber || run.versionId}</td>
+                  <td>v{run.versionNumber}</td>
                   <td>{run.scenarioName || '—'}</td>
                   <td>
                     <span className={`status-badge ${getStatusClass(run.status)}`}>

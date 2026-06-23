@@ -12,16 +12,14 @@ import { Link } from 'react-router-dom';
  *
  * @param {Object} props - Component props
  * @param {string|number} props.systemId - Unique identifier of the lift system
- * @param {string|number} props.versionId - Unique identifier of the version
  * @param {number} props.versionNumber - Version number being acted upon
  * @param {'DRAFT'|'PUBLISHED'|'ARCHIVED'} props.status - Current status of the version
  * @param {Function} props.onPublish - Callback function invoked when Publish button is clicked, receives versionNumber
- * @param {Function} props.onRunSimulation - Callback function invoked when Run Simulator button is clicked, receives versionId
+ * @param {Function} props.onRunSimulation - Callback function invoked when Run Simulator button is clicked, receives versionNumber
  * @returns {JSX.Element} The version actions component
  */
 function VersionActions({
   systemId,
-  versionId,
   versionNumber,
   status,
   onPublish,
@@ -48,7 +46,7 @@ function VersionActions({
       ) : (
         isPublished && (
           <button
-            onClick={() => onRunSimulation(versionId)}
+            onClick={() => onRunSimulation(versionNumber)}
             className="btn-primary btn-sm"
           >
             Run Simulator
