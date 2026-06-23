@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -85,6 +86,29 @@ public class BatchInputGeneratorTest {
 
         // Check for hall call event (1 passenger at tick 10, origin 7, going DOWN to 2)
         assertTrue(result.contains("10, hall_call, p3, 7, DOWN"));
+    }
+
+    @Test
+    public void testGenerateScenarioContent_SkipsSameFloorFlows() throws IOException {
+        LiftConfigDTO liftConfig = new LiftConfigDTO(
+                0, 10, 1, 1, 1, 1, 0, 0, 5,
+                ControllerStrategy.NEAREST_REQUEST_ROUTING,
+                IdleParkingMode.PARK_TO_HOME_FLOOR
+        );
+
+        PassengerFlowDTO sameFloorFlow = new PassengerFlowDTO(0, 3, 3, 2);
+        PassengerFlowDTO movingFlow = new PassengerFlowDTO(1, 2, 5, 1);
+        ScenarioDefinitionDTO scenario = new ScenarioDefinitionDTO(
+                20,
+                List.of(sameFloorFlow, movingFlow),
+                null
+        );
+
+        String result = generator.generateScenarioContent(liftConfig, scenario, "Same Floor Test");
+
+        assertFalse(result.contains("0, hall_call"));
+        assertFalse(result.contains(", 3, DOWN"));
+        assertTrue(result.contains("1, hall_call, p1, 2, UP"));
     }
 
     @Test
