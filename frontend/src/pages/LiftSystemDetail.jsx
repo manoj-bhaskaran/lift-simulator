@@ -733,7 +733,6 @@ function LiftSystemDetail() {
                   </div>
                   <VersionActions
                     systemId={id}
-                    versionId={version.id}
                     versionNumber={version.versionNumber}
                     status={version.status}
                     onPublish={handlePublishVersion}
