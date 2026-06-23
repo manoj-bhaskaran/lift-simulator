@@ -14,12 +14,26 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Spring Data JPA repository for SimulationRun entities.
  */
 @Repository
 public interface SimulationRunRepository extends JpaRepository<SimulationRun, Long> {
+
+    /**
+     * Find a run by id with its relationships eagerly loaded.
+     *
+     * @param id the simulation run id
+     * @return the run with lift system, version, and scenario loaded if found
+     */
+    @Query("SELECT r FROM SimulationRun r "
+            + "LEFT JOIN FETCH r.liftSystem "
+            + "LEFT JOIN FETCH r.version "
+            + "LEFT JOIN FETCH r.scenario "
+            + "WHERE r.id = :id")
+    Optional<SimulationRun> findByIdWithDetails(@Param("id") Long id);
 
     /**
      * Find all runs with their relationships eagerly loaded.

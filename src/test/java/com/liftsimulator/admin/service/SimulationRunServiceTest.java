@@ -300,18 +300,18 @@ public class SimulationRunServiceTest {
 
     @Test
     public void testGetRunById_Success() {
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
 
         SimulationRun result = runService.getRunById(1L);
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
     }
 
     @Test
     public void testGetRunById_NotFound() {
-        when(runRepository.findById(999L)).thenReturn(Optional.empty());
+        when(runRepository.findByIdWithDetails(999L)).thenReturn(Optional.empty());
 
         ResourceNotFoundException exception = assertThrows(
             ResourceNotFoundException.class,
@@ -319,7 +319,7 @@ public class SimulationRunServiceTest {
         );
 
         assertEquals("Simulation run not found with id: 999", exception.getMessage());
-        verify(runRepository).findById(999L);
+        verify(runRepository).findByIdWithDetails(999L);
     }
 
     @Test
@@ -357,127 +357,127 @@ public class SimulationRunServiceTest {
 
     @Test
     public void testStartRun_Success() {
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
         when(runRepository.save(any(SimulationRun.class))).thenReturn(mockRun);
 
         SimulationRun result = runService.startRun(1L);
 
         assertNotNull(result);
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
         verify(runRepository).save(any(SimulationRun.class));
     }
 
     @Test
     public void testStartRun_InvalidStatus() {
         mockRun.setStatus(RunStatus.RUNNING);
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
 
         assertThrows(
             IllegalStateException.class,
             () -> runService.startRun(1L)
         );
 
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
     }
 
     @Test
     public void testSucceedRun_Success() {
         mockRun.setStatus(RunStatus.RUNNING);
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
         when(runRepository.save(any(SimulationRun.class))).thenReturn(mockRun);
 
         SimulationRun result = runService.succeedRun(1L);
 
         assertNotNull(result);
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
         verify(runRepository).save(any(SimulationRun.class));
     }
 
     @Test
     public void testSucceedRun_InvalidStatus() {
         mockRun.setStatus(RunStatus.CREATED);
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
 
         assertThrows(
             IllegalStateException.class,
             () -> runService.succeedRun(1L)
         );
 
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
     }
 
     @Test
     public void testFailRun_Success() {
         mockRun.setStatus(RunStatus.RUNNING);
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
         when(runRepository.save(any(SimulationRun.class))).thenReturn(mockRun);
 
         SimulationRun result = runService.failRun(1L, "Test error");
 
         assertNotNull(result);
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
         verify(runRepository).save(any(SimulationRun.class));
     }
 
     @Test
     public void testFailRun_InvalidStatus() {
         mockRun.setStatus(RunStatus.CREATED);
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
 
         assertThrows(
             IllegalStateException.class,
             () -> runService.failRun(1L, "Test error")
         );
 
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
     }
 
     @Test
     public void testCancelRun_Success() {
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
         when(runRepository.save(any(SimulationRun.class))).thenReturn(mockRun);
 
         SimulationRun result = runService.cancelRun(1L);
 
         assertNotNull(result);
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
         verify(runRepository).save(any(SimulationRun.class));
     }
 
     @Test
     public void testCancelRun_InvalidStatus() {
         mockRun.setStatus(RunStatus.SUCCEEDED);
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
 
         assertThrows(
             IllegalStateException.class,
             () -> runService.cancelRun(1L)
         );
 
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
     }
 
     @Test
     public void testUpdateProgress_Success() {
         when(runRepository.updateCurrentTick(1L, 500L)).thenReturn(1);
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
 
         SimulationRun result = runService.updateProgress(1L, 500L);
 
         assertNotNull(result);
         verify(runRepository).updateCurrentTick(1L, 500L);
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
     }
 
     @Test
     public void testConfigureRun_Success() {
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
         when(runRepository.save(any(SimulationRun.class))).thenReturn(mockRun);
 
         SimulationRun result = runService.configureRun(1L, 1000L, 12345L, "/path/to/artefacts");
 
         assertNotNull(result);
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
         verify(runRepository).save(any(SimulationRun.class));
     }
 
@@ -487,7 +487,7 @@ public class SimulationRunServiceTest {
         mockRun.setTotalTicks(5000L);
         mockRun.setSeed(99999L);
         mockRun.setArtefactBasePath("/original/path");
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
         when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Configure with only artefactBasePath, keeping other values null
@@ -499,7 +499,7 @@ public class SimulationRunServiceTest {
         assertEquals(99999L, result.getSeed());
         // New value should be updated
         assertEquals("/new/path", result.getArtefactBasePath());
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
         verify(runRepository).save(any(SimulationRun.class));
     }
 
@@ -509,7 +509,7 @@ public class SimulationRunServiceTest {
         mockRun.setTotalTicks(5000L);
         mockRun.setSeed(99999L);
         mockRun.setArtefactBasePath("/original/path");
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
         when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Update only totalTicks, keeping seed null
@@ -521,7 +521,7 @@ public class SimulationRunServiceTest {
         // Existing values should be preserved
         assertEquals(99999L, result.getSeed());
         assertEquals("/original/path", result.getArtefactBasePath());
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
         verify(runRepository).save(any(SimulationRun.class));
     }
 
@@ -554,11 +554,11 @@ public class SimulationRunServiceTest {
     @Test
     public void testDeleteRun_Success() throws Exception {
         mockRun.setStatus(RunStatus.SUCCEEDED);
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
 
         runService.deleteRun(1L);
 
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
         verify(runRepository).deleteById(1L);
         verify(artefactService).deleteArtefacts(mockRun);
     }
@@ -566,7 +566,7 @@ public class SimulationRunServiceTest {
     @Test
     public void testDeleteRun_DefersArtefactDeletionUntilAfterCommit() throws Exception {
         mockRun.setStatus(RunStatus.SUCCEEDED);
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
 
         TransactionSynchronizationManager.initSynchronization();
         try {
@@ -587,7 +587,7 @@ public class SimulationRunServiceTest {
 
     @Test
     public void testDeleteRun_NotFound() {
-        when(runRepository.findById(999L)).thenReturn(Optional.empty());
+        when(runRepository.findByIdWithDetails(999L)).thenReturn(Optional.empty());
 
         ResourceNotFoundException exception = assertThrows(
             ResourceNotFoundException.class,
@@ -595,14 +595,14 @@ public class SimulationRunServiceTest {
         );
 
         assertEquals("Simulation run not found with id: 999", exception.getMessage());
-        verify(runRepository).findById(999L);
+        verify(runRepository).findByIdWithDetails(999L);
         verify(runRepository, never()).deleteById(any());
     }
 
     @Test
     public void testDeleteRun_RunningRunRejected() throws Exception {
         mockRun.setStatus(RunStatus.RUNNING);
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
 
         IllegalStateException exception = assertThrows(
             IllegalStateException.class,
@@ -617,7 +617,7 @@ public class SimulationRunServiceTest {
     @Test
     public void testDeleteRun_ArtefactDeletionFailureAfterCommitIsReported() throws Exception {
         mockRun.setStatus(RunStatus.FAILED);
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
         doThrow(new java.io.IOException("disk error")).when(artefactService).deleteArtefacts(mockRun);
 
         TransactionSynchronizationManager.initSynchronization();
@@ -640,7 +640,7 @@ public class SimulationRunServiceTest {
     @Test
     public void testConfigureRun_WithNullDurationTicks() {
         mockRun.setTotalTicks(null);
-        when(runRepository.findById(1L)).thenReturn(Optional.of(mockRun));
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
         when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         SimulationRun result = runService.configureRun(1L, null, 12345L, "/path/to/artefacts");
@@ -648,7 +648,7 @@ public class SimulationRunServiceTest {
         assertNotNull(result);
         // Verify that the run can be configured even with null durationTicks
         // The null check occurs during execution, not configuration
-        verify(runRepository).findById(1L);
+        verify(runRepository).findByIdWithDetails(1L);
         verify(runRepository).save(any(SimulationRun.class));
     }
 }
