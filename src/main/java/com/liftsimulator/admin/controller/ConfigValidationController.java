@@ -3,7 +3,6 @@ package com.liftsimulator.admin.controller;
 import com.liftsimulator.admin.dto.ConfigValidationRequest;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.service.ConfigValidationService;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,11 +19,6 @@ public class ConfigValidationController {
 
     private final ConfigValidationService configValidationService;
 
-    @SuppressFBWarnings(
-            value = "EI_EXPOSE_REP2",
-            justification = "Spring-managed service injected via constructor. "
-                    + "Lifecycle and immutability managed by Spring container."
-    )
     public ConfigValidationController(ConfigValidationService configValidationService) {
         this.configValidationService = configValidationService;
     }
