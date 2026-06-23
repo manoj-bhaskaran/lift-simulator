@@ -17,6 +17,12 @@ summary is kept under [Earlier history](#earlier-history).
 ## [Unreleased]
 
 
+## [0.53.1] - 2026-06-23
+
+### Fixed
+- **API contract polish**: Preserved duplicate bean-validation messages with `fieldErrors` arrays, added browser-readable `Location` headers to create endpoints through CORS, changed runtime simulate launch responses to HTTP 202 Accepted, and removed the unused one-argument lift-system response factory. Updated README/API documentation and package metadata for the 0.53.1 patch release.
+
+
 ## [0.53.0] - 2026-06-23
 
 ### Changed

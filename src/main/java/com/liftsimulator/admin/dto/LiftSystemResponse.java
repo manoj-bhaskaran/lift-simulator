@@ -16,24 +16,6 @@ public record LiftSystemResponse(
     long versionCount
 ) {
     /**
-     * Creates a response DTO from a LiftSystem entity.
-     *
-     * @param liftSystem the entity to convert
-     * @return the response DTO
-     */
-    public static LiftSystemResponse fromEntity(LiftSystem liftSystem) {
-        return new LiftSystemResponse(
-            liftSystem.getId(),
-            liftSystem.getSystemKey(),
-            liftSystem.getDisplayName(),
-            liftSystem.getDescription(),
-            liftSystem.getCreatedAt(),
-            liftSystem.getUpdatedAt(),
-            0
-        );
-    }
-
-    /**
      * Creates a response DTO from a LiftSystem entity with a version count.
      *
      * @param liftSystem the entity to convert

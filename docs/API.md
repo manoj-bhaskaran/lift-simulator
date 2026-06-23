@@ -18,7 +18,7 @@ All application endpoints use the `/api/v1` base path unless otherwise noted. Ad
       "description": "Main lift system for Building A"
     }
     ```
-  - Response (201 Created):
+  - Response (201 Created): includes `Location: /api/v1/lift-systems/{id}`
     ```json
     {
       "id": 1,
@@ -96,7 +96,7 @@ All application endpoints use the `/api/v1` base path unless otherwise noted. Ad
       "cloneFromVersionNumber": 1
     }
     ```
-  - Response (201 Created):
+  - Response (201 Created): includes `Location: /api/v1/lift-systems/{systemId}/versions/{versionNumber}`
     ```json
     {
       "id": 1,
@@ -237,7 +237,7 @@ Scenario payloads define passenger flow for UI-driven simulation runs. The scena
       }
     }
     ```
-  - Response (201 Created):
+  - Response (201 Created): includes `Location: /api/v1/scenarios/{id}`
     ```json
     {
       "id": 1,
@@ -457,7 +457,7 @@ The Simulation Run APIs enable UI to start simulations, poll their status, and a
 
 ### Standard Response DTOs
 
-Controllers return typed DTOs for JSON payloads rather than ad-hoc maps. Error payloads use the shared `ErrorResponse` shape (`status`, `message`, `timestamp`), bean-validation failures use `ValidationErrorResponse` (`status`, `message`, `fieldErrors`, `timestamp`), and validation endpoints continue to return typed validation responses containing `valid`, `errors`, and `warnings`.
+Controllers return typed DTOs for JSON payloads rather than ad-hoc maps. Error payloads use the shared `ErrorResponse` shape (`status`, `message`, `timestamp`), bean-validation failures use `ValidationErrorResponse` (`status`, `message`, `fieldErrors`, `timestamp`) where each `fieldErrors` entry is an array of messages so duplicate constraint failures are preserved, and validation endpoints continue to return typed validation responses containing `valid`, `errors`, and `warnings`. Create endpoints return `201 Created` with a `Location` header pointing at the created resource; the default CORS exposed-headers list includes `Location` so allowed browser clients can read it.
 
 
 For step-by-step CLI usage, UI-driven run workflows, artefact reproduction, the Morning Rush walkthrough, and troubleshooting scenarios, see [Workflows and Troubleshooting](Workflows-and-Troubleshooting.md).
@@ -593,7 +593,7 @@ All simulation run endpoints require the configured API key header.
 - `scenarioId` (optional): ID of the scenario to run (null for ad-hoc runs)
 - `seed` (optional): Random seed for reproducibility (auto-generated if not provided)
 
-**Response (201 Created):**
+**Response (201 Created):** includes `Location: /api/v1/simulation-runs/{id}`
 ```json
 {
   "id": 1,
@@ -961,7 +961,7 @@ curl -H "X-API-Key: replace-with-secure-key" \\
 - **Launch Local Simulator**: `POST /api/v1/runtime/systems/{systemKey}/simulate`
   - Writes the published configuration to a temporary JSON file
   - Spawns a local simulator process using the configuration
-  - Response (200 OK):
+  - Response (202 Accepted):
     ```json
     {
       "success": true,

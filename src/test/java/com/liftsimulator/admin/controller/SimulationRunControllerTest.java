@@ -298,7 +298,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.message").value("Validation failed"))
-            .andExpect(jsonPath("$.fieldErrors.tail").value("tail must be greater than or equal to 1"));
+            .andExpect(jsonPath("$.fieldErrors.tail[0]").value("tail must be greater than or equal to 1"));
     }
 
     @Test
@@ -312,7 +312,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.message").value("Validation failed"))
-            .andExpect(jsonPath("$.fieldErrors.tail").value("tail must be greater than or equal to 1"));
+            .andExpect(jsonPath("$.fieldErrors.tail[0]").value("tail must be greater than or equal to 1"));
     }
 
     @Test
@@ -326,7 +326,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.message").value("Validation failed"))
-            .andExpect(jsonPath("$.fieldErrors.tail").value("tail must be less than or equal to 10000"));
+            .andExpect(jsonPath("$.fieldErrors.tail[0]").value("tail must be less than or equal to 10000"));
     }
 
     @Test

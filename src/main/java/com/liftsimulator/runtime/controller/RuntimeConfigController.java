@@ -4,6 +4,8 @@ import com.liftsimulator.runtime.dto.RuntimeConfigDTO;
 import com.liftsimulator.runtime.dto.SimulationLaunchResponse;
 import com.liftsimulator.runtime.service.RuntimeConfigService;
 import com.liftsimulator.runtime.service.RuntimeSimulationService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -62,7 +64,8 @@ public class RuntimeConfigController {
      * @return response with launch status and process metadata
      */
     @PostMapping("/{systemKey}/simulate")
-    public SimulationLaunchResponse launchPublishedSimulation(@PathVariable String systemKey) {
-        return runtimeSimulationService.launchPublishedSimulation(systemKey);
+    public ResponseEntity<SimulationLaunchResponse> launchPublishedSimulation(@PathVariable String systemKey) {
+        SimulationLaunchResponse response = runtimeSimulationService.launchPublishedSimulation(systemKey);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
 }

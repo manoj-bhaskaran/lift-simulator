@@ -39,7 +39,7 @@ public class CorsProperties {
     /**
      * Headers exposed to the browser.
      */
-    private List<String> exposedHeaders = List.of("WWW-Authenticate");
+    private List<String> exposedHeaders = List.of("WWW-Authenticate", "Location");
 
     /**
      * Whether to allow credentials (cookies/HTTP auth) in cross-origin requests.

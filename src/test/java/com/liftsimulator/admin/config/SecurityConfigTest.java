@@ -101,6 +101,28 @@ public class SecurityConfigTest extends LocalIntegrationTest {
     }
 
     @Test
+    void corsActualRequest_ExposesLocationHeader() throws Exception {
+        String validSystemJson = """
+            {
+                "systemKey": "test-cors-location-system",
+                "displayName": "Test CORS Location System",
+                "description": "A test system to confirm CORS exposes Location"
+            }
+            """;
+
+        mockMvc.perform(post("/api/v1/lift-systems")
+                .header("Origin", "http://localhost:3000")
+                .with(httpBasic(TEST_ADMIN_USER, TEST_ADMIN_PASSWORD))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(validSystemJson))
+            .andExpect(status().isCreated())
+            .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
+            .andExpect(header().string("Access-Control-Expose-Headers", containsString("WWW-Authenticate")))
+            .andExpect(header().string("Access-Control-Expose-Headers", containsString("Location")))
+            .andExpect(header().exists("Location"));
+    }
+
+    @Test
     void csrfDisabled_AllowsStateChangingRequestWithoutToken() throws Exception {
         String validSystemJson = """
             {

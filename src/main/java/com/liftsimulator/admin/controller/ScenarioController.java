@@ -16,8 +16,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -71,7 +71,12 @@ public class ScenarioController {
         @Valid @RequestBody ScenarioRequest request
     ) {
         ScenarioResponse response = scenarioService.createScenario(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.created(
+            ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(response.id())
+                .toUri()
+        ).body(response);
     }
 
     /**
@@ -154,7 +159,12 @@ public class ScenarioController {
             id,
             request.targetLiftSystemVersionId()
         );
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.created(
+            ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/api/v1/scenarios/{id}")
+                .buildAndExpand(response.id())
+                .toUri()
+        ).body(response);
     }
 
     /**

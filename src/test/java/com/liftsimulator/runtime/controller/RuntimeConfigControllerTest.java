@@ -142,7 +142,7 @@ class RuntimeConfigControllerTest extends LocalIntegrationTest {
 
         mockMvc.perform(post("/api/v1/runtime/systems/test-system/simulate")
                 .header(API_KEY_HEADER, API_KEY_VALUE))
-            .andExpect(status().isOk())
+            .andExpect(status().isAccepted())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.message").value("started"))
             .andExpect(jsonPath("$.processId").value(42));
