@@ -116,15 +116,15 @@ public class SimulationRunServiceTest {
     @Test
     public void testCreateRun_Success() {
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
-        when(versionRepository.findById(1L)).thenReturn(Optional.of(mockVersion));
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1)).thenReturn(Optional.of(mockVersion));
         when(runRepository.save(any(SimulationRun.class))).thenReturn(mockRun);
 
-        SimulationRun result = runService.createRun(1L, 1L, null);
+        SimulationRun result = runService.createRun(1L, 1, null);
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
         verify(liftSystemRepository).findById(1L);
-        verify(versionRepository).findById(1L);
+        verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 1);
         verify(runRepository).save(any(SimulationRun.class));
     }
 
@@ -134,7 +134,7 @@ public class SimulationRunServiceTest {
 
         ResourceNotFoundException exception = assertThrows(
             ResourceNotFoundException.class,
-            () -> runService.createRun(999L, 1L, null)
+            () -> runService.createRun(999L, 1, null)
         );
 
         assertEquals("Lift system not found with id: 999", exception.getMessage());
@@ -144,39 +144,31 @@ public class SimulationRunServiceTest {
     @Test
     public void testCreateRun_VersionNotFound() {
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
-        when(versionRepository.findById(999L)).thenReturn(Optional.empty());
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 999)).thenReturn(Optional.empty());
 
         ResourceNotFoundException exception = assertThrows(
             ResourceNotFoundException.class,
-            () -> runService.createRun(1L, 999L, null)
+            () -> runService.createRun(1L, 999, null)
         );
 
-        assertEquals("Lift system version not found with id: 999", exception.getMessage());
-        verify(versionRepository).findById(999L);
+        assertEquals("Lift system version not found with lift system id 1 and version number: 999", exception.getMessage());
+        verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 999);
     }
 
     @Test
-    public void testCreateRun_VersionBelongsToDifferentSystem() {
-        LiftSystem otherSystem = new LiftSystem();
-        otherSystem.setId(2L);
-        otherSystem.setSystemKey("other-system");
-
-        LiftSystemVersion versionFromOtherSystem = new LiftSystemVersion();
-        versionFromOtherSystem.setId(5L);
-        versionFromOtherSystem.setVersionNumber(1);
-        versionFromOtherSystem.setLiftSystem(otherSystem);
-
+    public void testCreateRun_VersionNumberNotFoundForLiftSystem() {
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
-        when(versionRepository.findById(5L)).thenReturn(Optional.of(versionFromOtherSystem));
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 5)).thenReturn(Optional.empty());
 
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> runService.createRun(1L, 5L, null)
+        ResourceNotFoundException exception = assertThrows(
+            ResourceNotFoundException.class,
+            () -> runService.createRun(1L, 5, null)
         );
 
-        assertEquals("Version 5 does not belong to lift system 1", exception.getMessage());
+        assertEquals("Lift system version not found with lift system id 1 and version number: 5",
+                exception.getMessage());
         verify(liftSystemRepository).findById(1L);
-        verify(versionRepository).findById(5L);
+        verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 5);
     }
 
     @Test
@@ -184,11 +176,11 @@ public class SimulationRunServiceTest {
         Scenario scenario = new Scenario("Morning Rush", "{}", mockVersion);
         scenario.setId(7L);
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
-        when(versionRepository.findById(1L)).thenReturn(Optional.of(mockVersion));
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1)).thenReturn(Optional.of(mockVersion));
         when(scenarioRepository.findById(7L)).thenReturn(Optional.of(scenario));
         when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        SimulationRun result = runService.createRun(1L, 1L, 7L);
+        SimulationRun result = runService.createRun(1L, 1, 7L);
 
         assertNotNull(result);
         assertEquals(scenario, result.getScenario());
@@ -206,22 +198,22 @@ public class SimulationRunServiceTest {
         Scenario scenario = new Scenario("Other Scenario", "{}", otherVersion);
         scenario.setId(7L);
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
-        when(versionRepository.findById(1L)).thenReturn(Optional.of(mockVersion));
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1)).thenReturn(Optional.of(mockVersion));
         when(scenarioRepository.findById(7L)).thenReturn(Optional.of(scenario));
 
         IllegalArgumentException exception = assertThrows(
             IllegalArgumentException.class,
-            () -> runService.createRun(1L, 1L, 7L)
+            () -> runService.createRun(1L, 1, 7L)
         );
 
-        assertEquals("Scenario 7 does not belong to version 1", exception.getMessage());
+        assertEquals("Scenario 7 does not belong to version 1 of lift system 1", exception.getMessage());
         verify(runRepository, never()).save(any(SimulationRun.class));
     }
 
     @Test
     public void testCreateAndStartRun_ConfiguresRunStartsAndSubmitsExecution() throws Exception {
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
-        when(versionRepository.findById(1L)).thenReturn(Optional.of(mockVersion));
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1)).thenReturn(Optional.of(mockVersion));
         when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> {
             SimulationRun savedRun = invocation.getArgument(0);
             if (savedRun.getId() == null) {
@@ -230,7 +222,7 @@ public class SimulationRunServiceTest {
             return savedRun;
         });
 
-        SimulationRun result = runService.createAndStartRun(1L, 1L, null, 12345L);
+        SimulationRun result = runService.createAndStartRun(1L, 1, null, 12345L);
 
         assertEquals(42L, result.getId());
         assertEquals(RunStatus.RUNNING, result.getStatus());
@@ -245,7 +237,7 @@ public class SimulationRunServiceTest {
     @Test
     public void testCreateAndStartRun_SubmitsExecutionAfterTransactionCommit() throws Exception {
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
-        when(versionRepository.findById(1L)).thenReturn(Optional.of(mockVersion));
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1)).thenReturn(Optional.of(mockVersion));
         when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> {
             SimulationRun savedRun = invocation.getArgument(0);
             if (savedRun.getId() == null) {
@@ -256,7 +248,7 @@ public class SimulationRunServiceTest {
 
         TransactionSynchronizationManager.initSynchronization();
         try {
-            SimulationRun result = runService.createAndStartRun(1L, 1L, null, 12345L);
+            SimulationRun result = runService.createAndStartRun(1L, 1, null, 12345L);
 
             assertEquals(42L, result.getId());
             verify(executionService, never()).submitRunForExecution(42L);
@@ -281,7 +273,7 @@ public class SimulationRunServiceTest {
         mockScenario.setLiftSystemVersion(mockVersion);
 
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
-        when(versionRepository.findById(1L)).thenReturn(Optional.of(mockVersion));
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1)).thenReturn(Optional.of(mockVersion));
         when(scenarioRepository.findById(5L)).thenReturn(Optional.of(mockScenario));
         when(objectMapper.readValue(
             "{\"durationTicks\": 5000, \"passengerFlows\": []}",
@@ -295,7 +287,7 @@ public class SimulationRunServiceTest {
             return savedRun;
         });
 
-        SimulationRun result = runService.createAndStartRun(1L, 1L, 5L, 12345L);
+        SimulationRun result = runService.createAndStartRun(1L, 1, 5L, 12345L);
 
         assertEquals(42L, result.getId());
         assertEquals(RunStatus.RUNNING, result.getStatus());
