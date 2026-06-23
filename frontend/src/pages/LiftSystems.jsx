@@ -29,10 +29,6 @@ function LiftSystems() {
   const [alertMessage, setAlertMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    loadSystems();
-  }, []);
-
   /**
    * Loads all lift systems from the API.
    * Sets loading state and handles errors appropriately.
@@ -49,6 +45,10 @@ function LiftSystems() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadSystems();
+  }, []);
 
   /**
    * Handles lift system creation from the modal form.

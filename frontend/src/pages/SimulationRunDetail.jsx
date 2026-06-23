@@ -77,7 +77,7 @@ function SimulationRunDetail() {
     } finally {
       setIsCancelling(false);
     }
-  }, [runInfo?.id]);
+  }, [runInfo]);
 
   const handleDeleteRun = useCallback(async () => {
     if (!runInfo?.id) {
@@ -98,7 +98,7 @@ function SimulationRunDetail() {
     } finally {
       setIsDeleting(false);
     }
-  }, [runInfo?.id, navigate]);
+  }, [runInfo, navigate]);
 
   useEffect(() => {
     const loadInitial = async () => {
@@ -173,7 +173,7 @@ function SimulationRunDetail() {
       .map((segment) => encodeURIComponent(segment))
       .join('/');
     return `${normalizedApiBaseUrl}/simulation-runs/${runInfo.id}/artefacts/${encodedPath}`;
-  }, [runInfo?.id]);
+  }, [runInfo]);
 
   const handleArtefactDownload = useCallback(
     async (event, artefact) => {

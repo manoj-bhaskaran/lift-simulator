@@ -9,10 +9,6 @@ function HealthCheck() {
   const [error, setError] = useState(null);
   const [lastChecked, setLastChecked] = useState(null);
 
-  useEffect(() => {
-    checkHealth();
-  }, []);
-
   const checkHealth = async () => {
     try {
       setLoading(true);
@@ -27,6 +23,10 @@ function HealthCheck() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    checkHealth();
+  }, []);
 
   return (
     <div className="health-check">

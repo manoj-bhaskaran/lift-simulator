@@ -43,6 +43,7 @@ function SimulationRuns() {
   const [actionError, setActionError] = useState(null);
   const [actionErrorTitle, setActionErrorTitle] = useState('Action failed');
   const [actionNotice, setActionNotice] = useState(null);
+  const [now, setNow] = useState(() => Date.now());
 
   const [selectedSystemId, setSelectedSystemId] = useState(
     searchParams.get('systemId') || ''
@@ -124,6 +125,17 @@ function SimulationRuns() {
     return () => clearInterval(intervalId);
   }, [hasActiveRuns, loadRuns]);
 
+  // Keep `now` current so elapsed-time display refreshes for active runs
+  useEffect(() => {
+    if (!hasActiveRuns) return undefined;
+
+    const intervalId = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [hasActiveRuns]);
+
   useEffect(() => {
     setSelectedRunIds((currentIds) =>
       currentIds.filter((id) => runs.some((run) => run.id === id))
@@ -166,10 +178,10 @@ function SimulationRuns() {
    * @param {string|null} endDate - ISO end date string
    * @returns {string} Formatted duration string
    */
-  const formatDuration = (startDate, endDate) => {
+  const formatDuration = (startDate, endDate, nowMs = now) => {
     if (!startDate) return '—';
     const start = new Date(startDate).getTime();
-    const end = endDate ? new Date(endDate).getTime() : Date.now();
+    const end = endDate ? new Date(endDate).getTime() : nowMs;
     const durationMs = end - start;
     const totalSeconds = Math.floor(durationMs / 1000);
     const minutes = Math.floor(totalSeconds / 60);
