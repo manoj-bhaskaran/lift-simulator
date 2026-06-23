@@ -172,7 +172,7 @@ public class GlobalExceptionHandlerValidationTest {
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.message").value("Validation failed"))
             .andExpect(jsonPath("$.fieldErrors").exists())
-            .andExpect(jsonPath("$.fieldErrors.name").exists())
+            .andExpect(jsonPath("$.fieldErrors.name").isArray())
             .andExpect(jsonPath("$.timestamp").exists());
     }
 
@@ -223,7 +223,7 @@ public class GlobalExceptionHandlerValidationTest {
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.message").value("Validation failed"))
             .andExpect(jsonPath("$.fieldErrors").exists())
-            .andExpect(jsonPath("$.fieldErrors.passwordsMatch")
+            .andExpect(jsonPath("$.fieldErrors.passwordsMatch[0]")
                 .value("Passwords must match"))
             .andExpect(jsonPath("$.timestamp").exists());
     }
@@ -274,7 +274,7 @@ public class GlobalExceptionHandlerValidationTest {
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.message").value("Validation failed"))
             .andExpect(jsonPath("$.fieldErrors").exists())
-            .andExpect(jsonPath("$.fieldErrors.dateRangeValid")
+            .andExpect(jsonPath("$.fieldErrors.dateRangeValid[0]")
                 .value("End date must be after start date"))
             .andExpect(jsonPath("$.timestamp").exists());
     }

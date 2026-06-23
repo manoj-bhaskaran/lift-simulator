@@ -27,7 +27,9 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.OffsetDateTime;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -193,7 +195,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ValidationErrorResponse> handleValidationErrors(
         MethodArgumentNotValidException ex
     ) {
-        Map<String, String> fieldErrors = new HashMap<>();
+        Map<String, List<String>> fieldErrors = new LinkedHashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName;
             if (error instanceof FieldError fieldError) {
@@ -204,7 +206,7 @@ public class GlobalExceptionHandler {
                 fieldName = error.getObjectName();
             }
             String errorMessage = error.getDefaultMessage();
-            fieldErrors.put(fieldName, errorMessage);
+            fieldErrors.computeIfAbsent(fieldName, ignored -> new ArrayList<>()).add(errorMessage);
         });
 
         logger.debug("Validation failed for {} field(s): {}", fieldErrors.size(), fieldErrors.keySet());
@@ -226,13 +228,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ValidationErrorResponse> handleConstraintViolation(
         ConstraintViolationException ex
     ) {
-        Map<String, String> fieldErrors = new HashMap<>();
+        Map<String, List<String>> fieldErrors = new LinkedHashMap<>();
         ex.getConstraintViolations().forEach(violation -> {
             String propertyPath = violation.getPropertyPath().toString();
             String fieldName = propertyPath.contains(".")
                 ? propertyPath.substring(propertyPath.lastIndexOf('.') + 1)
                 : propertyPath;
-            fieldErrors.put(fieldName, violation.getMessage());
+            fieldErrors.computeIfAbsent(fieldName, ignored -> new ArrayList<>()).add(violation.getMessage());
         });
 
         logger.debug("Parameter validation failed for {} field(s): {}",

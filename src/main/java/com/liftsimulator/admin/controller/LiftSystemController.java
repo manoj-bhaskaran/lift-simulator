@@ -11,8 +11,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -62,7 +62,12 @@ public class LiftSystemController {
         @Valid @RequestBody CreateLiftSystemRequest request
     ) {
         LiftSystemResponse response = liftSystemService.createLiftSystem(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.created(
+            ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(response.id())
+                .toUri()
+        ).body(response);
     }
 
     /**

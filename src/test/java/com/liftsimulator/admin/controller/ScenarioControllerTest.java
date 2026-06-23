@@ -196,8 +196,8 @@ public class ScenarioControllerTest extends LocalIntegrationTest {
                 .content("{}"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.message").value("Validation failed"))
-            .andExpect(jsonPath("$.fieldErrors.scenarioJson").value("Scenario JSON is required"))
-            .andExpect(jsonPath("$.fieldErrors.liftSystemVersionId")
+            .andExpect(jsonPath("$.fieldErrors.scenarioJson[0]").value("Scenario JSON is required"))
+            .andExpect(jsonPath("$.fieldErrors.liftSystemVersionId[0]")
                 .value("Lift system version ID is required"));
     }
 
@@ -227,7 +227,7 @@ public class ScenarioControllerTest extends LocalIntegrationTest {
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.message").value("Validation failed"))
-            .andExpect(jsonPath("$.fieldErrors.name").value("Name is required"));
+            .andExpect(jsonPath("$.fieldErrors.name[0]").value("Name is required"));
     }
 
     @Test
@@ -241,7 +241,7 @@ public class ScenarioControllerTest extends LocalIntegrationTest {
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.message").value("Validation failed"))
-            .andExpect(jsonPath("$.fieldErrors.name").value("Name must not exceed 200 characters"));
+            .andExpect(jsonPath("$.fieldErrors.name[0]").value("Name must not exceed 200 characters"));
     }
 
     @Test
@@ -252,9 +252,9 @@ public class ScenarioControllerTest extends LocalIntegrationTest {
                 .content("{}"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.message").value("Validation failed"))
-            .andExpect(jsonPath("$.fieldErrors.name").value("Name is required"))
-            .andExpect(jsonPath("$.fieldErrors.scenarioJson").value("Scenario JSON is required"))
-            .andExpect(jsonPath("$.fieldErrors.liftSystemVersionId")
+            .andExpect(jsonPath("$.fieldErrors.name[0]").value("Name is required"))
+            .andExpect(jsonPath("$.fieldErrors.scenarioJson[0]").value("Scenario JSON is required"))
+            .andExpect(jsonPath("$.fieldErrors.liftSystemVersionId[0]")
                 .value("Lift system version ID is required"));
     }
 

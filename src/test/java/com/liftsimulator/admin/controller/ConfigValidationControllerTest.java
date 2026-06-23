@@ -122,6 +122,6 @@ public class ConfigValidationControllerTest extends LocalIntegrationTest {
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.message").value("Validation failed"))
-            .andExpect(jsonPath("$.fieldErrors.config").value("Config JSON is required"));
+            .andExpect(jsonPath("$.fieldErrors.config[0]").value("Config JSON is required"));
     }
 }

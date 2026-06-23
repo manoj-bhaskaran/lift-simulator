@@ -5,8 +5,8 @@ import com.liftsimulator.admin.dto.UpdateVersionConfigRequest;
 import com.liftsimulator.admin.dto.VersionResponse;
 import com.liftsimulator.admin.service.LiftSystemVersionService;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,7 +43,12 @@ public class LiftSystemVersionController {
             @PathVariable Long systemId,
             @Valid @RequestBody CreateVersionRequest request) {
         VersionResponse response = versionService.createVersion(systemId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.created(
+            ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{versionNumber}")
+                .buildAndExpand(response.versionNumber())
+                .toUri()
+        ).body(response);
     }
 
     /**
