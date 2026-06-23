@@ -137,8 +137,11 @@ function Simulator() {
       return;
     }
 
+    const querySystemId = searchParams.get('systemId');
     const preferredVersionNumber = searchParams.get('versionNumber');
-    const resolvedVersion = preferredVersionNumber
+    const queryMatchesSelectedSystem =
+      querySystemId && String(querySystemId) === String(selectedSystemId);
+    const resolvedVersion = queryMatchesSelectedSystem && preferredVersionNumber
       ? publishedVersions.find(
           (version) => String(version.versionNumber) === String(preferredVersionNumber)
         )
@@ -147,7 +150,7 @@ function Simulator() {
     if (resolvedVersion) {
       setSelectedVersionNumber(String(resolvedVersion.versionNumber));
     }
-  }, [publishedVersions, searchParams, selectedVersionNumber]);
+  }, [publishedVersions, searchParams, selectedSystemId, selectedVersionNumber]);
 
   const selectedSystem = systems.find(
     (system) => String(system.id) === String(selectedSystemId)
