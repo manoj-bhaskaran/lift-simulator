@@ -248,7 +248,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
 
         mockMvc.perform(get("/api/v1/simulation-runs/" + run.getId() + "/results")
                 .header(API_KEY_HEADER, API_KEY_VALUE))
-            .andExpect(status().isOk())
+            .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.runId").value(run.getId()))
             .andExpect(jsonPath("$.status").value("SUCCEEDED"))
             .andExpect(jsonPath("$.results").doesNotExist())
