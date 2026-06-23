@@ -457,15 +457,6 @@ public class SimulationRunExecutionService {
         cancelRunSafely(runId, message);
     }
 
-    private void cancelRunSafely(Long runId, Path logPath, String message) {
-        try (BufferedWriter logWriter = Files.newBufferedWriter(logPath, StandardCharsets.UTF_8, java.nio.file.StandardOpenOption.APPEND)) {
-            log(logWriter, message);
-        } catch (IOException ex) {
-            logger.warn("Failed to append cancellation message to run log for run {}", runId, ex);
-        }
-        cancelRunSafely(runId, message);
-    }
-
     private void cancelRunSafely(Long runId, String message) {
         try {
             SimulationRun run = getRunById(runId);
