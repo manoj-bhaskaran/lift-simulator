@@ -457,7 +457,7 @@ The Simulation Run APIs enable UI to start simulations, poll their status, and a
 
 ### Standard Response DTOs
 
-Controllers return typed DTOs for JSON payloads rather than ad-hoc maps. Error payloads use the shared `ErrorResponse` shape (`status`, `message`, `timestamp`), bean-validation failures use `ValidationErrorResponse` (`status`, `message`, `fieldErrors`, `timestamp`) where each `fieldErrors` entry is an array of messages so duplicate constraint failures are preserved, and validation endpoints continue to return typed validation responses containing `valid`, `errors`, and `warnings`. Create endpoints return `201 Created` with a `Location` header pointing at the created resource.
+Controllers return typed DTOs for JSON payloads rather than ad-hoc maps. Error payloads use the shared `ErrorResponse` shape (`status`, `message`, `timestamp`), bean-validation failures use `ValidationErrorResponse` (`status`, `message`, `fieldErrors`, `timestamp`) where each `fieldErrors` entry is an array of messages so duplicate constraint failures are preserved, and validation endpoints continue to return typed validation responses containing `valid`, `errors`, and `warnings`. Create endpoints return `201 Created` with a `Location` header pointing at the created resource; the default CORS exposed-headers list includes `Location` so allowed browser clients can read it.
 
 
 For step-by-step CLI usage, UI-driven run workflows, artefact reproduction, the Morning Rush walkthrough, and troubleshooting scenarios, see [Workflows and Troubleshooting](Workflows-and-Troubleshooting.md).

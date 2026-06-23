@@ -130,6 +130,7 @@ security:
       - Origin
     exposed-headers:
       - WWW-Authenticate
+      - Location
     allow-credentials: true
     max-age: 3600
 
