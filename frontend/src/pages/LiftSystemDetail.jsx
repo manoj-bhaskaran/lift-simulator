@@ -284,10 +284,10 @@ function LiftSystemDetail() {
   /**
    * Navigates to the simulator flow for a specific version.
    *
-   * @param {number} versionId - Version ID to run simulation for
+   * @param {number} versionNumber - Version number to run simulation for
    */
-  const handleRunSimulation = (versionId) => {
-    navigate(`/simulator/run?systemId=${id}&versionId=${versionId}`);
+  const handleRunSimulation = (versionNumber) => {
+    navigate(`/simulator/run?systemId=${id}&versionNumber=${versionNumber}`);
   };
 
   /**

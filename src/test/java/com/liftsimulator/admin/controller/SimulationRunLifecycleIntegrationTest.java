@@ -108,7 +108,7 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
 
         CreateSimulationRunRequest request = new CreateSimulationRunRequest(
                 testSystem.getId(),
-                testVersion.getId(),
+                testVersion.getVersionNumber(),
                 scenario.getId(),
                 4242L
         );

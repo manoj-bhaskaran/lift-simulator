@@ -108,7 +108,7 @@ public class SimulationRunController {
      * Creates and starts a new simulation run.
      * Endpoint: POST /api/simulation-runs
      *
-     * @param request the creation request containing liftSystemId, versionId, scenarioId (optional),
+     * @param request the creation request containing liftSystemId, versionNumber, scenarioId (optional),
      *                seed (optional)
      * @return the created and started simulation run with 201 status
      */
@@ -118,7 +118,7 @@ public class SimulationRunController {
     ) throws IOException {
         SimulationRun run = simulationRunService.createAndStartRun(
                 request.liftSystemId(),
-                request.versionId(),
+                request.versionNumber(),
                 request.scenarioId(),
                 request.seed()
         );

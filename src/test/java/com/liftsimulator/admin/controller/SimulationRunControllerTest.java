@@ -99,7 +99,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
     public void testCreateSimulationRun_Success() throws Exception {
         CreateSimulationRunRequest request = new CreateSimulationRunRequest(
             testSystem.getId(),
-            testVersion.getId(),
+            testVersion.getVersionNumber(),
             null,
             12345L
         );
@@ -111,7 +111,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").exists())
             .andExpect(jsonPath("$.liftSystemId").value(testSystem.getId()))
-            .andExpect(jsonPath("$.versionId").value(testVersion.getId()))
+            .andExpect(jsonPath("$.versionNumber").value(testVersion.getVersionNumber()))
             .andExpect(jsonPath("$.status").value("RUNNING"))
             .andExpect(jsonPath("$.seed").value(12345L))
             .andExpect(jsonPath("$.createdAt").exists())
@@ -122,7 +122,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
     public void testCreateSimulationRun_InvalidLiftSystem() throws Exception {
         CreateSimulationRunRequest request = new CreateSimulationRunRequest(
             999L,
-            testVersion.getId(),
+            testVersion.getVersionNumber(),
             null,
             null
         );
@@ -156,7 +156,7 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(run.getId()))
             .andExpect(jsonPath("$.liftSystemId").value(testSystem.getId()))
-            .andExpect(jsonPath("$.versionId").value(testVersion.getId()))
+            .andExpect(jsonPath("$.versionNumber").value(testVersion.getVersionNumber()))
             .andExpect(jsonPath("$.status").value("CREATED"));
     }
 

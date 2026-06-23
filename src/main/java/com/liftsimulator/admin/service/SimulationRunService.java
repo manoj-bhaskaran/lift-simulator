@@ -97,7 +97,7 @@ public class SimulationRunService {
      * Create a new simulation run.
      *
      * @param liftSystemId the lift system id
-     * @param versionId the version id
+     * @param versionNumber the version number
      * @param scenarioId the scenario id (optional)
      * @return the created run
      * @throws ResourceNotFoundException if the lift system, version, or scenario is not found
@@ -105,19 +105,15 @@ public class SimulationRunService {
      *                                  or the scenario does not belong to the version
      */
     @Transactional
-    public SimulationRun createRun(Long liftSystemId, Long versionId, Long scenarioId) {
+    public SimulationRun createRun(Long liftSystemId, Integer versionNumber, Long scenarioId) {
         LiftSystem liftSystem = liftSystemRepository.findById(liftSystemId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Lift system not found with id: " + liftSystemId));
 
-        LiftSystemVersion version = versionRepository.findById(versionId)
+        LiftSystemVersion version = versionRepository.findByLiftSystemIdAndVersionNumber(liftSystemId, versionNumber)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Lift system version not found with id: " + versionId));
-
-        if (!version.getLiftSystem().getId().equals(liftSystemId)) {
-            throw new IllegalArgumentException(
-                    "Version " + versionId + " does not belong to lift system " + liftSystemId);
-        }
+                        "Lift system version not found with lift system id " + liftSystemId
+                                + " and version number: " + versionNumber));
 
         SimulationRun run = new SimulationRun(liftSystem, version);
 
@@ -128,9 +124,10 @@ public class SimulationRunService {
                             "Scenario not found with id: " + scenarioId));
 
             // Validate that the scenario belongs to the same version
-            if (!scenario.getLiftSystemVersion().getId().equals(versionId)) {
+            if (!scenario.getLiftSystemVersion().getId().equals(version.getId())) {
                 throw new IllegalArgumentException(
-                        "Scenario " + scenarioId + " does not belong to version " + versionId);
+                        "Scenario " + scenarioId + " does not belong to version " + versionNumber
+                                + " of lift system " + liftSystemId);
             }
 
             run.setScenario(scenario);
@@ -144,7 +141,7 @@ public class SimulationRunService {
      * This method creates the run, sets up the artefact directory, configures it, and starts execution.
      *
      * @param liftSystemId the lift system id
-     * @param versionId the version id
+     * @param versionNumber the version number
      * @param scenarioId the scenario id (optional)
      * @param seed the random seed (optional, will be generated if not provided)
      * @return the started run
@@ -154,10 +151,10 @@ public class SimulationRunService {
      * @throws IOException if artefact directory creation fails
      */
     @Transactional
-    public SimulationRun createAndStartRun(Long liftSystemId, Long versionId, Long scenarioId, Long seed)
+    public SimulationRun createAndStartRun(Long liftSystemId, Integer versionNumber, Long scenarioId, Long seed)
             throws IOException {
         // Create the run
-        SimulationRun run = createRun(liftSystemId, versionId, scenarioId);
+        SimulationRun run = createRun(liftSystemId, versionNumber, scenarioId);
 
         // Generate seed if not provided
         Long runSeed = seed != null ? seed : ThreadLocalRandom.current().nextLong();
