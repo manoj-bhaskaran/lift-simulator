@@ -185,8 +185,9 @@ public class SimulationRunController {
      * Endpoint: GET /api/simulation-runs/{id}/results
      *
      * Returns:
-     * - 200 with structured results JSON when SUCCEEDED
-     * - 200 with error message and logs link when FAILED
+     * - 200 with structured results JSON when SUCCEEDED with readable results
+     * - 500 when SUCCEEDED but results file is unreadable (server error)
+     * - 400 when FAILED (client error - simulation failed)
      * - 409 when RUNNING (simulation still in progress)
      * - 400 when CREATED or CANCELLED
      *
@@ -203,21 +204,22 @@ public class SimulationRunController {
                     JsonNode results = artefactService.readResults(run);
                     yield ResponseEntity.ok(SimulationResultResponse.success(id, results));
                 } catch (IOException e) {
-                    // Results file not found or not readable - preserve SUCCEEDED status
-                    // but indicate results are unavailable
-                    yield ResponseEntity.ok(SimulationResultResponse.succeededWithoutResults(
-                            id,
-                            "Results file not available: " + e.getMessage()
-                    ));
+                    // Results file not found or not readable - genuine server error
+                    yield ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body(SimulationResultResponse.succeededWithoutResults(
+                                    id,
+                                    "Results file not available: " + e.getMessage()
+                            ));
                 }
             }
-            case FAILED -> ResponseEntity.ok(SimulationResultResponse.failure(id, run.getErrorMessage()));
+            case FAILED -> ResponseEntity.badRequest()
+                    .body(SimulationResultResponse.failure(id, run.getErrorMessage()));
             case RUNNING -> ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(SimulationResultResponse.running(id));
             case CREATED, CANCELLED -> ResponseEntity.badRequest()
                     .body(new SimulationResultResponse(
                             id,
-                            run.getStatus().name(),
+                            run.getStatus(),
                             null,
                             "Results not available for " + run.getStatus().name() + " runs",
                             null
