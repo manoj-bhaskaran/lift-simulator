@@ -17,6 +17,11 @@ summary is kept under [Earlier history](#earlier-history).
 ## [Unreleased]
 
 
+## [0.53.3] - 2026-06-23
+
+### Fixed
+- **Simulation run execution IO correctness**: Avoided reopening `run.log` while handling in-process cancellation, skipped same-floor passenger flows when generating downloadable `input.scenario` artefacts so CLI reproduction matches execution, and removed the discarded progress reload after direct tick updates. Updated README and package metadata for the 0.53.3 patch release.
+
 ## [0.53.2] - 2026-06-23
 
 ### Changed

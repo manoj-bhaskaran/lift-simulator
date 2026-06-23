@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -127,22 +126,16 @@ public class SimulationRunExecutionServiceTest {
     }
 
     @Test
-    public void testUpdateProgressUsesRepositoryDirectly() throws Exception {
-        SimulationRun run = new SimulationRun();
-        run.setId(1L);
-        run.setCurrentTick(500L);
+    public void testUpdateProgressUsesRepositoryDirectlyWithoutReloadingRun() throws Exception {
         when(runRepository.updateCurrentTick(1L, 500L)).thenReturn(1);
-        when(runRepository.findById(1L)).thenReturn(Optional.of(run));
 
         Method updateProgress = SimulationRunExecutionService.class.getDeclaredMethod(
                 "updateProgress", Long.class, Long.class);
         updateProgress.setAccessible(true);
-        SimulationRun result = (SimulationRun) updateProgress.invoke(executionService, 1L, 500L);
+        updateProgress.invoke(executionService, 1L, 500L);
 
-        assertNotNull(result);
-        assertEquals(500L, result.getCurrentTick());
         verify(runRepository).updateCurrentTick(1L, 500L);
-        verify(runRepository).findById(1L);
+        verify(runRepository, never()).findById(1L);
     }
 
     @Test

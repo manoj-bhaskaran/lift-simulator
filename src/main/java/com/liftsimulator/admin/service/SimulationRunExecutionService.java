@@ -216,7 +216,14 @@ public class SimulationRunExecutionService {
             updateProgress(request.runId(), 0L);
             log(logWriter, "Simulation started for run " + request.runId());
 
-            RunMetrics metrics = runSimulation(request.runId(), config, scenario, logWriter, cancelToken);
+            RunMetrics metrics;
+            try {
+                metrics = runSimulation(request.runId(), config, scenario, logWriter, cancelToken);
+            } catch (RunCancelledException ex) {
+                cancelRunSafely(request.runId(), logWriter, ex.getMessage());
+                writeResults(request.runId(), runDir, ex.getConfig(), ex.getScenario(), ex.getMetrics(), "CANCELLED", ex.getMessage());
+                return;
+            }
 
             if (cancelToken.isCancelled() || getRunById(request.runId()).getStatus() == SimulationRun.RunStatus.CANCELLED) {
                 log(logWriter, "Run cancelled for run " + request.runId());
@@ -226,13 +233,6 @@ public class SimulationRunExecutionService {
             log(logWriter, "Simulation succeeded for run " + request.runId());
             writeResults(request.runId(), runDir, config, scenario, metrics, "SUCCEEDED", null);
             succeedRun(request.runId());
-        } catch (RunCancelledException ex) {
-            try {
-                cancelRunSafely(request.runId(), logPath, ex.getMessage());
-                writeResults(request.runId(), runDir, ex.getConfig(), ex.getScenario(), ex.getMetrics(), "CANCELLED", ex.getMessage());
-            } catch (IOException ioEx) {
-                logger.warn("Failed to write cancellation results file for run {}", request.runId(), ioEx);
-            }
         } catch (IOException | RuntimeException ex) {
             String errorMessage = safeMessage(ex);
             logger.error("Simulation run {} failed", request.runId(), ex);
@@ -377,12 +377,11 @@ public class SimulationRunExecutionService {
         return runRepository.save(run);
     }
 
-    private SimulationRun updateProgress(Long runId, Long currentTick) {
+    private void updateProgress(Long runId, Long currentTick) {
         int updated = runRepository.updateCurrentTick(runId, currentTick);
         if (updated == 0) {
             throw new ResourceNotFoundException("Simulation run not found with id: " + runId);
         }
-        return getRunById(runId);
     }
 
     private void writeInputFiles(RunExecutionRequest request, Path runDir, BufferedWriter logWriter) throws IOException {

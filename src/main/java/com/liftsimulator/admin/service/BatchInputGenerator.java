@@ -167,6 +167,9 @@ public class BatchInputGenerator {
 
         for (PassengerFlowDTO flow : passengerFlows) {
             String direction = determineDirection(flow.originFloor(), flow.destinationFloor());
+            if (direction == null) {
+                continue;
+            }
 
             for (int i = 0; i < flow.passengers(); i++) {
                 String alias = String.format(Locale.ROOT, "p%d", passengerCounter++);
@@ -183,7 +186,13 @@ public class BatchInputGenerator {
     }
 
     private String determineDirection(int originFloor, int destinationFloor) {
-        return destinationFloor > originFloor ? "UP" : "DOWN";
+        if (destinationFloor > originFloor) {
+            return "UP";
+        }
+        if (destinationFloor < originFloor) {
+            return "DOWN";
+        }
+        return null;
     }
 
     private void writeScenarioFile(Path outputPath, String content) throws IOException {
