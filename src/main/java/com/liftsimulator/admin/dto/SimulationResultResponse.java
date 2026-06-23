@@ -1,13 +1,14 @@
 package com.liftsimulator.admin.dto;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.liftsimulator.admin.entity.SimulationRun.RunStatus;
 
 /**
  * Response DTO for simulation run results.
  */
 public record SimulationResultResponse(
     Long runId,
-    String status,
+    RunStatus status,
     JsonNode results,
     String errorMessage,
     String logsUrl
@@ -22,7 +23,7 @@ public record SimulationResultResponse(
     public static SimulationResultResponse success(Long runId, JsonNode results) {
         return new SimulationResultResponse(
             runId,
-            "SUCCEEDED",
+            RunStatus.SUCCEEDED,
             results,
             null,
             "/api/v1/simulation-runs/" + runId + "/logs"
@@ -39,7 +40,7 @@ public record SimulationResultResponse(
     public static SimulationResultResponse failure(Long runId, String errorMessage) {
         return new SimulationResultResponse(
             runId,
-            "FAILED",
+            RunStatus.FAILED,
             null,
             errorMessage,
             "/api/v1/simulation-runs/" + runId + "/logs"
@@ -55,7 +56,7 @@ public record SimulationResultResponse(
     public static SimulationResultResponse running(Long runId) {
         return new SimulationResultResponse(
             runId,
-            "RUNNING",
+            RunStatus.RUNNING,
             null,
             "Simulation is still running",
             null
@@ -73,7 +74,7 @@ public record SimulationResultResponse(
     public static SimulationResultResponse succeededWithoutResults(Long runId, String errorMessage) {
         return new SimulationResultResponse(
             runId,
-            "SUCCEEDED",
+            RunStatus.SUCCEEDED,
             null,
             errorMessage,
             "/api/v1/simulation-runs/" + runId + "/logs"
