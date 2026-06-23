@@ -17,6 +17,12 @@ summary is kept under [Earlier history](#earlier-history).
 ## [Unreleased]
 
 
+## [0.53.2] - 2026-06-23
+
+### Changed
+- **Dependabot dependency monitoring**: Removed the OWASP Dependency-Check Maven plugin and its non-blocking CI scan because NVD database downloads can hang in CI. Added weekly Dependabot updates for Maven, frontend npm packages, and GitHub Actions, and refreshed README/package metadata for the 0.53.2 patch release.
+
+
 ## [0.53.1] - 2026-06-23
 
 ### Fixed
