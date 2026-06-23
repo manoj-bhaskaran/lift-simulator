@@ -223,9 +223,9 @@ public class SimulationRunExecutionService {
                 writeResults(request.runId(), runDir, config, scenario, metrics, "CANCELLED", "Run cancelled.");
                 return;
             }
-            succeedRun(request.runId());
             log(logWriter, "Simulation succeeded for run " + request.runId());
             writeResults(request.runId(), runDir, config, scenario, metrics, "SUCCEEDED", null);
+            succeedRun(request.runId());
         } catch (RunCancelledException ex) {
             try {
                 cancelRunSafely(request.runId(), logPath, ex.getMessage());
