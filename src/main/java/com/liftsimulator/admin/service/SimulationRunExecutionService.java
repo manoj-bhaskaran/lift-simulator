@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
@@ -65,7 +64,7 @@ public class SimulationRunExecutionService {
     private final ScenarioValidationService scenarioValidationService;
     private final BatchInputGenerator batchInputGenerator;
     private final ObjectMapper objectMapper;
-    private final ExecutorService executor;
+    private final ThreadPoolExecutor executor;
     private final Map<Long, Future<?>> runningTasks = new ConcurrentHashMap<>();
     private final Map<Long, CancellationToken> cancellationTokens = new ConcurrentHashMap<>();
 
@@ -125,6 +124,16 @@ public class SimulationRunExecutionService {
         SimulationRun run = cancelRunStatus(runId);
         CancellationToken token = cancellationTokens.computeIfAbsent(runId, id -> new CancellationToken());
         token.cancel();
+        Future<?> future = runningTasks.get(runId);
+        if (future != null && future.cancel(false)) {
+            // future.cancel() marks the FutureTask cancelled but leaves it in the
+            // ArrayBlockingQueue, holding the slot. Remove it explicitly so the slot
+            // is released immediately. executeRun's finally block will never run for
+            // a task that never started, so clean up tracking state here too.
+            executor.remove((Runnable) future);
+            runningTasks.remove(runId, future);
+            cancellationTokens.remove(runId);
+        }
         return run;
     }
 

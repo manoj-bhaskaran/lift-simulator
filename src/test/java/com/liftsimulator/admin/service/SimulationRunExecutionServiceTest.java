@@ -323,6 +323,66 @@ public class SimulationRunExecutionServiceTest {
     }
 
     @Test
+    public void cancellingQueuedRunReleasesQueueSlot() throws Exception {
+        // Pool=1, queue=1: one thread running, one slot queued.
+        // Cancelling the queued run should free the slot immediately so a new submission succeeds.
+        SimulationRunExecutionService tightService = new SimulationRunExecutionService(
+                runRepository,
+                configValidationService,
+                scenarioValidationService,
+                batchInputGenerator,
+                objectMapper,
+                1,
+                1
+        );
+        try {
+            java.lang.reflect.Field executorField =
+                SimulationRunExecutionService.class.getDeclaredField("executor");
+            executorField.setAccessible(true);
+            java.util.concurrent.ThreadPoolExecutor tpe =
+                (java.util.concurrent.ThreadPoolExecutor) executorField.get(tightService);
+
+            java.util.concurrent.CountDownLatch blockLatch = new java.util.concurrent.CountDownLatch(1);
+
+            // Fill pool thread with a blocking task
+            tpe.submit(() -> {
+                try { blockLatch.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            });
+
+            // Submit a run that will sit in the queue (pool thread is blocked)
+            Path runDir = tempDir.resolve("run-cancel-queue");
+            Files.createDirectories(runDir);
+            SimulationRun queuedRun = runWithArtefactDirectory(201L, runDir, SHORT_SCENARIO);
+            AtomicReference<SimulationRun> storedQueued = new AtomicReference<>(queuedRun);
+            lenient().when(runRepository.findById(201L)).thenAnswer(inv -> Optional.of(storedQueued.get()));
+            lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(inv -> {
+                SimulationRun saved = inv.getArgument(0);
+                if (Long.valueOf(201L).equals(saved.getId())) storedQueued.set(saved);
+                return saved;
+            });
+
+            tightService.submitRunForExecution(201L);
+            // Queue slot is now occupied by run 201
+
+            // Cancel the queued run — should dequeue it and release the slot
+            tightService.cancelRun(201L);
+
+            // Queue slot is free; a 3rd submission must NOT be rejected
+            boolean rejected = false;
+            try {
+                tpe.submit(() -> {}); // should fit in the now-free slot
+            } catch (java.util.concurrent.RejectedExecutionException ex) {
+                rejected = true;
+            }
+            assertFalse(rejected, "Cancelling a queued run must release its queue slot");
+
+            blockLatch.countDown();
+        } finally {
+            tightService.shutdownExecutor();
+        }
+    }
+
+    @Test
     public void submissionsExceedingPoolPlusQueueAreRejectedWithFailedStatus() throws Exception {
         // Pool size=2, queue=10 → capacity=12. Submit 13 runs; the 13th must be rejected cleanly.
         SimulationRunExecutionService tightService = new SimulationRunExecutionService(
