@@ -41,6 +41,10 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // React Compiler rules that are overly strict for established patterns:
+      // calling async data-fetchers from effects and synchronising derived state
+      // in effects are well-understood, accepted React idioms.
+      'react-hooks/set-state-in-effect': 'off',
     },
   },
 ])

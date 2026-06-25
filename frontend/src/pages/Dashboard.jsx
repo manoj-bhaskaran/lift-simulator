@@ -9,10 +9,6 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadSystems();
-  }, []);
-
   const loadSystems = async () => {
     try {
       setLoading(true);
@@ -26,6 +22,10 @@ function Dashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadSystems();
+  }, []);
 
   return (
     <div className="dashboard">
