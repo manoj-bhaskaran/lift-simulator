@@ -41,6 +41,9 @@ management:
 simulation:
   artefacts:
     base-path: ./simulation-runs
+  execution:
+    max-concurrent-runs: 4
+    queue-capacity: 20
 
 # Security Configuration
 # Admin credentials for HTTP Basic authentication (override in application-dev.yml or environment)
