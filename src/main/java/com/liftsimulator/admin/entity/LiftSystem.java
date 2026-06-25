@@ -153,12 +153,12 @@ public class LiftSystem {
             return false;
         }
         LiftSystem that = (LiftSystem) o;
-        return Objects.equals(id, that.id);
+        return id != null && id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return getClass().hashCode();
     }
 
     @Override

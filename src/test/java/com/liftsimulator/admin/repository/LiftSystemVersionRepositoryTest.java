@@ -294,6 +294,32 @@ public class LiftSystemVersionRepositoryTest {
     }
 
     @Test
+    public void testTransientLiftSystemsAreDistinctInSet() {
+        LiftSystem a = new LiftSystem("key-a", "System A", "desc");
+        LiftSystem b = new LiftSystem("key-b", "System B", "desc");
+
+        Set<LiftSystem> set = new HashSet<>();
+        set.add(a);
+        set.add(b);
+
+        assertEquals(2, set.size(), "Two distinct transient LiftSystems must not collapse to one in a HashSet");
+        assertFalse(a.equals(b), "Transient LiftSystems with null ids must not be equal");
+    }
+
+    @Test
+    public void testTransientLiftSystemVersionsAreDistinctInSet() {
+        LiftSystemVersion a = new LiftSystemVersion(testSystem, 1, "{}");
+        LiftSystemVersion b = new LiftSystemVersion(testSystem, 2, "{}");
+
+        Set<LiftSystemVersion> set = new HashSet<>();
+        set.add(a);
+        set.add(b);
+
+        assertEquals(2, set.size(), "Two distinct transient LiftSystemVersions must not collapse to one in a HashSet");
+        assertFalse(a.equals(b), "Transient LiftSystemVersions with null ids must not be equal");
+    }
+
+    @Test
     public void testCascadeDeleteVersionsWithParentSystem() {
         LiftSystemVersion v1 = new LiftSystemVersion(testSystem, 1, "{}");
         LiftSystemVersion v2 = new LiftSystemVersion(testSystem, 2, "{}");
