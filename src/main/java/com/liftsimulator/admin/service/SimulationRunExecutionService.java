@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -65,7 +65,7 @@ public class SimulationRunExecutionService {
     private final BatchInputGenerator batchInputGenerator;
     private final ObjectMapper objectMapper;
     private final ThreadPoolExecutor executor;
-    private final Map<Long, Future<?>> runningTasks = new ConcurrentHashMap<>();
+    private final Map<Long, FutureTask<?>> runningTasks = new ConcurrentHashMap<>();
     private final Map<Long, CancellationToken> cancellationTokens = new ConcurrentHashMap<>();
 
     @SuppressFBWarnings(
@@ -124,13 +124,13 @@ public class SimulationRunExecutionService {
         SimulationRun run = cancelRunStatus(runId);
         CancellationToken token = cancellationTokens.computeIfAbsent(runId, id -> new CancellationToken());
         token.cancel();
-        Future<?> future = runningTasks.get(runId);
+        FutureTask<?> future = runningTasks.get(runId);
         if (future != null && future.cancel(false)) {
             // future.cancel() marks the FutureTask cancelled but leaves it in the
             // ArrayBlockingQueue, holding the slot. Remove it explicitly so the slot
             // is released immediately. executeRun's finally block will never run for
             // a task that never started, so clean up tracking state here too.
-            executor.remove((Runnable) future);
+            executor.remove(future);
             runningTasks.remove(runId, future);
             cancellationTokens.remove(runId);
         }
@@ -553,11 +553,12 @@ public class SimulationRunExecutionService {
     }
 
     private void submitExecution(RunExecutionRequest request) {
+        FutureTask<?> task = new FutureTask<>(() -> { executeRun(request); return null; });
         try {
-            Future<?> future = executor.submit(() -> executeRun(request));
-            runningTasks.put(request.runId(), future);
-            if (future.isDone()) {
-                runningTasks.remove(request.runId(), future);
+            executor.execute(task);
+            runningTasks.put(request.runId(), task);
+            if (task.isDone()) {
+                runningTasks.remove(request.runId(), task);
                 cancellationTokens.remove(request.runId());
             }
         } catch (RejectedExecutionException ex) {
