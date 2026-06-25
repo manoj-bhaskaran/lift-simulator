@@ -213,13 +213,12 @@ public class LiftSystemVersion {
             return false;
         }
         LiftSystemVersion that = (LiftSystemVersion) o;
-        return Objects.equals(liftSystem, that.liftSystem)
-                && Objects.equals(versionNumber, that.versionNumber);
+        return Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(liftSystem, versionNumber);
+        return Objects.hash(id);
     }
 
     @Override

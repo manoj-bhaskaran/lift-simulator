@@ -11,8 +11,10 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -245,6 +247,50 @@ public class LiftSystemVersionRepositoryTest {
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
             org.junit.jupiter.api.Assertions.fail("Failed to parse JSON: " + e.getMessage());
         }
+    }
+
+    @Test
+    public void testLiftSystemSetMembershipStableAfterSystemKeyMutation() {
+        LiftSystem system = new LiftSystem("original-key", "System", "desc");
+        entityManager.persist(system);
+        entityManager.flush();
+
+        Set<LiftSystem> set = new HashSet<>();
+        set.add(system);
+        assertTrue(set.contains(system));
+
+        system.setSystemKey("mutated-key");
+
+        assertTrue(set.contains(system), "Set membership must be stable after mutating systemKey");
+    }
+
+    @Test
+    public void testLiftSystemVersionSetMembershipStableAfterVersionNumberMutation() {
+        LiftSystemVersion version = new LiftSystemVersion(testSystem, 1, "{}");
+        entityManager.persist(version);
+        entityManager.flush();
+
+        Set<LiftSystemVersion> set = new HashSet<>();
+        set.add(version);
+        assertTrue(set.contains(version));
+
+        version.setVersionNumber(99);
+
+        assertTrue(set.contains(version), "Set membership must be stable after mutating versionNumber");
+    }
+
+    @Test
+    public void testRemoveVersionFromCollectionAfterMutation() {
+        LiftSystemVersion v1 = new LiftSystemVersion(testSystem, 1, "{}");
+        entityManager.persist(v1);
+        entityManager.flush();
+
+        testSystem.addVersion(v1);
+
+        v1.setVersionNumber(42);
+
+        assertTrue(testSystem.getVersions().remove(v1),
+                "removeVersion must succeed after mutating versionNumber");
     }
 
     @Test
