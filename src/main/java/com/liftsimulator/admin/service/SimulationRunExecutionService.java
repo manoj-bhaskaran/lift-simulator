@@ -29,15 +29,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,8 +64,8 @@ public class SimulationRunExecutionService {
     private final ScenarioValidationService scenarioValidationService;
     private final BatchInputGenerator batchInputGenerator;
     private final ObjectMapper objectMapper;
-    private final ExecutorService executor;
-    private final Map<Long, Future<?>> runningTasks = new ConcurrentHashMap<>();
+    private final ThreadPoolExecutor executor;
+    private final Map<Long, FutureTask<?>> runningTasks = new ConcurrentHashMap<>();
     private final Map<Long, CancellationToken> cancellationTokens = new ConcurrentHashMap<>();
 
     @SuppressFBWarnings(
@@ -74,13 +77,23 @@ public class SimulationRunExecutionService {
             ConfigValidationService configValidationService,
             ScenarioValidationService scenarioValidationService,
             BatchInputGenerator batchInputGenerator,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            @Value("${simulation.execution.max-concurrent-runs:4}") int maxConcurrentRuns,
+            @Value("${simulation.execution.queue-capacity:20}") int queueCapacity) {
         this.runRepository = runRepository;
         this.configValidationService = configValidationService;
         this.scenarioValidationService = scenarioValidationService;
         this.batchInputGenerator = batchInputGenerator;
         this.objectMapper = objectMapper;
-        this.executor = Executors.newCachedThreadPool(new SimulationRunnerThreadFactory());
+        this.executor = new ThreadPoolExecutor(
+            maxConcurrentRuns,
+            maxConcurrentRuns,
+            60L,
+            TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(queueCapacity),
+            new SimulationRunnerThreadFactory(),
+            new ThreadPoolExecutor.AbortPolicy()
+        );
     }
 
     /**
@@ -111,6 +124,16 @@ public class SimulationRunExecutionService {
         SimulationRun run = cancelRunStatus(runId);
         CancellationToken token = cancellationTokens.computeIfAbsent(runId, id -> new CancellationToken());
         token.cancel();
+        FutureTask<?> future = runningTasks.get(runId);
+        if (future != null && future.cancel(false)) {
+            // future.cancel() marks the FutureTask cancelled but leaves it in the
+            // ArrayBlockingQueue, holding the slot. Remove it explicitly so the slot
+            // is released immediately. executeRun's finally block will never run for
+            // a task that never started, so clean up tracking state here too.
+            executor.remove(future);
+            runningTasks.remove(runId, future);
+            cancellationTokens.remove(runId);
+        }
         return run;
     }
 
@@ -530,11 +553,17 @@ public class SimulationRunExecutionService {
     }
 
     private void submitExecution(RunExecutionRequest request) {
-        Future<?> future = executor.submit(() -> executeRun(request));
-        runningTasks.put(request.runId(), future);
-        if (future.isDone()) {
-            runningTasks.remove(request.runId(), future);
-            cancellationTokens.remove(request.runId());
+        FutureTask<?> task = new FutureTask<>(() -> { executeRun(request); return null; });
+        try {
+            executor.execute(task);
+            runningTasks.put(request.runId(), task);
+            if (task.isDone()) {
+                runningTasks.remove(request.runId(), task);
+                cancellationTokens.remove(request.runId());
+            }
+        } catch (RejectedExecutionException ex) {
+            logger.warn("Run {} rejected: simulation execution queue is full", request.runId());
+            failRunWithMessage(request.runId(), "Simulation queue is full; run rejected.", false);
         }
     }
 

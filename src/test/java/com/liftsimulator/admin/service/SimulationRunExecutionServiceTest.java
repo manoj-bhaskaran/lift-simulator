@@ -116,7 +116,9 @@ public class SimulationRunExecutionServiceTest {
                 configValidationService,
                 scenarioValidationService,
                 batchInputGenerator,
-                objectMapper
+                objectMapper,
+                2,
+                10
         );
     }
 
@@ -318,6 +320,158 @@ public class SimulationRunExecutionServiceTest {
         failRunWithMessage.invoke(executionService, 9L, "boom", true);
 
         verify(runRepository).markRunningRunFailed(anyLong(), any(String.class), any());
+    }
+
+    @Test
+    public void cancellingQueuedRunReleasesQueueSlot() throws Exception {
+        // Pool=1, queue=1: one thread running, one slot queued.
+        // Cancelling the queued run should free the slot immediately so a new submission succeeds.
+        SimulationRunExecutionService tightService = new SimulationRunExecutionService(
+                runRepository,
+                configValidationService,
+                scenarioValidationService,
+                batchInputGenerator,
+                objectMapper,
+                1,
+                1
+        );
+        try {
+            java.lang.reflect.Field executorField =
+                SimulationRunExecutionService.class.getDeclaredField("executor");
+            executorField.setAccessible(true);
+            java.util.concurrent.ThreadPoolExecutor tpe =
+                (java.util.concurrent.ThreadPoolExecutor) executorField.get(tightService);
+
+            java.util.concurrent.CountDownLatch blockLatch = new java.util.concurrent.CountDownLatch(1);
+
+            // Fill pool thread with a blocking task
+            tpe.submit(() -> {
+                try { blockLatch.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            });
+
+            // Submit a run that will sit in the queue (pool thread is blocked)
+            Path runDir = tempDir.resolve("run-cancel-queue");
+            Files.createDirectories(runDir);
+            SimulationRun queuedRun = runWithArtefactDirectory(201L, runDir, SHORT_SCENARIO);
+            AtomicReference<SimulationRun> storedQueued = new AtomicReference<>(queuedRun);
+            lenient().when(runRepository.findById(201L)).thenAnswer(inv -> Optional.of(storedQueued.get()));
+            lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(inv -> {
+                SimulationRun saved = inv.getArgument(0);
+                if (Long.valueOf(201L).equals(saved.getId())) storedQueued.set(saved);
+                return saved;
+            });
+
+            tightService.submitRunForExecution(201L);
+            // Queue slot is now occupied by run 201
+
+            // Cancel the queued run — should dequeue it and release the slot
+            tightService.cancelRun(201L);
+
+            // Queue slot is free; a 3rd submission must NOT be rejected
+            boolean rejected = false;
+            try {
+                tpe.submit(() -> {}); // should fit in the now-free slot
+            } catch (java.util.concurrent.RejectedExecutionException ex) {
+                rejected = true;
+            }
+            assertFalse(rejected, "Cancelling a queued run must release its queue slot");
+
+            blockLatch.countDown();
+        } finally {
+            tightService.shutdownExecutor();
+        }
+    }
+
+    @Test
+    public void submissionsExceedingPoolPlusQueueAreRejectedWithFailedStatus() throws Exception {
+        // Pool size=2, queue=10 → capacity=12. Submit 13 runs; the 13th must be rejected cleanly.
+        SimulationRunExecutionService tightService = new SimulationRunExecutionService(
+                runRepository,
+                configValidationService,
+                scenarioValidationService,
+                batchInputGenerator,
+                objectMapper,
+                1,
+                1
+        );
+        // Capacity = 1 thread + 1 queue slot = 2. A 3rd submission must be rejected.
+        int overCapacityRunId = 99;
+        SimulationRun overCapacityRun = new SimulationRun();
+        overCapacityRun.setId((long) overCapacityRunId);
+        overCapacityRun.setStatus(SimulationRun.RunStatus.CREATED);
+
+        LiftSystem liftSystem = new LiftSystem("sys", "Sys", "desc");
+        liftSystem.setId(10L);
+        LiftSystemVersion version = new LiftSystemVersion();
+        version.setId(20L);
+        version.setLiftSystem(liftSystem);
+        version.setVersionNumber(1);
+        version.setConfig(VALID_CONFIG);
+        overCapacityRun.setLiftSystem(liftSystem);
+        overCapacityRun.setVersion(version);
+
+        AtomicReference<SimulationRun> storedOverCapacity = new AtomicReference<>(overCapacityRun);
+
+        // Block the pool thread so queue fills up too
+        java.util.concurrent.CountDownLatch block = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CountDownLatch executing = new java.util.concurrent.CountDownLatch(1);
+
+        // IDs 97 and 98 will occupy the thread and queue slot
+        for (int id : new int[]{97, 98}) {
+            SimulationRun blocker = new SimulationRun();
+            blocker.setId((long) id);
+            blocker.setStatus(SimulationRun.RunStatus.CREATED);
+            blocker.setLiftSystem(liftSystem);
+            blocker.setVersion(version);
+            lenient().when(runRepository.findById((long) id)).thenReturn(Optional.of(blocker));
+            lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(inv -> inv.getArgument(0));
+            lenient().when(runRepository.updateCurrentTick(anyLong(), anyLong())).thenReturn(1);
+        }
+
+        // Use a scenario that blocks mid-way via the CountDownLatch approach is complex;
+        // instead we just verify the 3rd submission fails the run immediately.
+        lenient().when(runRepository.findById((long) overCapacityRunId)).thenReturn(Optional.of(overCapacityRun));
+        lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(inv -> {
+            SimulationRun saved = inv.getArgument(0);
+            if (saved.getId() == overCapacityRunId) {
+                storedOverCapacity.set(saved);
+            }
+            return saved;
+        });
+
+        // Fill the pool (1 thread) and queue (1 slot) with long-running tasks
+        tightService.getClass(); // just to ensure class is loaded; real work below
+
+        // Submit via reflection to avoid needing scenario setup; instead verify rejection at executor level
+        // by using a dedicated service with a saturated pool/queue.
+        // We submit two tasks that block, then the third should be rejected.
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+        java.lang.reflect.Field executorField = SimulationRunExecutionService.class.getDeclaredField("executor");
+        executorField.setAccessible(true);
+        java.util.concurrent.ThreadPoolExecutor tpe =
+            (java.util.concurrent.ThreadPoolExecutor) executorField.get(tightService);
+
+        // Fill pool and queue with blocking runnables
+        tpe.submit(() -> { try { latch.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } });
+        tpe.submit(() -> { try { latch.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } });
+
+        // Now submit the overCapacity run — executor is full, should be rejected cleanly
+        lenient().when(runRepository.findById((long) overCapacityRunId)).thenReturn(Optional.of(overCapacityRun));
+
+        Scenario scenario = new Scenario("s", SHORT_SCENARIO, version);
+        overCapacityRun.setScenario(scenario);
+        overCapacityRun.setArtefactBasePath(tempDir.resolve("run-99").toString());
+        Files.createDirectories(tempDir.resolve("run-99"));
+
+        tightService.submitRunForExecution((long) overCapacityRunId);
+
+        latch.countDown();
+        tightService.shutdownExecutor();
+
+        assertEquals(SimulationRun.RunStatus.FAILED, storedOverCapacity.get().getStatus(),
+            "Run rejected by a full queue must be marked FAILED, not left in CREATED state");
+        assertEquals("Simulation queue is full; run rejected.", storedOverCapacity.get().getErrorMessage(),
+            "Rejected run must carry a descriptive error message");
     }
 
     private AtomicReference<SimulationRun> prepareRepository(SimulationRun run) {
