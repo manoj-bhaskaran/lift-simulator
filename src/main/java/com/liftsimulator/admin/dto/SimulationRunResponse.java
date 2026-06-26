@@ -11,8 +11,11 @@ import java.time.OffsetDateTime;
 public record SimulationRunResponse(
     Long id,
     Long liftSystemId,
+    String liftSystemName,
+    Long versionId,
     Integer versionNumber,
     Long scenarioId,
+    String scenarioName,
     RunStatus status,
     OffsetDateTime createdAt,
     OffsetDateTime startedAt,
@@ -33,8 +36,11 @@ public record SimulationRunResponse(
         return new SimulationRunResponse(
             run.getId(),
             run.getLiftSystem() != null ? run.getLiftSystem().getId() : null,
+            run.getLiftSystem() != null ? run.getLiftSystem().getDisplayName() : null,
+            run.getVersion() != null ? run.getVersion().getId() : null,
             run.getVersion() != null ? run.getVersion().getVersionNumber() : null,
             run.getScenario() != null ? run.getScenario().getId() : null,
+            run.getScenario() != null ? run.getScenario().getName() : null,
             run.getStatus(),
             run.getCreatedAt(),
             run.getStartedAt(),

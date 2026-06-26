@@ -581,8 +581,11 @@ All simulation run endpoints require the configured API key header.
 ```json
 {
   "liftSystemId": 1,
+  "liftSystemName": "Downtown Tower",
+  "versionId": 2,
   "versionNumber": 2,
   "scenarioId": 3,
+  "scenarioName": "Morning Rush",
   "seed": 12345
 }
 ```
@@ -598,8 +601,11 @@ All simulation run endpoints require the configured API key header.
 {
   "id": 1,
   "liftSystemId": 1,
+  "liftSystemName": "Downtown Tower",
+  "versionId": 2,
   "versionNumber": 2,
   "scenarioId": 3,
+  "scenarioName": "Morning Rush",
   "status": "RUNNING",
   "createdAt": "2026-01-23T10:00:00Z",
   "startedAt": "2026-01-23T10:00:01Z",
@@ -634,8 +640,11 @@ Retrieves the current status and details of a simulation run, including progress
 {
   "id": 1,
   "liftSystemId": 1,
+  "liftSystemName": "Downtown Tower",
+  "versionId": 2,
   "versionNumber": 2,
   "scenarioId": 3,
+  "scenarioName": "Morning Rush",
   "status": "RUNNING",
   "createdAt": "2026-01-23T10:00:00Z",
   "startedAt": "2026-01-23T10:00:01Z",
@@ -673,8 +682,11 @@ Cancels a running simulation run and transitions it to a terminal `CANCELLED` st
 {
   "id": 1,
   "liftSystemId": 1,
+  "liftSystemName": "Downtown Tower",
+  "versionId": 2,
   "versionNumber": 2,
   "scenarioId": 3,
+  "scenarioName": "Morning Rush",
   "status": "CANCELLED",
   "createdAt": "2026-01-23T10:00:00Z",
   "startedAt": "2026-01-23T10:00:01Z",

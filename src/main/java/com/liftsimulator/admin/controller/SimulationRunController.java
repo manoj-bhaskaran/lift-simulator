@@ -141,8 +141,7 @@ public class SimulationRunController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<SimulationRunResponse> getSimulationRun(@PathVariable Long id) {
-        SimulationRun run = simulationRunService.getRunById(id);
-        SimulationRunResponse response = SimulationRunResponse.fromEntity(run);
+        SimulationRunResponse response = simulationRunService.getRunResponseById(id);
         return ResponseEntity.ok(response);
     }
 

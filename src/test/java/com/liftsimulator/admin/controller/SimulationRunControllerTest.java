@@ -6,9 +6,11 @@ import com.liftsimulator.admin.dto.CreateSimulationRunRequest;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.LiftSystemVersion.VersionStatus;
+import com.liftsimulator.admin.entity.Scenario;
 import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
+import com.liftsimulator.admin.repository.ScenarioRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,12 +61,16 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
     @Autowired
     private SimulationRunRepository runRepository;
 
+    @Autowired
+    private ScenarioRepository scenarioRepository;
+
     private LiftSystem testSystem;
     private LiftSystemVersion testVersion;
 
     @BeforeEach
     public void setUp() throws IOException {
         runRepository.deleteAll();
+        scenarioRepository.deleteAll();
         versionRepository.deleteAll();
         liftSystemRepository.deleteAll();
 
@@ -148,7 +154,13 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
 
     @Test
     public void testGetSimulationRun_Success() throws Exception {
+        Scenario scenario = scenarioRepository.save(new Scenario(
+            "Morning Rush",
+            "{\"durationTicks\": 10, \"passengerFlows\": []}",
+            testVersion
+        ));
         SimulationRun run = new SimulationRun(testSystem, testVersion);
+        run.setScenario(scenario);
         run = runRepository.save(run);
 
         mockMvc.perform(get("/api/v1/simulation-runs/" + run.getId())
@@ -156,7 +168,11 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(run.getId()))
             .andExpect(jsonPath("$.liftSystemId").value(testSystem.getId()))
+            .andExpect(jsonPath("$.liftSystemName").value(testSystem.getDisplayName()))
+            .andExpect(jsonPath("$.versionId").value(testVersion.getId()))
             .andExpect(jsonPath("$.versionNumber").value(testVersion.getVersionNumber()))
+            .andExpect(jsonPath("$.scenarioId").value(scenario.getId()))
+            .andExpect(jsonPath("$.scenarioName").value(scenario.getName()))
             .andExpect(jsonPath("$.status").value("CREATED"));
     }
 

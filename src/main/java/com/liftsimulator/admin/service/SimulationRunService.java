@@ -2,6 +2,7 @@ package com.liftsimulator.admin.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ScenarioDefinitionDTO;
+import com.liftsimulator.admin.dto.SimulationRunResponse;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.Scenario;
@@ -353,6 +354,21 @@ public class SimulationRunService {
      * @throws ResourceNotFoundException if the run is not found
      */
     public SimulationRun getRunById(Long id) {
+        return findRunByIdWithDetails(id);
+    }
+
+    /**
+     * Get a run response by its ID while the persistence context is still open.
+     *
+     * @param id the run id
+     * @return the run response
+     * @throws ResourceNotFoundException if the run is not found
+     */
+    public SimulationRunResponse getRunResponseById(Long id) {
+        return SimulationRunResponse.fromEntity(findRunByIdWithDetails(id));
+    }
+
+    private SimulationRun findRunByIdWithDetails(Long id) {
         return runRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Simulation run not found with id: " + id));

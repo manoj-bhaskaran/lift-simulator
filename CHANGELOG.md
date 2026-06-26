@@ -17,6 +17,11 @@ summary is kept under [Earlier history](#earlier-history).
 ## [Unreleased]
 
 
+## [0.53.4] - 2026-06-26
+
+### Fixed
+- **Simulation run detail DTO transaction safety**: The by-id simulation-run endpoint now builds its response inside the service read transaction with the run relationships eagerly loaded, and the detail payload includes related lift-system, version, and scenario display fields to keep future DTO expansion safe from lazy-loading failures. Updated README and package metadata for the 0.53.4 patch release.
+
 ## [0.53.3] - 2026-06-23
 
 ### Fixed
