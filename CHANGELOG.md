@@ -17,6 +17,11 @@ summary is kept under [Earlier history](#earlier-history).
 ## [Unreleased]
 
 
+## [0.53.5] - 2026-06-26
+
+### Fixed
+- **Consistent JSONB normalization**: Lift system version configuration writes now use the same Jackson re-serialization policy as scenarios before persisting to JSONB, while the JPA verification runner compares JSONB round trips semantically instead of requiring byte-for-byte string equality. Updated README and package metadata for the 0.53.5 patch release.
+
 ## [0.53.4] - 2026-06-26
 
 ### Fixed
