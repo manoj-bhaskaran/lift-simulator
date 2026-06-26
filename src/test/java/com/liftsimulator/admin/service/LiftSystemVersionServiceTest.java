@@ -124,6 +124,24 @@ public class LiftSystemVersionServiceTest {
     }
 
     @Test
+    public void testCreateVersion_RejectsTrailingJsonTokensDuringNormalization() {
+        String configWithTrailingTokens = "{\"minFloor\":0,\"maxFloor\":9} {\"ignored\":true}";
+        CreateVersionRequest request = new CreateVersionRequest(configWithTrailingTokens, null);
+
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(configValidationService.validate(configWithTrailingTokens)).thenReturn(validValidationResponse);
+        when(versionRepository.findMaxVersionNumberByLiftSystemId(1L)).thenReturn(null);
+
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> versionService.createVersion(1L, request)
+        );
+
+        assertEquals("Configuration JSON could not be normalized", exception.getMessage());
+        verify(versionRepository, never()).save(any(LiftSystemVersion.class));
+    }
+
+    @Test
     public void testCreateVersion_WithCloning() {
         String originalConfig = "{\"minFloor\": 0, \"maxFloor\": 9}";
         LiftSystemVersion sourceVersion = new LiftSystemVersion();
@@ -222,6 +240,24 @@ public class LiftSystemVersionServiceTest {
         verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 1);
         verify(configValidationService).validate(updatedConfig);
         verify(versionRepository).save(mockVersion);
+    }
+
+    @Test
+    public void testUpdateVersionConfig_RejectsTrailingJsonTokensDuringNormalization() {
+        String configWithTrailingTokens = "{\"minFloor\":0,\"maxFloor\":19} [1]";
+        UpdateVersionConfigRequest request = new UpdateVersionConfigRequest(configWithTrailingTokens);
+
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1))
+            .thenReturn(Optional.of(mockVersion));
+        when(configValidationService.validate(configWithTrailingTokens)).thenReturn(validValidationResponse);
+
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> versionService.updateVersionConfig(1L, 1, request)
+        );
+
+        assertEquals("Configuration JSON could not be normalized", exception.getMessage());
+        verify(versionRepository, never()).save(any(LiftSystemVersion.class));
     }
 
     @Test

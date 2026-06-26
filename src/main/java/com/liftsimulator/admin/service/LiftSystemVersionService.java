@@ -1,6 +1,7 @@
 package com.liftsimulator.admin.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
@@ -116,7 +117,9 @@ public class LiftSystemVersionService {
 
     private String normalizeConfigJson(String config) {
         try {
-            JsonNode configJson = objectMapper.readTree(config);
+            JsonNode configJson = objectMapper.reader()
+                .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                .readTree(config);
             return objectMapper.writeValueAsString(configJson);
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Configuration JSON could not be normalized", e);
