@@ -1,5 +1,6 @@
 package com.liftsimulator.admin.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.CreateVersionRequest;
 import com.liftsimulator.admin.dto.UpdateVersionConfigRequest;
@@ -12,7 +13,6 @@ import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -46,7 +46,6 @@ public class LiftSystemVersionServiceTest {
     @Mock
     private ConfigValidationService configValidationService;
 
-    @InjectMocks
     private LiftSystemVersionService versionService;
 
     private LiftSystem mockLiftSystem;
@@ -78,6 +77,12 @@ public class LiftSystemVersionServiceTest {
             Collections.emptyList(),
             Collections.emptyList()
         );
+        versionService = new LiftSystemVersionService(
+            liftSystemRepository,
+            versionRepository,
+            configValidationService,
+            new ObjectMapper()
+        );
     }
 
     @Test
@@ -98,6 +103,42 @@ public class LiftSystemVersionServiceTest {
         verify(configValidationService).validate(config);
         verify(versionRepository).findMaxVersionNumberByLiftSystemId(1L);
         verify(versionRepository).save(any(LiftSystemVersion.class));
+    }
+
+    @Test
+    public void testCreateVersion_NormalizesProvidedConfigBeforeSaving() {
+        String config = "{\n  \"minFloor\" : 0,\n  \"maxFloor\" : 9,\n  \"lifts\" : 2\n}";
+        CreateVersionRequest request = new CreateVersionRequest(config, null);
+
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(configValidationService.validate(config)).thenReturn(validValidationResponse);
+        when(versionRepository.findMaxVersionNumberByLiftSystemId(1L)).thenReturn(null);
+        when(versionRepository.save(any(LiftSystemVersion.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        VersionResponse response = versionService.createVersion(1L, request);
+
+        assertNotNull(response);
+        assertEquals("{\"minFloor\":0,\"maxFloor\":9,\"lifts\":2}", response.config());
+        verify(configValidationService).validate(config);
+    }
+
+    @Test
+    public void testCreateVersion_RejectsTrailingJsonTokensDuringNormalization() {
+        String configWithTrailingTokens = "{\"minFloor\":0,\"maxFloor\":9} {\"ignored\":true}";
+        CreateVersionRequest request = new CreateVersionRequest(configWithTrailingTokens, null);
+
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(configValidationService.validate(configWithTrailingTokens)).thenReturn(validValidationResponse);
+        when(versionRepository.findMaxVersionNumberByLiftSystemId(1L)).thenReturn(null);
+
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> versionService.createVersion(1L, request)
+        );
+
+        assertEquals("Configuration JSON could not be normalized", exception.getMessage());
+        verify(versionRepository, never()).save(any(LiftSystemVersion.class));
     }
 
     @Test
@@ -195,9 +236,28 @@ public class LiftSystemVersionServiceTest {
         VersionResponse response = versionService.updateVersionConfig(1L, 1, request);
 
         assertNotNull(response);
+        assertEquals("{\"minFloor\":0,\"maxFloor\":19,\"lifts\":3}", mockVersion.getConfig());
         verify(versionRepository).findByLiftSystemIdAndVersionNumber(1L, 1);
         verify(configValidationService).validate(updatedConfig);
         verify(versionRepository).save(mockVersion);
+    }
+
+    @Test
+    public void testUpdateVersionConfig_RejectsTrailingJsonTokensDuringNormalization() {
+        String configWithTrailingTokens = "{\"minFloor\":0,\"maxFloor\":19} [1]";
+        UpdateVersionConfigRequest request = new UpdateVersionConfigRequest(configWithTrailingTokens);
+
+        when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1))
+            .thenReturn(Optional.of(mockVersion));
+        when(configValidationService.validate(configWithTrailingTokens)).thenReturn(validValidationResponse);
+
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> versionService.updateVersionConfig(1L, 1, request)
+        );
+
+        assertEquals("Configuration JSON could not be normalized", exception.getMessage());
+        verify(versionRepository, never()).save(any(LiftSystemVersion.class));
     }
 
     @Test

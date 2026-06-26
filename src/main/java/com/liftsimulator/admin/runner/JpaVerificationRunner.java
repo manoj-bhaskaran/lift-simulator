@@ -1,10 +1,13 @@
 package com.liftsimulator.admin.runner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.LiftSystemVersion.VersionStatus;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -27,12 +30,20 @@ public class JpaVerificationRunner implements CommandLineRunner {
 
     private final LiftSystemRepository liftSystemRepository;
     private final LiftSystemVersionRepository versionRepository;
+    private final ObjectMapper objectMapper;
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "Spring-managed beans injected via constructor; ObjectMapper lifecycle "
+                    + "and configuration are managed by the application context."
+    )
     public JpaVerificationRunner(
             LiftSystemRepository liftSystemRepository,
-            LiftSystemVersionRepository versionRepository) {
+            LiftSystemVersionRepository versionRepository,
+            ObjectMapper objectMapper) {
         this.liftSystemRepository = liftSystemRepository;
         this.versionRepository = versionRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -139,10 +150,18 @@ public class JpaVerificationRunner implements CommandLineRunner {
         logger.info("✓ Saved complex JSONB config: id={}", saved.getId());
 
         Optional<LiftSystemVersion> retrieved = versionRepository.findById(saved.getId());
-        if (retrieved.isPresent() && retrieved.get().getConfig().equals(complexJson)) {
-            logger.info("✓ Retrieved JSONB config matches original");
+        if (retrieved.isPresent() && jsonSemanticallyEquals(complexJson, retrieved.get().getConfig())) {
+            logger.info("✓ Retrieved JSONB config semantically matches original");
         } else {
             throw new AssertionError("JSONB config mismatch after retrieval");
+        }
+    }
+
+    private boolean jsonSemanticallyEquals(String expectedJson, String actualJson) {
+        try {
+            return objectMapper.readTree(expectedJson).equals(objectMapper.readTree(actualJson));
+        } catch (JsonProcessingException e) {
+            throw new AssertionError("Failed to parse JSONB config during verification", e);
         }
     }
 

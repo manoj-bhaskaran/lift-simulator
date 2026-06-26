@@ -1,5 +1,9 @@
 package com.liftsimulator.admin.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.CreateVersionRequest;
 import com.liftsimulator.admin.dto.UpdateVersionConfigRequest;
@@ -8,6 +12,7 @@ import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,14 +28,22 @@ public class LiftSystemVersionService {
     private final LiftSystemRepository liftSystemRepository;
     private final LiftSystemVersionRepository versionRepository;
     private final ConfigValidationService configValidationService;
+    private final ObjectMapper objectMapper;
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "Spring-managed beans injected via constructor; ObjectMapper lifecycle "
+                    + "and configuration are managed by the application context."
+    )
     public LiftSystemVersionService(
             LiftSystemRepository liftSystemRepository,
             LiftSystemVersionRepository versionRepository,
-            ConfigValidationService configValidationService) {
+            ConfigValidationService configValidationService,
+            ObjectMapper objectMapper) {
         this.liftSystemRepository = liftSystemRepository;
         this.versionRepository = versionRepository;
         this.configValidationService = configValidationService;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -72,7 +85,7 @@ public class LiftSystemVersionService {
         Integer nextVersionNumber = getNextVersionNumber(systemId);
 
         // Create new version
-        LiftSystemVersion version = new LiftSystemVersion(liftSystem, nextVersionNumber, config);
+        LiftSystemVersion version = new LiftSystemVersion(liftSystem, nextVersionNumber, normalizeConfigJson(config));
         LiftSystemVersion savedVersion = versionRepository.save(version);
 
         return VersionResponse.fromEntity(savedVersion);
@@ -102,10 +115,21 @@ public class LiftSystemVersionService {
             throw new ConfigValidationException("Configuration validation failed", validationResponse);
         }
 
-        version.setConfig(request.config());
+        version.setConfig(normalizeConfigJson(request.config()));
         LiftSystemVersion updatedVersion = versionRepository.save(version);
 
         return VersionResponse.fromEntity(updatedVersion);
+    }
+
+    private String normalizeConfigJson(String config) {
+        try {
+            JsonNode configJson = objectMapper.reader()
+                .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                .readTree(config);
+            return objectMapper.writeValueAsString(configJson);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Configuration JSON could not be normalized", e);
+        }
     }
 
     /**
