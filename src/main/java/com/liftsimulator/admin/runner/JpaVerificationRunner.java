@@ -7,6 +7,7 @@ import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.LiftSystemVersion.VersionStatus;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -31,6 +32,11 @@ public class JpaVerificationRunner implements CommandLineRunner {
     private final LiftSystemVersionRepository versionRepository;
     private final ObjectMapper objectMapper;
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "Spring-managed beans injected via constructor; ObjectMapper lifecycle "
+                    + "and configuration are managed by the application context."
+    )
     public JpaVerificationRunner(
             LiftSystemRepository liftSystemRepository,
             LiftSystemVersionRepository versionRepository,

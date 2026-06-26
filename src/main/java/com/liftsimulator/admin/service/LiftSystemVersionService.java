@@ -12,6 +12,7 @@ import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,11 @@ public class LiftSystemVersionService {
     private final ConfigValidationService configValidationService;
     private final ObjectMapper objectMapper;
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "Spring-managed beans injected via constructor; ObjectMapper lifecycle "
+                    + "and configuration are managed by the application context."
+    )
     public LiftSystemVersionService(
             LiftSystemRepository liftSystemRepository,
             LiftSystemVersionRepository versionRepository,
