@@ -415,4 +415,70 @@ public class SimulationRunRepositoryTest {
         assertFalse(runRepository.existsById(run1Id));
         assertFalse(runRepository.existsById(run2Id));
     }
+
+    @Test
+    public void testMarkRunningRunFailed_UpdatesRunningToFailed() {
+        SimulationRun run = new SimulationRun(liftSystem, version);
+        run.start();
+        entityManager.persist(run);
+        entityManager.flush();
+        entityManager.clear();
+
+        OffsetDateTime failedAt = OffsetDateTime.now();
+        int rowsUpdated = runRepository.markRunningRunFailed(
+            run.getId(),
+            "Test failure",
+            failedAt
+        );
+
+        assertEquals(1, rowsUpdated);
+
+        SimulationRun updated = entityManager.find(SimulationRun.class, run.getId());
+        assertEquals(RunStatus.FAILED, updated.getStatus());
+        assertEquals("Test failure", updated.getErrorMessage());
+        assertEquals(failedAt, updated.getEndedAt());
+    }
+
+    @Test
+    public void testMarkRunningRunFailed_IgnoresNonRunningRun() {
+        SimulationRun run = new SimulationRun(liftSystem, version);
+        run.start();
+        run.succeed();
+        entityManager.persist(run);
+        entityManager.flush();
+        entityManager.clear();
+
+        OffsetDateTime failedAt = OffsetDateTime.now();
+        int rowsUpdated = runRepository.markRunningRunFailed(
+            run.getId(),
+            "Test failure",
+            failedAt
+        );
+
+        assertEquals(0, rowsUpdated, "Should not update non-RUNNING run");
+
+        SimulationRun unchanged = entityManager.find(SimulationRun.class, run.getId());
+        assertEquals(RunStatus.SUCCEEDED, unchanged.getStatus());
+    }
+
+    @Test
+    public void testMarkRunningRunFailed_IgnoresCancelledRun() {
+        SimulationRun run = new SimulationRun(liftSystem, version);
+        run.cancel();
+        entityManager.persist(run);
+        entityManager.flush();
+        entityManager.clear();
+
+        OffsetDateTime failedAt = OffsetDateTime.now();
+        int rowsUpdated = runRepository.markRunningRunFailed(
+            run.getId(),
+            "Test failure",
+            failedAt
+        );
+
+        assertEquals(0, rowsUpdated, "Should not update CANCELLED run");
+
+        SimulationRun unchanged = entityManager.find(SimulationRun.class, run.getId());
+        assertEquals(RunStatus.CANCELLED, unchanged.getStatus());
+    }
 }

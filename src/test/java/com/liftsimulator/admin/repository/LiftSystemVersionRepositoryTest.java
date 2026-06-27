@@ -20,7 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.springframework.dao.DataIntegrityViolationException;
 
 /**
  * Integration tests for LiftSystemVersionRepository.
@@ -339,5 +342,55 @@ public class LiftSystemVersionRepositoryTest {
 
         assertFalse(versionRepository.findById(v1Id).isPresent());
         assertFalse(versionRepository.findById(v2Id).isPresent());
+    }
+
+    @Test
+    public void testUniqueConstraintOnVersionNumber() {
+        LiftSystemVersion v1 = new LiftSystemVersion(testSystem, 1, "{\"v\": 1}");
+        LiftSystemVersion v2 = new LiftSystemVersion(testSystem, 1, "{\"v\": 2}");
+
+        entityManager.persist(v1);
+        entityManager.flush();
+
+        entityManager.persist(v2);
+
+        assertThrows(
+            DataIntegrityViolationException.class,
+            () -> entityManager.flush(),
+            "Duplicate version number should violate unique constraint"
+        );
+    }
+
+    @Test
+    public void testPublishAndArchivePreviousVersion() {
+        LiftSystemVersion v1 = new LiftSystemVersion(testSystem, 1, "{\"v\": 1}");
+        LiftSystemVersion v2 = new LiftSystemVersion(testSystem, 2, "{\"v\": 2}");
+
+        entityManager.persist(v1);
+        entityManager.persist(v2);
+        entityManager.flush();
+
+        v1.publish();
+        versionRepository.save(v1);
+        entityManager.flush();
+        entityManager.clear();
+
+        LiftSystemVersion v1ToArchive = versionRepository.findById(v1.getId()).orElseThrow();
+        v1ToArchive.archive();
+        versionRepository.save(v1ToArchive);
+
+        v2.publish();
+        versionRepository.save(v2);
+        entityManager.flush();
+        entityManager.clear();
+
+        List<LiftSystemVersion> publishedVersions = versionRepository
+            .findByLiftSystemIdAndIsPublishedTrue(testSystem.getId());
+        assertEquals(1, publishedVersions.size(), "Exactly one version should be published");
+        assertEquals(2, publishedVersions.get(0).getVersionNumber(), "v2 should be published");
+
+        LiftSystemVersion reloadedV1 = versionRepository.findById(v1.getId()).orElseThrow();
+        assertEquals(VersionStatus.ARCHIVED, reloadedV1.getStatus(), "v1 should be archived");
+        assertFalse(reloadedV1.getIsPublished(), "v1 should not be marked as published");
     }
 }
