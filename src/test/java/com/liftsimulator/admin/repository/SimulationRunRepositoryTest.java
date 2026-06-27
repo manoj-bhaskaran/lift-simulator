@@ -46,7 +46,7 @@ public class SimulationRunRepositoryTest {
 
     @BeforeEach
     public void setUp() {
-        liftSystem = new LiftSystem("test-system", "Test System", "Test");
+        liftSystem = new LiftSystem("test-system-" + System.currentTimeMillis(), "Test System", "Test");
         entityManager.persist(liftSystem);
 
         version = new LiftSystemVersion(liftSystem, 1, "{\"lifts\": 2}");
@@ -451,7 +451,7 @@ public class SimulationRunRepositoryTest {
         SimulationRun updated = runRepository.findById(run.getId()).orElseThrow();
         assertEquals(RunStatus.FAILED, updated.getStatus());
         assertEquals("Test failure", updated.getErrorMessage());
-        assertEquals(failedAt, updated.getEndedAt());
+        assertEquals(failedAt.truncatedTo(ChronoUnit.MICROS), updated.getEndedAt());
     }
 
     @Test

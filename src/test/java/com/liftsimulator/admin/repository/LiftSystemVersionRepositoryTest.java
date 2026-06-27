@@ -46,7 +46,7 @@ public class LiftSystemVersionRepositoryTest {
     @BeforeEach
     public void setUp() {
         testSystem = new LiftSystem(
-                "test-system",
+                "test-system-" + System.currentTimeMillis(),
                 "Test System",
                 "For testing versions"
         );
