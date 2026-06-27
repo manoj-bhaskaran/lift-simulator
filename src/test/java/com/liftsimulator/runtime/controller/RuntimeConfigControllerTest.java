@@ -134,7 +134,7 @@ class RuntimeConfigControllerTest extends LocalIntegrationTest {
     void simulateEndpointIsRemoved() throws Exception {
         mockMvc.perform(post("/api/v1/runtime/systems/test-system/simulate")
                 .header(API_KEY_HEADER, API_KEY_VALUE))
-            .andExpect(status().isMethodNotAllowed());
+            .andExpect(status().isNotFound());
 
         verifyNoInteractions(runtimeConfigService);
     }
