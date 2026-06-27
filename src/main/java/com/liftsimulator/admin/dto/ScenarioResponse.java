@@ -13,6 +13,7 @@ public record ScenarioResponse(
     JsonNode scenarioJson,
     Long liftSystemVersionId,
     LiftSystemVersionInfo versionInfo,
+    long simulationRunCount,
     OffsetDateTime createdAt,
     OffsetDateTime updatedAt
 ) {

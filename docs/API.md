@@ -253,6 +253,7 @@ Scenario payloads define passenger flow for UI-driven simulation runs. The scena
         ],
         "seed": 42
       },
+      "simulationRunCount": 0,
       "createdAt": "2026-01-11T10:00:00Z",
       "updatedAt": "2026-01-11T10:00:00Z"
     }
@@ -267,7 +268,17 @@ Scenario payloads define passenger flow for UI-driven simulation runs. The scena
 
 - **Get Scenario**: `GET /api/v1/scenarios/{id}`
   - Returns a stored scenario by ID
-  - Response (200 OK): Scenario details
+  - Response (200 OK): Scenario details, including `simulationRunCount` for deletion-impact warnings
+
+- **Get Scenario Run Count**: `GET /api/v1/scenarios/{id}/run-count`
+  - Returns the number of simulation runs that reference the scenario
+  - Response (200 OK): Numeric count used by clients before confirming destructive scenario deletion
+
+- **Delete Scenario**: `DELETE /api/v1/scenarios/{id}`
+  - Deletes the scenario and intentionally cascades its associated simulation-run history
+  - Associated run artefact directories are removed after the delete transaction commits so cascade-deleted runs do not leave orphaned files
+  - Clients should warn users with the run count before calling this endpoint
+  - Response (204 No Content): Scenario deleted
 
 #### Scenario Validation
 

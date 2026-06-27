@@ -29,6 +29,7 @@ function Scenarios() {
   const [alertMessage, setAlertMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [loadingDeleteImpact, setLoadingDeleteImpact] = useState(null);
   const [copyScenario, setCopyScenario] = useState(null);
   const [systems, setSystems] = useState([]);
   const [targetSystemId, setTargetSystemId] = useState('');
@@ -141,6 +142,23 @@ function Scenarios() {
       handleApiError(err, setAlertMessage, 'Failed to copy scenario');
     } finally {
       setCopying(false);
+    }
+  };
+
+  /**
+   * Opens scenario deletion confirmation with run-history impact details.
+   *
+   * @param {Object} scenario - Scenario selected for deletion
+   */
+  const handleOpenDeleteConfirm = async (scenario) => {
+    setLoadingDeleteImpact(scenario.id);
+    try {
+      const response = await scenariosApi.getScenarioRunCount(scenario.id);
+      setDeleteConfirm({ ...scenario, simulationRunCount: Number(response.data) || 0 });
+    } catch (err) {
+      handleApiError(err, setAlertMessage, 'Failed to load scenario deletion impact');
+    } finally {
+      setLoadingDeleteImpact(null);
     }
   };
 
@@ -266,9 +284,10 @@ function Scenarios() {
                   </button>
                   <button
                     className="btn-danger"
-                    onClick={() => setDeleteConfirm(scenario)}
+                    onClick={() => handleOpenDeleteConfirm(scenario)}
+                    disabled={loadingDeleteImpact === scenario.id}
                   >
-                    Delete
+                    {loadingDeleteImpact === scenario.id ? 'Checking...' : 'Delete'}
                   </button>
                 </div>
               </div>
@@ -322,7 +341,9 @@ function Scenarios() {
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
         title="Delete Scenario"
-        message={`Are you sure you want to delete "${deleteConfirm?.name}"? This action cannot be undone.`}
+        message={deleteConfirm?.simulationRunCount > 0
+          ? `Deleting "${deleteConfirm?.name}" will permanently delete ${deleteConfirm.simulationRunCount} simulation run(s), their history, and their artefacts. This action cannot be undone.`
+          : `Are you sure you want to delete "${deleteConfirm?.name}"? This action cannot be undone.`}
         confirmText="Delete"
         confirmStyle="danger"
         onConfirm={() => handleDeleteScenario(deleteConfirm.id)}

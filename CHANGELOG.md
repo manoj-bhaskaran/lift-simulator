@@ -17,6 +17,11 @@ summary is kept under [Earlier history](#earlier-history).
 ## [Unreleased]
 
 
+## [0.53.6] - 2026-06-27
+
+### Fixed
+- **Scenario deletion impact and artefact cleanup**: Scenario responses and a dedicated run-count endpoint now expose associated simulation-run counts, the Scenarios UI warns when deletion will remove run history and artefacts, and backend deletion captures cascade-removed runs before deleting the scenario so their artefact directories are cleaned after commit. Updated README and package metadata for the 0.53.6 patch release.
+
 ## [0.53.5] - 2026-06-26
 
 ### Fixed

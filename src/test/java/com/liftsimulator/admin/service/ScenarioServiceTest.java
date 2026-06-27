@@ -9,8 +9,10 @@ import com.liftsimulator.admin.dto.ValidationIssue;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.Scenario;
+import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.ScenarioRepository;
+import com.liftsimulator.admin.repository.SimulationRunRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,6 +64,12 @@ public class ScenarioServiceTest {
     @Mock
     private ScenarioValidationService scenarioValidationService;
 
+    @Mock
+    private SimulationRunRepository runRepository;
+
+    @Mock
+    private ArtefactService artefactService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private ScenarioService scenarioService;
     private LiftSystemVersion version;
@@ -72,6 +80,8 @@ public class ScenarioServiceTest {
                 scenarioRepository,
                 versionRepository,
                 scenarioValidationService,
+                runRepository,
+                artefactService,
                 objectMapper
         );
         version = version(20L);
@@ -101,6 +111,7 @@ public class ScenarioServiceTest {
         assertEquals(10L, response.versionInfo().liftSystemId());
         assertEquals("test-system", response.versionInfo().systemKey());
         assertEquals(1, response.versionInfo().versionNumber());
+        assertEquals(0L, response.simulationRunCount());
         assertEquals(0, response.versionInfo().minFloor());
         assertEquals(9, response.versionInfo().maxFloor());
 
@@ -343,6 +354,48 @@ public class ScenarioServiceTest {
         );
 
         assertTrue(exception.getMessage().contains("Stored scenario JSON could not be parsed"));
+    }
+
+    @Test
+    public void getScenarioIncludesSimulationRunCount() throws Exception {
+        Scenario scenario = new Scenario("Morning rush", validScenario(), version);
+        scenario.setId(30L);
+        when(scenarioRepository.findById(30L)).thenReturn(Optional.of(scenario));
+        when(runRepository.countByScenarioId(30L)).thenReturn(3L);
+
+        ScenarioResponse response = scenarioService.getScenario(30L);
+
+        assertEquals(3L, response.simulationRunCount());
+    }
+
+    @Test
+    public void deleteScenarioDeletesScenarioAfterCapturingCascadeRunArtefacts() throws Exception {
+        Scenario scenario = new Scenario("Morning rush", validScenario(), version);
+        scenario.setId(30L);
+        SimulationRun run = new SimulationRun(version.getLiftSystem(), version);
+        run.setId(88L);
+        run.setScenario(scenario);
+        run.setArtefactBasePath("/tmp/run-88");
+        when(scenarioRepository.findById(30L)).thenReturn(Optional.of(scenario));
+        when(runRepository.findByScenarioId(30L)).thenReturn(List.of(run));
+
+        scenarioService.deleteScenario(30L);
+
+        verify(runRepository).findByScenarioId(30L);
+        verify(scenarioRepository).delete(scenario);
+        verify(artefactService).deleteArtefacts(run);
+    }
+
+    @Test
+    public void countSimulationRunsThrowsWhenScenarioIsMissing() {
+        when(scenarioRepository.existsById(99L)).thenReturn(false);
+
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> scenarioService.countSimulationRuns(99L)
+        );
+
+        assertEquals("Scenario not found with id: 99", exception.getMessage());
     }
 
     private JsonNode json(String payload) throws Exception {
