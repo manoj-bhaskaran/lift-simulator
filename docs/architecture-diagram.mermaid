@@ -3,7 +3,7 @@
 graph TD
     subgraph clients["Clients & Entry Points"]
         UI["React Admin UI<br/>(SPA, Vite)"]
-        CLI["CLI Entry Points<br/>Main · LocalSimulationMain · ScenarioRunnerMain"]
+        CLI["CLI Entry Points<br/>Main · ScenarioRunnerMain"]
     end
 
     subgraph backend["Spring Boot Backend — Lift Config Service"]
@@ -16,7 +16,7 @@ graph TD
         subgraph svc["Service Layer"]
             CFGSVC["Config & Scenario Services<br/>LiftSystem · Version · Scenario<br/>ConfigValidation · ScenarioValidation"]
             RUNSVC["Run Orchestration<br/>SimulationRunService<br/>SimulationRunExecutionService (async)"]
-            SUPPORT["Support Services<br/>BatchInputGenerator · ArtefactService<br/>RuntimeSimulationService"]
+            SUPPORT["Support Services<br/>BatchInputGenerator · ArtefactService<br/>RuntimeConfigService"]
         end
 
         subgraph data["Persistence Layer"]
@@ -33,7 +33,7 @@ graph TD
 
     subgraph stores["External Stores"]
         DB[("PostgreSQL<br/>+ Flyway migrations")]
-        FS[["Artefact Filesystem<br/>config.json · scenario.json<br/>run.log · results.json"]]
+        FS[["Artefact Filesystem<br/>config.json · scenario.json · input.scenario<br/>run.log · results.json"]]
     end
 
     UI -->|"HTTPS JSON"| SEC

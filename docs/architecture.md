@@ -32,7 +32,7 @@ Mermaid code blocks natively, so the diagram appears inline here.
 graph TD
     subgraph clients["Clients & Entry Points"]
         UI["React Admin UI<br/>(SPA, Vite)"]
-        CLI["CLI Entry Points<br/>Main · LocalSimulationMain · ScenarioRunnerMain"]
+        CLI["CLI Entry Points<br/>Main · ScenarioRunnerMain"]
     end
 
     subgraph backend["Spring Boot Backend — Lift Config Service"]
@@ -45,7 +45,7 @@ graph TD
         subgraph svc["Service Layer"]
             CFGSVC["Config & Scenario Services<br/>LiftSystem · Version · Scenario<br/>ConfigValidation · ScenarioValidation"]
             RUNSVC["Run Orchestration<br/>SimulationRunService<br/>SimulationRunExecutionService (async)"]
-            SUPPORT["Support Services<br/>BatchInputGenerator · ArtefactService<br/>RuntimeSimulationService"]
+            SUPPORT["Support Services<br/>BatchInputGenerator · ArtefactService<br/>RuntimeConfigService"]
         end
 
         subgraph data["Persistence Layer"]
@@ -95,10 +95,9 @@ graph TD
   backend over REST and is packaged into the Spring Boot JAR (served from `/`)
   via the Maven `frontend` profile.
 - **CLI entry points** (`com.liftsimulator.Main`,
-  `runtime.LocalSimulationMain`, `scenario.ScenarioRunnerMain`) — lightweight
-  command-line drivers that exercise the simulation engine directly without the
-  web stack, used for demos, local runs from a config JSON, and scripted
-  scenario files.
+  `scenario.ScenarioRunnerMain`) — lightweight command-line drivers that
+  exercise the simulation engine directly without the web stack, used for demos
+  and scripted scenario files.
 
 ### Spring Boot backend (Lift Config Service)
 
@@ -118,7 +117,7 @@ graph TD
     thread pool, supports cancellation, and persists artefacts and KPIs.
   - *Support services* — `BatchInputGenerator` turns scenarios into engine
     input, `ArtefactService` reads/writes run artefacts, and
-    `RuntimeSimulationService` backs the lightweight runtime API.
+    `RuntimeConfigService` backs published-configuration reads for the lightweight runtime API.
 - **Persistence layer** (`admin.repository`, `admin.entity`) — Spring Data JPA
   repositories and entities (`LiftSystem`, `LiftSystemVersion`, `Scenario`,
   `SimulationRun`) mapping to PostgreSQL, with versioned configurations stored as
@@ -174,7 +173,7 @@ sequenceDiagram
     Run->>DB: persist run (CREATED → RUNNING)
     Run-->>Exec: submit async (after commit)
     Exec->>Gen: build engine input from scenario
-    Exec->>FS: write config.json / scenario.json
+    Exec->>FS: write config.json / scenario.json / input.scenario
     Exec->>Eng: run tick loop with chosen controller
     Eng-->>Exec: per-tick state & completed requests
     Exec->>FS: write run.log + results.json
