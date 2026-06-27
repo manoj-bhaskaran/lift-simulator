@@ -31,6 +31,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -129,7 +130,7 @@ public class GlobalExceptionHandler {
         logger.warn("Data integrity violation: {}", ex.getMessage(), ex);
 
         String message = "Operation violates data constraints";
-        if (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("version")) {
+        if (ex.getMessage() != null && ex.getMessage().toLowerCase(Locale.ENGLISH).contains("version")) {
             message = "Version number already exists for this lift system";
         }
 
