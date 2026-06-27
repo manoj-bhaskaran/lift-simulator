@@ -376,11 +376,12 @@ public class ScenarioServiceTest {
         run.setId(88L);
         run.setScenario(scenario);
         run.setArtefactBasePath("/tmp/run-88");
-        when(scenarioRepository.findById(30L)).thenReturn(Optional.of(scenario));
+        when(scenarioRepository.findByIdForUpdate(30L)).thenReturn(Optional.of(scenario));
         when(runRepository.findByScenarioId(30L)).thenReturn(List.of(run));
 
         scenarioService.deleteScenario(30L);
 
+        verify(scenarioRepository).findByIdForUpdate(30L);
         verify(runRepository).findByScenarioId(30L);
         verify(scenarioRepository).delete(scenario);
         verify(artefactService).deleteArtefacts(run);

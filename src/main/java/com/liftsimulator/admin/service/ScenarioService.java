@@ -200,11 +200,16 @@ public class ScenarioService {
     /**
      * Deletes a scenario by id.
      *
+     * <p>The scenario row is write-locked before capturing associated runs so
+     * concurrent run creation cannot insert a new child row after the capture
+     * query but before the delete commits. This keeps post-commit artefact cleanup
+     * aligned with the database cascade.</p>
+     *
      * @param id scenario id
      */
     @Transactional
     public void deleteScenario(Long id) {
-        Scenario scenario = scenarioRepository.findById(id)
+        Scenario scenario = scenarioRepository.findByIdForUpdate(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Scenario not found with id: " + id
             ));

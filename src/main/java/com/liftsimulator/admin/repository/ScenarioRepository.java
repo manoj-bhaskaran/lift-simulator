@@ -1,16 +1,30 @@
 package com.liftsimulator.admin.repository;
 
 import com.liftsimulator.admin.entity.Scenario;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
 
 /**
  * Repository for Scenario entities.
  */
 @Repository
 public interface ScenarioRepository extends JpaRepository<Scenario, Long> {
+
+    /**
+     * Find a scenario by id while holding a database write lock for serialized deletion.
+     *
+     * @param id the scenario id
+     * @return an Optional containing the locked Scenario if found
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Scenario s WHERE s.id = :id")
+    Optional<Scenario> findByIdForUpdate(@Param("id") Long id);
 
     /**
      * Counts scenarios associated with any version of the specified lift system.
