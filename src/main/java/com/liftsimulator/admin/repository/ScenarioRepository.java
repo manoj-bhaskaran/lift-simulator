@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -54,4 +55,17 @@ public interface ScenarioRepository extends JpaRepository<Scenario, Long> {
      * @return {@code true} if a different scenario with the same name exists
      */
     boolean existsByLiftSystemVersionIdAndNameAndIdNot(Long liftSystemVersionId, String name, Long id);
+
+    /**
+     * Finds all scenarios with relationships eagerly loaded.
+     *
+     * <p>This method uses JOIN-FETCH to prevent N+1 queries when traversing
+     * scenario.liftSystemVersion.liftSystem relationships.</p>
+     *
+     * @return list of all scenarios with loaded relationships
+     */
+    @Query("SELECT s FROM Scenario s "
+            + "JOIN FETCH s.liftSystemVersion v "
+            + "JOIN FETCH v.liftSystem")
+    List<Scenario> findAllWithDetails();
 }

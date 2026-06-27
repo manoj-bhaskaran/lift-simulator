@@ -189,10 +189,13 @@ public class ScenarioService {
     /**
      * Retrieves all scenarios.
      *
+     * <p>Uses JOIN-FETCH to eagerly load relationships and prevent N+1 queries
+     * when accessing scenario.liftSystemVersion.liftSystem in toResponse().</p>
+     *
      * @return list of scenario responses
      */
     public List<ScenarioResponse> getAllScenarios() {
-        return scenarioRepository.findAll().stream()
+        return scenarioRepository.findAllWithDetails().stream()
             .map(this::toResponse)
             .collect(Collectors.toList());
     }
