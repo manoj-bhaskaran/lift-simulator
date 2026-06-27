@@ -10,7 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.transaction.TestTransaction;
 
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -44,7 +46,7 @@ public class SimulationRunRepositoryTest {
 
     @BeforeEach
     public void setUp() {
-        liftSystem = new LiftSystem("test-system", "Test System", "Test");
+        liftSystem = new LiftSystem("test-system-" + System.currentTimeMillis(), "Test System", "Test");
         entityManager.persist(liftSystem);
 
         version = new LiftSystemVersion(liftSystem, 1, "{\"lifts\": 2}");
@@ -414,5 +416,86 @@ public class SimulationRunRepositoryTest {
 
         assertFalse(runRepository.existsById(run1Id));
         assertFalse(runRepository.existsById(run2Id));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    public void testMarkRunningRunFailed_UpdatesRunningToFailed() {
+        LiftSystem uniqueLiftSystem = new LiftSystem(
+            "test-system-" + System.currentTimeMillis(),
+            "Test System",
+            "Test"
+        );
+        entityManager.persist(uniqueLiftSystem);
+        LiftSystemVersion uniqueVersion = new LiftSystemVersion(uniqueLiftSystem, 1, "{\"lifts\": 2}");
+        entityManager.persist(uniqueVersion);
+        entityManager.flush();
+
+        SimulationRun run = new SimulationRun(uniqueLiftSystem, uniqueVersion);
+        run.start();
+        runRepository.save(run);
+        entityManager.flush();
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+
+        OffsetDateTime failedAt = OffsetDateTime.now();
+        int rowsUpdated = runRepository.markRunningRunFailed(
+            run.getId(),
+            "Test failure",
+            failedAt
+        );
+
+        assertEquals(1, rowsUpdated);
+
+        SimulationRun updated = runRepository.findById(run.getId()).orElseThrow();
+        assertEquals(RunStatus.FAILED, updated.getStatus());
+        assertEquals("Test failure", updated.getErrorMessage());
+        assertNotNull(updated.getEndedAt());
+        assertTrue(updated.getEndedAt().isAfter(failedAt.minusSeconds(1)),
+                "EndedAt should be close to when markRunningRunFailed was called");
+    }
+
+    @Test
+    public void testMarkRunningRunFailed_IgnoresNonRunningRun() {
+        SimulationRun run = new SimulationRun(liftSystem, version);
+        run.start();
+        run.succeed();
+        entityManager.persist(run);
+        entityManager.flush();
+        entityManager.clear();
+
+        OffsetDateTime failedAt = OffsetDateTime.now();
+        int rowsUpdated = runRepository.markRunningRunFailed(
+            run.getId(),
+            "Test failure",
+            failedAt
+        );
+
+        assertEquals(0, rowsUpdated, "Should not update non-RUNNING run");
+
+        SimulationRun unchanged = entityManager.find(SimulationRun.class, run.getId());
+        assertEquals(RunStatus.SUCCEEDED, unchanged.getStatus());
+    }
+
+    @Test
+    public void testMarkRunningRunFailed_IgnoresCancelledRun() {
+        SimulationRun run = new SimulationRun(liftSystem, version);
+        run.cancel();
+        entityManager.persist(run);
+        entityManager.flush();
+        entityManager.clear();
+
+        OffsetDateTime failedAt = OffsetDateTime.now();
+        int rowsUpdated = runRepository.markRunningRunFailed(
+            run.getId(),
+            "Test failure",
+            failedAt
+        );
+
+        assertEquals(0, rowsUpdated, "Should not update CANCELLED run");
+
+        SimulationRun unchanged = entityManager.find(SimulationRun.class, run.getId());
+        assertEquals(RunStatus.CANCELLED, unchanged.getStatus());
     }
 }

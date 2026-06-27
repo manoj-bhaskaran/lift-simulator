@@ -14,6 +14,7 @@ import com.liftsimulator.admin.service.ScenarioValidationException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -30,6 +31,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -113,6 +115,28 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(
             HttpStatus.CONFLICT.value(),
             ex.getMessage(),
+            OffsetDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    /**
+     * Handles data integrity violations (constraint violations) with 409 status.
+     * Typically caused by duplicate version numbers or other unique constraint violations.
+     * Returns generic client-facing message; logs full details server-side.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        logger.warn("Data integrity violation: {}", ex.getMessage(), ex);
+
+        String message = "Operation violates data constraints";
+        if (ex.getMessage() != null && ex.getMessage().toLowerCase(Locale.ENGLISH).contains("version")) {
+            message = "Version number already exists for this lift system";
+        }
+
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.CONFLICT.value(),
+            message,
             OffsetDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
