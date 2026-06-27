@@ -424,6 +424,7 @@ public class SimulationRunRepositoryTest {
         runRepository.save(run);
         entityManager.flush();
 
+        TestTransaction.flagForCommit();
         TestTransaction.end();
 
         OffsetDateTime failedAt = OffsetDateTime.now();
