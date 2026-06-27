@@ -6,16 +6,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -28,11 +25,7 @@ import java.util.Objects;
  * Versioned lift system configuration payloads.
  */
 @Entity
-@Table(
-    name = "lift_system_version",
-    schema = "lift_simulator",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"lift_system_id", "version_number"})
-)
+@Table(name = "lift_system_version", schema = "lift_simulator")
 public class LiftSystemVersion {
 
     @Id
@@ -40,14 +33,7 @@ public class LiftSystemVersion {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-        name = "lift_system_id",
-        nullable = false,
-        foreignKey = @ForeignKey(
-            name = "fk_lift_system_version_lift_system",
-            foreignKeyDefinition = "FOREIGN KEY (lift_system_id) REFERENCES lift_system(id) ON DELETE CASCADE"
-        )
-    )
+    @JoinColumn(name = "lift_system_id", nullable = false)
     private LiftSystem liftSystem;
 
     @Column(name = "version_number", nullable = false)
@@ -67,10 +53,10 @@ public class LiftSystemVersion {
     @JdbcTypeCode(SqlTypes.JSON)
     private String config;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private OffsetDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
     private OffsetDateTime updatedAt;
 
     @Version
@@ -91,16 +77,10 @@ public class LiftSystemVersion {
         this.config = config;
     }
 
-    @PrePersist
-    protected void onCreate() {
-        OffsetDateTime now = OffsetDateTime.now();
-        createdAt = now;
-        updatedAt = now;
-    }
-
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = OffsetDateTime.now();
+        // Timestamp columns are DB-owned; do not set in application code.
+        // Database NOW() is invoked on INSERT (via DEFAULT) and UPDATE (via trigger).
     }
 
     public void publish() {

@@ -9,7 +9,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -41,10 +40,10 @@ public class Scenario {
     @JoinColumn(name = "lift_system_version_id", nullable = false)
     private LiftSystemVersion liftSystemVersion;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private OffsetDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
     private OffsetDateTime updatedAt;
 
     public Scenario() {
@@ -61,16 +60,10 @@ public class Scenario {
         this.liftSystemVersion = liftSystemVersion;
     }
 
-    @PrePersist
-    protected void onCreate() {
-        OffsetDateTime now = OffsetDateTime.now();
-        createdAt = now;
-        updatedAt = now;
-    }
-
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = OffsetDateTime.now();
+        // Timestamp columns are DB-owned; do not set in application code.
+        // Database NOW() is invoked on INSERT (via DEFAULT) and UPDATE (via trigger).
     }
 
     public Long getId() {
