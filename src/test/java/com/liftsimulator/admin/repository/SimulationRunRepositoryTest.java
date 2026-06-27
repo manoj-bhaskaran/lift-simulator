@@ -11,6 +11,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.transaction.TestTransaction;
 
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -420,9 +421,10 @@ public class SimulationRunRepositoryTest {
     public void testMarkRunningRunFailed_UpdatesRunningToFailed() {
         SimulationRun run = new SimulationRun(liftSystem, version);
         run.start();
-        entityManager.persist(run);
+        runRepository.save(run);
         entityManager.flush();
-        entityManager.clear();
+
+        TestTransaction.end();
 
         OffsetDateTime failedAt = OffsetDateTime.now();
         int rowsUpdated = runRepository.markRunningRunFailed(
@@ -433,7 +435,7 @@ public class SimulationRunRepositoryTest {
 
         assertEquals(1, rowsUpdated);
 
-        SimulationRun updated = entityManager.find(SimulationRun.class, run.getId());
+        SimulationRun updated = runRepository.findById(run.getId()).orElseThrow();
         assertEquals(RunStatus.FAILED, updated.getStatus());
         assertEquals("Test failure", updated.getErrorMessage());
         assertEquals(failedAt, updated.getEndedAt());

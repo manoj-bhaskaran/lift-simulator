@@ -349,14 +349,11 @@ public class LiftSystemVersionRepositoryTest {
         LiftSystemVersion v1 = new LiftSystemVersion(testSystem, 1, "{\"v\": 1}");
         LiftSystemVersion v2 = new LiftSystemVersion(testSystem, 1, "{\"v\": 2}");
 
-        entityManager.persist(v1);
-        entityManager.flush();
-
-        entityManager.persist(v2);
+        versionRepository.saveAndFlush(v1);
 
         assertThrows(
             DataIntegrityViolationException.class,
-            () -> entityManager.flush(),
+            () -> versionRepository.saveAndFlush(v2),
             "Duplicate version number should violate unique constraint"
         );
     }
