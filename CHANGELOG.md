@@ -17,6 +17,11 @@ summary is kept under [Earlier history](#earlier-history).
 ## [Unreleased]
 
 
+## [0.53.7] - 2026-06-27
+
+### Changed
+- **Runtime simulation path removal**: Removed the no-op external-process runtime simulation endpoint (`POST /api/v1/runtime/systems/{systemKey}/simulate`), its `LocalSimulationMain` child-process launcher, and the unused frontend API wrapper while keeping simulation-run artefact generation such as `input.scenario` unchanged. Updated README/API/workflow documentation and package metadata for the 0.53.7 patch release.
+
 ## [0.53.6] - 2026-06-27
 
 ### Fixed

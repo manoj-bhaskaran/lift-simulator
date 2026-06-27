@@ -9,7 +9,7 @@
 The Lift Config Service accepts configuration JSON payloads at multiple entry points:
 - REST API endpoints (`POST /api/lift-systems/{systemId}/versions`, `PUT /api/lift-systems/{systemId}/versions/{versionNumber}`)
 - Configuration validation endpoint (`POST /api/config/validate`)
-- CLI tool (`LocalSimulationMain` reading JSON files)
+- removed JSON-config CLI tool (`LocalSimulationMain`, historical)
 
 By default, Jackson's `ObjectMapper` silently **ignores unknown properties** during JSON deserialization. This behavior can lead to several problems:
 
@@ -112,7 +112,7 @@ This ensures unknown fields in HTTP requests (e.g., `POST /api/lift-systems`) ge
 
 #### 4. CLI Tool Consistency
 
-**LocalSimulationMain** (`com.liftsimulator.runtime.LocalSimulationMain`):
+**Historical LocalSimulationMain** (`com.liftsimulator.runtime.LocalSimulationMain`, removed):
 - Standalone CLI ObjectMapper configured with same strict validation
 - Ensures consistent behavior across REST API and CLI workflows
 

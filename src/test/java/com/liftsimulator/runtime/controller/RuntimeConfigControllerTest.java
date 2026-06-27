@@ -3,9 +3,7 @@ package com.liftsimulator.runtime.controller;
 import com.liftsimulator.LocalIntegrationTest;
 import com.liftsimulator.admin.service.ResourceNotFoundException;
 import com.liftsimulator.runtime.dto.RuntimeConfigDTO;
-import com.liftsimulator.runtime.dto.SimulationLaunchResponse;
 import com.liftsimulator.runtime.service.RuntimeConfigService;
-import com.liftsimulator.runtime.service.RuntimeSimulationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -40,9 +38,6 @@ class RuntimeConfigControllerTest extends LocalIntegrationTest {
     @MockBean
     private RuntimeConfigService runtimeConfigService;
 
-    @MockBean
-    private RuntimeSimulationService runtimeSimulationService;
-
     @Test
     void getPublishedConfigWithoutApiKeyReturnsUnauthorized() throws Exception {
         mockMvc.perform(get("/api/v1/runtime/systems/test-system/config"))
@@ -52,7 +47,7 @@ class RuntimeConfigControllerTest extends LocalIntegrationTest {
             .andExpect(jsonPath("$.message").value("Authentication required"))
             .andExpect(jsonPath("$.timestamp").exists());
 
-        verifyNoInteractions(runtimeConfigService, runtimeSimulationService);
+        verifyNoInteractions(runtimeConfigService);
     }
 
     @Test
@@ -63,7 +58,7 @@ class RuntimeConfigControllerTest extends LocalIntegrationTest {
             .andExpect(header().doesNotExist("WWW-Authenticate"))
             .andExpect(jsonPath("$.status").value(401));
 
-        verifyNoInteractions(runtimeConfigService, runtimeSimulationService);
+        verifyNoInteractions(runtimeConfigService);
     }
 
     @Test
@@ -74,7 +69,7 @@ class RuntimeConfigControllerTest extends LocalIntegrationTest {
             .andExpect(jsonPath("$.status").value(401))
             .andExpect(jsonPath("$.message").value("Authentication required"));
 
-        verifyNoInteractions(runtimeConfigService, runtimeSimulationService);
+        verifyNoInteractions(runtimeConfigService);
     }
 
     @Test
@@ -136,27 +131,11 @@ class RuntimeConfigControllerTest extends LocalIntegrationTest {
     }
 
     @Test
-    void simulateWithValidApiKeyLaunchesPublishedSimulation() throws Exception {
-        when(runtimeSimulationService.launchPublishedSimulation("test-system"))
-            .thenReturn(new SimulationLaunchResponse(true, "started", 42L));
-
+    void simulateEndpointIsRemoved() throws Exception {
         mockMvc.perform(post("/api/v1/runtime/systems/test-system/simulate")
                 .header(API_KEY_HEADER, API_KEY_VALUE))
-            .andExpect(status().isAccepted())
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.message").value("started"))
-            .andExpect(jsonPath("$.processId").value(42));
+            .andExpect(status().isNotFound());
 
-        verify(runtimeSimulationService).launchPublishedSimulation("test-system");
-    }
-
-    @Test
-    void simulateWithoutApiKeyReturnsUnauthorized() throws Exception {
-        mockMvc.perform(post("/api/v1/runtime/systems/test-system/simulate"))
-            .andExpect(status().isUnauthorized())
-            .andExpect(header().doesNotExist("WWW-Authenticate"))
-            .andExpect(jsonPath("$.status").value(401));
-
-        verifyNoInteractions(runtimeConfigService, runtimeSimulationService);
+        verifyNoInteractions(runtimeConfigService);
     }
 }

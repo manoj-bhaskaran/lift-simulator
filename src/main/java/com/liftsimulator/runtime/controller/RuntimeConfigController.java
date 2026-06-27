@@ -1,14 +1,9 @@
 package com.liftsimulator.runtime.controller;
 
 import com.liftsimulator.runtime.dto.RuntimeConfigDTO;
-import com.liftsimulator.runtime.dto.SimulationLaunchResponse;
 import com.liftsimulator.runtime.service.RuntimeConfigService;
-import com.liftsimulator.runtime.service.RuntimeSimulationService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,13 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class RuntimeConfigController {
 
     private final RuntimeConfigService runtimeConfigService;
-    private final RuntimeSimulationService runtimeSimulationService;
 
-    public RuntimeConfigController(
-            RuntimeConfigService runtimeConfigService,
-            RuntimeSimulationService runtimeSimulationService) {
+    public RuntimeConfigController(RuntimeConfigService runtimeConfigService) {
         this.runtimeConfigService = runtimeConfigService;
-        this.runtimeSimulationService = runtimeSimulationService;
     }
 
     /**
@@ -55,17 +46,5 @@ public class RuntimeConfigController {
             @PathVariable String systemKey,
             @PathVariable Integer versionNumber) {
         return runtimeConfigService.getPublishedVersion(systemKey, versionNumber);
-    }
-
-    /**
-     * Launches a local simulator process using the currently published configuration.
-     *
-     * @param systemKey the unique system key
-     * @return response with launch status and process metadata
-     */
-    @PostMapping("/{systemKey}/simulate")
-    public ResponseEntity<SimulationLaunchResponse> launchPublishedSimulation(@PathVariable String systemKey) {
-        SimulationLaunchResponse response = runtimeSimulationService.launchPublishedSimulation(systemKey);
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
 }

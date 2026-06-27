@@ -981,27 +981,6 @@ curl -H "X-API-Key: replace-with-secure-key" \\
     }
     ```
 
-- **Launch Local Simulator**: `POST /api/v1/runtime/systems/{systemKey}/simulate`
-  - Writes the published configuration to a temporary JSON file
-  - Spawns a local simulator process using the configuration
-  - Response (202 Accepted):
-    ```json
-    {
-      "success": true,
-      "message": "Simulator started for system building-a-lifts using config lift-simulator-building-a-lifts-1234.json",
-      "processId": 4242
-    }
-    ```
-  - Error (404 Not Found):
-    - If lift system with the given key doesn't exist
-    - If no published version exists for the system
-
-**Runtime Simulation Launch Assumptions:**
-- The launcher uses the Java binary from `JAVA_HOME` (via `java.home`) to start child processes.
-- **Local/dev mode**: launches the simulator with the current application classpath (`java -cp <classpath> com.liftsimulator.runtime.LocalSimulationMain`).
-- **Packaged Spring Boot JARs**: launches the simulator using the Spring Boot `PropertiesLauncher` inside the packaged JAR (`java -cp <jar> org.springframework.boot.loader.launch.PropertiesLauncher --loader.main=...`).
-- Simulator process output is captured and logged by the backend, and running processes are tracked for shutdown.
-
 **Design Notes:**
 - Runtime APIs use system key (not internal ID) for lookups
 - Runtime APIs are read-only - no create, update, or delete operations

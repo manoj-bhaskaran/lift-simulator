@@ -557,7 +557,6 @@ The frontend integrates with these backend endpoints:
 - `POST /api/v1/lift-systems/{systemId}/versions/{versionNumber}/publish` - Publish version
 
 ### Runtime APIs
-- `POST /api/v1/runtime/systems/{systemKey}/simulate` - Launch simulator using published configuration
 
 ### Validation API
 - `POST /api/v1/config/validate` - Validate configuration
