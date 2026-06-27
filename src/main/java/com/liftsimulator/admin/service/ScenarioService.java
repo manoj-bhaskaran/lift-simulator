@@ -10,12 +10,17 @@ import com.liftsimulator.admin.dto.ScenarioValidationResponse;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.Scenario;
+import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.ScenarioRepository;
+import com.liftsimulator.admin.repository.SimulationRunRepository;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +38,8 @@ public class ScenarioService {
     private final ScenarioRepository scenarioRepository;
     private final LiftSystemVersionRepository versionRepository;
     private final ScenarioValidationService scenarioValidationService;
+    private final SimulationRunRepository runRepository;
+    private final ArtefactService artefactService;
     private final ObjectMapper objectMapper;
 
     @SuppressFBWarnings(
@@ -44,10 +51,14 @@ public class ScenarioService {
             ScenarioRepository scenarioRepository,
             LiftSystemVersionRepository versionRepository,
             ScenarioValidationService scenarioValidationService,
+            SimulationRunRepository runRepository,
+            ArtefactService artefactService,
             ObjectMapper objectMapper) {
         this.scenarioRepository = scenarioRepository;
         this.versionRepository = versionRepository;
         this.scenarioValidationService = scenarioValidationService;
+        this.runRepository = runRepository;
+        this.artefactService = artefactService;
         this.objectMapper = objectMapper;
     }
 
@@ -189,16 +200,69 @@ public class ScenarioService {
     /**
      * Deletes a scenario by id.
      *
+     * <p>The scenario row is write-locked before capturing associated runs so
+     * concurrent run creation cannot insert a new child row after the capture
+     * query but before the delete commits. This keeps post-commit artefact cleanup
+     * aligned with the database cascade.</p>
+     *
      * @param id scenario id
      */
     @Transactional
     public void deleteScenario(Long id) {
-        Scenario scenario = scenarioRepository.findById(id)
+        Scenario scenario = scenarioRepository.findByIdForUpdate(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Scenario not found with id: " + id
             ));
 
+        List<SimulationRun> runs = runRepository.findByScenarioId(id);
         scenarioRepository.delete(scenario);
+        deleteRunArtefactsAfterCommit(runs);
+    }
+
+    /**
+     * Counts simulation runs associated with a scenario.
+     *
+     * @param id scenario id
+     * @return number of runs that will be removed by scenario deletion
+     */
+    public long countSimulationRuns(Long id) {
+        if (!scenarioRepository.existsById(id)) {
+            throw new ResourceNotFoundException(
+                "Scenario not found with id: " + id
+            );
+        }
+        return runRepository.countByScenarioId(id);
+    }
+
+    private void deleteRunArtefactsAfterCommit(List<SimulationRun> runs) {
+        if (runs.isEmpty()) {
+            return;
+        }
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            deleteRunArtefacts(runs);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                deleteRunArtefacts(runs);
+            }
+        });
+    }
+
+    private void deleteRunArtefacts(List<SimulationRun> runs) {
+        for (SimulationRun run : runs) {
+            try {
+                artefactService.deleteArtefacts(run);
+            } catch (IOException e) {
+                throw new ArtefactDeletionException(
+                    "Failed to delete artefacts for simulation run " + run.getId()
+                        + ": " + e.getMessage(),
+                    e
+                );
+            }
+        }
     }
 
     private void validateScenarioJson(JsonNode scenarioJson, Long liftSystemVersionId) {
@@ -303,6 +367,7 @@ public class ScenarioService {
                 scenarioJson,
                 versionId,
                 versionInfo,
+                runRepository.countByScenarioId(scenario.getId()),
                 scenario.getCreatedAt(),
                 scenario.getUpdatedAt()
             );

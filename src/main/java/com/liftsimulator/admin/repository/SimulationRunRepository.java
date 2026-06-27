@@ -219,6 +219,22 @@ public interface SimulationRunRepository extends JpaRepository<SimulationRun, Lo
     long countActiveRunsByLiftSystemId(@Param("liftSystemId") Long liftSystemId);
 
     /**
+     * Find all runs for a specific scenario.
+     *
+     * @param scenarioId the scenario id
+     * @return list of runs for the scenario
+     */
+    List<SimulationRun> findByScenarioId(Long scenarioId);
+
+    /**
+     * Count runs for a specific scenario.
+     *
+     * @param scenarioId the scenario id
+     * @return total number of runs for the scenario
+     */
+    long countByScenarioId(Long scenarioId);
+
+    /**
      * Count runs for a specific lift system.
      *
      * @param liftSystemId the lift system id

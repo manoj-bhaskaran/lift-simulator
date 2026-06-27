@@ -125,6 +125,17 @@ public class ScenarioController {
     }
 
     /**
+     * Counts simulation runs associated with a scenario.
+     *
+     * @param id scenario id
+     * @return number of runs referencing the scenario
+     */
+    @GetMapping("/{id}/run-count")
+    public ResponseEntity<Long> countScenarioRuns(@PathVariable Long id) {
+        return ResponseEntity.ok(scenarioService.countSimulationRuns(id));
+    }
+
+    /**
      * Deletes a scenario by id.
      *
      * @param id scenario id
