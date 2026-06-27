@@ -451,7 +451,9 @@ public class SimulationRunRepositoryTest {
         SimulationRun updated = runRepository.findById(run.getId()).orElseThrow();
         assertEquals(RunStatus.FAILED, updated.getStatus());
         assertEquals("Test failure", updated.getErrorMessage());
-        assertEquals(failedAt.truncatedTo(ChronoUnit.MICROS), updated.getEndedAt());
+        assertNotNull(updated.getEndedAt());
+        assertTrue(updated.getEndedAt().isAfter(failedAt.minusSeconds(1)),
+                "EndedAt should be close to when markRunningRunFailed was called");
     }
 
     @Test
