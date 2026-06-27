@@ -253,6 +253,12 @@ public interface SimulationRunRepository extends JpaRepository<SimulationRun, Lo
     /**
      * Update the current tick for a simulation run.
      *
+     * <p>Note: @Modifying bulk updates bypass entity @PreUpdate/@PrePersist lifecycle callbacks.
+     * This is safe for SimulationRun (no updated_at timestamp), but any future bulk updates
+     * on entities with DB-owned timestamps (e.g., LiftSystemVersion, Scenario) must be
+     * handled via the database trigger that maintains the timestamp column, or the
+     * application must manually set the timestamp field via a second update query.</p>
+     *
      * @param id the run id
      * @param currentTick the current tick
      * @return number of rows updated
