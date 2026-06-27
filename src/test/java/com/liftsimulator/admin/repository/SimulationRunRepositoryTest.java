@@ -421,7 +421,17 @@ public class SimulationRunRepositoryTest {
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     public void testMarkRunningRunFailed_UpdatesRunningToFailed() {
-        SimulationRun run = new SimulationRun(liftSystem, version);
+        LiftSystem uniqueLiftSystem = new LiftSystem(
+            "test-system-" + System.currentTimeMillis(),
+            "Test System",
+            "Test"
+        );
+        entityManager.persist(uniqueLiftSystem);
+        LiftSystemVersion uniqueVersion = new LiftSystemVersion(uniqueLiftSystem, 1, "{\"lifts\": 2}");
+        entityManager.persist(uniqueVersion);
+        entityManager.flush();
+
+        SimulationRun run = new SimulationRun(uniqueLiftSystem, uniqueVersion);
         run.start();
         runRepository.save(run);
         entityManager.flush();
