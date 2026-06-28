@@ -481,9 +481,9 @@ public class SimulationRunExecutionServiceTest {
 
     private AtomicReference<SimulationRun> prepareRepository(SimulationRun run) {
         AtomicReference<SimulationRun> storedRun = new AtomicReference<>(run);
-        when(runRepository.findById(run.getId())).thenAnswer(invocation -> Optional.of(storedRun.get()));
+        lenient().when(runRepository.findById(run.getId())).thenAnswer(invocation -> Optional.of(storedRun.get()));
         lenient().when(runRepository.findByIdWithDetails(run.getId())).thenAnswer(invocation -> Optional.of(storedRun.get()));
-        when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> {
+        lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> {
             SimulationRun savedRun = invocation.getArgument(0);
             storedRun.set(savedRun);
             return savedRun;
