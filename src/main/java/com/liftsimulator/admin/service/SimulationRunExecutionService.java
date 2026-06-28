@@ -357,7 +357,7 @@ public class SimulationRunExecutionService {
     }
 
     private SimulationRun getRunById(Long runId) {
-        return runRepository.findById(runId)
+        return runRepository.findByIdWithDetails(runId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Simulation run not found with id: " + runId));
     }
