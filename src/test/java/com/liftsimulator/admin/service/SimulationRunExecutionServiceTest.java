@@ -138,6 +138,7 @@ public class SimulationRunExecutionServiceTest {
 
         verify(runRepository).updateCurrentTick(1L, 500L);
         verify(runRepository, never()).findById(1L);
+        verify(runRepository, never()).findByIdWithDetails(1L);
     }
 
     @Test
@@ -310,7 +311,7 @@ public class SimulationRunExecutionServiceTest {
         SimulationRun run = new SimulationRun();
         run.setId(9L);
         run.setStatus(SimulationRun.RunStatus.RUNNING);
-        when(runRepository.findById(9L)).thenReturn(Optional.of(run));
+        when(runRepository.findByIdWithDetails(9L)).thenReturn(Optional.of(run));
         when(runRepository.save(any(SimulationRun.class))).thenThrow(new IllegalStateException("stale state"));
         when(runRepository.markRunningRunFailed(anyLong(), any(String.class), any())).thenReturn(1);
 
@@ -355,6 +356,7 @@ public class SimulationRunExecutionServiceTest {
             SimulationRun queuedRun = runWithArtefactDirectory(201L, runDir, SHORT_SCENARIO);
             AtomicReference<SimulationRun> storedQueued = new AtomicReference<>(queuedRun);
             lenient().when(runRepository.findById(201L)).thenAnswer(inv -> Optional.of(storedQueued.get()));
+            lenient().when(runRepository.findByIdWithDetails(201L)).thenAnswer(inv -> Optional.of(storedQueued.get()));
             lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(inv -> {
                 SimulationRun saved = inv.getArgument(0);
                 if (Long.valueOf(201L).equals(saved.getId())) storedQueued.set(saved);
@@ -424,6 +426,7 @@ public class SimulationRunExecutionServiceTest {
             blocker.setLiftSystem(liftSystem);
             blocker.setVersion(version);
             lenient().when(runRepository.findById((long) id)).thenReturn(Optional.of(blocker));
+            lenient().when(runRepository.findByIdWithDetails((long) id)).thenReturn(Optional.of(blocker));
             lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(inv -> inv.getArgument(0));
             lenient().when(runRepository.updateCurrentTick(anyLong(), anyLong())).thenReturn(1);
         }
@@ -431,6 +434,7 @@ public class SimulationRunExecutionServiceTest {
         // Use a scenario that blocks mid-way via the CountDownLatch approach is complex;
         // instead we just verify the 3rd submission fails the run immediately.
         lenient().when(runRepository.findById((long) overCapacityRunId)).thenReturn(Optional.of(overCapacityRun));
+        lenient().when(runRepository.findByIdWithDetails((long) overCapacityRunId)).thenReturn(Optional.of(overCapacityRun));
         lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(inv -> {
             SimulationRun saved = inv.getArgument(0);
             if (saved.getId() == overCapacityRunId) {
@@ -457,6 +461,7 @@ public class SimulationRunExecutionServiceTest {
 
         // Now submit the overCapacity run — executor is full, should be rejected cleanly
         lenient().when(runRepository.findById((long) overCapacityRunId)).thenReturn(Optional.of(overCapacityRun));
+        lenient().when(runRepository.findByIdWithDetails((long) overCapacityRunId)).thenReturn(Optional.of(overCapacityRun));
 
         Scenario scenario = new Scenario("s", SHORT_SCENARIO, version);
         overCapacityRun.setScenario(scenario);
@@ -476,8 +481,9 @@ public class SimulationRunExecutionServiceTest {
 
     private AtomicReference<SimulationRun> prepareRepository(SimulationRun run) {
         AtomicReference<SimulationRun> storedRun = new AtomicReference<>(run);
-        when(runRepository.findById(run.getId())).thenAnswer(invocation -> Optional.of(storedRun.get()));
-        when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> {
+        lenient().when(runRepository.findById(run.getId())).thenAnswer(invocation -> Optional.of(storedRun.get()));
+        lenient().when(runRepository.findByIdWithDetails(run.getId())).thenAnswer(invocation -> Optional.of(storedRun.get()));
+        lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> {
             SimulationRun savedRun = invocation.getArgument(0);
             storedRun.set(savedRun);
             return savedRun;
