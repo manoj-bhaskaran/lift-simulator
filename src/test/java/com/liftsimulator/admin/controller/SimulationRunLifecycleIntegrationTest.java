@@ -140,6 +140,13 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
                 .andExpect(jsonPath("$.status").value("SUCCEEDED"))
                 .andExpect(jsonPath("$.results.runSummary.status").value("SUCCEEDED"))
                 .andExpect(jsonPath("$.results.kpis.pickupRequestsServed").value(1))
+                .andExpect(jsonPath("$.results.kpis.passengersServed").value(1))
+                .andExpect(jsonPath("$.results.kpis.avgPickupWaitTicks").isNotEmpty())
+                .andExpect(jsonPath("$.results.kpis.maxPickupWaitTicks").isNotEmpty())
+                .andExpect(jsonPath("$.results.kpis.idleTicks").isNotEmpty())
+                .andExpect(jsonPath("$.results.kpis.movingTicks").isNotEmpty())
+                .andExpect(jsonPath("$.results.kpis.doorTicks").isNotEmpty())
+                .andExpect(jsonPath("$.results.kpis.pickupLegUtilisation").isNotEmpty())
                 .andExpect(jsonPath("$.logsUrl").value("/api/v1/simulation-runs/" + runId + "/logs"));
     }
 
