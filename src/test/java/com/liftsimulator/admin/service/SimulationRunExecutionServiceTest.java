@@ -607,6 +607,21 @@ public class SimulationRunExecutionServiceTest {
             "All 3 passengers should be served");
         assertTrue(kpis.get("movingTicks").asLong() > 0,
             "Lift must move to service requests at different floors");
+
+        JsonNode perFloor = results.get("perFloor");
+        assertTrue(perFloor.isArray() && perFloor.size() > 0,
+            "Per-floor analytics must be recorded");
+
+        JsonNode floor0 = perFloor.path(0);
+        assertEquals(0, floor0.get("floor").asInt(), "First floor should be floor 0");
+        assertTrue(floor0.get("liftVisits").asLong() >= 1,
+            "Floor 0 should be visited (home floor and destination)");
+
+        JsonNode floor10 = perFloor.path(10);
+        assertEquals(10, floor10.get("floor").asInt(), "Floor 10 should exist in per-floor data");
+        assertTrue(floor10.get("liftVisits").asLong() >= 1,
+            "Floor 10 should be visited for the maxFloor request");
+
         assertInternalStateCleared(101L);
     }
 
