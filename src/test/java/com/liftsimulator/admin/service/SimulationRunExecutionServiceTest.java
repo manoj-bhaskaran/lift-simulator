@@ -479,6 +479,152 @@ public class SimulationRunExecutionServiceTest {
             "Rejected run must carry a descriptive error message");
     }
 
+    @Test
+    public void kpiRegressionTestWithFixedSeedAndMultiplePassengers() throws Exception {
+        Path runDir = tempDir.resolve("run-kpi-regression");
+        Files.createDirectories(runDir);
+
+        String kpiScenario = """
+            {
+                "durationTicks": 30,
+                "seed": 12345,
+                "passengerFlows": [
+                    {
+                        "startTick": 0,
+                        "originFloor": 0,
+                        "destinationFloor": 4,
+                        "passengers": 3
+                    },
+                    {
+                        "startTick": 10,
+                        "originFloor": 2,
+                        "destinationFloor": 1,
+                        "passengers": 2
+                    }
+                ]
+            }
+            """.trim();
+
+        SimulationRun run = runWithArtefactDirectory(100L, runDir, kpiScenario);
+        AtomicReference<SimulationRun> storedRun = prepareRepository(run);
+        when(configValidationService.validate(VALID_CONFIG)).thenReturn(validConfigResponse());
+        when(scenarioValidationService.validate(any(JsonNode.class))).thenReturn(validScenarioResponse());
+
+        executionService.submitRunForExecution(100L);
+
+        waitForExecutionToFinish(storedRun, SimulationRun.RunStatus.SUCCEEDED);
+        JsonNode results = objectMapper.readTree(runDir.resolve("results.json").toFile());
+        JsonNode kpis = results.get("kpis");
+
+        assertEquals(2, kpis.get("pickupRequestsServed").asInt(),
+            "Should have 2 pickup requests served (one per flow)");
+        assertEquals(5, kpis.get("passengersServed").asInt(),
+            "Should have 5 total passengers served (3 from flow 1 + 2 from flow 2)");
+        assertTrue(kpis.get("avgPickupWaitTicks").asDouble() > 0,
+            "Average wait ticks must be positive");
+        assertTrue(kpis.get("maxPickupWaitTicks").asLong() > 0,
+            "Max wait ticks must be positive");
+        assertTrue(kpis.get("idleTicks").asLong() >= 0,
+            "Idle ticks must be non-negative");
+        assertTrue(kpis.get("movingTicks").asLong() > 0,
+            "Moving ticks must be positive (lift must move to service requests)");
+        assertTrue(kpis.get("doorTicks").asLong() > 0,
+            "Door ticks must be positive (doors must open for pickups)");
+        double utilisation = kpis.get("pickupLegUtilisation").asDouble();
+        assertTrue(utilisation >= 0 && utilisation <= 1.0,
+            "Utilisation must be between 0 and 1, got " + utilisation);
+
+        JsonNode perLift = results.get("perLift").get(0);
+        assertEquals(30L, perLift.get("totalTicks").asLong(),
+            "Total ticks must equal scenario duration");
+        assertInternalStateCleared(100L);
+    }
+
+    @Test
+    public void directionalScanReversalFloorTest() throws Exception {
+        Path runDir = tempDir.resolve("run-ds-reversal");
+        Files.createDirectories(runDir);
+
+        String dsConfig = """
+            {
+                "minFloor": 0,
+                "maxFloor": 10,
+                "lifts": 1,
+                "travelTicksPerFloor": 1,
+                "doorTransitionTicks": 1,
+                "doorDwellTicks": 1,
+                "doorReopenWindowTicks": 1,
+                "homeFloor": 0,
+                "idleTimeoutTicks": 2,
+                "controllerStrategy": "DIRECTIONAL_SCAN",
+                "idleParkingMode": "PARK_TO_HOME_FLOOR"
+            }
+            """.trim();
+
+        String dsScenario = """
+            {
+                "durationTicks": 100,
+                "seed": 54321,
+                "passengerFlows": [
+                    {
+                        "startTick": 0,
+                        "originFloor": 0,
+                        "destinationFloor": 8,
+                        "passengers": 1
+                    },
+                    {
+                        "startTick": 5,
+                        "originFloor": 9,
+                        "destinationFloor": 0,
+                        "passengers": 1
+                    },
+                    {
+                        "startTick": 15,
+                        "originFloor": 10,
+                        "destinationFloor": 5,
+                        "passengers": 1
+                    }
+                ]
+            }
+            """.trim();
+
+        SimulationRun run = runWithArtefactDirectory(101L, runDir, dsScenario);
+        run.setLiftSystem(run.getLiftSystem());
+        run.getVersion().setConfig(dsConfig);
+        AtomicReference<SimulationRun> storedRun = prepareRepository(run);
+        when(configValidationService.validate(dsConfig)).thenReturn(validConfigResponse());
+        when(scenarioValidationService.validate(any(JsonNode.class))).thenReturn(validScenarioResponse());
+
+        executionService.submitRunForExecution(101L);
+
+        waitForExecutionToFinish(storedRun, SimulationRun.RunStatus.SUCCEEDED);
+        JsonNode results = objectMapper.readTree(runDir.resolve("results.json").toFile());
+        JsonNode kpis = results.get("kpis");
+
+        assertEquals(3, kpis.get("pickupRequestsServed").asInt(),
+            "All 3 requests should be served in directional scan");
+        assertEquals(3, kpis.get("passengersServed").asInt(),
+            "All 3 passengers should be served");
+        assertTrue(kpis.get("movingTicks").asLong() > 0,
+            "Lift must move to service requests at different floors");
+
+        JsonNode perFloor = results.get("perFloor");
+        assertTrue(perFloor.isArray() && perFloor.size() > 0,
+            "Per-floor analytics must be recorded");
+
+        JsonNode floor0 = perFloor.path(0);
+        assertEquals(0, floor0.get("floor").asInt(), "First floor should be floor 0");
+        assertTrue(floor0.get("liftVisits").asLong() >= 1,
+            "Floor 0 should be visited (home floor and destination)");
+
+        JsonNode floor10 = perFloor.path(10);
+        assertEquals(10, floor10.get("floor").asInt(), "Floor 10 should exist in per-floor data");
+        assertTrue(floor10.get("liftVisits").asLong() >= 1,
+            "Floor 10 should be visited for the maxFloor request");
+
+        assertInternalStateCleared(101L);
+    }
+
     private AtomicReference<SimulationRun> prepareRepository(SimulationRun run) {
         AtomicReference<SimulationRun> storedRun = new AtomicReference<>(run);
         lenient().when(runRepository.findById(run.getId())).thenAnswer(invocation -> Optional.of(storedRun.get()));
