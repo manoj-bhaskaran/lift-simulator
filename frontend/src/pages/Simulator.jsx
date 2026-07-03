@@ -480,7 +480,7 @@ function Simulator() {
               >
                 <option value="">Select a published version</option>
                 {publishedVersions.map((version) => (
-                  <option key={version.id} value={version.id}>
+                  <option key={version.id} value={version.versionNumber}>
                     Version {version.versionNumber}
                   </option>
                 ))}

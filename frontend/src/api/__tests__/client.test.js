@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('../../utils/errorHandlers', () => ({
+  logApiError: vi.fn(),
+}));
+
+import { logApiError } from '../../utils/errorHandlers';
+
 const axiosMock = vi.hoisted(() => ({
   create: vi.fn(),
   client: {
@@ -31,6 +37,7 @@ describe('api client', () => {
     axiosMock.client.interceptors.response.use.mockReset();
     axiosMock.client.request.mockReset();
     axiosMock.create.mockReturnValue(axiosMock.client);
+    logApiError.mockReset();
     vi.useRealTimers();
   });
 
@@ -123,5 +130,33 @@ describe('api client', () => {
 
     await expect(onRejected(timeoutError)).rejects.toBe(timeoutError);
     expect(axiosMock.client.request).not.toHaveBeenCalled();
+  });
+
+  it('rejects and logs a non-timeout error response without retrying', async () => {
+    await importClient();
+    const [, onRejected] = axiosMock.client.interceptors.response.use.mock.calls.at(-1);
+    const serverError = {
+      message: 'Request failed with status code 500',
+      config: { url: '/simulation-runs', method: 'post' },
+      response: { status: 500, data: { message: 'Internal error' } },
+    };
+
+    await expect(onRejected(serverError)).rejects.toBe(serverError);
+    expect(axiosMock.client.request).not.toHaveBeenCalled();
+    expect(logApiError).toHaveBeenCalledWith(serverError);
+  });
+
+  it('rejects and logs a network error (no response) without retrying', async () => {
+    await importClient();
+    const [, onRejected] = axiosMock.client.interceptors.response.use.mock.calls.at(-1);
+    const networkError = {
+      message: 'Network Error',
+      code: 'ERR_NETWORK',
+      config: { url: '/simulation-runs/55', method: 'get' },
+    };
+
+    await expect(onRejected(networkError)).rejects.toBe(networkError);
+    expect(axiosMock.client.request).not.toHaveBeenCalled();
+    expect(logApiError).toHaveBeenCalledWith(networkError);
   });
 });
