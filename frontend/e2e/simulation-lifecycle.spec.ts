@@ -30,7 +30,7 @@ async function createScenario(
 
   await page.locator('#scenarioName').fill(name);
   await page.locator('#liftSystem').selectOption({ label: systemDisplayName });
-  await page.waitForTimeout(500);
+  await expect(page.locator('#liftSystemVersion')).toContainText(/Version/i, { timeout: 5000 });
   await page.locator('#liftSystemVersion').selectOption({ index: 1 });
   await page.locator('#durationTicks').fill(String(durationTicks));
 
@@ -89,9 +89,9 @@ test.describe('Simulation Lifecycle', () => {
     await page.waitForLoadState('domcontentloaded');
 
     await page.locator('label:has-text("Lift System") select').selectOption({ label: testSystemDisplayName });
-    await page.waitForTimeout(500);
+    await expect(page.locator('label:has-text("Published Version") select')).toBeVisible({ timeout: 5000 });
     await page.locator('label:has-text("Published Version") select').selectOption({ index: 1 });
-    await page.waitForTimeout(500);
+    await expect(page.locator('label:has-text("Scenario") select')).toBeVisible({ timeout: 5000 });
     await page.locator('label:has-text("Scenario") select').selectOption({ label: scenarioName });
 
     await page.locator('button:has-text("Start Run")').click();
@@ -116,9 +116,9 @@ test.describe('Simulation Lifecycle', () => {
     await page.waitForLoadState('domcontentloaded');
 
     await page.locator('label:has-text("Lift System") select').selectOption({ label: testSystemDisplayName });
-    await page.waitForTimeout(500);
+    await expect(page.locator('label:has-text("Published Version") select')).toBeVisible({ timeout: 5000 });
     await page.locator('label:has-text("Published Version") select').selectOption({ index: 1 });
-    await page.waitForTimeout(500);
+    await expect(page.locator('label:has-text("Scenario") select')).toBeVisible({ timeout: 5000 });
     await page.locator('label:has-text("Scenario") select').selectOption({ label: scenarioName });
 
     await page.locator('button:has-text("Start Run")').click();

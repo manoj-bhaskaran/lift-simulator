@@ -295,14 +295,15 @@ export async function waitForBackend(page: Page, timeoutMs: number = 10000): Pro
 
   while (Date.now() - startTime < timeoutMs) {
     try {
-      const response = await page.request.get('http://localhost:8080/api/v1/health');
+      const response = await page.request.get('http://localhost:8080/api/v1/health', { timeout: 1000 });
       if (response.ok()) {
         return true;
       }
     } catch (error) {
       // Backend not ready yet
     }
-    await page.waitForTimeout(500);
+    // Use exponential backoff with small increments for polling
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
 
   return false;
@@ -398,8 +399,8 @@ export async function countLiftSystems(page: Page): Promise<number> {
   await page.goto('/systems');
   await page.waitForLoadState('domcontentloaded');
 
-  // Wait a bit for data to load
-  await page.waitForTimeout(1000);
+  // Wait for the systems grid or empty state to be visible (data loaded)
+  await page.locator('.systems-grid, .empty-state').first().waitFor({ state: 'visible', timeout: 5000 });
 
   const systemCards = page.locator('.system-card');
   return await systemCards.count();
@@ -411,8 +412,8 @@ export async function countLiftSystems(page: Page): Promise<number> {
 export async function countVersionsForSystem(page: Page, systemKey: string): Promise<number> {
   await navigateToSystemDetail(page, systemKey);
 
-  // Wait for versions to load
-  await page.waitForTimeout(1000);
+  // Wait for versions to be visible (they appear in the detail page)
+  await page.locator('#versions h3, .no-versions').first().waitFor({ state: 'visible', timeout: 5000 });
 
   const versionCards = page.locator('.version-card');
   return await versionCards.count();

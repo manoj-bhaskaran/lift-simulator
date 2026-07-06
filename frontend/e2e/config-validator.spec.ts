@@ -32,15 +32,9 @@ test.describe('Configuration Validator', () => {
     // Click Validate Configuration button
     await page.locator('button:has-text("Validate Configuration")').click();
 
-    // Wait for validation response
-    await page.waitForTimeout(1500);
-
-    // Verify validation passes
-    const resultSection = page.locator('.result-section');
-    await expect(resultSection).toBeVisible();
-
+    // Wait for validation result to appear
     const successResult = page.locator('.result-success');
-    await expect(successResult).toBeVisible();
+    await expect(successResult).toBeVisible({ timeout: 5000 });
 
     // Check for validation success text inside the visible result card.
     await expect(successResult).toContainText(/valid|success|passed/i);
@@ -53,15 +47,13 @@ test.describe('Configuration Validator', () => {
     // Click Validate Configuration button
     await page.locator('button:has-text("Validate Configuration")').click();
 
-    // Wait for validation response
-    await page.waitForTimeout(1500);
-
-    // Verify validation fails with clear errors
+    // Wait for validation result to appear
     const errorResult = page.locator('.result-error');
-    await expect(errorResult).toBeVisible();
+    await expect(errorResult).toBeVisible({ timeout: 5000 });
 
-    // Check for error messages (e.g., "maximum floor must be greater than minimum floor")
-    await expect(errorResult).toContainText(/error|invalid|fail/i);
+    // Check for error messages (e.g., "must be greater than", "cannot have", "is required")
+    // Be more specific about error messages instead of generic error word
+    await expect(errorResult).toContainText(/must be|cannot|is required|invalid/i);
   });
 
   test('Validator shows warnings distinctly from errors', async ({ page }) => {
@@ -73,22 +65,26 @@ test.describe('Configuration Validator', () => {
     await page.locator('.config-editor').fill(JSON.stringify(validConfig, null, 2));
 
     await page.locator('button:has-text("Validate Configuration")').click();
-    await page.waitForTimeout(1500);
 
-    // Should pass validation
+    // Wait for validation result
     const successResult = page.locator('.result-success');
-    await expect(successResult).toBeVisible();
+    await expect(successResult).toBeVisible({ timeout: 5000 });
 
-    // Check if warnings section exists (if applicable)
+    // Verify the result is success - no errors should be present
+    const errorResult = page.locator('.result-error');
+    await expect(errorResult).not.toBeVisible();
+
+    // Check if warnings section exists and verify they're visually distinct
     const warningsSection = page.locator('.warnings');
-    const hasWarnings = await warningsSection.isVisible();
+    const hasWarnings = await warningsSection.isVisible().catch(() => false);
 
-    // If warnings exist, they should be visually distinct from errors
+    // If warnings exist, verify they don't make validation fail
     if (hasWarnings) {
-      // Warnings should not make validation fail
+      // Warnings section should have distinct styling (not same as error section)
       await expect(successResult).toBeVisible();
-      // Warnings section should be present
-      await expect(warningsSection).toBeVisible();
+      await expect(warningsSection).toHaveClass(/warning/i);
+      // Error result should not be visible when warnings exist
+      await expect(errorResult).not.toBeVisible();
     }
   });
 
@@ -100,12 +96,12 @@ test.describe('Configuration Validator', () => {
     await page.locator('.config-editor').fill('{ this is not valid JSON }');
 
     await page.locator('button:has-text("Validate Configuration")').click();
-    await page.waitForTimeout(1500);
 
     // Should show error (either JSON parse error or validation error).
     const errorIndicator = page.locator('.result-error, .error-message').first();
-    await expect(errorIndicator).toBeVisible();
-    await expect(errorIndicator).toContainText(/error|invalid/i);
+    await expect(errorIndicator).toBeVisible({ timeout: 5000 });
+    // Check for JSON parse or validation errors more specifically
+    await expect(errorIndicator).toContainText(/JSON|parse|unexpected|cannot|invalid/i);
   });
 
   test('Validator handles boundary values correctly', async ({ page }) => {
@@ -117,10 +113,9 @@ test.describe('Configuration Validator', () => {
     await page.locator('.config-editor').fill(JSON.stringify(minConfig, null, 2));
 
     await page.locator('button:has-text("Validate Configuration")').click();
-    await page.waitForTimeout(1500);
 
     // Should pass
-    await expect(page.locator('.result-success')).toBeVisible();
+    await expect(page.locator('.result-success')).toBeVisible({ timeout: 5000 });
 
     // Test large valid configuration
     await page.locator('.config-editor').clear();
@@ -128,10 +123,9 @@ test.describe('Configuration Validator', () => {
     await page.locator('.config-editor').fill(JSON.stringify(largeConfig, null, 2));
 
     await page.locator('button:has-text("Validate Configuration")').click();
-    await page.waitForTimeout(1500);
 
     // Should pass
-    await expect(page.locator('.result-success')).toBeVisible();
+    await expect(page.locator('.result-success')).toBeVisible({ timeout: 5000 });
 
     // Test homeFloor boundary (homeFloor = maxFloor)
     const boundaryConfig = {
@@ -143,10 +137,9 @@ test.describe('Configuration Validator', () => {
     await page.locator('.config-editor').fill(JSON.stringify(boundaryConfig, null, 2));
 
     await page.locator('button:has-text("Validate Configuration")').click();
-    await page.waitForTimeout(1500);
 
     // Should pass - no off-by-one error
-    await expect(page.locator('.result-success')).toBeVisible();
+    await expect(page.locator('.result-success')).toBeVisible({ timeout: 5000 });
   });
 
   test('Validator accepts different controller strategies', async ({ page }) => {
@@ -162,9 +155,8 @@ test.describe('Configuration Validator', () => {
 
     await page.locator('.config-editor').fill(JSON.stringify(config1, null, 2));
     await page.locator('button:has-text("Validate Configuration")').click();
-    await page.waitForTimeout(1500);
 
-    await expect(page.locator('.result-success')).toBeVisible();
+    await expect(page.locator('.result-success')).toBeVisible({ timeout: 5000 });
 
     // Test DIRECTIONAL_SCAN strategy
     const config2 = {
@@ -176,8 +168,7 @@ test.describe('Configuration Validator', () => {
     await page.locator('.config-editor').clear();
     await page.locator('.config-editor').fill(JSON.stringify(config2, null, 2));
     await page.locator('button:has-text("Validate Configuration")').click();
-    await page.waitForTimeout(1500);
 
-    await expect(page.locator('.result-success')).toBeVisible();
+    await expect(page.locator('.result-success')).toBeVisible({ timeout: 5000 });
   });
 });

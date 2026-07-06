@@ -70,8 +70,8 @@ test.describe('Scenario Management', () => {
     // Select lift system
     await page.locator('#liftSystem').selectOption({ label: testSystemDisplayName });
 
-    // Wait a bit for versions to load
-    await page.waitForTimeout(500);
+    // Wait for versions to load
+    await expect(page.locator('#liftSystemVersion')).toContainText(/Version/i, { timeout: 5000 });
 
     // Select version
     await page.locator('#liftSystemVersion').selectOption({ index: 1 }); // Select first available version
@@ -98,7 +98,6 @@ test.describe('Scenario Management', () => {
     await page.waitForURL(/\/scenarios$/);
 
     // Verify scenario was created
-    await page.waitForTimeout(1000);
     await expect(page.locator('text=Test Morning Rush Scenario')).toBeVisible();
   });
 
@@ -118,7 +117,7 @@ test.describe('Scenario Management', () => {
 
     // Select lift system
     await page.locator('#liftSystem').selectOption({ label: testSystemDisplayName });
-    await page.waitForTimeout(500);
+    await expect(page.locator('#liftSystemVersion')).toContainText(/Version/i, { timeout: 5000 });
 
     // Select version
     await page.locator('#liftSystemVersion').selectOption({ index: 1 });
@@ -148,11 +147,8 @@ test.describe('Scenario Management', () => {
     await page.locator('button:has-text("Validate")').click();
 
     // Wait for validation to complete
-    await page.waitForTimeout(2000);
-
-    // Verify validation succeeded (alert modal should show success)
     const alertModal = page.locator('.modal-content.alert-modal');
-    await expect(alertModal).toBeVisible({ timeout: 3000 });
+    await expect(alertModal).toBeVisible({ timeout: 5000 });
     await expect(alertModal).toContainText('Scenario is valid!');
 
     // Close the alert
@@ -166,7 +162,6 @@ test.describe('Scenario Management', () => {
     await page.waitForURL(/\/scenarios$/, { timeout: 5000 });
 
     // Verify scenario was created
-    await page.waitForTimeout(1000);
     await expect(page.locator('text=Advanced JSON Test Scenario')).toBeVisible();
 
     // Navigate to edit the scenario to verify it was saved correctly
@@ -200,7 +195,7 @@ test.describe('Scenario Management', () => {
 
     await page.locator('#scenarioName').fill('Scenario To Edit');
     await page.locator('#liftSystem').selectOption({ label: testSystemDisplayName });
-    await page.waitForTimeout(500);
+    await expect(page.locator('#liftSystemVersion')).toContainText(/Version/i, { timeout: 5000 });
     await page.locator('#liftSystemVersion').selectOption({ index: 1 });
     await page.locator('#durationTicks').fill('100');
 
@@ -217,10 +212,10 @@ test.describe('Scenario Management', () => {
 
     await page.locator('button:has-text("Create Scenario")').click();
     await page.waitForURL(/\/scenarios$/);
-    await page.waitForTimeout(1000);
 
     // Now edit the scenario using Advanced JSON Mode
     const scenarioRow = page.locator('tr, .scenario-card').filter({ hasText: 'Scenario To Edit' });
+    await expect(scenarioRow).toBeVisible();
     const editButton = scenarioRow.locator('button:has-text("Edit"), a:has-text("Edit")');
     await editButton.click();
     await page.waitForURL(/\/scenarios\/\d+\/edit/);
@@ -246,10 +241,10 @@ test.describe('Scenario Management', () => {
 
     // Validate
     await page.locator('button:has-text("Validate")').click();
-    await page.waitForTimeout(2000);
 
     // Close validation success alert
     const alertModal = page.locator('.modal-content.alert-modal');
+    await expect(alertModal).toBeVisible({ timeout: 5000 });
     if (await alertModal.isVisible()) {
       await alertModal.locator('button:has-text("OK")').click();
     }
@@ -261,8 +256,8 @@ test.describe('Scenario Management', () => {
     await page.waitForURL(/\/scenarios$/, { timeout: 5000 });
 
     // Go back to edit and verify changes were saved
-    await page.waitForTimeout(1000);
     const updatedScenarioRow = page.locator('.scenario-card').filter({ hasText: 'Scenario To Edit' });
+    await expect(updatedScenarioRow).toBeVisible();
     await updatedScenarioRow.locator('button:has-text("Edit")').click();
     await page.waitForURL(/\/scenarios\/\d+\/edit/);
 
@@ -292,7 +287,7 @@ test.describe('Scenario Management', () => {
     // Fill required fields
     await page.locator('#scenarioName').fill('Invalid JSON Test');
     await page.locator('#liftSystem').selectOption({ label: testSystemDisplayName });
-    await page.waitForTimeout(500);
+    await expect(page.locator('#liftSystemVersion')).toContainText(/Version/i, { timeout: 5000 });
     await page.locator('#liftSystemVersion').selectOption({ index: 1 });
 
     // Switch to Advanced JSON Mode
@@ -306,11 +301,10 @@ test.describe('Scenario Management', () => {
 
     // Try to validate
     await page.locator('button:has-text("Validate")').click();
-    await page.waitForTimeout(1000);
 
     // Should show error message about invalid JSON
     const alertModal = page.locator('.modal-content.alert-modal');
-    await expect(alertModal).toBeVisible({ timeout: 3000 });
+    await expect(alertModal).toBeVisible({ timeout: 5000 });
     await expect(alertModal).toContainText(/Invalid JSON format/i);
 
     // Close the alert
@@ -318,9 +312,8 @@ test.describe('Scenario Management', () => {
 
     // Try to save - should also show error
     await page.locator('button:has-text("Create Scenario")').click();
-    await page.waitForTimeout(1000);
 
     // Should show error message and stay on the same page
-    await expect(page.locator('text=/Invalid JSON format/i')).toBeVisible();
+    await expect(page.locator('text=/Invalid JSON format/i')).toBeVisible({ timeout: 5000 });
   });
 });

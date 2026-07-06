@@ -83,8 +83,6 @@ test.describe('Configuration Version Management', () => {
     await expect(page.locator('.create-version-form')).toBeHidden({ timeout: 5000 });
 
     // Step 4: Verify version appears with status DRAFT
-    await page.waitForTimeout(1000); // Wait for UI to update
-
     const versionCard = page.locator('.version-card').filter({ hasText: 'Version 1' });
     await expect(versionCard).toBeVisible();
 
@@ -126,7 +124,6 @@ test.describe('Configuration Version Management', () => {
     await expect(page.locator('.create-version-form')).toBeHidden({ timeout: 5000 });
 
     // Verify the version appears with status DRAFT
-    await page.waitForTimeout(1000);
     const versionCard = page.locator('.version-card').filter({ hasText: 'Version 1' });
     await expect(versionCard).toBeVisible();
     await expect(versionCard.locator('.status-badge')).toHaveText(/DRAFT/i);
@@ -156,10 +153,8 @@ test.describe('Configuration Version Management', () => {
     await expect(page.locator('.create-version-form')).toBeHidden();
 
     // Step 4: Verify no new version was created
-    await page.waitForTimeout(500);
     const versionCards = page.locator('.version-card');
-    const versionCount = await versionCards.count();
-    expect(versionCount).toBe(0);
+    await expect(versionCards).toHaveCount(0);
   });
 
   test('TC_0007: Create Valid Configuration After Fix', async ({ page }) => {
@@ -192,8 +187,6 @@ test.describe('Configuration Version Management', () => {
     await expect(page.locator('.create-version-form')).toBeHidden({ timeout: 5000 });
 
     // Step 3: Verify version is created with status DRAFT
-    await page.waitForTimeout(1000);
-
     const versionCard = page.locator('.version-card').filter({ hasText: 'Version 1' });
     await expect(versionCard).toBeVisible();
 
@@ -232,25 +225,16 @@ test.describe('Configuration Version Management', () => {
     // Step 3: Click Validate button
     await page.locator('button:has-text("Validate")').click();
 
-    // Wait for validation response
-    await page.waitForTimeout(1500);
-
     // Verify validation passes
-    const validationSection = page.locator('.validation-section');
-    await expect(validationSection).toBeVisible();
-
     const successIndicator = page.locator('.validation-success');
-    await expect(successIndicator).toBeVisible();
+    await expect(successIndicator).toBeVisible({ timeout: 5000 });
 
     // Step 4: Click Save Draft button
     await page.locator('button:has-text("Save Draft")').click();
 
-    // Wait for save confirmation
-    await page.waitForTimeout(1500);
-
-    // Verify success message or that unsaved indicator is gone
+    // Verify save completed by checking unsaved indicator is gone
     const unsavedIndicator = page.locator('.unsaved-indicator');
-    await expect(unsavedIndicator).toBeHidden();
+    await expect(unsavedIndicator).toBeHidden({ timeout: 5000 });
 
     // Step 5: Re-open editor to verify configuration persists
     await navigateToSystemDetail(page, testSystemKey);
@@ -271,8 +255,6 @@ test.describe('Configuration Version Management', () => {
     await navigateToSystemDetail(page, testSystemKey);
 
     // Verify both versions are DRAFT
-    await page.waitForTimeout(1000);
-
     const version1Card = page.locator('.version-card').filter({ hasText: 'Version 1' });
     const version2Card = page.locator('.version-card').filter({ hasText: 'Version 2' });
 
@@ -286,11 +268,8 @@ test.describe('Configuration Version Management', () => {
     await page.locator('.modal-content button:has-text("Publish")').click();
     await expect(page.locator('.modal-content')).toBeHidden({ timeout: 5000 });
 
-    // Wait for status update
-    await page.waitForTimeout(1500);
-
     // Verify Version 1 becomes PUBLISHED
-    await expect(version1Card.locator('.status-badge')).toHaveText(/PUBLISHED/i);
+    await expect(version1Card.locator('.status-badge')).toHaveText(/PUBLISHED/i, { timeout: 5000 });
 
     // Step 2: Publish Version 2
     await version2Card.locator('button:has-text("Publish")').click();
@@ -299,19 +278,19 @@ test.describe('Configuration Version Management', () => {
     await page.locator('.modal-content button:has-text("Publish")').click();
     await expect(page.locator('.modal-content')).toBeHidden({ timeout: 5000 });
 
-    // Wait for status update
-    await page.waitForTimeout(1500);
-
     // Step 3: Verify Version 2 becomes PUBLISHED
-    await expect(version2Card.locator('.status-badge')).toHaveText(/PUBLISHED/i);
+    await expect(version2Card.locator('.status-badge')).toHaveText(/PUBLISHED/i, { timeout: 5000 });
 
     // Verify Version 1 is automatically ARCHIVED
-    await expect(version1Card.locator('.status-badge')).toHaveText(/ARCHIVED/i);
+    await expect(version1Card.locator('.status-badge')).toHaveText(/ARCHIVED/i, { timeout: 5000 });
 
-    // Verify only one version remains PUBLISHED
-    const publishedBadges = page.locator('.status-badge').filter({ hasText: /PUBLISHED/i });
-    const publishedCount = await publishedBadges.count();
-    expect(publishedCount).toBe(1);
+    // Verify only one version remains PUBLISHED (use polling to ensure deterministic count)
+    await expect.poll(async () => {
+      const publishedBadges = page.locator('.status-badge').filter({ hasText: /PUBLISHED/i });
+      return await publishedBadges.count();
+    }, {
+      timeout: 5000
+    }).toBe(1);
   });
 
   test('Cannot edit published version', async ({ page }) => {
@@ -325,24 +304,30 @@ test.describe('Configuration Version Management', () => {
     await versionCard.locator('button:has-text("Publish")').click();
     await page.locator('.modal-content button:has-text("Publish")').click();
     await expect(page.locator('.modal-content')).toBeHidden({ timeout: 5000 });
-    await page.waitForTimeout(1500);
+
+    // Verify the version status is PUBLISHED
+    await expect(versionCard.locator('.status-badge')).toHaveText(/PUBLISHED/i, { timeout: 5000 });
 
     // Verify Edit button is not available for published version
-    // The link text should change to "View Config" or edit button should be hidden
+    // For published versions, there should be no "Edit Config" link, only a "View Config" link
     const editLink = versionCard.locator('a:has-text("Edit Config")');
-    const editLinkVisible = await editLink.isVisible();
+    await expect(editLink).not.toBeVisible();
 
-    if (editLinkVisible) {
-      // If edit link exists, it should open in read-only mode
-      await editLink.click();
-      await page.waitForURL(/\/systems\/[^/]+\/versions\/\d+\/edit/);
+    // Verify View Config link is available for published versions
+    const viewConfigLink = versionCard.locator('a:has-text("View Config"), button:has-text("View Config")');
+    await expect(viewConfigLink).toBeVisible();
 
-      // Save Draft button should not be visible for published versions
-      const saveDraftButton = page.locator('button:has-text("Save Draft")');
-      await expect(saveDraftButton).toBeHidden();
-    } else {
-      // Edit link should not be present at all
-      expect(editLinkVisible).toBe(false);
-    }
+    // If we navigate to edit page via URL (not the UI link), it should be read-only
+    // Click View Config to enter view mode
+    await viewConfigLink.click();
+    await page.waitForURL(/\/systems\/[^/]+\/versions\/\d+\/edit/);
+
+    // For published versions, the Save Draft button is disabled (not hidden)
+    const saveDraftButton = page.locator('button:has-text("Save Draft")');
+    await expect(saveDraftButton).toBeDisabled();
+
+    // Verify a message is shown indicating the version cannot be edited
+    const readOnlyMessage = page.locator('text=/only DRAFT versions can be edited/i');
+    await expect(readOnlyMessage).toBeVisible();
   });
 });
