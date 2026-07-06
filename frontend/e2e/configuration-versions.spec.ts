@@ -322,14 +322,12 @@ test.describe('Configuration Version Management', () => {
     await viewConfigLink.click();
     await page.waitForURL(/\/systems\/[^/]+\/versions\/\d+\/edit/);
 
-    // Save Draft button should not be visible in read-only mode
+    // For published versions, the Save Draft button is disabled (not hidden)
     const saveDraftButton = page.locator('button:has-text("Save Draft")');
-    await expect(saveDraftButton).not.toBeVisible();
+    await expect(saveDraftButton).toBeDisabled();
 
-    // Verify the config textarea is disabled or read-only
-    const configTextarea = page.locator('.config-textarea');
-    const isDisabled = await configTextarea.isDisabled();
-    const isReadOnly = await configTextarea.evaluate((el: HTMLTextAreaElement) => el.readOnly);
-    expect(isDisabled || isReadOnly).toBe(true);
+    // Verify a message is shown indicating the version cannot be edited
+    const readOnlyMessage = page.locator('text=/only DRAFT versions can be edited/i');
+    await expect(readOnlyMessage).toBeVisible();
   });
 });
