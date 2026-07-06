@@ -89,8 +89,8 @@ test.describe('Dashboard Metrics', () => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
-    // Wait a bit for metrics to update
-    await page.waitForTimeout(1000);
+    // Verify dashboard metrics are displayed before reading them
+    await expect(page.locator('.stat-item').filter({ hasText: /Lift Systems/i })).toBeVisible();
 
     // Step 7: Compare Dashboard metrics
     const updatedMetrics = await getDashboardMetrics(page);
