@@ -17,6 +17,11 @@ summary is kept under [Earlier history](#earlier-history).
 ## [Unreleased]
 
 
+## [0.53.8] - 2026-07-06
+
+### Changed
+- **Spring Boot 4 compatibility pre-work**: Replaced deprecated Spring Boot test mocking, Spring Security request matcher, and Hibernate generated-value APIs with replacements already available on the current 3.4.x baseline. Runtime and simulation-run API-key paths, configurable CSRF ignored paths, and generated timestamp semantics are unchanged. Updated README, ADR notes, and package metadata for the 0.53.8 patch release.
+
 ## [0.53.7] - 2026-06-27
 
 ### Changed

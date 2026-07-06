@@ -104,8 +104,8 @@ Spring Security filter chains updated to protect versioned endpoints:
 @Order(1)
 public SecurityFilterChain apiKeySecurityFilterChain(HttpSecurity http) {
     http.securityMatcher(new OrRequestMatcher(
-            new AntPathRequestMatcher("/api/v1/runtime/**"),
-            new AntPathRequestMatcher("/api/v1/simulation-runs/**")
+            PathPatternRequestMatcher.withDefaults().matcher("/api/v1/runtime/**"),
+            PathPatternRequestMatcher.withDefaults().matcher("/api/v1/simulation-runs/**")
         ));
     // ...
 }

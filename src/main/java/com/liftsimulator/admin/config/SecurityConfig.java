@@ -22,7 +22,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
@@ -98,6 +98,8 @@ public class SecurityConfig {
         "/api/v1/swagger-ui.html"
     };
     private static final String PLACEHOLDER_SECRET = "CHANGE_ME";
+    private static final PathPatternRequestMatcher.Builder PATH_MATCHER =
+        PathPatternRequestMatcher.withDefaults();
 
     @Value("${security.admin.username:admin}")
     private String adminUsername;
@@ -186,8 +188,8 @@ public class SecurityConfig {
      */
     private RequestMatcher apiKeyProtectedMatcher() {
         return new OrRequestMatcher(
-            new AntPathRequestMatcher("/api/v1/runtime/**"),
-            new AntPathRequestMatcher("/api/v1/simulation-runs/**")
+            PATH_MATCHER.matcher("/api/v1/runtime/**"),
+            PATH_MATCHER.matcher("/api/v1/simulation-runs/**")
         );
     }
 
@@ -324,7 +326,7 @@ public class SecurityConfig {
         CookieCsrfTokenRepository tokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
         RequestMatcher[] ignoredMatchers = csrfProperties.getIgnoredPaths().stream()
-            .map(AntPathRequestMatcher::new)
+            .map(PATH_MATCHER::matcher)
             .toArray(RequestMatcher[]::new);
 
         csrf.csrfTokenRepository(tokenRepository)
