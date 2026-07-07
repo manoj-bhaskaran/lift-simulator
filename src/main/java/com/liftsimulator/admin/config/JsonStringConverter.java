@@ -1,9 +1,9 @@
 package com.liftsimulator.admin.config;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * JPA AttributeConverter for JSON string columns.
@@ -45,7 +45,7 @@ public class JsonStringConverter implements AttributeConverter<String, String> {
         // Validate JSON format before persisting
         try {
             OBJECT_MAPPER.readTree(attribute);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalArgumentException("Invalid JSON format: " + e.getMessage(), e);
         }
 

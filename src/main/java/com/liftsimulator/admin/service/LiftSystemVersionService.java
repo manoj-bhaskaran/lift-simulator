@@ -1,9 +1,5 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.CreateVersionRequest;
 import com.liftsimulator.admin.dto.UpdateVersionConfigRequest;
@@ -17,6 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Service for managing lift system versions.
@@ -127,7 +127,7 @@ public class LiftSystemVersionService {
                 .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
                 .readTree(config);
             return objectMapper.writeValueAsString(configJson);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalArgumentException("Configuration JSON could not be normalized", e);
         }
     }

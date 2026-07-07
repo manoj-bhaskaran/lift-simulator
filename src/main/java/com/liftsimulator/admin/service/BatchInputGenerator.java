@@ -1,6 +1,5 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.LiftConfigDTO;
 import com.liftsimulator.admin.dto.PassengerFlowDTO;
 import com.liftsimulator.admin.dto.ScenarioDefinitionDTO;
@@ -14,6 +13,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Generates batch simulator input files in the legacy .scenario format.
@@ -30,7 +31,8 @@ public class BatchInputGenerator {
     private final ObjectMapper objectMapper;
 
     public BatchInputGenerator(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper.copy();
+        // Jackson 3 replaces ObjectMapper.copy() with rebuild().build() to obtain an isolated copy.
+        this.objectMapper = objectMapper.rebuild().build();
     }
 
     /**
@@ -76,7 +78,9 @@ public class BatchInputGenerator {
     private LiftConfigDTO parseLiftConfig(String liftConfigJson) throws IOException {
         try {
             return objectMapper.readValue(liftConfigJson, LiftConfigDTO.class);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
+            // Jackson 3 read failures are unchecked; keep surfacing them as IOException so the
+            // batch-generation call chain (throws IOException) stays a clean file-level error.
             throw new IOException("Failed to parse lift configuration JSON: " + e.getMessage(), e);
         }
     }

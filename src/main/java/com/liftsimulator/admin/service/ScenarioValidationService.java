@@ -1,12 +1,5 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.liftsimulator.admin.dto.LiftConfigDTO;
 import com.liftsimulator.admin.dto.PassengerFlowDTO;
 import com.liftsimulator.admin.dto.ScenarioDefinitionDTO;
@@ -19,10 +12,15 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.exc.InvalidFormatException;
+import tools.jackson.databind.exc.MismatchedInputException;
+import tools.jackson.databind.exc.UnrecognizedPropertyException;
 
 /**
  * Service for validating UI scenario JSON payloads.
@@ -72,7 +70,7 @@ public class ScenarioValidationService {
         LiftConfigDTO config;
         try {
             config = objectMapper.readValue(version.getConfig(), LiftConfigDTO.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException(
                 "Failed to parse lift system version config: " + e.getMessage(), e
             );
@@ -91,7 +89,7 @@ public class ScenarioValidationService {
         try {
             scenario = objectMapper.readerFor(ScenarioDefinitionDTO.class)
                 .readValue(scenarioJson);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             // This shouldn't happen since we already validated successfully above
             throw new IllegalStateException("Failed to parse scenario JSON: " + e.getMessage(), e);
         }
@@ -151,17 +149,10 @@ public class ScenarioValidationService {
             }
             errors.add(new ValidationIssue(fieldName, errorMessage, ValidationIssue.Severity.ERROR));
             return new ScenarioValidationResponse(false, errors, warnings);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             errors.add(new ValidationIssue(
                 "scenario",
                 "Invalid JSON format: " + e.getOriginalMessage(),
-                ValidationIssue.Severity.ERROR
-            ));
-            return new ScenarioValidationResponse(false, errors, warnings);
-        } catch (IOException e) {
-            errors.add(new ValidationIssue(
-                "scenario",
-                "Unable to read scenario payload: " + e.getMessage(),
                 ValidationIssue.Severity.ERROR
             ));
             return new ScenarioValidationResponse(false, errors, warnings);
@@ -182,12 +173,12 @@ public class ScenarioValidationService {
         return new ScenarioValidationResponse(valid, errors, warnings);
     }
 
-    private String getFieldNameFromPath(List<JsonMappingException.Reference> path) {
+    private String getFieldNameFromPath(List<JacksonException.Reference> path) {
         if (path == null || path.isEmpty()) {
             return "scenario";
         }
-        JsonMappingException.Reference lastRef = path.get(path.size() - 1);
-        String fieldName = lastRef.getFieldName();
+        JacksonException.Reference lastRef = path.get(path.size() - 1);
+        String fieldName = lastRef.getPropertyName();
         return fieldName != null ? fieldName : "scenario";
     }
 
