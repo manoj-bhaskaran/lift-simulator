@@ -39,11 +39,11 @@ We evaluated several options for building this backend:
 
 ## Decision
 
-We will use **Spring Boot 3.2.1** as the foundation for the Lift Config Service backend.
+We use **Spring Boot 4.0.x** as the foundation for the Lift Config Service backend.
 
 ### Implementation Details
 
-1. **Framework**: Spring Boot 3.2.1 (requires Java 17+)
+1. **Framework**: Spring Boot 4.0.x (requires Java 17+)
 2. **Build System**: Continue using Maven, inherit from `spring-boot-starter-parent`
 3. **Package Structure**: Create `admin` package hierarchy separate from simulation core:
    - `admin/controller` - REST controllers
@@ -267,8 +267,8 @@ We also evaluated different persistence options:
 
 ## References
 
-- Spring Boot Documentation: https://docs.spring.io/spring-boot/docs/3.2.1/reference/html/
-- Spring Boot Actuator: https://docs.spring.io/spring-boot/docs/3.2.1/reference/html/actuator.html
+- Spring Boot Documentation: https://docs.spring.io/spring-boot/docs/4.0.x/reference/html/
+- Spring Boot Actuator: https://docs.spring.io/spring-boot/docs/4.0.x/reference/html/actuator.html
 - ADR-0001: Tick-Based Simulation (simulation core design)
 - ADR-0002: Single Source of Truth for Lift State (state management)
 - ADR-0003: Request Lifecycle Management (request handling)
