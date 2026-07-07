@@ -17,6 +17,11 @@ summary is kept under [Earlier history](#earlier-history).
 ## [Unreleased]
 
 
+## [0.53.9] - 2026-07-06
+
+### Changed
+- **Spring Boot 3.5 baseline refresh**: Upgraded the Maven Spring Boot parent from 3.4.5 to 3.5.15 and added the temporary Spring Boot properties migrator runtime dependency so renamed or removed configuration keys are reported during the 3.5.x transition. Updated README and package metadata for the 0.53.9 patch release.
+
 ## [0.53.8] - 2026-07-06
 
 ### Changed

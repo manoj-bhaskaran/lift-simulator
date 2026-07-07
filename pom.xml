@@ -8,13 +8,13 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.5</version>
+        <version>3.5.15</version>
         <relativePath/>
     </parent>
 
     <groupId>com.liftsimulator</groupId>
     <artifactId>lift-simulator</artifactId>
-    <version>0.53.8</version>
+    <version>0.53.9</version>
     <packaging>jar</packaging>
 
     <name>Lift Simulator</name>
@@ -97,6 +97,13 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.7.0</version>
+        </dependency>
+
+        <!-- Spring Boot Properties Migrator for temporary 3.5.x configuration migration diagnostics -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-properties-migrator</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- Spring Boot Test Starter -->
