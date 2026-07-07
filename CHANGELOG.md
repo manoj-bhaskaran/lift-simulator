@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.54.0] - 2026-07-07
+
+### Changed
+- **Spring Boot 4 build migration**: Upgraded the Maven parent to Spring Boot 4.0.7, renamed the MVC starter/test starter dependencies, added the modular Data JPA test starter for repository slices, moved springdoc to 3.0.3, and let Spring Boot dependency management provide JUnit 6 and Testcontainers 2. Updated Boot 4 test-slice imports, Testcontainers PostgreSQL package imports, README dependency notes, and package metadata for the 0.54.0 pre-MVP minor release.
+
 
 ## [0.53.9] - 2026-07-06
 

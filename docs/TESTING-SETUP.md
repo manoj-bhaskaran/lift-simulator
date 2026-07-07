@@ -5,7 +5,7 @@ This document describes the test configuration for the Lift Simulator project, i
 ## Overview
 
 The project uses:
-- **JUnit 5** for unit and integration tests
+- **JUnit 6** for unit and integration tests
 - **Spring Boot Test** for context-based testing
 - **PostgreSQL** as the test database (matches production database)
 - **Testcontainers** for some integration tests that need Docker
@@ -261,6 +261,6 @@ env:
 ## References
 
 - [Spring Boot Testing](https://spring.io/guides/gs/testing-web/)
-- [JUnit 5 Documentation](https://junit.org/junit5/docs/current/user-guide/)
+- [JUnit Documentation](https://junit.org/junit5/docs/current/user-guide/)
 - [Testcontainers Documentation](https://www.testcontainers.org/)
 - [PostgreSQL Docker Image](https://hub.docker.com/_/postgres)

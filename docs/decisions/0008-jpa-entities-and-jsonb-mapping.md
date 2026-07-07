@@ -206,7 +206,7 @@ This keeps timestamp management consistent with database defaults while allowing
 
 ## Implementation Notes
 
-1. **Hibernate Version**: Using Hibernate 6.x (included with Spring Boot 3.2.1)
+1. **Hibernate Version**: Using Hibernate 7.x (included with Spring Boot 4.0.x)
 2. **PostgreSQL Dialect**: Configured in `application-dev.yml`
 3. **DDL Validation**: Hibernate set to `validate` mode (Flyway handles schema creation)
 4. **Test Configuration**: Separate `application-test.yml` for test database
