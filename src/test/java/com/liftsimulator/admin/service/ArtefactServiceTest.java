@@ -1,7 +1,7 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ArtefactInfo;
 import com.liftsimulator.admin.entity.SimulationRun;
 import org.junit.jupiter.api.Test;
@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ArtefactServiceTest {
 
-    private final ArtefactService artefactService = new ArtefactService(new ObjectMapper());
+    private final ArtefactService artefactService = new ArtefactService(tools.jackson.databind.json.JsonMapper.builder().build());
 
     @TempDir
     private Path tempDir;

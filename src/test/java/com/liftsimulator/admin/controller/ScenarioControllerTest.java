@@ -1,6 +1,6 @@
 package com.liftsimulator.admin.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.liftsimulator.LocalIntegrationTest;
 import com.liftsimulator.admin.controller.fixtures.ControllerApiFixtures;
 import com.liftsimulator.admin.dto.ScenarioRequest;

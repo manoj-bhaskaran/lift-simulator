@@ -35,6 +35,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 @ActiveProfiles("test")
 public class LiftSystemVersionRepositoryTest {
 
+    private static final tools.jackson.databind.ObjectMapper OBJECT_MAPPER =
+        tools.jackson.databind.json.JsonMapper.builder().build();
+
     @Autowired
     private TestEntityManager entityManager;
 
@@ -244,10 +247,10 @@ public class LiftSystemVersionRepositoryTest {
         assertTrue(retrieved.isPresent());
         // Compare JSON semantically, not as strings, because PostgreSQL JSONB normalizes key order
         try {
-            com.fasterxml.jackson.databind.JsonNode expected = new com.fasterxml.jackson.databind.ObjectMapper().readTree(complexJson);
-            com.fasterxml.jackson.databind.JsonNode actual = new com.fasterxml.jackson.databind.ObjectMapper().readTree(retrieved.get().getConfig());
+            tools.jackson.databind.JsonNode expected = OBJECT_MAPPER.readTree(complexJson);
+            tools.jackson.databind.JsonNode actual = OBJECT_MAPPER.readTree(retrieved.get().getConfig());
             assertEquals(expected, actual);
-        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+        } catch (tools.jackson.core.JsonProcessingException e) {
             org.junit.jupiter.api.Assertions.fail("Failed to parse JSON: " + e.getMessage());
         }
     }

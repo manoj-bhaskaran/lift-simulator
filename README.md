@@ -2,7 +2,7 @@
 
 A Java-based simulation of lift (elevator) controllers with a focus on correctness and design clarity.
 
-Current version: **0.55.0**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
+Current version: **0.56.0**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## What is this?
 
@@ -335,7 +335,7 @@ Alternatively, set `LOGGING_FILE_PATH` as an environment variable.
 
 This project ships an `.editorconfig` for consistent formatting across editors and IDEs (IntelliJ IDEA has built-in support; VS Code, Eclipse, and Vim/Neovim use plugins). It enforces UTF-8 encoding, LF line endings, 4-space indentation for Java and XML, trailing-whitespace removal, and final-newline insertion.
 
-**Backend dependency baseline:** Spring Boot 4.0.7, Springdoc OpenAPI 3.0.3, PostgreSQL JDBC driver 42.7.11, and the Flyway PostgreSQL module (managed by Spring Boot dependency management). Spring Boot 4 dependency management also supplies JUnit 6 and Testcontainers 2 for the backend test suite, with modular MVC and Data JPA test starters covering controller and repository slice tests.
+**Backend dependency baseline:** Spring Boot 4.0.7, Springdoc OpenAPI 3.0.3, PostgreSQL JDBC driver 42.7.11, and the Flyway PostgreSQL module (managed by Spring Boot dependency management). Spring Boot 4 dependency management also supplies JUnit 6 and Testcontainers 2 for the backend test suite, with modular MVC and Data JPA test starters covering controller and repository slice tests. Test sources use Jackson 3 `tools.jackson` core/databind APIs and Spring-configured mappers for JSON contract assertions.
 
 **Commenting style:** use `//` for single-line comments and `/* */` for multi-line explanations, write non-obvious logic as complete sentences, and end comment sentences with periods.
 

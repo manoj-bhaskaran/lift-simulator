@@ -1,7 +1,7 @@
 package com.liftsimulator.admin.controller;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.config.SecurityConfig;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
@@ -310,6 +310,25 @@ public class GlobalExceptionHandlerValidationTest {
             .andExpect(jsonPath("$.fieldErrors", hasKey("username")))
             .andExpect(jsonPath("$.fieldErrors", hasKey("password")))
             .andExpect(jsonPath("$.fieldErrors", hasKey("passwordsMatch")))
+            .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    public void testFieldValidation_UnknownProperty_ReturnsDocumentedErrorBody() throws Exception {
+        String request = """
+            {
+                "name": "Valid Name",
+                "email": "test@example.com",
+                "unexpectedField": "rejected"
+            }
+            """;
+
+        mockMvc.perform(post("/api/v1/test/field-validation")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(request))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value("Unknown property 'unexpectedField' is not allowed"))
             .andExpect(jsonPath("$.timestamp").exists());
     }
 }
