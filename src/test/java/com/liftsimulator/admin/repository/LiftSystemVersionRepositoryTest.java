@@ -6,9 +6,9 @@ import com.liftsimulator.admin.entity.LiftSystemVersion.VersionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.HashSet;
@@ -34,6 +34,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
 public class LiftSystemVersionRepositoryTest {
+
+    private static final tools.jackson.databind.ObjectMapper OBJECT_MAPPER =
+        tools.jackson.databind.json.JsonMapper.builder().build();
 
     @Autowired
     private TestEntityManager entityManager;
@@ -244,10 +247,10 @@ public class LiftSystemVersionRepositoryTest {
         assertTrue(retrieved.isPresent());
         // Compare JSON semantically, not as strings, because PostgreSQL JSONB normalizes key order
         try {
-            com.fasterxml.jackson.databind.JsonNode expected = new com.fasterxml.jackson.databind.ObjectMapper().readTree(complexJson);
-            com.fasterxml.jackson.databind.JsonNode actual = new com.fasterxml.jackson.databind.ObjectMapper().readTree(retrieved.get().getConfig());
+            tools.jackson.databind.JsonNode expected = OBJECT_MAPPER.readTree(complexJson);
+            tools.jackson.databind.JsonNode actual = OBJECT_MAPPER.readTree(retrieved.get().getConfig());
             assertEquals(expected, actual);
-        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+        } catch (tools.jackson.core.JacksonException e) {
             org.junit.jupiter.api.Assertions.fail("Failed to parse JSON: " + e.getMessage());
         }
     }

@@ -22,13 +22,12 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -185,11 +184,11 @@ public class SecurityConfig {
      * Request matcher for API key protected endpoints.
      * Matches runtime configuration and simulation run APIs.
      */
-    private RequestMatcher apiKeyProtectedMatcher(HandlerMappingIntrospector introspector) {
-        MvcRequestMatcher.Builder matcherBuilder = new MvcRequestMatcher.Builder(introspector);
+    private RequestMatcher apiKeyProtectedMatcher() {
+        PathPatternRequestMatcher.Builder matcherBuilder = PathPatternRequestMatcher.withDefaults();
         return new OrRequestMatcher(
-            matcherBuilder.pattern("/api/v1/runtime/**"),
-            matcherBuilder.pattern("/api/v1/simulation-runs/**")
+            matcherBuilder.matcher("/api/v1/runtime/**"),
+            matcherBuilder.matcher("/api/v1/simulation-runs/**")
         );
     }
 
@@ -201,14 +200,13 @@ public class SecurityConfig {
      */
     @Bean
     @Order(1)
-    public SecurityFilterChain apiKeySecurityFilterChain(
-            HttpSecurity http, HandlerMappingIntrospector introspector) throws Exception {
+    public SecurityFilterChain apiKeySecurityFilterChain(HttpSecurity http) throws Exception {
         AuthenticationEntryPoint entryPoint = apiKeyAuthenticationEntryPoint();
 
         http
-            .securityMatcher(apiKeyProtectedMatcher(introspector))
+            .securityMatcher(apiKeyProtectedMatcher())
             .cors(Customizer.withDefaults())
-            .csrf(csrf -> configureCsrf(csrf, introspector))
+            .csrf(this::configureCsrf)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(entryPoint))
@@ -236,12 +234,11 @@ public class SecurityConfig {
      */
     @Bean
     @Order(2)
-    public SecurityFilterChain adminApiSecurityFilterChain(
-            HttpSecurity http, HandlerMappingIntrospector introspector) throws Exception {
+    public SecurityFilterChain adminApiSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .securityMatcher("/api/v1/**")
             .cors(Customizer.withDefaults())
-            .csrf(csrf -> configureCsrf(csrf, introspector))
+            .csrf(this::configureCsrf)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(adminAuthenticationEntryPoint())
@@ -276,12 +273,11 @@ public class SecurityConfig {
      */
     @Bean
     @Order(3)
-    public SecurityFilterChain actuatorSecurityFilterChain(
-            HttpSecurity http, HandlerMappingIntrospector introspector) throws Exception {
+    public SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .securityMatcher("/actuator/**")
             .cors(Customizer.withDefaults())
-            .csrf(csrf -> configureCsrf(csrf, introspector))
+            .csrf(this::configureCsrf)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(adminAuthenticationEntryPoint())
@@ -302,11 +298,10 @@ public class SecurityConfig {
      */
     @Bean
     @Order(4)
-    public SecurityFilterChain publicSecurityFilterChain(
-            HttpSecurity http, HandlerMappingIntrospector introspector) throws Exception {
+    public SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(Customizer.withDefaults())
-            .csrf(csrf -> configureCsrf(csrf, introspector))
+            .csrf(this::configureCsrf)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/index.html", "/assets/**", "/favicon.ico").permitAll()
@@ -322,8 +317,7 @@ public class SecurityConfig {
      * Configures CSRF based on the explicit security.csrf configuration.
      */
     private void configureCsrf(
-            org.springframework.security.config.annotation.web.configurers.CsrfConfigurer<HttpSecurity> csrf,
-            HandlerMappingIntrospector introspector) {
+            org.springframework.security.config.annotation.web.configurers.CsrfConfigurer<HttpSecurity> csrf) {
         if (!csrfProperties.isEnabled()) {
             csrf.disable();
             return;
@@ -331,9 +325,9 @@ public class SecurityConfig {
 
         CookieCsrfTokenRepository tokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
-        MvcRequestMatcher.Builder matcherBuilder = new MvcRequestMatcher.Builder(introspector);
+        PathPatternRequestMatcher.Builder matcherBuilder = PathPatternRequestMatcher.withDefaults();
         RequestMatcher[] ignoredMatchers = csrfProperties.getIgnoredPaths().stream()
-            .map(matcherBuilder::pattern)
+            .map(matcherBuilder::matcher)
             .toArray(RequestMatcher[]::new);
 
         csrf.csrfTokenRepository(tokenRepository)

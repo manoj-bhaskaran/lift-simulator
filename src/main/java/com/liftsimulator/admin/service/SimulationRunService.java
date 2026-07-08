@@ -1,6 +1,5 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ScenarioDefinitionDTO;
 import com.liftsimulator.admin.dto.SimulationRunResponse;
 import com.liftsimulator.admin.entity.LiftSystem;
@@ -37,6 +36,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Service for managing simulation runs.
@@ -216,7 +217,7 @@ public class SimulationRunService {
             if (scenarioDefinition.durationTicks() != null) {
                 return scenarioDefinition.durationTicks().longValue();
             }
-        } catch (IOException ex) {
+        } catch (JacksonException ex) {
             LOGGER.warn("Failed to extract durationTicks from scenario {}: {}", scenario.getId(), ex.getMessage());
         }
         return null;

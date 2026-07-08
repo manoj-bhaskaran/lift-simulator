@@ -1,7 +1,7 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ScenarioRequest;
 import com.liftsimulator.admin.dto.ScenarioResponse;
 import com.liftsimulator.admin.dto.ScenarioValidationResponse;
@@ -70,7 +70,7 @@ public class ScenarioServiceTest {
     @Mock
     private ArtefactService artefactService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = tools.jackson.databind.json.JsonMapper.builder().build();
     private ScenarioService scenarioService;
     private LiftSystemVersion version;
 

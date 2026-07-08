@@ -1,6 +1,6 @@
 package com.liftsimulator.admin.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.liftsimulator.LocalIntegrationTest;
 import com.liftsimulator.admin.dto.CreateSimulationRunRequest;
 import com.liftsimulator.admin.entity.LiftSystem;
@@ -15,7 +15,7 @@ import com.liftsimulator.admin.repository.SimulationRunRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Propagation;
@@ -605,5 +605,27 @@ public class SimulationRunControllerTest extends LocalIntegrationTest {
                 .header(API_KEY_HEADER, API_KEY_VALUE))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.size").value(100));
+    }
+
+    @Test
+    public void testCreateSimulationRun_TimestampsUseIsoOffsetFormat() throws Exception {
+        CreateSimulationRunRequest request = new CreateSimulationRunRequest(
+            testSystem.getId(),
+            testVersion.getVersionNumber(),
+            null,
+            12345L
+        );
+
+        mockMvc.perform(post("/api/v1/simulation-runs")
+                .header(API_KEY_HEADER, API_KEY_VALUE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.createdAt", org.hamcrest.Matchers.matchesPattern(
+                "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+            )))
+            .andExpect(jsonPath("$.startedAt", org.hamcrest.Matchers.matchesPattern(
+                "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+            )));
     }
 }

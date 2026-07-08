@@ -16,6 +16,21 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.56.0] - 2026-07-08
+
+### Changed
+- **Jackson 3 migration (test sources)**: Migrated backend test Jackson core/databind imports to the `tools.jackson` packages, kept annotations on `com.fasterxml.jackson.annotation`, and added JSON contract regression assertions for strict unknown-property 400 responses, ISO-8601 timestamp serialization, JSONB semantic round trips, and simulation result/metrics payload shape. Updated README and package metadata for the 0.56.0 pre-MVP minor release.
+
+## [0.55.0] - 2026-07-07
+
+### Changed
+- **Jackson 3 migration (main sources)**: Migrated all main-source Jackson usages from the `com.fasterxml.jackson.databind`/`core` packages to Jackson 3's `tools.jackson.databind`/`core` packages (annotations remain under `com.fasterxml.jackson.annotation`), as required by the Spring Boot 4 default of Jackson 3. Reworked `JacksonConfiguration` from `Jackson2ObjectMapperBuilderCustomizer` to a `JsonMapper.Builder` bean seeded with a `JsonFactory` that enforces the existing stream-read constraints (max nesting depth 100, max string length 1 MiB) and re-asserts `FAIL_ON_UNKNOWN_PROPERTIES`, while re-applying every auto-configured `JsonMapperBuilderCustomizer` so Spring Boot defaults are preserved. Audited Jackson exception handling for Jackson 3's unchecked `JacksonException` (formerly checked `JsonProcessingException`) so JSON parse and unknown-property failures still surface as clean 400s and unreadable simulation results still surface as 500s. Removed now-redundant `JavaTimeModule` registrations and the `WRITE_DATES_AS_TIMESTAMPS` toggle (java.time support and ISO-8601 date output are Jackson 3 core defaults), and replaced `ObjectMapper.copy()` with `rebuild().build()`. The JSON contract — strict unknown-property rejection, JSONB round-trips, and the authentication/authorization error-body shape — is unchanged. Updated ADR-0013 and package metadata for the 0.55.0 pre-MVP minor release.
+
+## [0.54.0] - 2026-07-07
+
+### Changed
+- **Spring Boot 4 build migration**: Upgraded the Maven parent to Spring Boot 4.0.7, renamed the MVC starter/test starter dependencies, added the modular Data JPA test starter for repository slices, moved springdoc to 3.0.3, and let Spring Boot dependency management provide JUnit 6 and Testcontainers 2. Updated Boot 4 test-slice imports, Testcontainers PostgreSQL package imports, README dependency notes, and package metadata for the 0.54.0 pre-MVP minor release.
+
 
 ## [0.53.9] - 2026-07-06
 

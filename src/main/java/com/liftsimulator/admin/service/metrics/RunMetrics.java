@@ -1,8 +1,5 @@
 package com.liftsimulator.admin.service.metrics;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.liftsimulator.admin.dto.LiftConfigDTO;
 import com.liftsimulator.admin.dto.PassengerFlowDTO;
 import com.liftsimulator.domain.LiftRequest;
@@ -14,6 +11,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 public final class RunMetrics {
     private final Map<Long, RequestLifecycle> lifecycles = new LinkedHashMap<>();

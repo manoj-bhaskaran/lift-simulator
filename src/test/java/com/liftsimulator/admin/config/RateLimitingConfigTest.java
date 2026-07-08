@@ -1,7 +1,7 @@
 package com.liftsimulator.admin.config;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,7 +18,7 @@ class RateLimitingConfigTest {
 
         assertThat(registration.getUrlPatterns())
             .containsExactlyInAnyOrder("/api/v1/*", "/actuator/*");
-        assertThat(registration.getOrder()).isEqualTo(SecurityProperties.DEFAULT_FILTER_ORDER - 2);
+        assertThat(registration.getOrder()).isEqualTo(SecurityFilterProperties.DEFAULT_FILTER_ORDER - 2);
         assertThat(registration.getFilter()).isInstanceOf(RequestSizeLimitFilter.class);
     }
 
@@ -32,7 +32,7 @@ class RateLimitingConfigTest {
 
         assertThat(registration.getUrlPatterns())
             .containsExactlyInAnyOrder("/api/v1/*", "/actuator/*");
-        assertThat(registration.getOrder()).isEqualTo(SecurityProperties.DEFAULT_FILTER_ORDER - 1);
+        assertThat(registration.getOrder()).isEqualTo(SecurityFilterProperties.DEFAULT_FILTER_ORDER - 1);
         assertThat(registration.getFilter()).isInstanceOf(RateLimitingFilter.class);
     }
 }

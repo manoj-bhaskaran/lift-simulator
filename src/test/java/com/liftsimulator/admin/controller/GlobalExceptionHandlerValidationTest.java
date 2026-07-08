@@ -1,7 +1,7 @@
 package com.liftsimulator.admin.controller;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.config.SecurityConfig;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * The GlobalExceptionHandler safely handles both FieldError and ObjectError types.
  */
 @WebMvcTest(controllers = {GlobalExceptionHandler.class}, excludeAutoConfiguration = {
-    org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
+    org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration.class
 })
 @ActiveProfiles("test")
 @Import({
@@ -310,6 +310,25 @@ public class GlobalExceptionHandlerValidationTest {
             .andExpect(jsonPath("$.fieldErrors", hasKey("username")))
             .andExpect(jsonPath("$.fieldErrors", hasKey("password")))
             .andExpect(jsonPath("$.fieldErrors", hasKey("passwordsMatch")))
+            .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    public void testFieldValidation_UnknownProperty_ReturnsDocumentedErrorBody() throws Exception {
+        String request = """
+            {
+                "name": "Valid Name",
+                "email": "test@example.com",
+                "unexpectedField": "rejected"
+            }
+            """;
+
+        mockMvc.perform(post("/api/v1/test/field-validation")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(request))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value("Unknown property 'unexpectedField' is not allowed"))
             .andExpect(jsonPath("$.timestamp").exists());
     }
 }

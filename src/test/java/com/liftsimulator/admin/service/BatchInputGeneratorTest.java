@@ -1,6 +1,6 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.LiftConfigDTO;
 import com.liftsimulator.admin.dto.PassengerFlowDTO;
 import com.liftsimulator.admin.dto.ScenarioDefinitionDTO;
@@ -35,7 +35,7 @@ public class BatchInputGeneratorTest {
 
     @BeforeEach
     public void setUp() {
-        objectMapper = new ObjectMapper();
+        objectMapper = tools.jackson.databind.json.JsonMapper.builder().build();
         generator = new BatchInputGenerator(objectMapper);
     }
 

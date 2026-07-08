@@ -1,6 +1,6 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.CreateVersionRequest;
 import com.liftsimulator.admin.dto.UpdateVersionConfigRequest;
@@ -81,7 +81,7 @@ public class LiftSystemVersionServiceTest {
             liftSystemRepository,
             versionRepository,
             configValidationService,
-            new ObjectMapper()
+            tools.jackson.databind.json.JsonMapper.builder().build()
         );
     }
 

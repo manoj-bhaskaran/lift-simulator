@@ -1,7 +1,7 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.ValidationIssue;
 import jakarta.validation.Validation;
@@ -24,9 +24,10 @@ public class ConfigValidationServiceTest {
 
     @BeforeEach
     public void setUp() {
-        objectMapper = new ObjectMapper();
         // Configure ObjectMapper to match production settings - fail on unknown properties
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+        objectMapper = tools.jackson.databind.json.JsonMapper.builder()
+                .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
         Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
         validationService = new ConfigValidationService(objectMapper, validator);
     }

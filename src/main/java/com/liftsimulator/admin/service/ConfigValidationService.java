@@ -1,11 +1,5 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.LiftConfigDTO;
 import com.liftsimulator.admin.dto.ValidationIssue;
@@ -17,6 +11,11 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.exc.InvalidFormatException;
+import tools.jackson.databind.exc.MismatchedInputException;
+import tools.jackson.databind.exc.UnrecognizedPropertyException;
 
 /**
  * Service for validating lift system configuration JSON.
@@ -100,7 +99,7 @@ public class ConfigValidationService {
                 ValidationIssue.Severity.ERROR
             ));
             return new ConfigValidationResponse(false, errors, warnings);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             errors.add(new ValidationIssue(
                 "config",
                 "Invalid JSON format: " + e.getOriginalMessage(),
@@ -129,18 +128,18 @@ public class ConfigValidationService {
     }
 
     /**
-     * Extracts the field name from Jackson's JsonMappingException path.
+     * Extracts the field name from Jackson's databind exception path.
      *
-     * @param path The path from the JsonMappingException
+     * @param path The path from the {@link JacksonException}
      * @return The field name, or "config" if path is empty
      */
-    private String getFieldNameFromPath(List<JsonMappingException.Reference> path) {
+    private String getFieldNameFromPath(List<JacksonException.Reference> path) {
         if (path == null || path.isEmpty()) {
             return "config";
         }
         // Get the last reference in the path (most specific field)
-        JsonMappingException.Reference lastRef = path.get(path.size() - 1);
-        String fieldName = lastRef.getFieldName();
+        JacksonException.Reference lastRef = path.get(path.size() - 1);
+        String fieldName = lastRef.getPropertyName();
         return fieldName != null ? fieldName : "config";
     }
 

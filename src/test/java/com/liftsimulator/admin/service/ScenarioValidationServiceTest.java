@@ -1,8 +1,8 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ScenarioValidationResponse;
 import com.liftsimulator.admin.dto.ValidationIssue;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
@@ -55,9 +55,10 @@ public class ScenarioValidationServiceTest {
 
     @BeforeEach
     public void setUp() {
-        objectMapper = new ObjectMapper();
         // Match production strict-schema behaviour so unknown scenario fields become validation errors.
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+        objectMapper = tools.jackson.databind.json.JsonMapper.builder()
+                .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
         Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
         validationService = new ScenarioValidationService(objectMapper, validator, versionRepository);
     }

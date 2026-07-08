@@ -1,6 +1,6 @@
 package com.liftsimulator.admin.config;
 
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -19,7 +19,7 @@ public class RateLimitingConfig {
 
     /**
      * Registers the rate-limiting filter at one order before the Spring Security filter chain
-     * ({@code SecurityProperties.DEFAULT_FILTER_ORDER - 1}) so it runs before authentication
+     * ({@code SecurityFilterProperties.DEFAULT_FILTER_ORDER - 1}) so it runs before authentication
      * and can throttle all traffic including unauthenticated brute-force or flood requests.
      */
     @Bean
@@ -28,7 +28,7 @@ public class RateLimitingConfig {
         FilterRegistrationBean<RequestSizeLimitFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(new RequestSizeLimitFilter(properties));
         registration.addUrlPatterns("/api/v1/*", "/actuator/*");
-        registration.setOrder(SecurityProperties.DEFAULT_FILTER_ORDER - 2);
+        registration.setOrder(SecurityFilterProperties.DEFAULT_FILTER_ORDER - 2);
         registration.setName("requestSizeLimitFilter");
         return registration;
     }
@@ -39,7 +39,7 @@ public class RateLimitingConfig {
         FilterRegistrationBean<RateLimitingFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(new RateLimitingFilter(properties));
         registration.addUrlPatterns("/api/v1/*", "/actuator/*");
-        registration.setOrder(SecurityProperties.DEFAULT_FILTER_ORDER - 1);
+        registration.setOrder(SecurityFilterProperties.DEFAULT_FILTER_ORDER - 1);
         registration.setName("rateLimitingFilter");
         return registration;
     }

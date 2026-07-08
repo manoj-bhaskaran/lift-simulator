@@ -1,6 +1,6 @@
 package com.liftsimulator.testsupport;
 
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -28,7 +28,7 @@ final class SharedPostgresContainer {
     /** Schema the migrations and entity mappings live in. */
     static final String SCHEMA = "lift_simulator";
 
-    private static volatile PostgreSQLContainer<?> container;
+    private static volatile PostgreSQLContainer container;
 
     private SharedPostgresContainer() {
     }
@@ -36,13 +36,13 @@ final class SharedPostgresContainer {
     /**
      * Returns the running shared container, starting it on first call.
      */
-    static PostgreSQLContainer<?> getStarted() {
-        PostgreSQLContainer<?> local = container;
+    static PostgreSQLContainer getStarted() {
+        PostgreSQLContainer local = container;
         if (local == null) {
             synchronized (SharedPostgresContainer.class) {
                 local = container;
                 if (local == null) {
-                    local = new PostgreSQLContainer<>(IMAGE)
+                    local = new PostgreSQLContainer(IMAGE)
                             .withDatabaseName(DATABASE)
                             .withUsername(USERNAME)
                             .withPassword(PASSWORD)
