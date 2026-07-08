@@ -88,6 +88,12 @@
         </dependency>
 
         <!-- Flyway for database migrations -->
+        <!-- Spring Boot 4 extracted Flyway auto-configuration into its own module;
+             flyway-core alone no longer triggers migrations at startup. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-flyway</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>

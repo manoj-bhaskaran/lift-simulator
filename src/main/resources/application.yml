@@ -6,6 +6,11 @@ spring:
     import: "optional:classpath:version.properties"
   jpa:
     open-in-view: false
+  jackson:
+    deserialization:
+      # Jackson 3 defaults FAIL_ON_UNKNOWN_PROPERTIES to false; the API contract
+      # rejects unknown request fields with HTTP 400, so re-enable it explicitly.
+      fail-on-unknown-properties: true
   flyway:
     enabled: true
     schemas: lift_simulator
