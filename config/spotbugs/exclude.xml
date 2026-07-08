@@ -12,4 +12,13 @@
         <Class name="com.liftsimulator.runtime.controller.RuntimeConfigController"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
+    <!--
+        Spring Security's HttpSecurity.build() declares "throws Exception", so the
+        SecurityFilterChain @Bean methods must propagate it. Narrowing the throws
+        clause is not possible, making this a framework-imposed false positive.
+    -->
+    <Match>
+        <Class name="com.liftsimulator.admin.config.SecurityConfig"/>
+        <Bug pattern="THROWS_METHOD_THROWS_CLAUSE_BASIC_EXCEPTION"/>
+    </Match>
 </FindBugsFilter>

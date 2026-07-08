@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * The GlobalExceptionHandler safely handles both FieldError and ObjectError types.
  */
 @WebMvcTest(controllers = {GlobalExceptionHandler.class}, excludeAutoConfiguration = {
-    org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
+    org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration.class
 })
 @ActiveProfiles("test")
 @Import({
