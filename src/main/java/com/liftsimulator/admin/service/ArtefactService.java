@@ -1,7 +1,5 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ArtefactInfo;
 import com.liftsimulator.admin.entity.SimulationRun;
 import org.slf4j.Logger;
@@ -22,6 +20,8 @@ import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
 import java.util.stream.Stream;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Service for managing simulation run artefacts with security controls.
@@ -40,7 +40,8 @@ public class ArtefactService {
     private final ObjectMapper objectMapper;
 
     public ArtefactService(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper.copy();
+        // Jackson 3 replaces ObjectMapper.copy() with rebuild().build() to obtain an isolated copy.
+        this.objectMapper = objectMapper.rebuild().build();
     }
 
     public record ArtefactDownload(

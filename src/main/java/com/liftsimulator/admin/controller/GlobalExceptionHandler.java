@@ -1,6 +1,5 @@
 package com.liftsimulator.admin.controller;
 
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.ErrorResponse;
 import com.liftsimulator.admin.dto.ScenarioValidationResponse;
@@ -26,6 +25,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import tools.jackson.databind.exc.UnrecognizedPropertyException;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;

@@ -1,6 +1,5 @@
 package com.liftsimulator.admin.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.liftsimulator.admin.dto.ArtefactInfo;
 import com.liftsimulator.admin.dto.CreateSimulationRunRequest;
 import com.liftsimulator.admin.dto.SimulationResultResponse;
@@ -40,6 +39,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.List;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -208,8 +209,10 @@ public class SimulationRunController {
                 try {
                     JsonNode results = artefactService.readResults(run);
                     yield ResponseEntity.ok(SimulationResultResponse.success(id, results));
-                } catch (IOException e) {
-                    // Results file not found or not readable - genuine server error
+                } catch (IOException | JacksonException e) {
+                    // Results file not found, not readable, or malformed JSON - genuine server error.
+                    // Jackson 3 parse failures are unchecked JacksonException, so catch them alongside
+                    // IOException to preserve the 500-with-body contract for unreadable results.
                     yield ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body(SimulationResultResponse.succeededWithoutResults(
                                     id,

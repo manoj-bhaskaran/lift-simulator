@@ -4,6 +4,12 @@
 
 **Status**: Accepted
 
+> **Update (2026-07-07, Jackson 3 / Spring Boot 4):** The decision to reject
+> unknown properties is unchanged, but the implementation moved to Jackson 3.
+> The code samples below reflect the original Jackson 2 implementation; see
+> [Update — Jackson 3 migration](#update--jackson-3-migration-spring-boot-4) at
+> the end of this ADR for the current approach.
+
 ## Context
 
 The Lift Config Service accepts configuration JSON payloads at multiple entry points:
@@ -364,3 +370,61 @@ This ADR complies with:
 - [OWASP: Input Validation](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)
 - [REST API Error Handling Best Practices](https://www.rfc-editor.org/rfc/rfc7807)
 - [Semantic Versioning 2.0.0](https://semver.org/)
+
+## Update — Jackson 3 migration (Spring Boot 4)
+
+**Date**: 2026-07-07 (v0.55.0)
+
+Spring Boot 4 defaults to **Jackson 3**, which relocates the runtime packages from
+`com.fasterxml.jackson.databind`/`core` to `tools.jackson.databind`/`core` (only
+`jackson-annotations` keeps the `com.fasterxml.jackson.annotation` package). The
+strict-schema decision above is unchanged; only its implementation moved.
+
+### What changed
+
+1. **Configuration customizer → builder bean.** Jackson 3 owns stream-read
+   constraints on the `tools.jackson.core.TokenStreamFactory`, which a
+   `JsonMapperBuilderCustomizer` cannot replace on an already-created builder.
+   `JacksonConfiguration` therefore overrides Spring Boot's
+   `@ConditionalOnMissingBean` `jsonMapperBuilder` with a `JsonMapper.Builder`
+   bean seeded from a constrained `JsonFactory`, re-applies every auto-configured
+   `JsonMapperBuilderCustomizer` (so module discovery, `spring.jackson.*`
+   properties, and ProblemDetail support are preserved), and asserts
+   `FAIL_ON_UNKNOWN_PROPERTIES` last so unknown fields are always rejected:
+
+   ```java
+   @Bean
+   public JsonMapper.Builder jsonMapperBuilder(List<JsonMapperBuilderCustomizer> customizers) {
+       StreamReadConstraints readConstraints = StreamReadConstraints.builder()
+           .maxNestingDepth(MAX_JSON_NESTING_DEPTH)
+           .maxStringLength(MAX_JSON_STRING_LENGTH)
+           .build();
+       JsonFactory jsonFactory = JsonFactory.builder()
+           .streamReadConstraints(readConstraints)
+           .build();
+       JsonMapper.Builder builder = JsonMapper.builder(jsonFactory);
+       customizers.forEach(customizer -> customizer.customize(builder));
+       builder.enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+       return builder;
+   }
+   ```
+
+2. **Modules are built in.** Jackson 3 bundles java.time support in databind
+   core and serializes dates as ISO-8601 strings by default
+   (`WRITE_DATES_AS_TIMESTAMPS` moved to `DateTimeFeature` and is off), so the
+   explicit `JavaTimeModule` registration and `WRITE_DATES_AS_TIMESTAMPS` toggle
+   in the security error handlers were removed. A plain `new ObjectMapper()`
+   still renders `OffsetDateTime`/`Instant` as ISO-8601 strings.
+
+3. **Unchecked exceptions.** The checked `JsonProcessingException`/
+   `JsonMappingException` are gone; all Jackson failures now extend the unchecked
+   `tools.jackson.core.JacksonException`. Unknown-property detection still relies
+   on `UnrecognizedPropertyException` (now `tools.jackson.databind.exc`), and the
+   mapping-path helper reads `JacksonException.Reference.getPropertyName()`
+   (renamed from `getFieldName()`). Catch/throws clauses were audited so parse and
+   unknown-property failures still return 400 and unreadable results still return
+   500.
+
+The externally observable JSON contract — strict unknown-property rejection, the
+`{ valid, errors[], warnings[] }` validation body, JSONB round-trips, and the
+authentication/authorization error-body shape — is unchanged.

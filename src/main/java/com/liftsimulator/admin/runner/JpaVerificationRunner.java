@@ -1,7 +1,5 @@
 package com.liftsimulator.admin.runner;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.entity.LiftSystem;
 import com.liftsimulator.admin.entity.LiftSystemVersion;
 import com.liftsimulator.admin.entity.LiftSystemVersion.VersionStatus;
@@ -17,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Command-line runner to verify basic JPA entity and repository operations.
@@ -160,7 +160,7 @@ public class JpaVerificationRunner implements CommandLineRunner {
     private boolean jsonSemanticallyEquals(String expectedJson, String actualJson) {
         try {
             return objectMapper.readTree(expectedJson).equals(objectMapper.readTree(actualJson));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new AssertionError("Failed to parse JSONB config during verification", e);
         }
     }

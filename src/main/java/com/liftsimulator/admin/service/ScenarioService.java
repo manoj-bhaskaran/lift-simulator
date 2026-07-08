@@ -1,8 +1,5 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.LiftConfigDTO;
 import com.liftsimulator.admin.dto.ScenarioRequest;
 import com.liftsimulator.admin.dto.ScenarioResponse;
@@ -23,6 +20,9 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Service for managing stored scenarios.
@@ -279,7 +279,7 @@ public class ScenarioService {
     private JsonNode parseStoredScenarioJson(Scenario scenario) {
         try {
             return objectMapper.readTree(scenario.getScenarioJson());
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Stored scenario JSON could not be parsed", e);
         }
     }
@@ -330,7 +330,7 @@ public class ScenarioService {
     private String serializeScenarioJson(JsonNode scenarioJson) {
         try {
             return objectMapper.writeValueAsString(scenarioJson);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalArgumentException("Scenario JSON could not be serialized");
         }
     }
@@ -374,7 +374,7 @@ public class ScenarioService {
                 scenario.getCreatedAt(),
                 scenario.getUpdatedAt()
             );
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Stored scenario JSON could not be parsed", e);
         }
     }

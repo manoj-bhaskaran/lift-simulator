@@ -1,8 +1,5 @@
 package com.liftsimulator.admin.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -11,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -61,10 +59,10 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
      */
     public CustomAuthenticationEntryPoint(String realm) {
         this.realm = realm;
+        // Jackson 3 bundles java.time support in databind core and serializes dates as ISO-8601
+        // strings by default (WRITE_DATES_AS_TIMESTAMPS is off), so no module or feature tuning
+        // is needed to render the timestamp as an ISO-8601 string.
         this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new JavaTimeModule());
-        // Serialize dates as ISO-8601 strings, not timestamps
-        this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     @Override
