@@ -55,9 +55,10 @@ public class ScenarioValidationServiceTest {
 
     @BeforeEach
     public void setUp() {
-        objectMapper = tools.jackson.databind.json.JsonMapper.builder().build();
         // Match production strict-schema behaviour so unknown scenario fields become validation errors.
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+        objectMapper = tools.jackson.databind.json.JsonMapper.builder()
+                .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
         Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
         validationService = new ScenarioValidationService(objectMapper, validator, versionRepository);
     }

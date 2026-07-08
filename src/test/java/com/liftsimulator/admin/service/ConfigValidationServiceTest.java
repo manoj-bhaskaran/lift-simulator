@@ -24,9 +24,10 @@ public class ConfigValidationServiceTest {
 
     @BeforeEach
     public void setUp() {
-        objectMapper = tools.jackson.databind.json.JsonMapper.builder().build();
         // Configure ObjectMapper to match production settings - fail on unknown properties
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+        objectMapper = tools.jackson.databind.json.JsonMapper.builder()
+                .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
         Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
         validationService = new ConfigValidationService(objectMapper, validator);
     }

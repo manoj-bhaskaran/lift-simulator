@@ -250,7 +250,7 @@ public class LiftSystemVersionRepositoryTest {
             tools.jackson.databind.JsonNode expected = OBJECT_MAPPER.readTree(complexJson);
             tools.jackson.databind.JsonNode actual = OBJECT_MAPPER.readTree(retrieved.get().getConfig());
             assertEquals(expected, actual);
-        } catch (tools.jackson.core.JsonProcessingException e) {
+        } catch (tools.jackson.core.JacksonException e) {
             org.junit.jupiter.api.Assertions.fail("Failed to parse JSON: " + e.getMessage());
         }
     }

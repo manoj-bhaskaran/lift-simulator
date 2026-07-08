@@ -72,7 +72,7 @@ public class TestcontainersContextCustomizerFactory implements ContextCustomizer
             if (propertySources.contains(SOURCE_NAME)) {
                 return;
             }
-            PostgreSQLContainer<?> postgres = SharedPostgresContainer.getStarted();
+            PostgreSQLContainer postgres = SharedPostgresContainer.getStarted();
             Map<String, Object> properties = new HashMap<>();
             properties.put("spring.datasource.url", postgres.getJdbcUrl());
             properties.put("spring.datasource.username", postgres.getUsername());
