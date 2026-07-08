@@ -1,7 +1,7 @@
 package com.liftsimulator.admin.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.liftsimulator.admin.dto.ConfigValidationResponse;
 import com.liftsimulator.admin.dto.ScenarioValidationResponse;
 import com.liftsimulator.admin.dto.ValidationIssue;
@@ -106,7 +106,7 @@ public class SimulationRunExecutionServiceTest {
     @TempDir
     private Path tempDir;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = tools.jackson.databind.json.JsonMapper.builder().build();
     private SimulationRunExecutionService executionService;
 
     @BeforeEach

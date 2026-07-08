@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.56.0] - 2026-07-08
+
+### Changed
+- **Jackson 3 migration (test sources)**: Migrated backend test Jackson core/databind imports to the `tools.jackson` packages, kept annotations on `com.fasterxml.jackson.annotation`, and added JSON contract regression assertions for strict unknown-property 400 responses, ISO-8601 timestamp serialization, JSONB semantic round trips, and simulation result/metrics payload shape. Updated README and package metadata for the 0.56.0 pre-MVP minor release.
+
 ## [0.55.0] - 2026-07-07
 
 ### Changed
