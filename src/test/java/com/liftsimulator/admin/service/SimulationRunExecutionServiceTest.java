@@ -161,7 +161,7 @@ public class SimulationRunExecutionServiceTest {
         assertTrue(Files.readString(runDir.resolve("run.log")).contains("Simulation succeeded for run 1"));
 
         JsonNode results = objectMapper.readTree(runDir.resolve("results.json").toFile());
-        assertEquals("SUCCEEDED", results.at("/runSummary/status").asText());
+        assertEquals("SUCCEEDED", results.at("/runSummary/status").asString());
         assertEquals(1L, results.at("/runSummary/runId").asLong());
         assertTrue(results.has("kpis"));
         assertInternalStateCleared(1L);
@@ -183,8 +183,8 @@ public class SimulationRunExecutionServiceTest {
         assertTrue(Files.readString(runDir.resolve("run.log")).contains("Missing scenario payload for run 2"));
 
         JsonNode results = objectMapper.readTree(runDir.resolve("results.json").toFile());
-        assertEquals("FAILED", results.at("/runSummary/status").asText());
-        assertEquals("Missing scenario payload for run.", results.at("/runSummary/message").asText());
+        assertEquals("FAILED", results.at("/runSummary/status").asString());
+        assertEquals("Missing scenario payload for run.", results.at("/runSummary/message").asString());
         assertInternalStateCleared(2L);
     }
 
@@ -204,8 +204,8 @@ public class SimulationRunExecutionServiceTest {
         assertTrue(Files.readString(runDir.resolve("run.log")).contains("Scenario validation failed"));
 
         JsonNode results = objectMapper.readTree(runDir.resolve("results.json").toFile());
-        assertEquals("FAILED", results.at("/runSummary/status").asText());
-        assertEquals("Invalid scenario payload.", results.at("/runSummary/message").asText());
+        assertEquals("FAILED", results.at("/runSummary/status").asString());
+        assertEquals("Invalid scenario payload.", results.at("/runSummary/message").asString());
         assertInternalStateCleared(3L);
     }
 

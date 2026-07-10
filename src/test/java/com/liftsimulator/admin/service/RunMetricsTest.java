@@ -199,7 +199,7 @@ class RunMetricsTest {
         assertNotNull(lifts);
         assertEquals(1, lifts.size());
         ObjectNode lift = (ObjectNode) lifts.get(0);
-        assertEquals("lift-1", lift.get("liftId").asText());
+        assertEquals("lift-1", lift.get("liftId").asString());
         assertEquals(1, lift.get("minFloor").asInt());
         assertEquals(5, lift.get("maxFloor").asInt());
         assertEquals(1L, lift.get("movingTicks").asLong());

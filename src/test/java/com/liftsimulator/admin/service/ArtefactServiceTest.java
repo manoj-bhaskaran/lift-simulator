@@ -125,7 +125,7 @@ class ArtefactServiceTest {
 
         JsonNode results = artefactService.readResults(runForTempDir());
 
-        assertEquals("SUCCEEDED", results.at("/runSummary/status").asText());
+        assertEquals("SUCCEEDED", results.at("/runSummary/status").asString());
     }
 
     @Test
