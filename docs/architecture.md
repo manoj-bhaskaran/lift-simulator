@@ -101,6 +101,11 @@ graph TD
 
 ### Spring Boot backend (Lift Config Service)
 
+Built on Spring Boot 4.1 (Spring Framework 7, Spring Security 7.1, Hibernate
+ORM 7, Jackson 3, Flyway 12); the full dependency baseline table lives in the
+README's Development Setup section. Runs on Java 17+ (CI builds and tests on
+Java 21 LTS).
+
 - **Security & edge filters** (`admin.config`, `admin.security`) — HTTP Basic
   authentication for admin APIs, API-key authentication for runtime/simulation
   APIs, role-based access control (ADMIN / VIEWER), token-bucket rate limiting
