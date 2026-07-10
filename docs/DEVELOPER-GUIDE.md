@@ -396,7 +396,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.57.0.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.57.1.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:
@@ -458,7 +458,7 @@ When both admin values are present, the Axios client sends an HTTP Basic `Author
 
 ## Git Hooks
 
-A pre-commit hook lives in `.githooks/pre-commit`. It fires automatically whenever `pom.xml` is staged and keeps version references in `README.md`, `docs/*.md`, and `frontend/package.json` in sync — so you never need to update them by hand.
+A pre-commit hook lives in `.githooks/pre-commit`. It fires automatically whenever `pom.xml` is staged and delegates to `scripts/sync-versions.sh`, the single implementation for repository version synchronization.
 
 Activate it once after cloning:
 
@@ -466,6 +466,6 @@ Activate it once after cloning:
 git config core.hooksPath .githooks
 ```
 
-**What the hook does:** when it detects a version change in the staged `pom.xml`, it runs `mvn generate-resources` to update `README.md` and `docs/*.md`, updates `frontend/package.json` (via `npm version` if available, otherwise Python), and re-stages all affected files before the commit is recorded.
+**What the hook does:** when it detects a version change in staged `pom.xml`, it runs `./scripts/sync-versions.sh --staged-pom` to read the Maven project version from the staged `pom.xml` blob, update the `README.md` current-version line, rewrite every `lift-simulator-X.Y.Z.jar` reference in `README.md`, `frontend/README.md`, and `docs/*.md`, update `frontend/package.json`/`frontend/package-lock.json` with `npm version` (or the Python fallback), and re-stage the affected files before the commit is recorded. Maven compile/resource phases no longer rewrite tracked documentation files.
 
-**CI safety net:** the CI pipeline includes a version-consistency check that fails the build if any of these files are out of sync with `pom.xml`, catching the rare case where the hook was bypassed with `--no-verify`.
+**CI safety net:** the CI pipeline runs `./scripts/sync-versions.sh --check`, which performs the same coverage without writing files and fails the build if any README, docs, or frontend package version is out of sync with `pom.xml`, catching the rare case where the hook was bypassed with `--no-verify`.

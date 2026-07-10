@@ -14,7 +14,7 @@
 
     <groupId>com.liftsimulator</groupId>
     <artifactId>lift-simulator</artifactId>
-    <version>0.57.0</version>
+    <version>0.57.1</version>
     <packaging>jar</packaging>
 
     <name>Lift Simulator</name>
@@ -168,41 +168,6 @@
                         <configuration>
                             <target>
                                 <delete dir="${project.build.outputDirectory}/db/migration" quiet="true"/>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>sync-readme-version</id>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <target>
-                                <replaceregexp
-                                    file="${project.basedir}/README.md"
-                                    match="Current version: \*\*[0-9]+\.[0-9]+\.[0-9]+\*\*"
-                                    replace="Current version: **${project.version}**"
-                                    byline="true"/>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>sync-docs-jar-version</id>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <target>
-                                <replaceregexp
-                                    match="lift-simulator-[0-9]+\.[0-9]+\.[0-9]+\.jar"
-                                    replace="lift-simulator-${project.version}.jar"
-                                    byline="true">
-                                    <fileset dir="${project.basedir}/docs">
-                                        <include name="*.md"/>
-                                    </fileset>
-                                </replaceregexp>
                             </target>
                         </configuration>
                         <goals>
