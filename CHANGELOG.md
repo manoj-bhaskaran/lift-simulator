@@ -19,7 +19,7 @@ summary is kept under [Earlier history](#earlier-history).
 ## [0.57.1] - 2026-07-10
 
 ### Fixed
-- **Version synchronization tooling**: Added `scripts/sync-versions.sh` as the single hook/CI implementation for syncing the Maven version into README current-version text, README/docs/frontend JAR filename examples, and frontend package metadata. The pre-commit hook now delegates to the script, CI verifies with the script's `--check` mode, stale README JAR references were refreshed, and Maven no longer mutates tracked README/docs files during `generate-resources`. Updated package metadata for the 0.57.1 pre-MVP patch release.
+- **Version synchronization tooling**: Added `scripts/sync-versions.sh` as the single hook/CI implementation for syncing the Maven version into README current-version text, README/docs/frontend JAR filename examples, and frontend package metadata. The pre-commit hook now delegates to the script using the staged `pom.xml` blob, CI verifies with the script's `--check` mode, stale README JAR references were refreshed, and Maven no longer mutates tracked README/docs files during `generate-resources`. Updated package metadata for the 0.57.1 pre-MVP patch release.
 
 ## [0.57.0] - 2026-07-10
 

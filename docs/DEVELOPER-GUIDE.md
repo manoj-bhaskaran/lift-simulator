@@ -466,6 +466,6 @@ Activate it once after cloning:
 git config core.hooksPath .githooks
 ```
 
-**What the hook does:** when it detects a version change in staged `pom.xml`, it runs `./scripts/sync-versions.sh` to read the Maven project version, update the `README.md` current-version line, rewrite every `lift-simulator-X.Y.Z.jar` reference in `README.md`, `frontend/README.md`, and `docs/*.md`, update `frontend/package.json`/`frontend/package-lock.json` with `npm version` (or the Python fallback), and re-stage the affected files before the commit is recorded. Maven compile/resource phases no longer rewrite tracked documentation files.
+**What the hook does:** when it detects a version change in staged `pom.xml`, it runs `./scripts/sync-versions.sh --staged-pom` to read the Maven project version from the staged `pom.xml` blob, update the `README.md` current-version line, rewrite every `lift-simulator-X.Y.Z.jar` reference in `README.md`, `frontend/README.md`, and `docs/*.md`, update `frontend/package.json`/`frontend/package-lock.json` with `npm version` (or the Python fallback), and re-stage the affected files before the commit is recorded. Maven compile/resource phases no longer rewrite tracked documentation files.
 
 **CI safety net:** the CI pipeline runs `./scripts/sync-versions.sh --check`, which performs the same coverage without writing files and fails the build if any README, docs, or frontend package version is out of sync with `pom.xml`, catching the rare case where the hook was bypassed with `--no-verify`.

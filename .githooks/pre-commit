@@ -7,7 +7,7 @@ if ! git diff --cached --name-only | grep -q '^pom\.xml$'; then
 fi
 
 echo "[pre-commit] pom.xml version change detected — syncing version references..."
-./scripts/sync-versions.sh
+./scripts/sync-versions.sh --staged-pom
 
 # Re-stage all version-synced files.
 git add README.md frontend/README.md docs/*.md scripts/sync-versions.sh frontend/package.json

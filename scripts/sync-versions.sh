@@ -2,12 +2,22 @@
 set -euo pipefail
 
 MODE="sync"
-if [ "${1:-}" = "--check" ]; then
-  MODE="check"
-elif [ $# -gt 0 ]; then
-  echo "Usage: $0 [--check]" >&2
-  exit 2
-fi
+POM_SOURCE="worktree"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --check)
+      MODE="check"
+      ;;
+    --staged-pom)
+      POM_SOURCE="staged"
+      ;;
+    *)
+      echo "Usage: $0 [--check] [--staged-pom]" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
 
 cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
@@ -20,9 +30,15 @@ else
   exit 1
 fi
 
-VERSION=$("$PYTHON" - <<'PY'
-import xml.etree.ElementTree as ET
-root = ET.parse('pom.xml').getroot()
+if [ "$POM_SOURCE" = "staged" ]; then
+  POM_XML=$(git show :pom.xml)
+else
+  POM_XML=$(cat pom.xml)
+fi
+
+VERSION=$(POM_XML="$POM_XML" "$PYTHON" - <<'PY'
+import os, xml.etree.ElementTree as ET
+root = ET.fromstring(os.environ['POM_XML'])
 ns = {'m': 'http://maven.apache.org/POM/4.0.0'}
 version = root.find('m:version', ns)
 if version is None or not version.text:
