@@ -44,7 +44,7 @@ class RequestSizeLimitFilterTest {
 
         filter.doFilter(request, response, filterChain);
 
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE.value());
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.CONTENT_TOO_LARGE.value());
         assertThat(response.getContentAsString()).contains("Request body exceeds");
         verify(filterChain, never()).doFilter(request, response);
     }
@@ -57,7 +57,7 @@ class RequestSizeLimitFilterTest {
 
         filter.doFilter(request, response, filterChain);
 
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE.value());
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.CONTENT_TOO_LARGE.value());
         assertThat(response.getContentAsString()).contains("Request body exceeds");
         verify(filterChain, never()).doFilter(any(), eq(response));
     }

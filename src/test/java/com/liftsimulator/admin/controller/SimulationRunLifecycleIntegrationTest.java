@@ -158,7 +158,7 @@ public class SimulationRunLifecycleIntegrationTest extends LocalIntegrationTest 
                     .andExpect(status().isOk())
                     .andReturn();
             JsonNode pollJson = objectMapper.readTree(pollResult.getResponse().getContentAsString());
-            if ("SUCCEEDED".equals(pollJson.get("status").asText())) {
+            if ("SUCCEEDED".equals(pollJson.get("status").asString())) {
                 return true;
             }
             Thread.sleep(100);

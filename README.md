@@ -2,7 +2,7 @@
 
 A Java-based simulation of lift (elevator) controllers with a focus on correctness and design clarity.
 
-Current version: **0.56.0**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
+Current version: **0.57.0**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## What is this?
 
@@ -22,7 +22,7 @@ For a visual overview of the major components (React admin UI, Spring Boot backe
 
 **Prerequisites**
 
-- **Java 17+** — [Oracle](https://www.oracle.com/java/technologies/downloads/) or OpenJDK
+- **Java 17+** (Java 21 LTS recommended; CI builds and tests on 21) — [Oracle](https://www.oracle.com/java/technologies/downloads/) or OpenJDK
 - **Node.js 20.19+ or 22.12+** and npm — [nodejs.org](https://nodejs.org/)
 - **PostgreSQL 12+** — [postgresql.org](https://www.postgresql.org/download/)
 - **Maven 3.6+** — bundled with most Java IDEs, or [download separately](https://maven.apache.org/download.cgi)
@@ -335,7 +335,22 @@ Alternatively, set `LOGGING_FILE_PATH` as an environment variable.
 
 This project ships an `.editorconfig` for consistent formatting across editors and IDEs (IntelliJ IDEA has built-in support; VS Code, Eclipse, and Vim/Neovim use plugins). It enforces UTF-8 encoding, LF line endings, 4-space indentation for Java and XML, trailing-whitespace removal, and final-newline insertion.
 
-**Backend dependency baseline:** Spring Boot 4.0.7, Springdoc OpenAPI 3.0.3, PostgreSQL JDBC driver 42.7.11, and the Flyway PostgreSQL module (managed by Spring Boot dependency management). Spring Boot 4 dependency management also supplies JUnit 6 and Testcontainers 2 for the backend test suite, with modular MVC and Data JPA test starters covering controller and repository slice tests. Test sources use Jackson 3 `tools.jackson` core/databind APIs and Spring-configured mappers for JSON contract assertions.
+**Backend dependency baseline** — versions are supplied by the Spring Boot 4.1.0 parent's dependency management unless marked explicit:
+
+| Component | Version |
+|-----------|---------|
+| Spring Boot | 4.1.0 |
+| Spring Framework | 7.0 |
+| Spring Security | 7.1 |
+| Hibernate ORM | 7.4 |
+| Jackson | 3.1 (`tools.jackson` packages) |
+| Flyway | 12.4 (with PostgreSQL module) |
+| JUnit | 6.0 |
+| Testcontainers | 2.0 |
+| Springdoc OpenAPI | 3.0.3 (explicit) |
+| PostgreSQL JDBC driver | 42.7.11 (explicit) |
+
+The backend test suite uses the modular MVC and Data JPA test starters for controller and repository slice tests. Test sources use Jackson 3 `tools.jackson` core/databind APIs and Spring-configured mappers for JSON contract assertions.
 
 **Commenting style:** use `//` for single-line comments and `/* */` for multi-line explanations, write non-obvious logic as complete sentences, and end comment sentences with periods.
 

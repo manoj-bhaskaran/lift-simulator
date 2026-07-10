@@ -16,7 +16,7 @@ The project uses:
 
 ### Prerequisites
 
-1. **Java 17** - Development environment
+1. **Java 17+** (CI uses Java 21 LTS) - Development environment
 2. **PostgreSQL 15+** - Test database server
 3. **Maven 3.6+** - Build tool
 

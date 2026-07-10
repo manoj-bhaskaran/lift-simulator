@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.0] - 2026-07-10
+
+### Changed
+- **Spring Boot 4.1.0 upgrade (completes the 3.4.5 → 4.1.0 sequence)**: Bumped the Maven parent from 4.0.7 to 4.1.0, moving the backend baseline to Spring Framework 7.0, Spring Security 7.1, Hibernate ORM 7.4, Jackson 3.1, and Flyway 12.4. Removed the now-redundant explicit Testcontainers BOM import (Spring Boot 4.1 dependency management supplies Testcontainers 2.0.5) and confirmed no 4.0-deprecated bridges remain (no `spring-boot-starter-web` alias, no Jackson 2 defaults toggle, no properties migrator). Replaced the Framework 7-deprecated `HttpStatus.PAYLOAD_TOO_LARGE` constant with `CONTENT_TOO_LARGE` (still HTTP 413; the JSON error body is unchanged) and the Jackson 3.1-deprecated `JsonNode.asText()` test usages with `asString()` for a deprecation-clean compile. Moved CI from JDK 17 to JDK 21 LTS while keeping the compiled bytecode at Java 17 (`maven.compiler.release=17`), so Java 17 runtimes remain supported. Verified Flyway 12.4 migrations against PostgreSQL via Testcontainers, behavioural smoke tests on a running instance (HTTP Basic + ADMIN/VIEWER RBAC, API-key auth, actuator behind ADMIN, Swagger UI, SPA forwarding, rate limiting, request-size caps, CORS preflight, and Framework 7 strict trailing-slash path matching), and an end-to-end simulation run (system → version → scenario → run → results/log artefacts). Refreshed README/architecture/testing docs with the new dependency baseline table for the 0.57.0 pre-MVP minor release.
+
 ## [0.56.0] - 2026-07-08
 
 ### Changed

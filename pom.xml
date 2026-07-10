@@ -8,13 +8,13 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.7</version>
+        <version>4.1.0</version>
         <relativePath/>
     </parent>
 
     <groupId>com.liftsimulator</groupId>
     <artifactId>lift-simulator</artifactId>
-    <version>0.56.0</version>
+    <version>0.57.0</version>
     <packaging>jar</packaging>
 
     <name>Lift Simulator</name>
@@ -25,21 +25,7 @@
         <maven.compiler.release>17</maven.compiler.release>
         <frontend.dir>${project.basedir}/frontend</frontend.dir>
         <frontend.build.dir>${frontend.dir}/dist</frontend.build.dir>
-        <testcontainers.version>2.0.5</testcontainers.version>
     </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <!-- Testcontainers BOM: manages versions for all org.testcontainers modules -->
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-bom</artifactId>
-                <version>${testcontainers.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <!-- Spring Boot Web Starter -->

@@ -8,6 +8,8 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+# Node/npm distribution installed locally by the Maven frontend profile
+/node/
 dist
 dist-ssr
 *.local

@@ -85,7 +85,7 @@ public class RequestSizeLimitFilter extends OncePerRequestFilter {
     private void writePayloadTooLarge(
             HttpServletResponse response,
             long maxBodyBytes) throws IOException {
-        response.setStatus(HttpStatus.PAYLOAD_TOO_LARGE.value());
+        response.setStatus(HttpStatus.CONTENT_TOO_LARGE.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write(String.format(
             "{\"status\":413,\"error\":\"Payload Too Large\","
