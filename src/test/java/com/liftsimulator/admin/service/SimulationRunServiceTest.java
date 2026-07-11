@@ -69,6 +69,7 @@ public class SimulationRunServiceTest {
     private EntityManager entityManager;
 
     private SimulationRunService runService;
+    private RunLifecycleManager lifecycleManager;
 
     private LiftSystem mockLiftSystem;
     private LiftSystemVersion mockVersion;
@@ -79,6 +80,11 @@ public class SimulationRunServiceTest {
 
     @BeforeEach
     public void setUp() throws Exception {
+        lifecycleManager = new RunLifecycleManager(runRepository);
+        java.lang.reflect.Field lifecycleEntityManagerField = RunLifecycleManager.class.getDeclaredField("entityManager");
+        lifecycleEntityManagerField.setAccessible(true);
+        lifecycleEntityManagerField.set(lifecycleManager, entityManager);
+
         runService = new SimulationRunService(
                 runRepository,
                 liftSystemRepository,
@@ -86,14 +92,10 @@ public class SimulationRunServiceTest {
                 scenarioRepository,
                 executionService,
                 artefactService,
+                lifecycleManager,
                 objectMapper,
                 tempDir.toString()
         );
-
-        // Inject EntityManager mock via reflection (it's normally injected by @PersistenceContext)
-        java.lang.reflect.Field entityManagerField = SimulationRunService.class.getDeclaredField("entityManager");
-        entityManagerField.setAccessible(true);
-        entityManagerField.set(runService, entityManager);
 
         mockLiftSystem = new LiftSystem();
         mockLiftSystem.setId(1L);
@@ -530,7 +532,7 @@ public class SimulationRunServiceTest {
         when(runRepository.failOrphanedRunningRuns(any(String.class), any(OffsetDateTime.class))).thenReturn(2);
         when(runRepository.cancelOrphanedCreatedRuns(any(OffsetDateTime.class))).thenReturn(1);
 
-        SimulationRunService.StartupRecoveryResult result = runService.recoverOrphanedRunsOnStartup();
+        RunLifecycleManager.StartupRecoveryResult result = runService.recoverOrphanedRunsOnStartup();
 
         assertEquals(2, result.failedRunningRuns());
         assertEquals(1, result.cancelledCreatedRuns());
@@ -615,8 +617,9 @@ public class SimulationRunServiceTest {
     }
 
     @Test
-    public void testDeleteRun_ArtefactDeletionFailureAfterCommitIsReported() throws Exception {
+    public void testDeleteRun_ArtefactDeletionFailureAfterCommitIsBestEffort() throws Exception {
         mockRun.setStatus(RunStatus.FAILED);
+        mockRun.setArtefactBasePath(tempDir.resolve("run-1").toString());
         when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
         doThrow(new java.io.IOException("disk error")).when(artefactService).deleteArtefacts(mockRun);
 
@@ -625,18 +628,14 @@ public class SimulationRunServiceTest {
             runService.deleteRun(1L);
             TransactionSynchronization synchronization = TransactionSynchronizationManager.getSynchronizations().get(0);
 
-            ArtefactDeletionException exception = assertThrows(
-                ArtefactDeletionException.class,
-                synchronization::afterCommit
-            );
+            synchronization.afterCommit();
 
-            assertTrue(exception.getMessage().contains("disk error"));
             verify(runRepository).deleteById(1L);
+            verify(artefactService).deleteArtefacts(mockRun);
         } finally {
             TransactionSynchronizationManager.clearSynchronization();
         }
     }
-
     @Test
     public void testConfigureRun_WithNullDurationTicks() {
         mockRun.setTotalTicks(null);

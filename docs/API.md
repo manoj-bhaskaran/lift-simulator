@@ -720,6 +720,28 @@ Cancels a running simulation run and transitions it to a terminal `CANCELLED` st
 
 ---
 
+
+##### Delete Simulation Run
+
+**Endpoint:** `DELETE /api/v1/simulation-runs/{id}`
+
+Deletes a terminal simulation-run database record. Only runs in `SUCCEEDED`, `FAILED`, or `CANCELLED` state can be deleted; `CREATED` and `RUNNING` runs return `409 Conflict`.
+
+Artefact cleanup is intentionally best-effort and runs only after the delete transaction commits, so rollback or commit failures cannot remove files for a surviving run row. If post-commit artefact deletion fails, the API response still reflects the committed database delete and the server logs a warning with the run id and artefact path for operator cleanup.
+
+**Response:** `204 No Content`
+
+**Error Response (409 Conflict):**
+```json
+{
+  "status": 409,
+  "message": "Cannot delete a simulation run in RUNNING state. Only completed runs (SUCCEEDED, FAILED, CANCELLED) can be deleted.",
+  "timestamp": "2026-01-23T10:05:30Z"
+}
+```
+
+---
+
 ##### Get Simulation Results
 
 **Endpoint:** `GET /api/v1/simulation-runs/{id}/results`

@@ -95,6 +95,9 @@ public class SimulationRunExecutionServiceTest {
     private SimulationRunRepository runRepository;
 
     @Mock
+    private RunLifecycleManager lifecycleManager;
+
+    @Mock
     private ConfigValidationService configValidationService;
 
     @Mock
@@ -112,7 +115,7 @@ public class SimulationRunExecutionServiceTest {
     @BeforeEach
     public void setUp() {
         executionService = new SimulationRunExecutionService(
-                runRepository,
+                lifecycleManager,
                 configValidationService,
                 scenarioValidationService,
                 batchInputGenerator,
@@ -125,20 +128,6 @@ public class SimulationRunExecutionServiceTest {
     @AfterEach
     public void tearDown() {
         executionService.shutdownExecutor();
-    }
-
-    @Test
-    public void testUpdateProgressUsesRepositoryDirectlyWithoutReloadingRun() throws Exception {
-        when(runRepository.updateCurrentTick(1L, 500L)).thenReturn(1);
-
-        Method updateProgress = SimulationRunExecutionService.class.getDeclaredMethod(
-                "updateProgress", Long.class, Long.class);
-        updateProgress.setAccessible(true);
-        updateProgress.invoke(executionService, 1L, 500L);
-
-        verify(runRepository).updateCurrentTick(1L, 500L);
-        verify(runRepository, never()).findById(1L);
-        verify(runRepository, never()).findByIdWithDetails(1L);
     }
 
     @Test
@@ -311,16 +300,16 @@ public class SimulationRunExecutionServiceTest {
         SimulationRun run = new SimulationRun();
         run.setId(9L);
         run.setStatus(SimulationRun.RunStatus.RUNNING);
-        when(runRepository.findByIdWithDetails(9L)).thenReturn(Optional.of(run));
-        when(runRepository.save(any(SimulationRun.class))).thenThrow(new IllegalStateException("stale state"));
-        when(runRepository.markRunningRunFailed(anyLong(), any(String.class), any())).thenReturn(1);
+        when(lifecycleManager.getByIdWithDetails(9L)).thenReturn(run);
+        when(lifecycleManager.failRun(9L, "boom")).thenThrow(new IllegalStateException("stale state"));
+
 
         Method failRunWithMessage = SimulationRunExecutionService.class.getDeclaredMethod(
                 "failRunWithMessage", Long.class, String.class, boolean.class);
         failRunWithMessage.setAccessible(true);
         failRunWithMessage.invoke(executionService, 9L, "boom", true);
 
-        verify(runRepository).markRunningRunFailed(anyLong(), any(String.class), any());
+        verify(lifecycleManager).markRunningRunFailedSafely(anyLong(), any(String.class), any());
     }
 
     @Test
@@ -328,7 +317,7 @@ public class SimulationRunExecutionServiceTest {
         // Pool=1, queue=1: one thread running, one slot queued.
         // Cancelling the queued run should free the slot immediately so a new submission succeeds.
         SimulationRunExecutionService tightService = new SimulationRunExecutionService(
-                runRepository,
+                lifecycleManager,
                 configValidationService,
                 scenarioValidationService,
                 batchInputGenerator,
@@ -355,8 +344,8 @@ public class SimulationRunExecutionServiceTest {
             Files.createDirectories(runDir);
             SimulationRun queuedRun = runWithArtefactDirectory(201L, runDir, SHORT_SCENARIO);
             AtomicReference<SimulationRun> storedQueued = new AtomicReference<>(queuedRun);
-            lenient().when(runRepository.findById(201L)).thenAnswer(inv -> Optional.of(storedQueued.get()));
-            lenient().when(runRepository.findByIdWithDetails(201L)).thenAnswer(inv -> Optional.of(storedQueued.get()));
+            lenient().when(runRepository.findById(201L)).thenAnswer(inv -> storedQueued.get());
+            lenient().when(lifecycleManager.getByIdWithDetails(201L)).thenAnswer(inv -> storedQueued.get());
             lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(inv -> {
                 SimulationRun saved = inv.getArgument(0);
                 if (Long.valueOf(201L).equals(saved.getId())) storedQueued.set(saved);
@@ -388,7 +377,7 @@ public class SimulationRunExecutionServiceTest {
     public void submissionsExceedingPoolPlusQueueAreRejectedWithFailedStatus() throws Exception {
         // Pool size=2, queue=10 → capacity=12. Submit 13 runs; the 13th must be rejected cleanly.
         SimulationRunExecutionService tightService = new SimulationRunExecutionService(
-                runRepository,
+                lifecycleManager,
                 configValidationService,
                 scenarioValidationService,
                 batchInputGenerator,
@@ -425,16 +414,16 @@ public class SimulationRunExecutionServiceTest {
             blocker.setStatus(SimulationRun.RunStatus.CREATED);
             blocker.setLiftSystem(liftSystem);
             blocker.setVersion(version);
-            lenient().when(runRepository.findById((long) id)).thenReturn(Optional.of(blocker));
-            lenient().when(runRepository.findByIdWithDetails((long) id)).thenReturn(Optional.of(blocker));
+            lenient().when(runRepository.findById((long) id)).thenReturn(blocker);
+            lenient().when(lifecycleManager.getByIdWithDetails((long) id)).thenReturn(blocker);
             lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(inv -> inv.getArgument(0));
-            lenient().when(runRepository.updateCurrentTick(anyLong(), anyLong())).thenReturn(1);
+
         }
 
         // Use a scenario that blocks mid-way via the CountDownLatch approach is complex;
         // instead we just verify the 3rd submission fails the run immediately.
-        lenient().when(runRepository.findById((long) overCapacityRunId)).thenReturn(Optional.of(overCapacityRun));
-        lenient().when(runRepository.findByIdWithDetails((long) overCapacityRunId)).thenReturn(Optional.of(overCapacityRun));
+        lenient().when(runRepository.findById((long) overCapacityRunId)).thenReturn(overCapacityRun);
+        lenient().when(lifecycleManager.getByIdWithDetails((long) overCapacityRunId)).thenReturn(overCapacityRun);
         lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(inv -> {
             SimulationRun saved = inv.getArgument(0);
             if (saved.getId() == overCapacityRunId) {
@@ -460,8 +449,8 @@ public class SimulationRunExecutionServiceTest {
         tpe.submit(() -> { try { latch.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } });
 
         // Now submit the overCapacity run — executor is full, should be rejected cleanly
-        lenient().when(runRepository.findById((long) overCapacityRunId)).thenReturn(Optional.of(overCapacityRun));
-        lenient().when(runRepository.findByIdWithDetails((long) overCapacityRunId)).thenReturn(Optional.of(overCapacityRun));
+        lenient().when(runRepository.findById((long) overCapacityRunId)).thenReturn(overCapacityRun);
+        lenient().when(lifecycleManager.getByIdWithDetails((long) overCapacityRunId)).thenReturn(overCapacityRun);
 
         Scenario scenario = new Scenario("s", SHORT_SCENARIO, version);
         overCapacityRun.setScenario(scenario);
@@ -627,16 +616,42 @@ public class SimulationRunExecutionServiceTest {
 
     private AtomicReference<SimulationRun> prepareRepository(SimulationRun run) {
         AtomicReference<SimulationRun> storedRun = new AtomicReference<>(run);
-        lenient().when(runRepository.findById(run.getId())).thenAnswer(invocation -> Optional.of(storedRun.get()));
-        lenient().when(runRepository.findByIdWithDetails(run.getId())).thenAnswer(invocation -> Optional.of(storedRun.get()));
+        lenient().when(runRepository.findById(run.getId())).thenAnswer(invocation -> storedRun.get());
+        lenient().when(lifecycleManager.getByIdWithDetails(run.getId())).thenAnswer(invocation -> storedRun.get());
         lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> {
             SimulationRun savedRun = invocation.getArgument(0);
             storedRun.set(savedRun);
             return savedRun;
         });
-        lenient().when(runRepository.updateCurrentTick(anyLong(), anyLong())).thenAnswer(invocation -> {
+        lenient().when(lifecycleManager.updateProgress(anyLong(), anyLong())).thenAnswer(invocation -> {
             storedRun.get().setCurrentTick(invocation.getArgument(1));
-            return 1;
+            return storedRun.get();
+        });
+        lenient().when(lifecycleManager.configureRun(anyLong(), any(), any(), any())).thenAnswer(invocation -> {
+            SimulationRun current = storedRun.get();
+            Long totalTicks = invocation.getArgument(1);
+            Long seed = invocation.getArgument(2);
+            String artefactBasePath = invocation.getArgument(3);
+            if (totalTicks != null) current.setTotalTicks(totalTicks);
+            if (seed != null) current.setSeed(seed);
+            if (artefactBasePath != null) current.setArtefactBasePath(artefactBasePath);
+            return current;
+        });
+        lenient().when(lifecycleManager.startRun(anyLong())).thenAnswer(invocation -> {
+            storedRun.get().start();
+            return storedRun.get();
+        });
+        lenient().when(lifecycleManager.succeedRun(anyLong())).thenAnswer(invocation -> {
+            storedRun.get().succeed();
+            return storedRun.get();
+        });
+        lenient().when(lifecycleManager.failRun(anyLong(), any())).thenAnswer(invocation -> {
+            storedRun.get().fail(invocation.getArgument(1));
+            return storedRun.get();
+        });
+        lenient().when(lifecycleManager.cancelRun(anyLong())).thenAnswer(invocation -> {
+            storedRun.get().cancel();
+            return storedRun.get();
         });
         return storedRun;
     }
