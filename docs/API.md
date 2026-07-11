@@ -142,8 +142,7 @@ Simulation artefact reads are also bounded: full log reads and `results.json` pa
 
 Controllers return typed DTOs for JSON payloads rather than ad-hoc maps.
 
-- **Create endpoints** return `201 Created` with a `Location` header pointing at the created resource (for example `Location: /api/v1/lift-systems/{id}`). The default CORS exposed-headers list includes `Location` so allowed browser clients can read it.
-- **Runtime simulator launches** return `202 Accepted`.
+- **Create endpoints** return `201 Created` with a `Location` header pointing at the created resource (for example `Location: /api/v1/lift-systems/{id}`). The default CORS exposed-headers list includes `Location` so allowed browser clients can read it. Creating a simulation run also returns `201 Created` and starts execution asynchronously.
 - **Deletes** return `204 No Content`.
 
 ### Pagination and Sorting
@@ -205,7 +204,6 @@ The same `valid` / `errors` / `warnings` shape is returned when validation runs 
 |--------|---------|
 | `200 OK` | Successful read or update |
 | `201 Created` | Resource created (includes `Location` header) |
-| `202 Accepted` | Runtime simulator launch accepted |
 | `204 No Content` | Successful delete |
 | `400 Bad Request` | Validation error or malformed request |
 | `401 Unauthorized` | Missing or invalid credentials |

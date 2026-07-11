@@ -875,7 +875,7 @@ All lift system configurations must conform to the following structure:
 {
   "minFloor": 0,
   "maxFloor": 9,
-  "lifts": 2,
+  "lifts": 1,
   "travelTicksPerFloor": 1,
   "doorTransitionTicks": 2,
   "doorDwellTicks": 3,
@@ -893,7 +893,7 @@ All lift system configurations must conform to the following structure:
 |-------|------|-------------|-------------|
 | `minFloor` | Integer | Required | Minimum floor in the building (can be negative for basements) |
 | `maxFloor` | Integer | > minFloor | Maximum floor in the building (must be greater than minFloor) |
-| `lifts` | Integer | ≥ 1 | Number of lift cars |
+| `lifts` | Integer | Exactly `1` | Number of lift cars. Multi-lift simulation is not supported in v1.0.0, so any value other than `1` is rejected with a validation error |
 | `travelTicksPerFloor` | Integer | ≥ 1 | Ticks required to travel one floor |
 | `doorTransitionTicks` | Integer | ≥ 1 | Ticks required for doors to open or close |
 | `doorDwellTicks` | Integer | ≥ 1 | Ticks doors stay open before closing |
@@ -908,7 +908,7 @@ All lift system configurations must conform to the following structure:
 - **Structural validation:** ensures JSON is well-formed and all required fields are present.
 - **Type validation:** validates field types and enum values.
 - **Domain validation:** enforces business rules and cross-field constraints — `doorReopenWindowTicks` must not exceed `doorTransitionTicks`, `maxFloor` must be greater than `minFloor`, and `homeFloor` must be within the floor range.
-- **Warnings** (non-blocking): low `doorDwellTicks`, more lifts than floors available in the range, low `idleTimeoutTicks` with `PARK_TO_HOME_FLOOR` mode, and zero `doorReopenWindowTicks` (which disables door reopening).
+- **Warnings** (non-blocking): low `doorDwellTicks`, low `idleTimeoutTicks` with `PARK_TO_HOME_FLOOR` mode, and zero `doorReopenWindowTicks` (which disables door reopening).
 
 Validation runs automatically when creating a new version, updating a version's configuration, or publishing a version. If it fails with errors, the operation is rejected with a `400 Bad Request` using the `valid` / `errors` / `warnings` shape documented in [API Conventions](API.md#error-response-structure). To validate without persisting, `POST` the config to the validation endpoint (see the generated OpenAPI spec).
 
