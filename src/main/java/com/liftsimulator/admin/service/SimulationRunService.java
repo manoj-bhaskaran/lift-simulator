@@ -519,7 +519,7 @@ public class SimulationRunService {
     private void deleteArtefacts(SimulationRun run, Long id) {
         try {
             artefactService.deleteArtefacts(run);
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.warn(
                     "Best-effort artefact deletion failed for simulation run {} at {}",
                     id,

@@ -19,7 +19,7 @@ summary is kept under [Earlier history](#earlier-history).
 ## [0.57.4] - 2026-07-11
 
 ### Changed
-- **Simulation-run lifecycle centralization**: Added a dedicated `RunLifecycleManager` as the single owner for simulation-run configuration, status transitions, progress updates, and startup recovery. `SimulationRunService` and `SimulationRunExecutionService` now delegate lifecycle writes through it, reducing drift risk between admin and async execution paths. Completed-run deletion still removes database rows before artefacts, but post-commit artefact deletion is now documented and implemented as best-effort: failures are logged with the run id and artefact path without failing an already-committed delete request. Updated API/README documentation and package metadata for the 0.57.4 pre-MVP patch release.
+- **Simulation-run lifecycle centralization**: Added a dedicated `RunLifecycleManager` as the single owner for simulation-run configuration, status transitions, progress updates, and startup recovery. `SimulationRunService` and `SimulationRunExecutionService` now delegate lifecycle writes through it, reducing drift risk between admin and async execution paths. Completed-run deletion still removes database rows before artefacts, but post-commit artefact deletion is now documented and implemented as best-effort: checked and unchecked cleanup failures are logged with the run id and artefact path without failing an already-committed delete request. Updated API/README/developer documentation and Maven/npm metadata for the 0.57.4 pre-MVP patch release.
 
 ## [0.57.3] - 2026-07-11
 

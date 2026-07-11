@@ -636,6 +636,29 @@ public class SimulationRunServiceTest {
             TransactionSynchronizationManager.clearSynchronization();
         }
     }
+
+
+    @Test
+    public void testDeleteRun_UncheckedArtefactDeletionFailureAfterCommitIsBestEffort() throws Exception {
+        mockRun.setStatus(RunStatus.FAILED);
+        mockRun.setArtefactBasePath(tempDir.resolve("run-1").toString());
+        when(runRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(mockRun));
+        doThrow(new ArtefactStateException("not a directory")).when(artefactService).deleteArtefacts(mockRun);
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            runService.deleteRun(1L);
+            TransactionSynchronization synchronization = TransactionSynchronizationManager.getSynchronizations().get(0);
+
+            synchronization.afterCommit();
+
+            verify(runRepository).deleteById(1L);
+            verify(artefactService).deleteArtefacts(mockRun);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
     @Test
     public void testConfigureRun_WithNullDurationTicks() {
         mockRun.setTotalTicks(null);
