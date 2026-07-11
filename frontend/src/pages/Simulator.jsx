@@ -3,15 +3,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import { scenariosApi } from '../api/scenariosApi';
-import { authHeaders } from '../api/client';
+import { authHeaders, normalizedApiBaseUrl } from '../api/client';
 import { simulationRunsApi } from '../api/simulationRunsApi';
 import ConfirmModal from '../components/ConfirmModal';
 import { handleApiError } from '../utils/errorHandlers';
+import { isTerminalRunStatus, useRunPolling } from '../hooks/useRunPolling';
+import { formatRunDuration, getRunStatusPillClass } from '../utils/statusUtils';
 import './Simulator.css';
-
-const terminalStatuses = new Set(['SUCCEEDED', 'FAILED', 'CANCELLED']);
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '/api/v1').trim() || '/api/v1';
-const normalizedApiBaseUrl = apiBaseUrl.replace(/\/$/, '');
 
 const kpiLabels = {
   requestsTotal: 'Requests',
@@ -174,7 +172,7 @@ function Simulator() {
   );
 
   const runStatus = runInfo?.status;
-  const isTerminal = runStatus ? terminalStatuses.has(runStatus) : false;
+  const isTerminal = isTerminalRunStatus(runStatus);
 
   // Clear selected scenario when version changes if it's not compatible
   useEffect(() => {
@@ -189,17 +187,10 @@ function Simulator() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVersionNumber, filteredScenarios]);
 
-  useEffect(() => {
-    if (!runInfo || isTerminal) {
-      return undefined;
-    }
-
-    const intervalId = setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-
-    return () => clearInterval(intervalId);
-  }, [runInfo, isTerminal]);
+  useRunPolling(() => setNow(Date.now()), {
+    intervalMs: 1000,
+    enabled: Boolean(runInfo) && !isTerminal,
+  });
 
   const pollRunStatus = useCallback(async () => {
     if (!runInfo?.id) {
@@ -215,18 +206,11 @@ function Simulator() {
     }
   }, [runInfo]);
 
-  useEffect(() => {
-    if (!runInfo?.id || isTerminal) {
-      return undefined;
-    }
-
-    pollRunStatus();
-    const intervalId = setInterval(() => {
-      pollRunStatus();
-    }, 3000);
-
-    return () => clearInterval(intervalId);
-  }, [runInfo?.id, isTerminal, pollRunStatus]);
+  useRunPolling(pollRunStatus, {
+    intervalMs: 3000,
+    enabled: Boolean(runInfo?.id) && !isTerminal,
+    immediate: true,
+  });
 
   useEffect(() => {
     if (!runInfo?.id || !isTerminal) {
@@ -373,19 +357,6 @@ function Simulator() {
     },
     [runInfo?.id, artefactDownloadUrl]
   );
-
-  const formatDuration = (durationMs) => {
-    if (durationMs == null) {
-      return '—';
-    }
-    const totalSeconds = Math.floor(durationMs / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
-    }
-    return `${seconds}s`;
-  };
 
   const formatNumber = (value) => {
     if (value == null || Number.isNaN(value)) {
@@ -564,7 +535,7 @@ function Simulator() {
           <div className="status-header">
             <h3>Run Status</h3>
             <div className="status-actions">
-              <span className={`status-pill ${runStatus?.toLowerCase()}`}>
+              <span className={getRunStatusPillClass(runStatus)}>
                 {runStatus}
               </span>
               {(runStatus === 'RUNNING' || runStatus === 'CREATED') && (
@@ -599,7 +570,7 @@ function Simulator() {
             </div>
             <div>
               <span className="label">Elapsed Time</span>
-              <p>{formatDuration(elapsedMs)}</p>
+              <p>{formatRunDuration(elapsedMs)}</p>
             </div>
             <div>
               <span className="label">Seed</span>

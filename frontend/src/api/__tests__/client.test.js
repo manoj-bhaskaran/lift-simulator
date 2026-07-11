@@ -55,6 +55,22 @@ describe('api client', () => {
     expect(config.headers).not.toHaveProperty('X-API-Key');
   });
 
+  it('exports apiBaseUrl and a trailing-slash-normalised variant for reuse across pages', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'https://api.example.com/api/v1/');
+
+    const clientModule = await import('../client');
+
+    expect(clientModule.apiBaseUrl).toBe('https://api.example.com/api/v1/');
+    expect(clientModule.normalizedApiBaseUrl).toBe('https://api.example.com/api/v1');
+  });
+
+  it('defaults apiBaseUrl to /api/v1 when unset', async () => {
+    const clientModule = await import('../client');
+
+    expect(clientModule.apiBaseUrl).toBe('/api/v1');
+    expect(clientModule.normalizedApiBaseUrl).toBe('/api/v1');
+  });
+
   it('adds Basic auth and API key headers from Vite env vars', async () => {
     vi.stubEnv('VITE_ADMIN_USERNAME', 'admin');
     vi.stubEnv('VITE_ADMIN_PASSWORD', 'local-admin-password');

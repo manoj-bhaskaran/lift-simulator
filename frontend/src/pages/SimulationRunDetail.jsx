@@ -1,16 +1,14 @@
 // @ts-check
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { authHeaders } from '../api/client';
+import { authHeaders, normalizedApiBaseUrl } from '../api/client';
 import { simulationRunsApi } from '../api/simulationRunsApi';
 import AlertModal from '../components/AlertModal';
 import ConfirmModal from '../components/ConfirmModal';
 import { getApiErrorMessage, handleApiError, logApiError } from '../utils/errorHandlers';
+import { isTerminalRunStatus, useRunPolling } from '../hooks/useRunPolling';
+import { formatDate, formatRunDuration, getRunStatusPillClass } from '../utils/statusUtils';
 import './SimulationRunDetail.css';
-
-const terminalStatuses = new Set(['SUCCEEDED', 'FAILED', 'CANCELLED']);
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '/api/v1').trim() || '/api/v1';
-const normalizedApiBaseUrl = apiBaseUrl.replace(/\/$/, '');
 
 const kpiLabels = {
   requestsTotal: 'Requests',
@@ -50,7 +48,7 @@ function SimulationRunDetail() {
   const [deleteError, setDeleteError] = useState(null);
 
   const runStatus = runInfo?.status;
-  const isTerminal = runStatus ? terminalStatuses.has(runStatus) : false;
+  const isTerminal = isTerminalRunStatus(runStatus);
 
   const loadRunInfo = useCallback(async () => {
     if (!id) return;
@@ -110,16 +108,13 @@ function SimulationRunDetail() {
   }, [loadRunInfo]);
 
   // Poll for status updates while running
-  useEffect(() => {
-    if (!runInfo?.id || isTerminal) return undefined;
-
-    const intervalId = setInterval(() => {
+  useRunPolling(
+    useCallback(() => {
       setNow(Date.now());
       loadRunInfo();
-    }, 3000);
-
-    return () => clearInterval(intervalId);
-  }, [runInfo?.id, isTerminal, loadRunInfo]);
+    }, [loadRunInfo]),
+    { intervalMs: 3000, enabled: Boolean(runInfo?.id) && !isTerminal }
+  );
 
   // Load results and artefacts when terminal
   useEffect(() => {
@@ -219,17 +214,6 @@ function SimulationRunDetail() {
     [runInfo?.id, artefactDownloadUrl]
   );
 
-  const formatDuration = (durationMs) => {
-    if (durationMs == null) return '—';
-    const totalSeconds = Math.floor(durationMs / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
-    }
-    return `${seconds}s`;
-  };
-
   const formatNumber = (value) => {
     if (value == null || Number.isNaN(value)) return '—';
     if (typeof value === 'number') {
@@ -257,11 +241,6 @@ function SimulationRunDetail() {
       index += 1;
     }
     return `${size.toFixed(1)} ${units[index]}`;
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '—';
-    return new Date(dateString).toLocaleString();
   };
 
   const runSummary = results?.results?.runSummary;
@@ -319,7 +298,7 @@ function SimulationRunDetail() {
         <div className="status-header">
           <h3>Run Status</h3>
           <div className="status-actions">
-            <span className={`status-pill ${runStatus?.toLowerCase()}`}>
+            <span className={getRunStatusPillClass(runStatus)}>
               {runStatus}
             </span>
             {(runStatus === 'RUNNING' || runStatus === 'CREATED') && (
@@ -379,7 +358,7 @@ function SimulationRunDetail() {
           </div>
           <div>
             <span className="label">Duration</span>
-            <p>{formatDuration(elapsedMs)}</p>
+            <p>{formatRunDuration(elapsedMs)}</p>
           </div>
           <div>
             <span className="label">Seed</span>

@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { logApiError } from '../utils/errorHandlers';
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '/api/v1').trim() || '/api/v1';
+export const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '/api/v1').trim() || '/api/v1';
+export const normalizedApiBaseUrl = apiBaseUrl.replace(/\/$/, '');
 const timeoutFromEnv = Number(import.meta.env.VITE_API_TIMEOUT_MS);
 const requestTimeoutMs =
   Number.isFinite(timeoutFromEnv) && timeoutFromEnv > 0 ? timeoutFromEnv : 10000;

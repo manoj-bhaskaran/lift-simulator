@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.5] - 2026-07-11
+
+### Changed
+- **Frontend polling/utils consolidation and credential guard**: Added a shared `useRunPolling` hook (`frontend/src/hooks/useRunPolling.js`) encapsulating interval lifecycle, terminal-status (`SUCCEEDED`/`FAILED`/`CANCELLED`) stop conditions, and unmount cleanup, and migrated the five duplicated `setInterval` polling blocks in `Simulator.jsx`, `SimulationRuns.jsx`, and `SimulationRunDetail.jsx` onto it. Moved duplicated status-badge and date/duration formatting helpers into `utils/statusUtils.js` and deleted the page-local copies. `api/client.js` now exports the single-source-of-truth `apiBaseUrl`/`normalizedApiBaseUrl`, removing the re-derivation in `Simulator.jsx` and `SimulationRunDetail.jsx`. `vite.config.js` now fails a production-mode build if `VITE_ADMIN_PASSWORD` or `VITE_API_KEY` is set, since `VITE_*` variables are embedded in the compiled bundle; `frontend/README.md` documents the guard and the risk. Updated affected unit tests and added focused coverage for the new hook.
+
 ## [0.57.4] - 2026-07-11
 
 ### Changed

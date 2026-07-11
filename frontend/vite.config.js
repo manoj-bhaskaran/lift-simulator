@@ -1,6 +1,6 @@
 import process from 'node:process'
 import { Buffer } from 'node:buffer'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
 function buildE2EProxyHeaders() {
@@ -20,23 +20,51 @@ function buildE2EProxyHeaders() {
   return headers
 }
 
+// Vite inlines every VITE_-prefixed variable into the compiled client bundle,
+// so a production build must never embed real backend credentials. Fail the
+// build rather than ship them; see frontend/README.md for the safe options.
+function assertNoProductionCredentials(mode, command) {
+  if (command !== 'build' || mode !== 'production') {
+    return
+  }
+
+  const env = loadEnv(mode, process.cwd(), 'VITE_')
+  const offendingVars = [
+    env.VITE_ADMIN_PASSWORD?.trim() ? 'VITE_ADMIN_PASSWORD' : null,
+    env.VITE_API_KEY?.trim() ? 'VITE_API_KEY' : null,
+  ].filter(Boolean)
+
+  if (offendingVars.length > 0) {
+    throw new Error(
+      `Refusing to create a production build with ${offendingVars.join(' and ')} set. ` +
+        'VITE_* variables are embedded in the compiled client bundle and are readable by ' +
+        'anyone who loads the app. Unset these for production builds and authenticate via ' +
+        'a backend/session proxy instead. See frontend/README.md for details.'
+    )
+  }
+}
+
 const e2eProxyHeaders = buildE2EProxyHeaders()
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 3000,
-    proxy: {
-      '/api/v1': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        headers: e2eProxyHeaders,
-      },
-      '/actuator': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
+export default defineConfig(({ mode, command }) => {
+  assertNoProductionCredentials(mode, command)
+
+  return {
+    plugins: [react()],
+    server: {
+      port: 3000,
+      proxy: {
+        '/api/v1': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+          headers: e2eProxyHeaders,
+        },
+        '/actuator': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+        },
       },
     },
-  },
+  }
 })
