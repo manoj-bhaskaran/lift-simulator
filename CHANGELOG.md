@@ -19,7 +19,7 @@ summary is kept under [Earlier history](#earlier-history).
 ## [0.57.2] - 2026-07-11
 
 ### Fixed
-- **Repository hygiene and logging cleanup**: Untracked generated `run-artefacts/` outputs, removed the unused simple lift controller, ad-hoc one-test PowerShell runner, unused H2 test dependency, and no-op Checkstyle gate/configuration. Runtime logging now writes to `logs/application.log` so the existing log ignore rules apply, and engine warnings flow through SLF4J/Logback. Updated README/developer docs and package metadata for the 0.57.2 pre-MVP patch release.
+- **Repository hygiene and logging cleanup**: Untracked generated `run-artefacts/` outputs, removed the unused simple lift controller, ad-hoc one-test PowerShell runner, unused H2 test dependency, and no-op Checkstyle gate/configuration. Runtime logging now keeps the Logback base at `logs/application` so the effective files remain `logs/application.log` and `logs/application-error.log`, and engine warnings flow through SLF4J/Logback. Updated README/developer docs and package metadata for the 0.57.2 pre-MVP patch release.
 
 ## [0.57.1] - 2026-07-10
 

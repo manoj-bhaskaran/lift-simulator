@@ -28,7 +28,7 @@ public class StateTransitionValidator {
                 LiftStatus.MOVING_DOWN,
                 LiftStatus.DOORS_OPENING,
                 LiftStatus.OUT_OF_SERVICE
-        );
+        ));
 
         /*
          * MOVING_UP can transition to: MOVING_UP, IDLE, OUT_OF_SERVICE.
@@ -38,7 +38,7 @@ public class StateTransitionValidator {
                 LiftStatus.MOVING_UP,
                 LiftStatus.IDLE,
                 LiftStatus.OUT_OF_SERVICE
-        );
+        ));
 
         /*
          * MOVING_DOWN can transition to: MOVING_DOWN, IDLE, OUT_OF_SERVICE.
@@ -48,7 +48,7 @@ public class StateTransitionValidator {
                 LiftStatus.MOVING_DOWN,
                 LiftStatus.IDLE,
                 LiftStatus.OUT_OF_SERVICE
-        );
+        ));
 
         /*
          * DOORS_OPENING can transition to: DOORS_OPEN, DOORS_CLOSING (abort), OUT_OF_SERVICE.
@@ -59,14 +59,14 @@ public class StateTransitionValidator {
                 LiftStatus.DOORS_OPEN,
                 LiftStatus.DOORS_CLOSING,
                 LiftStatus.OUT_OF_SERVICE
-        );
+        ));
 
         // DOORS_OPEN can transition to: DOORS_CLOSING, OUT_OF_SERVICE.
         VALID_TRANSITIONS.put(LiftStatus.DOORS_OPEN, EnumSet.of(
                 LiftStatus.DOORS_OPEN,
                 LiftStatus.DOORS_CLOSING,
                 LiftStatus.OUT_OF_SERVICE
-        );
+        ));
 
         // DOORS_CLOSING can transition to: IDLE, DOORS_OPENING (re-open), OUT_OF_SERVICE.
         VALID_TRANSITIONS.put(LiftStatus.DOORS_CLOSING, EnumSet.of(
@@ -74,13 +74,13 @@ public class StateTransitionValidator {
                 LiftStatus.IDLE,
                 LiftStatus.DOORS_OPENING,
                 LiftStatus.OUT_OF_SERVICE
-        );
+        ));
 
         // OUT_OF_SERVICE can transition to: IDLE (for maintenance recovery).
         VALID_TRANSITIONS.put(LiftStatus.OUT_OF_SERVICE, EnumSet.of(
                 LiftStatus.OUT_OF_SERVICE,
                 LiftStatus.IDLE
-        );
+        ));
     }
 
     /**
