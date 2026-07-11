@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.9] - 2026-07-11
+
+### Changed
+- **Frontend simulation page decomposition**: Split the simulator setup, run-status, and results rendering out of the large `Simulator.jsx` and `SimulationRunDetail.jsx` pages into reusable simulation-run components, with shared result-formatting helpers for KPIs, artefact sizes, and per-lift metrics. Updated frontend documentation and package metadata for the 0.57.9 pre-MVP patch release.
+
 ## [0.57.8] - 2026-07-11
 
 ### Changed
