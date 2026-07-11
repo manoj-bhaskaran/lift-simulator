@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.8] - 2026-07-11
+
+### Changed
+- **Simulation execution service split**: Refactored the admin asynchronous execution path so `SimulationRunExecutionService` owns queueing, cancellation, executor shutdown, and in-flight task tracking, while the new `SimulationRunner` owns validation, lifecycle transitions, progress updates, and simulation ticking, and the new `SimulationArtefactWriter` owns run logs, config/scenario snapshots, generated batch input, and `results.json` writing. This keeps the public simulation-run API unchanged while isolating runner and filesystem responsibilities for easier maintenance. Updated README and package metadata for the 0.57.8 pre-MVP patch release.
+
 ## [0.57.7] - 2026-07-11
 
 ### Changed
