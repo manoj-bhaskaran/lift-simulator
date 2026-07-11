@@ -414,7 +414,7 @@ public class SimulationRunExecutionServiceTest {
             blocker.setStatus(SimulationRun.RunStatus.CREATED);
             blocker.setLiftSystem(liftSystem);
             blocker.setVersion(version);
-            lenient().when(runRepository.findById((long) id)).thenReturn(blocker);
+            lenient().when(runRepository.findById((long) id)).thenReturn(Optional.of(blocker));
             lenient().when(lifecycleManager.getByIdWithDetails((long) id)).thenReturn(blocker);
             lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -422,7 +422,7 @@ public class SimulationRunExecutionServiceTest {
 
         // Use a scenario that blocks mid-way via the CountDownLatch approach is complex;
         // instead we just verify the 3rd submission fails the run immediately.
-        lenient().when(runRepository.findById((long) overCapacityRunId)).thenReturn(overCapacityRun);
+        lenient().when(runRepository.findById((long) overCapacityRunId)).thenReturn(Optional.of(overCapacityRun));
         lenient().when(lifecycleManager.getByIdWithDetails((long) overCapacityRunId)).thenReturn(overCapacityRun);
         lenient().when(runRepository.save(any(SimulationRun.class))).thenAnswer(inv -> {
             SimulationRun saved = inv.getArgument(0);
@@ -449,7 +449,7 @@ public class SimulationRunExecutionServiceTest {
         tpe.submit(() -> { try { latch.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } });
 
         // Now submit the overCapacity run — executor is full, should be rejected cleanly
-        lenient().when(runRepository.findById((long) overCapacityRunId)).thenReturn(overCapacityRun);
+        lenient().when(runRepository.findById((long) overCapacityRunId)).thenReturn(Optional.of(overCapacityRun));
         lenient().when(lifecycleManager.getByIdWithDetails((long) overCapacityRunId)).thenReturn(overCapacityRun);
 
         Scenario scenario = new Scenario("s", SHORT_SCENARIO, version);
