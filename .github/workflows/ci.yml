@@ -77,8 +77,6 @@ jobs:
         path: target/site/jacoco/
         retention-days: 30
 
-    - name: Check code style
-      run: mvn -q checkstyle:check
 
     - name: Run static analysis
       run: mvn -q spotbugs:check

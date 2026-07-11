@@ -5,14 +5,15 @@ import com.liftsimulator.domain.LiftState;
 import com.liftsimulator.domain.LiftStatus;
 
 import java.util.Map;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Core simulation engine that advances time in discrete ticks.
  * The engine owns time and coordinates state updates.
  */
 public final class SimulationEngine {
-    private static final Logger LOGGER = Logger.getLogger(SimulationEngine.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(SimulationEngine.class);
     private static final int DEFAULT_TRAVEL_TICKS_PER_FLOOR = 1;
     private static final int DEFAULT_DOOR_TRANSITION_TICKS = 2;
     private static final int DEFAULT_DOOR_DWELL_TICKS = 3;
@@ -256,14 +257,14 @@ public final class SimulationEngine {
         // Validate the state transition.
         if (!StateTransitionValidator.isValidTransition(currentStatus, newStatus)) {
             // Invalid transition - return current state unchanged.
-            LOGGER.warning(String.format(
-                "Invalid state transition for action %s: %s -> %s at floor %d (tick %d)",
+            LOGGER.warn(
+                "Invalid state transition for action {}: {} -> {} at floor {} (tick {})",
                 action,
                 currentStatus,
                 newStatus,
                 state.getFloor(),
                 clock.getCurrentTick()
-            ));
+            );
             return new ActionResult(state, false);
         }
 
@@ -489,13 +490,13 @@ public final class SimulationEngine {
     }
 
     private void logInvalidAction(Action action, LiftStatus currentStatus, LiftState state) {
-        LOGGER.warning(String.format(
-            "Invalid action %s attempted in state %s at floor %d (tick %d)",
+        LOGGER.warn(
+            "Invalid action {} attempted in state {} at floor {} (tick {})",
             action,
             currentStatus,
             state.getFloor(),
             clock.getCurrentTick()
-        ));
+        );
     }
 
     private void advanceMovement() {

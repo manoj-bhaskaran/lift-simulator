@@ -155,7 +155,7 @@ return switch (strategy) {
 - **Added**: `invalid_controller_strategy.scenario` test resource
 - **Updated**: CHANGELOG.md with version 0.14.0 entry
 - **Updated**: README.md with controller strategy documentation
-- **No changes needed**: Existing controllers (NaiveLiftController, SimpleLiftController)
+- **No changes needed**: Existing active controllers (NaiveLiftController)
 
 ## Future Considerations
 - **DIRECTIONAL_SCAN implementation**: Complete the directional scan controller

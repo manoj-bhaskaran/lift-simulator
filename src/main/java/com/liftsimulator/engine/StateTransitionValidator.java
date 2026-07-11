@@ -7,14 +7,15 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Validates and manages state transitions for the lift state machine.
  * Ensures that only valid transitions occur and logs any invalid attempts.
  */
 public class StateTransitionValidator {
-    private static final Logger LOGGER = Logger.getLogger(StateTransitionValidator.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(StateTransitionValidator.class);
 
     // Define valid state transitions based on actions.
     private static final Map<LiftStatus, Set<LiftStatus>> VALID_TRANSITIONS = new EnumMap<>(LiftStatus.class);
@@ -124,17 +125,17 @@ public class StateTransitionValidator {
     public static boolean isValidTransition(LiftStatus fromStatus, LiftStatus toStatus) {
         Set<LiftStatus> validNextStates = VALID_TRANSITIONS.get(fromStatus);
         if (validNextStates == null) {
-            LOGGER.warning("No valid transitions defined for status: " + fromStatus);
+            LOGGER.warn("No valid transitions defined for status: {}", fromStatus);
             return false;
         }
 
         boolean isValid = validNextStates.contains(toStatus);
         if (!isValid) {
-            LOGGER.warning(String.format(
-                "Invalid state transition attempted: %s -> %s",
+            LOGGER.warn(
+                "Invalid state transition attempted: {} -> {}",
                 fromStatus,
                 toStatus
-            ));
+            );
         }
 
         return isValid;

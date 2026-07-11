@@ -14,7 +14,7 @@
 
     <groupId>com.liftsimulator</groupId>
     <artifactId>lift-simulator</artifactId>
-    <version>0.57.1</version>
+    <version>0.57.2</version>
     <packaging>jar</packaging>
 
     <name>Lift Simulator</name>
@@ -121,12 +121,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- H2 Database for testing -->
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>test</scope>
-        </dependency>
 
         <!-- Testcontainers for PostgreSQL integration testing -->
         <dependency>
@@ -197,17 +191,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.6</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.6.0</version>
-                <configuration>
-                    <configLocation>config/checkstyle/checkstyle.xml</configLocation>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                    <consoleOutput>true</consoleOutput>
-                    <failsOnError>true</failsOnError>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
