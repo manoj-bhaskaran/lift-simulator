@@ -12,8 +12,6 @@ import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.ScenarioRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +20,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -31,7 +28,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
@@ -48,10 +44,6 @@ public class SimulationRunService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SimulationRunService.class);
 
-    private static final String STARTUP_RECOVERY_ERROR_MESSAGE =
-            "Run was still RUNNING when the application started; marking it FAILED because no in-memory "
-                    + "executor task can survive a JVM restart.";
-
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
             "createdAt",
             "startedAt",
@@ -60,9 +52,6 @@ public class SimulationRunService {
             "id"
     );
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     private final SimulationRunRepository runRepository;
     private final LiftSystemRepository liftSystemRepository;
     private final LiftSystemVersionRepository versionRepository;
@@ -70,6 +59,7 @@ public class SimulationRunService {
     private final String artefactsBasePath;
     private final SimulationRunExecutionService executionService;
     private final ArtefactService artefactService;
+    private final RunLifecycleManager lifecycleManager;
     private final ObjectMapper objectMapper;
 
     @SuppressFBWarnings(
@@ -83,6 +73,7 @@ public class SimulationRunService {
             ScenarioRepository scenarioRepository,
             SimulationRunExecutionService executionService,
             ArtefactService artefactService,
+            RunLifecycleManager lifecycleManager,
             ObjectMapper objectMapper,
             @Value("${simulation.artefacts.base-path:./simulation-runs}") String artefactsBasePath) {
         this.runRepository = runRepository;
@@ -91,6 +82,7 @@ public class SimulationRunService {
         this.scenarioRepository = scenarioRepository;
         this.executionService = executionService;
         this.artefactService = artefactService;
+        this.lifecycleManager = lifecycleManager;
         this.objectMapper = objectMapper;
         this.artefactsBasePath = artefactsBasePath;
     }
@@ -178,12 +170,11 @@ public class SimulationRunService {
         run.setArtefactBasePath(artefactPath);
 
         // Save configuration
-        run = runRepository.save(run);
+        run = lifecycleManager.configureRun(run.getId(), totalTicks, runSeed, artefactPath);
 
         // Start the run before submitting for async execution
         // This ensures the API returns RUNNING status immediately
-        run.start();
-        run = runRepository.save(run);
+        run = lifecycleManager.startRun(run.getId());
 
         // Submit the run for execution only after the surrounding transaction commits.
         // Otherwise, the async executor can start immediately and attempt to read the
@@ -355,7 +346,7 @@ public class SimulationRunService {
      * @throws ResourceNotFoundException if the run is not found
      */
     public SimulationRun getRunById(Long id) {
-        return findRunByIdWithDetails(id);
+        return lifecycleManager.getByIdWithDetails(id);
     }
 
     /**
@@ -366,13 +357,7 @@ public class SimulationRunService {
      * @throws ResourceNotFoundException if the run is not found
      */
     public SimulationRunResponse getRunResponseById(Long id) {
-        return SimulationRunResponse.fromEntity(findRunByIdWithDetails(id));
-    }
-
-    private SimulationRun findRunByIdWithDetails(Long id) {
-        return runRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Simulation run not found with id: " + id));
+        return SimulationRunResponse.fromEntity(lifecycleManager.getByIdWithDetails(id));
     }
 
     /**
@@ -407,159 +392,87 @@ public class SimulationRunService {
 
     /**
      * Start a simulation run.
-     * Transitions from CREATED to RUNNING.
      *
      * @param id the run id
      * @return the updated run
-     * @throws ResourceNotFoundException if the run is not found
-     * @throws IllegalStateException if the run is not in CREATED state
      */
     @Transactional
     public SimulationRun startRun(Long id) {
-        SimulationRun run = getRunById(id);
-        run.start();
-        return runRepository.save(run);
+        return lifecycleManager.startRun(id);
     }
 
     /**
      * Mark a simulation run as succeeded.
-     * Transitions from RUNNING to SUCCEEDED.
      *
      * @param id the run id
      * @return the updated run
-     * @throws ResourceNotFoundException if the run is not found
-     * @throws IllegalStateException if the run is not in RUNNING state
      */
     @Transactional
     public SimulationRun succeedRun(Long id) {
-        SimulationRun run = getRunById(id);
-        run.succeed();
-        return runRepository.save(run);
+        return lifecycleManager.succeedRun(id);
     }
 
     /**
      * Mark a simulation run as failed.
-     * Transitions from RUNNING to FAILED.
      *
      * @param id the run id
      * @param errorMessage the error message describing the failure
      * @return the updated run
-     * @throws ResourceNotFoundException if the run is not found
-     * @throws IllegalStateException if the run is not in RUNNING state
      */
     @Transactional
     public SimulationRun failRun(Long id, String errorMessage) {
-        SimulationRun run = getRunById(id);
-        run.fail(errorMessage);
-        return runRepository.save(run);
+        return lifecycleManager.failRun(id, errorMessage);
     }
 
     /**
      * Cancel a simulation run.
-     * Can transition from CREATED or RUNNING to CANCELLED.
      *
      * @param id the run id
      * @return the updated run
-     * @throws ResourceNotFoundException if the run is not found
-     * @throws IllegalStateException if the run is not in CREATED or RUNNING state
      */
     @Transactional
     public SimulationRun cancelRun(Long id) {
-        SimulationRun run = getRunById(id);
-        run.cancel();
-        return runRepository.save(run);
+        return lifecycleManager.cancelRun(id);
     }
 
     /**
      * Update the progress of a running simulation.
-     * Uses REQUIRES_NEW propagation to ensure a fresh transaction is created,
-     * which is important when called from async threads. Uses a targeted UPDATE
-     * query to avoid overwriting concurrent status changes (e.g., cancel/fail/succeed).
      *
      * @param id the run id
      * @param currentTick the current tick number
      * @return the updated run
-     * @throws ResourceNotFoundException if the run is not found
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public SimulationRun updateProgress(Long id, Long currentTick) {
-        int updated = runRepository.updateCurrentTick(id, currentTick);
-        if (updated == 0) {
-            throw new ResourceNotFoundException("Simulation run not found with id: " + id);
-        }
-        // Clear the persistence context to ensure fresh read from database
-        entityManager.clear();
-        // Retrieve the updated entity from database
-        SimulationRun run = getRunById(id);
-        return run;
+        return lifecycleManager.updateProgress(id, currentTick);
     }
 
     /**
      * Set configuration for a run before starting.
-     * Only updates non-null values, preserving existing configuration.
      *
      * @param id the run id
      * @param totalTicks total number of ticks for the simulation (null to keep existing)
      * @param seed random seed for reproducibility (null to keep existing)
      * @param artefactBasePath base path for output artefacts (null to keep existing)
      * @return the updated run
-     * @throws ResourceNotFoundException if the run is not found
      */
     @Transactional
     public SimulationRun configureRun(Long id, Long totalTicks, Long seed, String artefactBasePath) {
-        SimulationRun run = getRunById(id);
-        if (totalTicks != null) {
-            run.setTotalTicks(totalTicks);
-        }
-        if (seed != null) {
-            run.setSeed(seed);
-        }
-        if (artefactBasePath != null) {
-            run.setArtefactBasePath(artefactBasePath);
-        }
-        return runRepository.save(run);
+        return lifecycleManager.configureRun(id, totalTicks, seed, artefactBasePath);
     }
 
     /**
      * Reconciles non-terminal runs that cannot have a live executor task after application startup.
-     * RUNNING runs are marked FAILED because their in-memory worker was lost with the previous JVM,
-     * while never-submitted CREATED runs are marked CANCELLED so they can be cleaned up.
      *
      * @return counts of recovered RUNNING and CREATED runs
      */
     @Transactional
-    public StartupRecoveryResult recoverOrphanedRunsOnStartup() {
-        OffsetDateTime recoveredAt = OffsetDateTime.now();
-        int failedRunningRuns = runRepository.failOrphanedRunningRuns(
-                STARTUP_RECOVERY_ERROR_MESSAGE,
-                recoveredAt
-        );
-        int cancelledCreatedRuns = runRepository.cancelOrphanedCreatedRuns(recoveredAt);
-
-        if (failedRunningRuns > 0 || cancelledCreatedRuns > 0) {
-            LOGGER.warn(
-                    "Recovered orphaned simulation runs on startup: {} RUNNING marked FAILED, "
-                            + "{} CREATED marked CANCELLED",
-                    failedRunningRuns,
-                    cancelledCreatedRuns
-            );
-        }
-
-        return new StartupRecoveryResult(failedRunningRuns, cancelledCreatedRuns);
-    }
-
-    /**
-     * Result counts for startup reconciliation of orphaned simulation runs.
-     *
-     * @param failedRunningRuns number of RUNNING rows marked FAILED
-     * @param cancelledCreatedRuns number of CREATED rows marked CANCELLED
-     */
-    public record StartupRecoveryResult(int failedRunningRuns, int cancelledCreatedRuns) {
+    public RunLifecycleManager.StartupRecoveryResult recoverOrphanedRunsOnStartup() {
+        return lifecycleManager.recoverOrphanedRunsOnStartup();
     }
 
     /**
      * Delete a completed simulation run, removing both its database record and any
-     * stored artefact files.
+     * stored artefact files on a best-effort basis.
      *
      * <p>Only runs in a terminal state (SUCCEEDED, FAILED, CANCELLED) may be deleted;
      * attempting to delete an in-progress run (CREATED or RUNNING) fails fast so that
@@ -567,16 +480,17 @@ public class SimulationRunService {
      *
      * <p>The database record is deleted first, and artefacts are removed only after
      * the surrounding transaction commits. This prevents a rollback or commit
-     * failure from leaving a surviving run row with permanently deleted files.</p>
+     * failure from leaving a surviving run row with permanently deleted files.
+     * Post-commit artefact deletion failures are logged and do not fail the
+     * already-committed delete request.</p>
      *
      * @param id the run id
      * @throws ResourceNotFoundException if the run is not found
      * @throws IllegalStateException if the run is not in a terminal state
-     * @throws ArtefactDeletionException if the stored artefacts cannot be removed
      */
     @Transactional
     public void deleteRun(Long id) {
-        SimulationRun run = getRunById(id);
+        SimulationRun run = lifecycleManager.getByIdWithDetails(id);
         RunStatus status = run.getStatus();
         if (status != RunStatus.SUCCEEDED && status != RunStatus.FAILED && status != RunStatus.CANCELLED) {
             throw new IllegalStateException(
@@ -605,9 +519,13 @@ public class SimulationRunService {
     private void deleteArtefacts(SimulationRun run, Long id) {
         try {
             artefactService.deleteArtefacts(run);
-        } catch (IOException e) {
-            throw new ArtefactDeletionException(
-                    "Failed to delete artefacts for simulation run " + id + ": " + e.getMessage(), e);
+        } catch (Exception e) {
+            LOGGER.warn(
+                    "Best-effort artefact deletion failed for simulation run {} at {}",
+                    id,
+                    run.getArtefactBasePath(),
+                    e
+            );
         }
     }
 }
