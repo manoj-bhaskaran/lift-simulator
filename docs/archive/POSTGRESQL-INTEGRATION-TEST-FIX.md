@@ -1,3 +1,8 @@
+⚠️ **ARCHIVED** — This document is a point-in-time incident record and is no longer actively maintained. For current guidance, refer to [TESTING-SETUP.md](../TESTING-SETUP.md) or the [Workflows and Troubleshooting guide](../Workflows-and-Troubleshooting.md).
+
+---
+
+
 # PostgreSQL Integration Test Fix - Complete Summary
 
 ## Problem Statement

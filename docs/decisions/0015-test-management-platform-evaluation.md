@@ -207,7 +207,7 @@ Platforms evaluated but not deeply researched:
 
 ## Follow-up Actions
 
-1. ✅ Document evaluation findings (see `docs/testquality-evaluation.md`)
+1. ✅ Document evaluation findings (see archived `docs/archive/testquality-evaluation.md`)
 2. ✅ Create ADR capturing decision rationale
 3. 🔲 Create `frontend/e2e/TEST-CATALOG.md` for formal test case documentation (recommended)
 4. 🔲 Monitor test suite growth and team changes
@@ -216,7 +216,7 @@ Platforms evaluated but not deeply researched:
 
 ## References
 
-- [Detailed Evaluation Document](../testquality-evaluation.md) - Comprehensive 10-section analysis
+- [Detailed Evaluation Document](../archive/testquality-evaluation.md) - Archived comprehensive 10-section analysis
 - [TestQuality API Documentation](https://doc.testquality.com/api)
 - [TestQuality Playwright Integration](https://doc.testquality.com/automations-imports/test-runners/integrating_with_Playwright)
 - [TestQuality GitHub Integration](https://doc.testquality.com/integrate_with_github)

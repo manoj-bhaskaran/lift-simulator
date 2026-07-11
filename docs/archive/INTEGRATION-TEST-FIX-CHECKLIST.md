@@ -1,3 +1,8 @@
+⚠️ **ARCHIVED** — This document is a point-in-time incident record and is no longer actively maintained. For current guidance, refer to [TESTING-SETUP.md](../TESTING-SETUP.md) or the [Workflows and Troubleshooting guide](../Workflows-and-Troubleshooting.md).
+
+---
+
+
 # Integration Test Credential Fix - Checklist & Verification
 
 ## Issue Summary
@@ -353,9 +358,9 @@ A: Fixed! Tests now use consistent credentials (lift_admin) in both environments
 If you still see "root" errors, check that all test classes extend LocalIntegrationTest.
 
 ## Document References
-- Technical details: [docs/INTEGRATION-TEST-CREDENTIAL-FIX.md](../docs/INTEGRATION-TEST-CREDENTIAL-FIX.md)
-- Usage guide: [docs/TESTING-ARCHITECTURE-GUIDE.md](../docs/TESTING-ARCHITECTURE-GUIDE.md)
-- Summary: [docs/POSTGRESQL-INTEGRATION-TEST-FIX.md](../docs/POSTGRESQL-INTEGRATION-TEST-FIX.md)
+- Technical details: [INTEGRATION-TEST-CREDENTIAL-FIX.md](INTEGRATION-TEST-CREDENTIAL-FIX.md) (archived)
+- Usage guide: [TESTING-ARCHITECTURE-GUIDE.md](../TESTING-ARCHITECTURE-GUIDE.md)
+- Summary: [POSTGRESQL-INTEGRATION-TEST-FIX.md](POSTGRESQL-INTEGRATION-TEST-FIX.md) (archived)
 
 ---
 **Status**: ✅ Ready for CI/CD verification

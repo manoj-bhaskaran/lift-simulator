@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.3] - 2026-07-11
+
+### Changed
+- **Documentation consolidation and archival**: Archived 8 historical incident fix write-ups (`CI-CD-FIX-SUMMARY`, `GITHUB-CI-CD-FIX`, `CI-CD-IMPLEMENTATION-CHECKLIST`, and 5 integration test fixes) with point-in-time banners to `docs/archive/` and fixed or neutralized their broken external links. Moved the superseded `testquality-evaluation.md` to archive with a pointer from ADR-0015. Merged `docs/TROUBLESHOOTING.md` into `docs/Workflows-and-Troubleshooting.md` as a single consolidated troubleshooting home, updated all inbound links in `README.md` and `docs/` files, and verified zero broken relative links in all markdown. No functional changes; documentation-only improvements prior to planned API.md/README slimming.
+
 ## [0.57.2] - 2026-07-11
 
 ### Fixed

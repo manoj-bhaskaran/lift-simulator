@@ -1,3 +1,8 @@
+⚠️ **ARCHIVED** — This document is a point-in-time incident record and is no longer actively maintained. For current guidance, refer to [TESTING-SETUP.md](../TESTING-SETUP.md) or the [Workflows and Troubleshooting guide](../Workflows-and-Troubleshooting.md).
+
+---
+
+
 # CI/CD Fix Implementation Checklist
 
 ## Overview
@@ -156,7 +161,7 @@ This checklist documents all changes made to fix GitHub CI/CD test failures.
 - [TESTING-SETUP.md](../TESTING-SETUP.md)
 - [CI-CD-FIX-SUMMARY.md](CI-CD-FIX-SUMMARY.md)
 - [GITHUB-CI-CD-FIX.md](GITHUB-CI-CD-FIX.md)
-- [verify-test-setup.sh](../scripts/verify-test-setup.sh)
+- `scripts/verify-test-setup.sh` - Verification script (see repo root)
 
 ## ✅ Quality Assurance
 

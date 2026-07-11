@@ -1,3 +1,8 @@
+⚠️ **ARCHIVED** — This document is a point-in-time incident record and is no longer actively maintained. For current guidance, refer to [TESTING-SETUP.md](../TESTING-SETUP.md) or the [Workflows and Troubleshooting guide](../Workflows-and-Troubleshooting.md).
+
+---
+
+
 # CI/CD GitHub Tests Fix - Summary
 
 ## Problem Statement
@@ -196,8 +201,8 @@ The GitHub Actions workflow automatically verifies:
 ## Related Documentation
 
 - [TESTING-SETUP.md](../TESTING-SETUP.md) - Comprehensive testing guide
-- [.github/workflows/ci.yml](.github/workflows/ci.yml) - CI workflow configuration
-- [src/test/resources/application-test.yml](src/test/resources/application-test.yml) - Test database configuration
+- `.github/workflows/ci.yml` - CI workflow configuration (see repo root)
+- `src/test/resources/application-test.yml` - Test database configuration (see repo root)
 
 ## Contact & Support
 

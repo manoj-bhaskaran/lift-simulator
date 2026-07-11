@@ -79,7 +79,7 @@ For a visual overview of the major components (React admin UI, Spring Boot backe
 
 **UAT testing** — follow the 14 detailed scenarios in [docs/UAT-TEST-SCENARIOS.md](docs/UAT-TEST-SCENARIOS.md) (estimated 2–3 hours, with expected results, pass/fail criteria, and a sign-off checklist).
 
-**Quick troubleshooting** — most setup failures are: database not running (check credentials in `application-dev.yml`), a port conflict (8080 and 3000 must be free), the wrong Node version (`node --version`), or a migration failure (requires PostgreSQL 12+). See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for the full guide.
+**Quick troubleshooting** — most setup failures are: database not running (check credentials in `application-dev.yml`), a port conflict (8080 and 3000 must be free), the wrong Node version (`node --version`), or a migration failure (requires PostgreSQL 12+). See [docs/Workflows-and-Troubleshooting.md#general-troubleshooting](docs/Workflows-and-Troubleshooting.md#general-troubleshooting) for the full guide.
 
 ## Admin Interface
 
@@ -303,7 +303,7 @@ On startup the application runs Flyway automatically: it creates the `lift_simul
 
 The schema includes `lift_system` and `lift_system_version` (versioned JSONB configurations), `scenario` (reusable test scenarios), and `simulation_run`, which tracks run status (CREATED, RUNNING, SUCCEEDED, FAILED, CANCELLED) with optimistic locking and referential integrity to lift systems and versions. See [ADR-0007](docs/decisions/0007-postgresql-flyway-integration.md) and [ADR-0008](docs/decisions/0008-jpa-entities-and-jsonb-mapping.md) for the persistence design.
 
-For JPA entities, repositories, and verification-runner usage, see [docs/DEVELOPER-GUIDE.md#jpa-entities-and-repositories](docs/DEVELOPER-GUIDE.md#jpa-entities-and-repositories). For connection, permission, and migration errors, see [docs/TROUBLESHOOTING.md#database-troubleshooting](docs/TROUBLESHOOTING.md#database-troubleshooting). For backup and restore procedures, see [docs/DATABASE-BACKUP.md](docs/DATABASE-BACKUP.md).
+For JPA entities, repositories, and verification-runner usage, see [docs/DEVELOPER-GUIDE.md#jpa-entities-and-repositories](docs/DEVELOPER-GUIDE.md#jpa-entities-and-repositories). For connection, permission, and migration errors, see [docs/Workflows-and-Troubleshooting.md#database-troubleshooting](docs/Workflows-and-Troubleshooting.md#database-troubleshooting). For backup and restore procedures, see [docs/DATABASE-BACKUP.md](docs/DATABASE-BACKUP.md).
 
 ## Logging
 

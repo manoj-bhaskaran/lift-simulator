@@ -1,3 +1,8 @@
+⚠️ **ARCHIVED** — This document is a point-in-time incident record and is no longer actively maintained. For current guidance, refer to [TESTING-SETUP.md](../TESTING-SETUP.md) or the [Workflows and Troubleshooting guide](../Workflows-and-Troubleshooting.md).
+
+---
+
+
 # GitHub CI/CD Tests Fix - Complete Summary
 
 ## Executive Summary
@@ -272,9 +277,9 @@ These tests are skipped when Docker is unavailable (expected behavior).
 
 - [TESTING-SETUP.md](../TESTING-SETUP.md) - Complete testing guide
 - [CI-CD-FIX-SUMMARY.md](CI-CD-FIX-SUMMARY.md) - This document
-- [.github/workflows/ci.yml](../.github/workflows/ci.yml) - CI workflow
-- [src/test/resources/application-test.yml](../src/test/resources/application-test.yml) - Test config
-- [scripts/verify-test-setup.sh](../scripts/verify-test-setup.sh) - Verification script
+- `.github/workflows/ci.yml` - CI workflow (see repo root)
+- `src/test/resources/application-test.yml` - Test config (see repo root)
+- `scripts/verify-test-setup.sh` - Verification script (see repo root)
 
 ## Conclusion
 
