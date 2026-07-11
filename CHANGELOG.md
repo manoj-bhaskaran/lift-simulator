@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.7] - 2026-07-11
+
+### Changed
+- **API/README documentation slimming**: Rewrote `docs/API.md` (1030 → 220 lines) as an API *conventions* reference — authentication (HTTP Basic + API key), role-based access control, URL versioning, rate limiting, request/artefact size limits, response conventions (201 + `Location`, 202, pagination/sorting), and the shared `ErrorResponse`/`ValidationErrorResponse` shape — with the generated SpringDoc OpenAPI spec (Swagger UI / `api-docs`) promoted as the authoritative, always-current endpoint reference instead of hand-maintained per-endpoint schemas. Relocated the consumer-relevant reference material that the generated spec does not present as tables — the lift-configuration schema and validation rules (with the 0.46.0 floor-range migration note), the scenario payload schema, and the batch-input-generator format — into a new "Configuration and Scenario Schema Reference" section of `docs/Workflows-and-Troubleshooting.md`. Condensed the root `README.md` (434 → 336 lines): merged Rate Limiting and Request/Artefact Size Limits into a single summary linking to `docs/API.md`, shortened the Logging and Testing sections to summaries that link to the authoritative docs, and left Quick Start intact. Slimmed `frontend/README.md` (670 → 308 lines) to frontend-specific setup, scripts, testing methodology, and type-checking, replacing the long CI/CD and deployment sections with pointers to the root README and CI workflows. Fixed a stale Table-of-Contents anchor and verified zero broken internal markdown links in the edited files. Documentation-only; synchronised package metadata for the 0.57.7 pre-MVP patch release.
+
 ## [0.57.6] - 2026-07-11
 
 ### Changed

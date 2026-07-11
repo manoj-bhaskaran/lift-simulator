@@ -13,12 +13,11 @@ React-based admin interface for managing lift system configurations.
 This is the frontend admin application for the Lift Simulator system. It provides a web-based interface for:
 - Managing lift systems and configurations
 - Creating and publishing configuration versions
-- Validating configuration JSON
-- Displaying detailed validation errors when configuration JSON is invalid
+- Validating configuration JSON and displaying detailed validation errors
+- Managing simulation runs, including multi-select bulk cancellation for active runs and bulk deletion for completed runs
 - Monitoring system health
-- Reviewing per-system version counts in the Lift Systems list
-- Maintaining consistent form control alignment across scenario creation screens
-- Managing Simulation Runs with multi-select bulk cancellation for active runs and bulk deletion for completed runs
+
+For the overall project setup (backend, database, and Quick Start), see the [root README](../README.md). Backend REST API conventions (auth, RBAC, rate limits, error shape) live in [docs/API.md](../docs/API.md), and the always-current endpoint reference is the generated Swagger UI at `/api/v1/swagger-ui.html`.
 
 ## Versioning
 
@@ -81,7 +80,7 @@ VITE_ADMIN_PASSWORD=local-admin-password
 VITE_API_KEY=local-api-key
 ```
 
-The Axios client sends `Authorization: Basic ...` when both admin values are set and sends `X-API-Key` when `VITE_API_KEY` is set. Vite exposes `VITE_*` values in the browser bundle, so use these credentials only for local development or disposable environments. Anyone who can load a built SPA can inspect `VITE_ADMIN_PASSWORD` and `VITE_API_KEY`; do not deploy a hosted frontend bundle with real backend credentials. For hosted use, move authentication behind a backend/session proxy or another server-side auth layer, and never commit this file.
+The Axios client sends `Authorization: Basic ...` when both admin values are set and sends `X-API-Key` when `VITE_API_KEY` is set.
 
 > **⚠️ `VITE_*` variables ship in the bundle.** Vite inlines every `VITE_`-prefixed variable into the compiled JavaScript at build time — there is no server-side secret store. Anyone who loads the app can read `VITE_ADMIN_PASSWORD` and `VITE_API_KEY` from the shipped bundle. `npm run build` **fails** if `VITE_ADMIN_PASSWORD` or `VITE_API_KEY` is set for any `vite build` invocation, including a custom `--mode` (e.g. `--mode staging`), so a real credential can't accidentally end up in a deployed build. Use `VITE_*` credentials for local development or disposable environments only; for hosted deployments, authenticate through a backend/session proxy instead.
 
@@ -91,11 +90,11 @@ The Axios client sends `Authorization: Basic ...` when both admin values are set
 npm run dev
 ```
 
-The application will start on **http://localhost:3000**
+The application will start on **http://localhost:3000**.
 
 ### 4. Start Backend Service
 
-Make sure the Spring Boot backend is running on port 8080. The authenticated admin and simulation APIs require credentials even during E2E runs, so export backend credentials before starting Spring Boot. The matching browser-test credentials are injected by Playwright at test time, not by the application bundle:
+Make sure the Spring Boot backend is running on port 8080. The authenticated admin and simulation APIs require credentials, so export backend credentials before starting Spring Boot:
 
 ```bash
 export ADMIN_USERNAME=admin
@@ -125,150 +124,51 @@ The frontend uses **Playwright** for end-to-end (E2E) UI automation testing.
 
 ### Testing Strategy
 
-- **E2E tests (Playwright)**: Full user journeys against the running application
-- **Unit tests**: Components, hooks, and utility functions (future addition)
-- **Integration tests**: Page-level flows with mocked API calls (future addition)
+- **E2E tests (Playwright)**: Full user journeys against the running application, located in `e2e/*.spec.ts`
+- **Unit tests** (future): Components, hooks, and utilities as `*.test.jsx` alongside component files
+- **Integration tests** (future): Page-level flows with mocked API calls as `*.spec.jsx` in `src/__tests__/`
 
-### E2E Testing with Playwright
+### First-Time Setup
 
-Playwright is configured to test the application against a real browser. Tests are located in `e2e/*.spec.ts`.
-
-#### First-Time Setup
-
-Install Playwright browser binaries:
+Install Playwright browser binaries (once per machine):
 
 ```bash
-npx playwright install
+npx playwright install          # Chromium, Firefox, WebKit
+npx playwright install chromium # Chromium only, to save disk space
 ```
 
-This downloads Chromium, Firefox, and WebKit browsers. You only need to do this once per machine.
+### Running Tests
 
-> **Note:** If you only need Chromium, use `npx playwright install chromium` to save disk space.
-
-#### Running Tests
-
-Run all tests (headless mode) after the backend is running with matching Playwright-only credentials:
+Start the backend first (see step 4 above), then run Playwright with matching E2E-only credentials. Do **not** use `VITE_*` variables for E2E secrets — Vite exposes those to the browser bundle by design; the `E2E_*` variables are injected at browser-context level and are never bundled.
 
 ```bash
 export E2E_ADMIN_USERNAME=admin
 export E2E_ADMIN_PASSWORD=local-admin-password
 export E2E_API_KEY=local-api-key
-npm test
+npm test              # headless
+npm run test:headed   # with browser UI
+npm run test:ui       # interactive UI (recommended for debugging)
+npm run test:debug    # step-by-step debug
+npm run test:report   # view the HTML report
 ```
 
-Run tests with browser UI visible:
+The Playwright web server automatically starts the frontend dev server before tests and shuts it down afterward. Start the backend separately first so feature tests run instead of being skipped.
 
-```bash
-npm run test:headed
-```
-
-Run tests in interactive UI mode (recommended for debugging):
-
-```bash
-npm run test:ui
-```
-
-Run tests in debug mode with step-by-step execution:
-
-```bash
-npm run test:debug
-```
-
-View HTML test report:
-
-```bash
-npm run test:report
-```
-
-#### Configuration
+### Configuration
 
 Playwright is configured in `playwright.config.ts` with:
 
 - **Base URL**: http://localhost:3000
 - **API URL**: `/api/v1` by default, proxied by Vite to `http://localhost:8080/api/v1`
-- **Backend Health URL**: Feature tests check `http://localhost:8080/api/v1/health` before executing
-- **E2E Auth Headers**: Playwright injects optional `E2E_ADMIN_USERNAME`/`E2E_ADMIN_PASSWORD` Basic auth and `E2E_API_KEY` headers at browser-context level, and the Vite dev proxy mirrors those headers for `/api/v1` requests; these values are never read by app code or bundled by Vite
-- **Web Server**: Automatically starts `npm run dev` before tests
-- **Test Directory**: `e2e/`
+- **Backend Health URL**: feature tests check `http://localhost:8080/api/v1/health` before executing
+- **E2E Auth Headers**: Playwright injects optional `E2E_ADMIN_USERNAME`/`E2E_ADMIN_PASSWORD` Basic auth and `E2E_API_KEY` headers at browser-context level, mirrored by the Vite dev proxy for `/api/v1` requests; these values are never read by app code or bundled by Vite
 - **Retries on CI**: 2 retries to handle flaky tests
-- **Artifacts**: Screenshots and videos on failure, traces on retry
+- **Artifacts**: screenshots and videos on failure, traces on retry
 - **Browsers**: Chromium (default), with Firefox and WebKit commented out
 
-The configuration automatically starts the frontend dev server before running tests and shuts it down afterward. Start the backend separately first so feature tests run instead of being skipped.
+### Current Coverage and Structure
 
-#### CI Integration
-
-Playwright tests run automatically in GitHub Actions CI on:
-- Pull requests to main
-- Pushes to main
-
-**Test Reports in CI:**
-
-When tests run in CI, Playwright generates an HTML report that is uploaded as a GitHub Actions artifact. To view the report:
-
-1. Go to the [Actions tab](../../actions) in GitHub
-2. Click on the workflow run you want to inspect
-3. Scroll down to the "Artifacts" section at the bottom of the page
-4. Download the `playwright-report` artifact (available for 30 days)
-5. Extract the zip file and open `index.html` in your browser
-
-**Test Artifacts on Failure:**
-
-If tests fail, additional artifacts are uploaded:
-- Screenshots of failed tests
-- Videos of test execution
-- Playwright traces for debugging
-
-These are available in the `playwright-test-artifacts` artifact in the same location.
-
-**CI Behavior:**
-- The dedicated `e2e-playwright` job depends on successful backend and frontend jobs
-- CI provisions PostgreSQL, packages the Spring Boot JAR, starts the backend on port 8080, and waits for `/api/v1/health` before running Playwright
-- Test failures will fail the CI workflow and block PR merges
-- Tests run with 2 retries on CI to handle transient issues
-- Only Chromium browser is tested in CI (for speed and reliability)
-- The Playwright web server automatically starts the frontend on port 3000 before tests begin
-
-#### Test Structure & Naming
-
-- All E2E tests go in `e2e/*.spec.ts`
-- Unit tests (when added): `*.test.jsx` alongside component files
-- Integration tests (when added): `*.spec.jsx` in `src/__tests__/`
-
-Example structure:
-
-```
-frontend/
-  e2e/
-    smoke.spec.ts           # E2E smoke tests
-    lift-systems.spec.ts    # E2E tests for lift systems
-  src/
-    components/
-      SystemCard.jsx
-      SystemCard.test.jsx   # Unit tests (future)
-    __tests__/
-      integration.spec.jsx  # Integration tests (future)
-```
-
-#### Current Test Coverage
-
-**Smoke Tests** (`e2e/smoke.spec.ts`):
-- Application loads and displays dashboard
-- Navigation to Lift Systems page works
-- Health check page is accessible
-- Configuration validator page is accessible
-- Footer displays version information
-
-#### Example Scenarios to Cover
-
-- **E2E**: Create a new lift system, publish a version, and verify it appears in the versions list
-- **E2E**: Validate configuration JSON and check for error messages
-- **Unit** (future): Render a status badge with the correct color based on status
-- **Integration** (future): Load the Lift Systems list with mocked API responses and verify pagination
-
-#### Writing New Tests
-
-Create a new test file in `e2e/`:
+Smoke tests (`e2e/smoke.spec.ts`) cover: application loads and displays the dashboard, navigation to Lift Systems works, and the Health Check and Configuration Validator pages are accessible with the footer version shown. Add new tests as `e2e/*.spec.ts`:
 
 ```typescript
 import { test, expect } from '@playwright/test';
@@ -281,58 +181,19 @@ test.describe('Feature Name', () => {
 });
 ```
 
-See [Playwright documentation](https://playwright.dev/docs/writing-tests) for more details.
+See the [Playwright documentation](https://playwright.dev/docs/writing-tests) for more details.
 
 ### Future Testing Additions
 
 - **Unit tests**: Vitest + React Testing Library for component testing
 - **Integration tests**: Mock Service Worker (MSW) for API mocking
-- **Coverage**: Target ≥80% statement/branch coverage for new code
+- **Coverage**: target ≥80% statement/branch coverage for new code
 
 ## CI/CD
 
-The repository uses **GitHub Actions** with the CI workflow defined in
-`.github/workflows/ci.yml` and CodeQL security scanning defined in
-`.github/workflows/codeql.yml`.
+The frontend is built and tested as part of the repository-wide GitHub Actions pipeline (`.github/workflows/ci.yml`), which runs `npm ci`, `npm run lint`, `npm run build`, and the Playwright E2E job against a live backend, plus CodeQL security scanning (`.github/workflows/codeql.yml`). The Playwright HTML report and failure artifacts (screenshots, videos, traces) are uploaded as GitHub Actions artifacts, available under the **Artifacts** section of each workflow run for 30 days. For the full job breakdown and how to run the same checks locally, see the [root README Testing and Quality Checks sections](../README.md#testing).
 
-### What Runs on Pull Requests
-
-- **Backend**
-  - Unit tests, coverage report (JaCoCo), and coverage gate (`mvn verify`)
-  - SpotBugs static analysis
-  - Package build with the frontend profile (tests skipped for the final
-    package step), then upload the packaged JAR as a build artifact
-- **Frontend**
-  - `npm ci`
-  - `npm run lint`
-  - `npm run build`
-- **Playwright E2E with backend**
-  - Download the JAR packaged by the `backend` job (not rebuilt)
-  - Provision PostgreSQL and start the Spring Boot backend from that JAR
-  - Wait for `/api/v1/health`
-  - Run `npm test` in `frontend/` against the live backend
-  - Upload the Playwright HTML report and failure artifacts
-- **CodeQL** (separate workflow: pull requests to `main` and a weekly
-  schedule)
-  - Static security analysis of the `java-kotlin` and `javascript-typescript`
-    languages
-
-The PostgreSQL schema-creation and packaged-JAR asset-verification steps used
-by the `backend` and `e2e-playwright` jobs are shared scripts,
-`scripts/ci-create-test-schema.sh` and `scripts/ci-verify-jar-assets.sh`,
-rather than duplicated inline blocks.
-
-### Run CI Checks Locally
-
-From the repository root:
-
-```bash
-mvn -q verify
-mvn -q spotbugs:check
-mvn -q -Pfrontend package -DskipTests
-```
-
-From `frontend/` (with the backend already running for the E2E step):
+To reproduce the frontend CI steps locally:
 
 ```bash
 npm ci
@@ -341,106 +202,14 @@ npm run build
 E2E_ADMIN_USERNAME=admin E2E_ADMIN_PASSWORD=local-admin-password E2E_API_KEY=local-api-key npm test
 ```
 
-### Deployment Automation
-
-There is currently **no automated deployment pipeline** configured. Use the deployment guidance below and consider wiring builds to your preferred platform.
-
 ## Deployment
 
-This section covers production deployment options for the admin UI.
+There is currently **no automated deployment pipeline**. Two deployment models are supported:
 
-### Primary Deployment: Spring Boot Integration (Recommended)
+- **Spring Boot integration (recommended for this monorepo):** the backend serves the built frontend from the same origin, producing a single JAR with no CORS configuration and consistent versioning. Build and run it from the repository root with the Maven `frontend` profile — see [Building the Project](../README.md#building-the-project) in the root README for the exact commands and asset verification.
+- **Standalone static hosting (CDN / Netlify / Vercel / S3+CloudFront):** run `npm run build` and deploy the generated `dist/` directory. When the frontend and backend are hosted separately you must set `VITE_API_BASE_URL` to the backend API URL at build time and configure CORS on the backend to allow the frontend origin. Because `VITE_*` values are inlined into the bundle, never bake real admin passwords or API keys into a hosted build; authenticate through a backend/session proxy instead.
 
-**Use this approach for the monorepo setup where the frontend is served by the Spring Boot backend.**
-
-This is the recommended deployment model for most use cases. It provides:
-- Single JAR deployment with both frontend and backend
-- Simplified deployment and operations
-- No CORS configuration needed
-- Consistent versioning across frontend and backend
-
-**Build and deploy:**
-
-From the repository root:
-
-```bash
-mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.57.6.jar
-```
-
-This command:
-1. Builds the React app using Vite
-2. Copies the build output to `src/main/resources/static`
-3. Packages everything into a single Spring Boot JAR
-4. Serves the frontend from `http://localhost:8080/`
-5. Serves the API from `http://localhost:8080/api`
-
-**Access the application:**
-- Frontend: http://localhost:8080
-- API: http://localhost:8080/api/v1
-- Actuator: http://localhost:8080/actuator
-
-### Alternative Deployment: Standalone Static Hosting
-
-**Use this approach if you need to deploy the frontend separately (CDN, static hosting, etc.).**
-
-This deployment model is suitable when:
-- You want to serve the frontend from a CDN
-- You need separate scaling for frontend and backend
-- You're deploying to a static hosting service (Netlify, Vercel, etc.)
-
-**Build the frontend:**
-
-```bash
-cd frontend
-npm run build
-```
-
-The build output will be in the `dist/` directory.
-
-**Preview the production build locally:**
-
-```bash
-npm run preview
-```
-
-**Deploy the `dist/` directory to:**
-- Static web server (nginx, Apache)
-- CDN (CloudFront, Cloudflare)
-- Static hosting platforms (Netlify, Vercel, GitHub Pages)
-
-**Important:** When deploying separately, you must:
-1. Configure CORS on the backend to allow requests from your frontend domain
-2. Set `VITE_API_BASE_URL` environment variable to point to your backend API URL
-3. Ensure the backend is accessible from the frontend domain
-
-#### Deployment Options
-
-**Vercel / Netlify (JAMstack)**
-
-- Build command: `npm run build`
-- Output directory: `dist`
-- Environment variables:
-  - `VITE_API_BASE_URL=https://api.example.com/api`
-  - `VITE_API_TIMEOUT_MS=10000`
-
-**AWS S3 + CloudFront**
-
-- Upload `dist/` to an S3 bucket configured for static hosting.
-- Create a CloudFront distribution pointing at the bucket.
-- Set environment variables at build time (CI/CD) before running `npm run build`.
-
-**Docker Container**
-
-- Build a static image that serves `dist/` via nginx.
-- Pass `VITE_API_BASE_URL` and `VITE_API_TIMEOUT_MS` at build time so the bundle is configured correctly.
-
-**Spring Boot Integration**
-
-- Recommended for this repo; the backend serves the frontend from the same origin.
-- Use `mvn -Pfrontend clean package` to bundle and deploy a single JAR.
-
-### Deployment Checklist
+**Deployment checklist:**
 
 - [ ] Confirm `VITE_API_BASE_URL` targets the correct environment.
 - [ ] Ensure CORS is configured if frontend and backend are hosted separately.
@@ -457,28 +226,16 @@ The API client can be configured at build time via Vite environment variables:
 | Variable | Description | Default |
 | --- | --- | --- |
 | `VITE_API_BASE_URL` | Base URL for API requests (e.g., `https://api.example.com/api/v1`) | `/api/v1` |
-| `VITE_API_TIMEOUT_MS` | Axios request timeout in milliseconds. Timed-out safe read requests are retried once after a short delay so cold-started backends can continue showing the current loading indicator before an error is displayed; if the backend remains unreachable, the UI shows a plain-language server-reachability message instead of raw transport details such as status code 502. | `10000` |
+| `VITE_API_TIMEOUT_MS` | Axios request timeout in milliseconds. Timed-out safe read requests are retried once after a short delay so cold-started backends can keep showing the current loading indicator before an error is displayed; if the backend stays unreachable, the UI shows a plain-language server-reachability message rather than raw transport details. | `10000` |
 | `VITE_ADMIN_USERNAME` | Optional admin username used with `VITE_ADMIN_PASSWORD` to build an HTTP Basic `Authorization` header | unset |
 | `VITE_ADMIN_PASSWORD` | Optional admin password used with `VITE_ADMIN_USERNAME` to build an HTTP Basic `Authorization` header | unset |
 | `VITE_API_KEY` | Optional runtime/simulation API key sent as `X-API-Key` | unset |
 
-Example `.env` file:
-
-```bash
-VITE_API_BASE_URL=http://localhost:8080/api/v1
-VITE_API_TIMEOUT_MS=15000
-VITE_ADMIN_USERNAME=admin
-VITE_ADMIN_PASSWORD=local-admin-password
-VITE_API_KEY=local-api-key
-```
-
-If `VITE_API_BASE_URL` is left unset, the app will continue to use `/api/v1`, which works with the Vite proxy in local development. The backend ignores whichever auth header does not apply to a specific endpoint, so sending both the Basic auth and API-key headers from the shared Axios client works for local development. Do not rely on bundled `VITE_ADMIN_PASSWORD` or `VITE_API_KEY` values for hosted deployments; keep real credentials server-side behind a backend/session proxy.
-
-**Production build guard:** `vite.config.js` fails any `vite build` invocation — including `npm run build` and a custom `--mode` such as `--mode staging` — if `VITE_ADMIN_PASSWORD` or `VITE_API_KEY` is set in the build environment, so a real credential cannot be baked into a shipped bundle by accident. `VITE_ADMIN_USERNAME` alone does not trigger the guard. The guard only applies to the `build` command — `npm run dev` and `npm run preview` are unaffected.
+If `VITE_API_BASE_URL` is left unset, the app uses `/api/v1`, which works with the Vite proxy in local development. The backend ignores whichever auth header does not apply to a specific endpoint, so the shared Axios client can safely send both. As noted above, `vite.config.js` fails any `vite build` (including `npm run build` and custom `--mode`) if `VITE_ADMIN_PASSWORD` or `VITE_API_KEY` is set; `VITE_ADMIN_USERNAME` alone does not trigger the guard, and `npm run dev`/`npm run preview` are unaffected.
 
 ### Playwright E2E Environment Variables
 
-The Playwright configuration and Vite dev proxy can inject backend authentication headers for local and CI E2E runs without exposing credentials through Vite's client-side environment variables:
+The Playwright configuration and Vite dev proxy inject backend authentication headers for local and CI E2E runs without exposing credentials through Vite's client-side environment variables:
 
 | Variable | Description | Default |
 | --- | --- | --- |
@@ -486,21 +243,9 @@ The Playwright configuration and Vite dev proxy can inject backend authenticatio
 | `E2E_ADMIN_PASSWORD` | Optional admin password used to build a Basic auth header for Playwright browser requests | unset |
 | `E2E_API_KEY` | Optional runtime/simulation API key sent as `X-API-Key` by Playwright browser requests | unset |
 
-Do not use `VITE_*` variables for E2E secrets. Vite exposes `VITE_*` values to browser bundles by design.
+### Proxy and Ports
 
-### Proxy Setup
-
-The Vite dev server is configured to proxy API requests to the backend:
-
-- `/api/*` → `http://localhost:8080/api/*`
-- `/actuator/*` → `http://localhost:8080/actuator/*`
-
-This eliminates CORS issues during local development.
-
-### Ports
-
-- **Frontend**: http://localhost:3000
-- **Backend**: http://localhost:8080
+The Vite dev server proxies `/api/*` and `/actuator/*` to `http://localhost:8080`, eliminating CORS issues during local development. The frontend runs on **http://localhost:3000** and the backend on **http://localhost:8080**.
 
 ## Project Structure
 
@@ -530,140 +275,33 @@ frontend/
 
 ## Features
 
-### Dashboard
-- Overview of lift systems
-- Quick statistics
-- Quick action links
+- **Dashboard** — overview of lift systems with quick statistics and action links
+- **Lift Systems Management** — view, create, and inspect systems and their versions; jump to the versions section; launch a local simulator for published configurations
+- **Configuration Validator** — validate configuration JSON with real-time feedback and a sample configuration
+- **Health Check** — monitor backend service health
 
-### Lift Systems Management
-- View all lift systems
-- Create new systems
-- View system details and versions
-- Jump directly to the versions section from the Lift Systems list
-- Launch a local simulator for published configurations
-
-### Configuration Validator
-- Validate lift system configuration JSON
-- Real-time validation feedback
-- Sample configuration provided
-
-### Health Check
-- Monitor backend service health
-- Real-time status updates
-- Detailed health information
-
-## Sanity Checks
-
-- From the **Lift Systems** list, select **Manage Versions** and confirm the detail view scrolls to the Versions section.
-
-## API Integration
-
-The frontend integrates with these backend endpoints:
-
-### Admin APIs
-- `GET /api/v1/lift-systems` - List all systems
-- `POST /api/v1/lift-systems` - Create system
-- `GET /api/v1/lift-systems/{id}` - Get system details
-- `PUT /api/v1/lift-systems/{id}` - Update system
-- `DELETE /api/v1/lift-systems/{id}` - Delete system
-- `GET /api/v1/lift-systems/{systemId}/versions` - List versions
-- `POST /api/v1/lift-systems/{systemId}/versions` - Create version
-- `PUT /api/v1/lift-systems/{systemId}/versions/{versionNumber}` - Update version
-- `POST /api/v1/lift-systems/{systemId}/versions/{versionNumber}/publish` - Publish version
-
-### Runtime APIs
-
-### Validation API
-- `POST /api/v1/config/validate` - Validate configuration
-
-### Health API
-- `GET /api/v1/health` - Health check
+The frontend integrates with the backend `/api/v1` endpoints (lift systems, versions, validation, simulation runs, runtime configuration, and health). The authoritative endpoint reference is the generated Swagger UI (`/api/v1/swagger-ui.html`); cross-cutting conventions are documented in [docs/API.md](../docs/API.md).
 
 ## Troubleshooting
 
-### Backend Connection Issues
+- **Backend connection issues** (e.g. `Cannot reach the server. Please check it is running and try again.`): verify the backend is running (`curl http://localhost:8080/api/v1/health`), check backend logs, and confirm PostgreSQL is running and accessible.
+- **Port already in use**: if port 3000 is busy, Vite tries the next available port — check the console output for the actual port.
+- **CORS errors**: the proxy configuration should prevent these locally; verify `vite.config.js` proxy settings, restart `npm run dev`, and clear the browser cache.
 
-If you see errors about failed API calls, including the friendly message `Cannot reach the server. Please check it is running and try again.`:
-
-1. Verify backend is running: `curl http://localhost:8080/api/v1/health`
-2. Check backend logs for errors
-3. Ensure PostgreSQL database is running and accessible
-
-### Port Already in Use
-
-If port 3000 is in use, Vite will automatically try the next available port. Check the console output for the actual port.
-
-### CORS Errors
-
-The proxy configuration should prevent CORS issues. If you encounter CORS errors:
-1. Verify `vite.config.js` proxy settings are correct
-2. Restart the dev server: `npm run dev`
-3. Clear browser cache and reload
+For broader setup and database troubleshooting, see [docs/Workflows-and-Troubleshooting.md](../docs/Workflows-and-Troubleshooting.md).
 
 ## Maintenance
 
-### Dependency Updates
-
-To keep dependencies up to date and secure, periodically check for and apply updates:
-
-**Check for outdated dependencies:**
+Keep dependencies current and in sync with this README:
 
 ```bash
-npm outdated
+npm outdated                        # list outdated dependencies
+npx npm-check-updates --interactive # review and choose updates
+npm install                         # apply
+npm audit                           # check for vulnerabilities
 ```
 
-**Update dependencies interactively:**
-
-```bash
-npx npm-check-updates --interactive
-```
-
-This allows you to:
-- Review available updates for each dependency
-- Choose which updates to apply (major, minor, patch)
-- See breaking change warnings
-
-**Apply selected updates:**
-
-```bash
-npx npm-check-updates -u
-npm install
-```
-
-**Best practices:**
-- Review changelogs before applying major version updates
-- Test thoroughly after updating dependencies
-- Update dependencies regularly (monthly recommended)
-- Keep the `package.json` ranges in sync with this README
-- Run `npm audit` to check for security vulnerabilities
-
-**After updating:**
-
-```bash
-npm test          # Run tests (if available)
-npm run build     # Verify build still works
-npm run dev       # Test in development mode
-```
-
-### Version Synchronization
-
-When updating dependency versions:
-1. Update `package.json` with new version ranges
-2. Update the "Tech Stack" section in this README to match
-3. Test the application thoroughly
-4. Document breaking changes in the project CHANGELOG
-
-## Next Steps
-
-This is a basic scaffold. Future enhancements could include:
-
-- Full CRUD operations for lift systems and versions
-- Rich configuration editor with validation
-- User authentication and authorization
-- Real-time monitoring and metrics
-- Deployment automation
-- Unit/integration tests with Vitest + Testing Library
-- Expand E2E test coverage with Playwright
+Review changelogs before major-version updates, test after updating (`npm test`, `npm run build`, `npm run dev`), and when versions change update `package.json`, the **Tech Stack** section above, and the project CHANGELOG.
 
 ## Contributing
 
