@@ -396,7 +396,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.jpa.verify=true"
 Or with the JAR:
 
 ```bash
-java -jar target/lift-simulator-0.57.1.jar --spring.jpa.verify=true
+java -jar target/lift-simulator-0.57.2.jar --spring.jpa.verify=true
 ```
 
 The verification runner will:

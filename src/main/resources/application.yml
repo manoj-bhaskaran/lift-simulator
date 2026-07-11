@@ -26,8 +26,7 @@ logging:
     root: INFO
     com.liftsimulator: DEBUG
   file:
-    name: logs/application
-    path: logs
+    name: logs/application.log
 
 # Actuator Configuration
 management:

@@ -7,14 +7,15 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Validates and manages state transitions for the lift state machine.
  * Ensures that only valid transitions occur and logs any invalid attempts.
  */
 public class StateTransitionValidator {
-    private static final Logger LOGGER = Logger.getLogger(StateTransitionValidator.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(StateTransitionValidator.class);
 
     // Define valid state transitions based on actions.
     private static final Map<LiftStatus, Set<LiftStatus>> VALID_TRANSITIONS = new EnumMap<>(LiftStatus.class);
@@ -27,7 +28,7 @@ public class StateTransitionValidator {
                 LiftStatus.MOVING_DOWN,
                 LiftStatus.DOORS_OPENING,
                 LiftStatus.OUT_OF_SERVICE
-        ));
+        );
 
         /*
          * MOVING_UP can transition to: MOVING_UP, IDLE, OUT_OF_SERVICE.
@@ -37,7 +38,7 @@ public class StateTransitionValidator {
                 LiftStatus.MOVING_UP,
                 LiftStatus.IDLE,
                 LiftStatus.OUT_OF_SERVICE
-        ));
+        );
 
         /*
          * MOVING_DOWN can transition to: MOVING_DOWN, IDLE, OUT_OF_SERVICE.
@@ -47,7 +48,7 @@ public class StateTransitionValidator {
                 LiftStatus.MOVING_DOWN,
                 LiftStatus.IDLE,
                 LiftStatus.OUT_OF_SERVICE
-        ));
+        );
 
         /*
          * DOORS_OPENING can transition to: DOORS_OPEN, DOORS_CLOSING (abort), OUT_OF_SERVICE.
@@ -58,14 +59,14 @@ public class StateTransitionValidator {
                 LiftStatus.DOORS_OPEN,
                 LiftStatus.DOORS_CLOSING,
                 LiftStatus.OUT_OF_SERVICE
-        ));
+        );
 
         // DOORS_OPEN can transition to: DOORS_CLOSING, OUT_OF_SERVICE.
         VALID_TRANSITIONS.put(LiftStatus.DOORS_OPEN, EnumSet.of(
                 LiftStatus.DOORS_OPEN,
                 LiftStatus.DOORS_CLOSING,
                 LiftStatus.OUT_OF_SERVICE
-        ));
+        );
 
         // DOORS_CLOSING can transition to: IDLE, DOORS_OPENING (re-open), OUT_OF_SERVICE.
         VALID_TRANSITIONS.put(LiftStatus.DOORS_CLOSING, EnumSet.of(
@@ -73,13 +74,13 @@ public class StateTransitionValidator {
                 LiftStatus.IDLE,
                 LiftStatus.DOORS_OPENING,
                 LiftStatus.OUT_OF_SERVICE
-        ));
+        );
 
         // OUT_OF_SERVICE can transition to: IDLE (for maintenance recovery).
         VALID_TRANSITIONS.put(LiftStatus.OUT_OF_SERVICE, EnumSet.of(
                 LiftStatus.OUT_OF_SERVICE,
                 LiftStatus.IDLE
-        ));
+        );
     }
 
     /**
@@ -124,17 +125,17 @@ public class StateTransitionValidator {
     public static boolean isValidTransition(LiftStatus fromStatus, LiftStatus toStatus) {
         Set<LiftStatus> validNextStates = VALID_TRANSITIONS.get(fromStatus);
         if (validNextStates == null) {
-            LOGGER.warning("No valid transitions defined for status: " + fromStatus);
+            LOGGER.warn("No valid transitions defined for status: {}", fromStatus);
             return false;
         }
 
         boolean isValid = validNextStates.contains(toStatus);
         if (!isValid) {
-            LOGGER.warning(String.format(
-                "Invalid state transition attempted: %s -> %s",
+            LOGGER.warn(
+                "Invalid state transition attempted: {} -> {}",
                 fromStatus,
                 toStatus
-            ));
+            );
         }
 
         return isValid;
