@@ -353,7 +353,7 @@ From the repository root:
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.57.2.jar
+java -jar target/lift-simulator-0.57.3.jar
 ```
 
 This command:
