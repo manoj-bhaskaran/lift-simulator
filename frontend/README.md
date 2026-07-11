@@ -83,7 +83,7 @@ VITE_API_KEY=local-api-key
 
 The Axios client sends `Authorization: Basic ...` when both admin values are set and sends `X-API-Key` when `VITE_API_KEY` is set. Vite exposes `VITE_*` values in the browser bundle, so use these credentials only for local development or disposable environments. Anyone who can load a built SPA can inspect `VITE_ADMIN_PASSWORD` and `VITE_API_KEY`; do not deploy a hosted frontend bundle with real backend credentials. For hosted use, move authentication behind a backend/session proxy or another server-side auth layer, and never commit this file.
 
-> **⚠️ `VITE_*` variables ship in the bundle.** Vite inlines every `VITE_`-prefixed variable into the compiled JavaScript at build time — there is no server-side secret store. Anyone who loads the app can read `VITE_ADMIN_PASSWORD` and `VITE_API_KEY` from the shipped bundle. `npm run build` **fails** if `VITE_ADMIN_PASSWORD` or `VITE_API_KEY` is set while building in production mode (`vite build`'s default mode), so a real credential can't accidentally end up in a deployed build. Use `VITE_*` credentials for local development or disposable environments only; for hosted deployments, authenticate through a backend/session proxy instead.
+> **⚠️ `VITE_*` variables ship in the bundle.** Vite inlines every `VITE_`-prefixed variable into the compiled JavaScript at build time — there is no server-side secret store. Anyone who loads the app can read `VITE_ADMIN_PASSWORD` and `VITE_API_KEY` from the shipped bundle. `npm run build` **fails** if `VITE_ADMIN_PASSWORD` or `VITE_API_KEY` is set for any `vite build` invocation, including a custom `--mode` (e.g. `--mode staging`), so a real credential can't accidentally end up in a deployed build. Use `VITE_*` credentials for local development or disposable environments only; for hosted deployments, authenticate through a backend/session proxy instead.
 
 ### 3. Start Development Server
 
@@ -464,7 +464,7 @@ VITE_API_KEY=local-api-key
 
 If `VITE_API_BASE_URL` is left unset, the app will continue to use `/api/v1`, which works with the Vite proxy in local development. The backend ignores whichever auth header does not apply to a specific endpoint, so sending both the Basic auth and API-key headers from the shared Axios client works for local development. Do not rely on bundled `VITE_ADMIN_PASSWORD` or `VITE_API_KEY` values for hosted deployments; keep real credentials server-side behind a backend/session proxy.
 
-**Production build guard:** `vite.config.js` fails `npm run build` (production mode) if `VITE_ADMIN_PASSWORD` or `VITE_API_KEY` is set in the build environment, so a real credential cannot be baked into a shipped bundle by accident. `VITE_ADMIN_USERNAME` alone does not trigger the guard. The guard only applies to production-mode builds — `npm run dev` and `npm run preview` are unaffected.
+**Production build guard:** `vite.config.js` fails any `vite build` invocation — including `npm run build` and a custom `--mode` such as `--mode staging` — if `VITE_ADMIN_PASSWORD` or `VITE_API_KEY` is set in the build environment, so a real credential cannot be baked into a shipped bundle by accident. `VITE_ADMIN_USERNAME` alone does not trigger the guard. The guard only applies to the `build` command — `npm run dev` and `npm run preview` are unaffected.
 
 ### Playwright E2E Environment Variables
 

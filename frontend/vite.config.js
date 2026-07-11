@@ -21,10 +21,13 @@ function buildE2EProxyHeaders() {
 }
 
 // Vite inlines every VITE_-prefixed variable into the compiled client bundle,
-// so a production build must never embed real backend credentials. Fail the
-// build rather than ship them; see frontend/README.md for the safe options.
+// so any `vite build` output must never embed real backend credentials. This
+// applies regardless of --mode: `build` always produces a shippable bundle,
+// and a custom mode (e.g. `--mode staging`) is not a safe way to opt out of
+// the check. Fail the build rather than ship them; see frontend/README.md
+// for the safe options.
 function assertNoProductionCredentials(mode, command) {
-  if (command !== 'build' || mode !== 'production') {
+  if (command !== 'build') {
     return
   }
 
@@ -36,9 +39,9 @@ function assertNoProductionCredentials(mode, command) {
 
   if (offendingVars.length > 0) {
     throw new Error(
-      `Refusing to create a production build with ${offendingVars.join(' and ')} set. ` +
+      `Refusing to create a build with ${offendingVars.join(' and ')} set. ` +
         'VITE_* variables are embedded in the compiled client bundle and are readable by ' +
-        'anyone who loads the app. Unset these for production builds and authenticate via ' +
+        'anyone who loads the app. Unset these before building and authenticate via ' +
         'a backend/session proxy instead. See frontend/README.md for details.'
     )
   }
