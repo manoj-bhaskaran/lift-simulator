@@ -38,26 +38,12 @@ jobs:
         cache: 'maven'
 
     - name: Create test database schema
-      run: |
-        # Wait for PostgreSQL to be ready
-        for i in {1..30}; do
-          pg_isready -h localhost -p 5432 -U lift_admin && break
-          echo "Waiting for postgres... ($i/30)"
-          sleep 1
-        done
-        
-        # Create schema with safe DDL
-        PGPASSWORD=liftpassword psql -h localhost -U lift_admin -d lift_simulator_test -c "DROP SCHEMA IF EXISTS lift_simulator CASCADE;"
-        PGPASSWORD=liftpassword psql -h localhost -U lift_admin -d lift_simulator_test -c "CREATE SCHEMA IF NOT EXISTS lift_simulator;"
-        PGPASSWORD=liftpassword psql -h localhost -U lift_admin -d lift_simulator_test -c "GRANT ALL PRIVILEGES ON SCHEMA lift_simulator TO lift_admin;"
+      run: ./scripts/ci-create-test-schema.sh
       env:
         PGPASSWORD: liftpassword
 
     - name: Verify version consistency
       run: ./scripts/sync-versions.sh --check
-
-    - name: Build project
-      run: mvn -q clean compile
 
     - name: Verify tests and coverage gate
       run: mvn -q verify
@@ -87,12 +73,17 @@ jobs:
         mvn -q -Pfrontend package -DskipTests
 
     - name: Verify packaged frontend assets
-      run: |
-        JAR_FILE=$(find target -maxdepth 1 -name 'lift-simulator-*.jar' ! -name '*.original' | head -n 1)
-        test -n "$JAR_FILE"
-        echo "Verifying frontend assets in $JAR_FILE"
-        jar tf "$JAR_FILE" | grep '^BOOT-INF/classes/static/index.html$'
-        jar tf "$JAR_FILE" | grep '^BOOT-INF/classes/static/assets/'
+      run: ./scripts/ci-verify-jar-assets.sh
+
+    - name: Upload packaged JAR
+      uses: actions/upload-artifact@v7
+      with:
+        name: packaged-jar
+        path: |
+          target/lift-simulator-*.jar
+          !target/lift-simulator-*.original
+        retention-days: 1
+        if-no-files-found: error
 
   frontend:
     runs-on: ubuntu-latest
@@ -150,12 +141,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v7
 
-    - name: Set up JDK 21
+    - name: Set up JDK 21 (runtime for packaged JAR)
       uses: actions/setup-java@v5
       with:
         java-version: '21'
         distribution: 'temurin'
-        cache: 'maven'
 
     - name: Set up Node.js
       uses: actions/setup-node@v6
@@ -172,30 +162,17 @@ jobs:
       working-directory: frontend
       run: npx playwright install --with-deps chromium
 
-    - name: Package deployable JAR for E2E with frontend profile
-      run: |
-        echo "Activating Maven frontend profile: mvn -Pfrontend package -DskipTests"
-        mvn -q -Pfrontend package -DskipTests
+    - name: Download packaged JAR
+      uses: actions/download-artifact@v7
+      with:
+        name: packaged-jar
+        path: target
 
-    - name: Verify E2E packaged frontend assets
-      run: |
-        JAR_FILE=$(find target -maxdepth 1 -name 'lift-simulator-*.jar' ! -name '*.original' | head -n 1)
-        test -n "$JAR_FILE"
-        echo "Verifying frontend assets in $JAR_FILE"
-        jar tf "$JAR_FILE" | grep '^BOOT-INF/classes/static/index.html$'
-        jar tf "$JAR_FILE" | grep '^BOOT-INF/classes/static/assets/'
+    - name: Verify packaged frontend assets
+      run: ./scripts/ci-verify-jar-assets.sh
 
     - name: Create E2E database schema
-      run: |
-        for i in {1..30}; do
-          pg_isready -h localhost -p 5432 -U lift_admin && break
-          echo "Waiting for postgres... ($i/30)"
-          sleep 1
-        done
-
-        PGPASSWORD=liftpassword psql -h localhost -U lift_admin -d lift_simulator_test -c "DROP SCHEMA IF EXISTS lift_simulator CASCADE;"
-        PGPASSWORD=liftpassword psql -h localhost -U lift_admin -d lift_simulator_test -c "CREATE SCHEMA IF NOT EXISTS lift_simulator;"
-        PGPASSWORD=liftpassword psql -h localhost -U lift_admin -d lift_simulator_test -c "GRANT ALL PRIVILEGES ON SCHEMA lift_simulator TO lift_admin;"
+      run: ./scripts/ci-create-test-schema.sh
       env:
         PGPASSWORD: liftpassword
 
