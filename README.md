@@ -2,7 +2,7 @@
 
 A Java-based simulation of lift (elevator) controllers with a focus on correctness and design clarity.
 
-Current version: **0.57.6**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
+Current version: **0.57.7**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## What is this?
 
@@ -99,7 +99,7 @@ The **frontend admin UI** provides:
 
 Run the UI in dev mode with `cd frontend && npm install && npm run dev`; it proxies API requests to the backend on port 8080. See [frontend/README.md](frontend/README.md) for setup, environment variables, and the type-definition (JSDoc) workflow.
 
-The **backend REST API** is versioned under `/api/v1` (base URL `http://localhost:8080/api/v1`). Interactive documentation is available via Swagger UI at `/api/v1/swagger-ui.html` and OpenAPI JSON at `/api/v1/api-docs`. Create endpoints return `201 Created` with browser-readable `Location` headers, runtime simulator launches return `202 Accepted`, and validation errors preserve all messages per field as arrays. For the complete endpoint reference — lift systems, versions, scenarios, simulation runs, runtime configuration, health, and request/response examples — see [docs/API.md](docs/API.md). For CLI/UI run workflows, artefact reproduction, and simulation-run troubleshooting, see [docs/Workflows-and-Troubleshooting.md](docs/Workflows-and-Troubleshooting.md). See [ADR-0020](docs/decisions/0020-url-based-api-versioning.md) for the versioning strategy.
+The **backend REST API** is versioned under `/api/v1` (base URL `http://localhost:8080/api/v1`). The complete, always-current endpoint reference is generated from the code by SpringDoc and served as interactive Swagger UI at `/api/v1/swagger-ui.html` and OpenAPI JSON at `/api/v1/api-docs`. API conventions — authentication, role-based access control, versioning, rate limiting, request-size limits, and the shared error-response shape — are documented in [docs/API.md](docs/API.md). For CLI/UI run workflows, the configuration and scenario schema reference, artefact reproduction, and simulation-run troubleshooting, see [docs/Workflows-and-Troubleshooting.md](docs/Workflows-and-Troubleshooting.md). See [ADR-0020](docs/decisions/0020-url-based-api-versioning.md) for the versioning strategy.
 
 ## Building the Project
 
@@ -116,12 +116,12 @@ mvn clean package
 Build a deployable Spring Boot JAR that also serves the React admin UI from `/` (activates the Maven `frontend` profile):
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.57.6.jar
+java -jar target/lift-simulator-0.57.7.jar
 ```
 
 The `frontend` profile installs Node.js 20.19.0 (for Vite 7 compatibility), runs `npm ci`, builds the Vite bundle, and packages it under `BOOT-INF/classes/static/`. CI uses this profile so downloaded JAR artifacts include the frontend assets. Verify the packaged UI with:
 ```bash
-jar tf target/lift-simulator-0.57.6.jar | grep '^BOOT-INF/classes/static/'
+jar tf target/lift-simulator-0.57.7.jar | grep '^BOOT-INF/classes/static/'
 ```
 
 ## Running the Application
@@ -133,8 +133,8 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 
 Or run the built JAR. The demo selects a controller strategy via command-line arguments:
 ```bash
-java -cp target/lift-simulator-0.57.6.jar com.liftsimulator.Main --help
-java -cp target/lift-simulator-0.57.6.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.57.7.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.57.7.jar com.liftsimulator.Main --strategy=directional-scan
 ```
 `--strategy` accepts `nearest-request` (default) or `directional-scan`. The demo runs a pre-configured scenario and prints the simulation state at each tick.
 
@@ -142,57 +142,24 @@ java -cp target/lift-simulator-0.57.6.jar com.liftsimulator.Main --strategy=dire
 Run scripted scenarios with the scenario runner — either the bundled demo or a custom file:
 ```bash
 mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
-java -cp target/lift-simulator-0.57.6.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.57.7.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 Scenario files are plain text with metadata and tick-based event lines (parsing enforces limits of 1,000,000 ticks and 10,000 events per file); the controller strategy and idle-parking mode are taken from the scenario file. For the scenario file format and metadata keys, see the [CLI run workflows guide](docs/Workflows-and-Troubleshooting.md#cli-usage-unchanged). For simulation engine internals, controller strategy behaviour, out-of-service handling, request modelling, and the lift state machine, see [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md).
 
 ## Testing
 
-Run the full verification suite (tests and JaCoCo coverage gate):
+Run the full verification suite (tests and JaCoCo coverage gate) or a faster test-only cycle:
 ```bash
-mvn verify
-```
-
-For a faster local test-only cycle:
-```bash
-mvn test
+mvn verify   # tests + JaCoCo coverage gate
+mvn test     # tests only
 ```
 
 > **No local PostgreSQL needed.** Integration tests provision a throwaway PostgreSQL container via
 > [Testcontainers](https://java.testcontainers.org/) and run the real Flyway migrations against it; the only
-> requirement is a running **Docker** daemon. (CI uses its own PostgreSQL service container — see
-> `.github/workflows/ci.yml`.)
+> requirement is a running **Docker** daemon. (CI uses its own PostgreSQL service container.)
 
-The suite spans several levels:
-
-- **Unit tests** — controllers, services, and domain logic: request lifecycle transitions (`LiftRequestTest`), artefact path/download/log/result handling (`ArtefactServiceTest`), simulation-run lifecycle transitions (`RunLifecycleManagerTest`), simulation execution artefact orchestration (`SimulationRunExecutionServiceTest`), nearest-request and directional-scan routing, door handling and cancellation (`NaiveLiftControllerTest`, `DirectionalScanLiftControllerTest`), and the tick mechanism (`SimulationEngineTest`).
-- **Integration tests** — full Spring context for REST APIs and repositories, including scenario CRUD, configuration-validation, runtime configuration, simulation-launch, and health controller APIs, multi-request scenarios, dynamic request addition during movement, cancellation, and out-of-service handling (`ScenarioControllerTest`, `ConfigValidationControllerTest`, `RuntimeConfigControllerTest`, `HealthControllerTest`, `DirectionalScanIntegrationTest`, `LiftRequestLifecycleTest`). Scenario fixtures live in `src/test/resources/scenarios`, controller API fixtures live under `src/test/java/com/liftsimulator/admin/controller/fixtures`, and batch-input golden files live under `src/test/resources/batch-input`.
-- **Scenario tests** — `ControllerScenarioTest` exercises realistic multi-request routing for both controller strategies via a deterministic `ScenarioHarness`, guarding against behavioural regressions.
-- **Playwright E2E tests** — browser smoke and feature tests under `frontend/e2e` run against the React dev server (port 3000) and a live backend (port 8080). See [ADR-0014](docs/decisions/0014-playwright-e2e-testing.md).
-
-Run a single class or method:
-```bash
-mvn test -Dtest=ControllerScenarioTest
-mvn test -Dtest=ControllerScenarioTest#testDirectionalScan_CanonicalScenario_FromReadme
-```
-
-The project enforces a minimum **50% line coverage baseline** through JaCoCo during `mvn verify` for production business logic, excluding Spring wiring, DTO/entity/repository boilerplate, package descriptors, and CLI/application entrypoints. CI runs the same Maven phase so pull requests fail if the scoped coverage baseline drops below the threshold. Dependency monitoring is handled by GitHub Dependabot for Maven, frontend npm packages, and GitHub Actions; Dependabot opens weekly update pull requests instead of running an NVD-backed OWASP Dependency-Check scan during CI. Generate only the coverage report (available at `target/site/jacoco/index.html`) with:
-```bash
-mvn jacoco:report
-```
-
-For local frontend E2E runs, start the backend with credentials in one terminal, then run Playwright with matching variables in another:
-```bash
-# Terminal 1: repository root
-export ADMIN_USERNAME=admin ADMIN_PASSWORD=local-admin-password API_KEY=local-api-key
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
-```
-```bash
-# Terminal 2: frontend/
-E2E_ADMIN_USERNAME=admin E2E_ADMIN_PASSWORD=local-admin-password E2E_API_KEY=local-api-key npm test
-```
-In CI, the backend test job runs with `SPRING_JPA_HIBERNATE_DDL_AUTO=validate`, matching the checked-in test and runtime profile strategy so Flyway migrations remain the only source of schema changes and mapping drift fails the build. The `backend` job packages the deployable JAR with `mvn -Pfrontend package -DskipTests` and uploads it as a build artifact; the `e2e-playwright` job downloads that JAR (rather than rebuilding it), starts the packaged application, waits for `/api/v1/health` and the React root page, and runs `npm test` in `frontend/`.
+The suite spans backend unit tests, Spring-context integration tests for the REST APIs and repositories, deterministic controller scenario tests, and Playwright browser E2E tests under `frontend/e2e` (see [ADR-0014](docs/decisions/0014-playwright-e2e-testing.md)). `mvn verify` enforces a minimum **50% line coverage baseline** through JaCoCo for production business logic (report at `target/site/jacoco/index.html`); CI runs the same phase so pull requests fail if the scoped baseline drops. For the full setup — test database, categories, environment variables, and IDE integration — see [docs/TESTING-SETUP.md](docs/TESTING-SETUP.md) and [docs/TESTING-ARCHITECTURE-GUIDE.md](docs/TESTING-ARCHITECTURE-GUIDE.md). For local frontend E2E runs and the Playwright configuration, see [frontend/README.md](frontend/README.md#testing).
 
 ## Quality Checks
 
@@ -213,7 +180,7 @@ The backend is configured via YAML files under `src/main/resources/`:
 - `application-dev.yml` — development secrets and database settings (copy from `application-dev.yml.template`)
 - `application-local.yml` — optional local-only overrides such as log paths or ports (copy from `application-local.yml.template`)
 
-No profile is active in the checked-in base configuration, so launches must set `SPRING_PROFILES_ACTIVE` explicitly — for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for development, `SPRING_PROFILES_ACTIVE=dev,local` to add local overrides (your `application-local.yml` is git-ignored, so `git pull` will not overwrite it), or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.57.6.jar` for production. This prevents a development profile from masking production configuration mistakes.
+No profile is active in the checked-in base configuration, so launches must set `SPRING_PROFILES_ACTIVE` explicitly — for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for development, `SPRING_PROFILES_ACTIVE=dev,local` to add local overrides (your `application-local.yml` is git-ignored, so `git pull` will not overwrite it), or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.57.7.jar` for production. This prevents a development profile from masking production configuration mistakes.
 
 OpenAPI/Swagger access is controlled by `security.openapi.public-access` (`SECURITY_OPENAPI_PUBLIC_ACCESS`). The checked-in base configuration and the code fallback both default to `false`, so `/api/v1/api-docs` and `/api/v1/swagger-ui.html` require ADMIN-role authentication unless an environment or profile override explicitly enables public access. The development template keeps `${SECURITY_OPENAPI_PUBLIC_ACCESS:true}` for local convenience; set `SECURITY_OPENAPI_PUBLIC_ACCESS=false` in any shared or production environment.
 
@@ -230,59 +197,15 @@ Public endpoints requiring no authentication are `/api/v1/health` and static/fro
 
 Admin APIs support role-based access control with two roles: **ADMIN** (read and write) and **VIEWER** (read-only). Write methods (POST, PUT, PATCH, DELETE) require ADMIN; configure multiple users under `security.users` in `application-dev.yml`. Always keep credentials out of version control, prefer environment variables in production, and use HTTPS so HTTP Basic credentials are not exposed.
 
-For runtime API-key setup and request/response examples, see [docs/API.md](docs/API.md). The security baseline, RBAC, and CORS/CSRF policies are documented in [ADR-0019](docs/decisions/0019-spring-security-baseline.md), [ADR-0021](docs/decisions/0021-role-based-access-control-rbac.md), and [ADR-0022](docs/decisions/0022-explicit-cors-csrf-policy.md).
+For runtime API-key setup, RBAC details, and the shared error-response shape, see [docs/API.md](docs/API.md). The security baseline, RBAC, and CORS/CSRF policies are documented in [ADR-0019](docs/decisions/0019-spring-security-baseline.md), [ADR-0021](docs/decisions/0021-role-based-access-control-rbac.md), and [ADR-0022](docs/decisions/0022-explicit-cors-csrf-policy.md).
 
 ## Frontend timeout retry behavior
 
 The admin UI keeps the default Axios request timeout at 10 seconds, but automatically retries one timed-out safe read request after a short delay. This helps first-use backend cold starts complete while the existing page or action loading indicator remains visible; a user-facing error is shown only if the retry also fails.
 
-## Rate Limiting
+## Rate Limiting and Size Limits
 
-The API is protected by a token-bucket rate limiter (Bucket4j) applied per client IP address. Separate limits apply to the admin and runtime/simulation-run API groups.
-
-Default thresholds (configurable in `application.yml` or overridden per environment):
-
-| API group | Default capacity | Refill |
-|-----------|-----------------|--------|
-| Admin (`/api/v1/**`) | 100 requests | 100 per 60 s |
-| Runtime / simulation-runs | 1 000 requests | 1 000 per 60 s |
-
-When the limit is exceeded the server responds with **HTTP 429 Too Many Requests** and includes:
-- `Retry-After: <seconds>` — how long to wait before retrying
-- `X-RateLimit-Limit: <capacity>` — total bucket capacity
-- `X-RateLimit-Remaining: 0` — tokens remaining (always 0 on a 429)
-
-**Configuration reference** (`application.yml`):
-```yaml
-rate-limiting:
-  enabled: true               # set to false to disable entirely (e.g. in integration tests)
-  trust-forwarded-for: false  # set to true only behind a trusted reverse proxy
-  max-buckets-per-group: 10000 # caps retained client-IP buckets per API group
-  admin:
-    capacity: 100             # bucket capacity (max burst)
-    refill-tokens: 100        # tokens added per period
-    refill-period-seconds: 60
-  runtime:
-    capacity: 1000
-    refill-tokens: 1000
-    refill-period-seconds: 60
-```
-
-**`trust-forwarded-for`** — when `false` (the default), the rate-limiter uses `getRemoteAddr()` as the bucket key, which prevents callers from bypassing limits by spoofing `X-Forwarded-For`. Set to `true` only when the service runs exclusively behind a trusted reverse proxy that controls this header.
-
-Override individual fields per Spring profile to tighten limits in production or loosen them for load testing.
-
-## Request and Artefact Size Limits
-
-The backend rejects oversized API request bodies before JSON deserialization and constrains Jackson JSON nesting/string sizes to reduce denial-of-service risk from very large or deeply nested JSON payloads. By default, `/api/v1/**` and `/actuator/**` request bodies are capped at **1 MiB** and oversized requests receive **HTTP 413 Payload Too Large**.
-
-```yaml
-request-size-limits:
-  enabled: true
-  max-body-bytes: 1048576
-```
-
-Simulation artefact reads are also bounded: full log reads and `results.json` parsing are capped at **1 MiB** each. Prefer the existing `tail` query parameter for large logs; `tail` accepts values from `1` to `10000`, rejects out-of-range values with HTTP 400, and tailed log reads remain capped by line count without materializing the entire file in memory.
+The API is protected by a per-client-IP token-bucket rate limiter (Bucket4j) with separate limits for the admin (100 req/60 s) and runtime/simulation-run (1 000 req/60 s) groups; exceeding a limit returns **HTTP 429** with `Retry-After` and `X-RateLimit-*` headers. Request bodies for `/api/v1/**` and `/actuator/**` are capped at **1 MiB** (**HTTP 413** when exceeded), and simulation artefact log/`results.json` reads are bounded at 1 MiB each. All thresholds are configurable in `application.yml` and overridable per Spring profile. See [docs/API.md](docs/API.md#rate-limiting) for the full configuration reference, response headers, and the `trust-forwarded-for` proxy note.
 
 ## Database Setup
 
@@ -307,28 +230,7 @@ For JPA entities, repositories, and verification-runner usage, see [docs/DEVELOP
 
 ## Logging
 
-The backend uses Logback for logging with both console and file output. All logs are persisted to the `logs/` directory in the project root:
-
-- **Main application log** (`logs/application.log`) — all levels; rotates at 10MB or daily at midnight; 30 days / 1GB retention; archived as `logs/application-YYYY-MM-DD.N.log`.
-- **Error log** (`logs/application-error.log`) — ERROR level only; rotates at 10MB or daily; 90 days / 500MB retention.
-
-Logging is configured via `src/main/resources/logback-spring.xml`, with profile-specific levels (DEBUG and verbose SQL for `dev`, INFO for `prod`) and full stack traces for all exceptions. Log files (`*.log`) are git-ignored; the `logs/` directory is preserved with a `.gitkeep` file.
-
-View and search logs:
-```bash
-tail -f logs/application.log          # follow the main log
-tail -f logs/application-error.log    # follow errors only
-grep "ERROR" logs/application-*.log   # search across archives
-```
-
-To customise log locations without git conflicts, set them in `application-local.yml` (run with `SPRING_PROFILES_ACTIVE=dev,local`):
-```yaml
-logging:
-  file:
-    name: /custom/path/to/application.log
-    path: /custom/path/to/logs
-```
-Alternatively, set `LOGGING_FILE_PATH` as an environment variable.
+The backend uses Logback (configured in `src/main/resources/logback-spring.xml`) with console and file output persisted to `logs/`: `logs/application.log` (all levels, 30-day retention) and `logs/application-error.log` (ERROR only, 90-day retention), both rotating at 10 MB or daily. Levels are profile-specific (DEBUG and verbose SQL for `dev`, INFO for `prod`). Log files are git-ignored; the directory is kept with `.gitkeep`. Override log locations via `application-local.yml` (run with `SPRING_PROFILES_ACTIVE=dev,local`) or the `LOGGING_FILE_PATH` environment variable. For finding and tailing simulation-run logs, see [docs/Workflows-and-Troubleshooting.md#where-to-find-logs](docs/Workflows-and-Troubleshooting.md#where-to-find-logs).
 
 ## Development Setup
 
