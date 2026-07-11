@@ -302,6 +302,35 @@ public class SimulationRunner {
         return ex.getMessage() != null ? ex.getMessage() : "Unexpected simulation failure";
     }
 
+    private static final class RunCancelledException extends CancellationException {
+        private static final long serialVersionUID = 1L;
+        private final transient RunMetrics metrics;
+        private final transient LiftConfigDTO config;
+        private final transient ScenarioDefinitionDTO scenario;
+
+        private RunCancelledException(String message,
+                                      RunMetrics metrics,
+                                      LiftConfigDTO config,
+                                      ScenarioDefinitionDTO scenario) {
+            super(message);
+            this.metrics = metrics;
+            this.config = config;
+            this.scenario = scenario;
+        }
+
+        private RunMetrics getMetrics() {
+            return metrics;
+        }
+
+        private LiftConfigDTO getConfig() {
+            return config;
+        }
+
+        private ScenarioDefinitionDTO getScenario() {
+            return scenario;
+        }
+    }
+
     public record RunExecutionRequest(Long runId, String configJson, String scenarioJson, String scenarioName) {
     }
 }

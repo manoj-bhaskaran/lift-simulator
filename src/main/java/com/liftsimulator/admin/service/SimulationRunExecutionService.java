@@ -156,6 +156,7 @@ public class SimulationRunExecutionService {
             }
         } catch (RejectedExecutionException ex) {
             logger.warn("Run {} rejected: simulation execution queue is full", request.runId());
+            cancellationTokens.remove(request.runId(), token);
             failRunWithMessage(request.runId(), "Simulation queue is full; run rejected.", false);
         }
     }
