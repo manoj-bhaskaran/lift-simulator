@@ -1,3 +1,8 @@
+⚠️ **ARCHIVED** — This document is a point-in-time incident record and is no longer actively maintained. The decision documented in [ADR-0015](../decisions/0015-test-management-platform-evaluation.md) remains the current guidance.
+
+---
+
+
 # TestQuality vs Playwright-only CI Execution Evaluation
 
 **Version:** 0.44.0

@@ -1,6 +1,6 @@
 # Workflows and Troubleshooting
 
-This guide explains how to run Lift Simulator simulations from the command line and the admin UI, where run artefacts are stored, how to reproduce UI-driven runs locally, and how to diagnose common simulation-run failures. It complements the API reference by focusing on operational workflows rather than endpoint schemas.
+This guide explains how to run Lift Simulator simulations from the command line and the admin UI, where run artefacts are stored, how to reproduce UI-driven runs locally, and how to diagnose common failures. It complements the API reference by focusing on operational workflows rather than endpoint schemas. For API-level errors, see [docs/API.md](API.md).
 
 ## Table of Contents
 
@@ -12,6 +12,9 @@ This guide explains how to run Lift Simulator simulations from the command line 
   - [Reproducing UI Runs via CLI](#reproducing-ui-runs-via-cli)
   - [Example Scenario Walkthrough: Morning Rush Hour](#example-scenario-walkthrough-morning-rush-hour)
   - [Troubleshooting](#troubleshooting)
+- [General Troubleshooting](#general-troubleshooting)
+  - [Quick Start Troubleshooting](#quick-start-troubleshooting)
+  - [Database Troubleshooting](#database-troubleshooting)
 
 ## CLI and UI-Run Workflows
 
@@ -43,7 +46,7 @@ The command-line interface remains **fully backward compatible** with previous v
 Run a simulation using a `.scenario` file:
 
 ```bash
-java -cp target/lift-simulator-0.57.2.jar \
+java -cp target/lift-simulator-0.57.3.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   path/to/scenario.scenario
 ```
@@ -57,12 +60,12 @@ If no scenario file is provided, uses `demo.scenario` from the classpath.
 **Example:**
 ```bash
 # Run with a specific scenario file
-java -cp target/lift-simulator-0.57.2.jar \
+java -cp target/lift-simulator-0.57.3.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   my-test-scenario.scenario
 
 # Run with default demo scenario
-java -cp target/lift-simulator-0.57.2.jar \
+java -cp target/lift-simulator-0.57.3.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain
 ```
 
@@ -106,7 +109,7 @@ Event rows are comma-delimited, and each request carries a unique alias (`p1`, `
 Run a quick demo simulation with built-in configuration:
 
 ```bash
-java -cp target/lift-simulator-0.57.2.jar \
+java -cp target/lift-simulator-0.57.3.jar \
   com.liftsimulator.Main \
   --strategy=directional-scan
 ```
@@ -384,7 +387,7 @@ You can reproduce any UI-driven run using the CLI by downloading the generated i
 
 4. **Run via CLI**
    ```bash
-   java -cp target/lift-simulator-0.57.2.jar \
+   java -cp target/lift-simulator-0.57.3.jar \
      com.liftsimulator.scenario.ScenarioRunnerMain \
      run-42-reproduction.scenario
    ```
@@ -429,7 +432,7 @@ curl -X POST http://localhost:8080/api/batch/generate-input \
 **3. Run the scenario:**
 
 ```bash
-java -cp target/lift-simulator-0.57.2.jar \
+java -cp target/lift-simulator-0.57.3.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   run-42-reproduction.scenario
 ```
@@ -521,7 +524,7 @@ Where `run-123-inputs.json` contains:
 **2. Run via CLI:**
 
 ```bash
-java -cp target/lift-simulator-0.57.2.jar \
+java -cp target/lift-simulator-0.57.3.jar \
   com.liftsimulator.scenario.ScenarioRunnerMain \
   morning-rush-reproduction.scenario
 ```
@@ -853,5 +856,76 @@ seed must be a valid integer
 - Use exact same seed from UI run
 - Verify all configuration parameters match
 - Rebuild CLI JAR if versions don't match: `mvn clean package`
+
+---
+
+## General Troubleshooting
+
+### Quick Start Troubleshooting
+
+#### Backend won't start
+
+- Verify PostgreSQL is running: `psql -h localhost -U lift_admin -d lift_simulator`
+- Check database credentials in `src/main/resources/application-dev.yml`
+- Check port 8080 isn't already in use: `lsof -i :8080` (macOS/Linux) or `netstat -ano | findstr :8080` (Windows)
+
+#### StackOverflowError in backend logs when loading HTML routes
+
+- Ensure the SPA forwarder does not match `/index.html` (the app now excludes it to prevent recursive forwards)
+- Restart the backend after pulling the latest changes
+
+#### Backend returns 404 for index.html
+
+- Build the frontend assets with `mvn -Pfrontend clean package` or run the frontend dev server at http://localhost:3000
+- Verify `target/classes/static/index.html` exists after building the frontend bundle
+
+#### Frontend won't start
+
+- Verify Node.js version: `node --version` (should be 20.19+ or 22.12+)
+- Delete `node_modules` and reinstall: `rm -rf node_modules && npm install`
+- Check port 3000 isn't already in use
+
+#### Can't connect to backend from frontend
+
+- Verify backend is running at http://localhost:8080/api/v1/health
+- Check browser console for CORS errors
+- Vite dev proxy should handle this automatically
+
+#### Database migrations fail
+
+- Drop and recreate database (see [Database Setup](../README.md#database-setup))
+- Verify PostgreSQL version is 12+
+- Check Flyway migration files in `src/main/resources/db/migration/`
+
+#### Scenario validation fails with "Unable to read scenario payload"
+
+- Confirm the scenario JSON is valid and not empty
+- Retry the request after verifying the payload format
+
+#### Cannot delete a lift system due to scenario dependencies
+
+- Delete scenarios (or the versions that reference them) before deleting the lift system
+- Retry the delete once dependent scenarios are removed
+
+### Database Troubleshooting
+
+#### Connection refused errors
+
+- Ensure PostgreSQL is running: `sudo service postgresql status`
+- Check the connection settings in `application-dev.yml`
+
+#### Permission denied errors
+
+- Verify the database user has proper permissions: `GRANT ALL PRIVILEGES ON DATABASE lift_simulator TO lift_admin;`
+- Ensure schema-level permissions: `GRANT ALL ON SCHEMA lift_simulator TO lift_admin;`
+
+#### Migration errors
+
+- Check Flyway history: `SELECT * FROM flyway_schema_history;`
+- For development, you can reset the database: `DROP DATABASE lift_simulator; CREATE DATABASE lift_simulator;`
+- If `public.flyway_schema_history` exists from earlier runs, drop it and restart the app so Flyway recreates history in `lift_simulator`: `DROP TABLE public.flyway_schema_history;`
+- If a legacy `public.schema_metadata` table exists from older releases, it can be dropped; current migrations do not use it: `DROP TABLE public.schema_metadata;`
+- If you upgraded from 0.23.0 and see "Found more than one migration with version 1", run `mvn clean` once to clear stale build artifacts; the build now removes old migration resources automatically.
+- If Flyway reports "No migrations found", rebuild with `mvn clean package` to refresh the packaged `db/migration` resources.
 
 ---
