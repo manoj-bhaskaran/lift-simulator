@@ -291,35 +291,45 @@ See [Playwright documentation](https://playwright.dev/docs/writing-tests) for mo
 
 ## CI/CD
 
-The repository uses **GitHub Actions** with the workflow defined in `.github/workflows/ci.yml`.
+The repository uses **GitHub Actions** with the CI workflow defined in
+`.github/workflows/ci.yml` and CodeQL security scanning defined in
+`.github/workflows/codeql.yml`.
 
 ### What Runs on Pull Requests
 
 - **Backend**
-  - Compile, unit tests, coverage report (JaCoCo)
-  - Checkstyle and SpotBugs static analysis
-  - Package build (tests skipped for the final package step)
+  - Unit tests, coverage report (JaCoCo), and coverage gate (`mvn verify`)
+  - SpotBugs static analysis
+  - Package build with the frontend profile (tests skipped for the final
+    package step), then upload the packaged JAR as a build artifact
 - **Frontend**
   - `npm ci`
   - `npm run lint`
   - `npm run build`
 - **Playwright E2E with backend**
-  - Provision PostgreSQL
-  - Package and start the Spring Boot backend
+  - Download the JAR packaged by the `backend` job (not rebuilt)
+  - Provision PostgreSQL and start the Spring Boot backend from that JAR
   - Wait for `/api/v1/health`
   - Run `npm test` in `frontend/` against the live backend
   - Upload the Playwright HTML report and failure artifacts
+- **CodeQL** (separate workflow: pull requests to `main` and a weekly
+  schedule)
+  - Static security analysis of the `java-kotlin` and `javascript-typescript`
+    languages
+
+The PostgreSQL schema-creation and packaged-JAR asset-verification steps used
+by the `backend` and `e2e-playwright` jobs are shared scripts,
+`scripts/ci-create-test-schema.sh` and `scripts/ci-verify-jar-assets.sh`,
+rather than duplicated inline blocks.
 
 ### Run CI Checks Locally
 
 From the repository root:
 
 ```bash
-mvn -q clean compile
-mvn -q test jacoco:report
-mvn -q checkstyle:check
+mvn -q verify
 mvn -q spotbugs:check
-mvn -q package -DskipTests
+mvn -q -Pfrontend package -DskipTests
 ```
 
 From `frontend/` (with the backend already running for the E2E step):
@@ -355,7 +365,7 @@ From the repository root:
 
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.57.5.jar
+java -jar target/lift-simulator-0.57.6.jar
 ```
 
 This command:

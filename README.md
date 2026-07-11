@@ -2,7 +2,7 @@
 
 A Java-based simulation of lift (elevator) controllers with a focus on correctness and design clarity.
 
-Current version: **0.57.5**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
+Current version: **0.57.6**. This project follows [Semantic Versioning](https://semver.org/); see [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## What is this?
 
@@ -116,12 +116,12 @@ mvn clean package
 Build a deployable Spring Boot JAR that also serves the React admin UI from `/` (activates the Maven `frontend` profile):
 ```bash
 mvn -Pfrontend clean package
-java -jar target/lift-simulator-0.57.5.jar
+java -jar target/lift-simulator-0.57.6.jar
 ```
 
 The `frontend` profile installs Node.js 20.19.0 (for Vite 7 compatibility), runs `npm ci`, builds the Vite bundle, and packages it under `BOOT-INF/classes/static/`. CI uses this profile so downloaded JAR artifacts include the frontend assets. Verify the packaged UI with:
 ```bash
-jar tf target/lift-simulator-0.57.5.jar | grep '^BOOT-INF/classes/static/'
+jar tf target/lift-simulator-0.57.6.jar | grep '^BOOT-INF/classes/static/'
 ```
 
 ## Running the Application
@@ -133,8 +133,8 @@ mvn exec:java -Dexec.mainClass="com.liftsimulator.Main"
 
 Or run the built JAR. The demo selects a controller strategy via command-line arguments:
 ```bash
-java -cp target/lift-simulator-0.57.5.jar com.liftsimulator.Main --help
-java -cp target/lift-simulator-0.57.5.jar com.liftsimulator.Main --strategy=directional-scan
+java -cp target/lift-simulator-0.57.6.jar com.liftsimulator.Main --help
+java -cp target/lift-simulator-0.57.6.jar com.liftsimulator.Main --strategy=directional-scan
 ```
 `--strategy` accepts `nearest-request` (default) or `directional-scan`. The demo runs a pre-configured scenario and prints the simulation state at each tick.
 
@@ -142,7 +142,7 @@ java -cp target/lift-simulator-0.57.5.jar com.liftsimulator.Main --strategy=dire
 Run scripted scenarios with the scenario runner — either the bundled demo or a custom file:
 ```bash
 mvn exec:java -Dexec.mainClass="com.liftsimulator.scenario.ScenarioRunnerMain"
-java -cp target/lift-simulator-0.57.5.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
+java -cp target/lift-simulator-0.57.6.jar com.liftsimulator.scenario.ScenarioRunnerMain path/to/scenario.scenario
 ```
 
 Scenario files are plain text with metadata and tick-based event lines (parsing enforces limits of 1,000,000 ticks and 10,000 events per file); the controller strategy and idle-parking mode are taken from the scenario file. For the scenario file format and metadata keys, see the [CLI run workflows guide](docs/Workflows-and-Troubleshooting.md#cli-usage-unchanged). For simulation engine internals, controller strategy behaviour, out-of-service handling, request modelling, and the lift state machine, see [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md).
@@ -192,7 +192,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 # Terminal 2: frontend/
 E2E_ADMIN_USERNAME=admin E2E_ADMIN_PASSWORD=local-admin-password E2E_API_KEY=local-api-key npm test
 ```
-In CI, the backend test job runs with `SPRING_JPA_HIBERNATE_DDL_AUTO=validate`, matching the checked-in test and runtime profile strategy so Flyway migrations remain the only source of schema changes and mapping drift fails the build. The `e2e-playwright` job packages the backend with `mvn -Pfrontend package -DskipTests`, starts the packaged application, waits for `/api/v1/health` and the React root page, and runs `npm test` in `frontend/`.
+In CI, the backend test job runs with `SPRING_JPA_HIBERNATE_DDL_AUTO=validate`, matching the checked-in test and runtime profile strategy so Flyway migrations remain the only source of schema changes and mapping drift fails the build. The `backend` job packages the deployable JAR with `mvn -Pfrontend package -DskipTests` and uploads it as a build artifact; the `e2e-playwright` job downloads that JAR (rather than rebuilding it), starts the packaged application, waits for `/api/v1/health` and the React root page, and runs `npm test` in `frontend/`.
 
 ## Quality Checks
 
@@ -203,7 +203,7 @@ mvn verify                  # tests and JaCoCo coverage gate
 
 Static analysis is enforced with SpotBugs; the previous no-op Checkstyle gate was removed because it did not enforce repository style rules. SpotBugs suppressions are limited to Spring-managed dependency injection in service constructors.
 
-Dependabot is configured in `.github/dependabot.yml` to check Maven dependencies, frontend npm dependencies, and GitHub Actions weekly.
+Dependabot is configured in `.github/dependabot.yml` to check Maven dependencies, frontend npm dependencies, and GitHub Actions weekly. CodeQL static security analysis runs in `.github/workflows/codeql.yml` for the `java-kotlin` and `javascript-typescript` languages, triggered on pull requests to `main` and weekly.
 
 ## Configuration
 
@@ -213,7 +213,7 @@ The backend is configured via YAML files under `src/main/resources/`:
 - `application-dev.yml` — development secrets and database settings (copy from `application-dev.yml.template`)
 - `application-local.yml` — optional local-only overrides such as log paths or ports (copy from `application-local.yml.template`)
 
-No profile is active in the checked-in base configuration, so launches must set `SPRING_PROFILES_ACTIVE` explicitly — for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for development, `SPRING_PROFILES_ACTIVE=dev,local` to add local overrides (your `application-local.yml` is git-ignored, so `git pull` will not overwrite it), or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.57.5.jar` for production. This prevents a development profile from masking production configuration mistakes.
+No profile is active in the checked-in base configuration, so launches must set `SPRING_PROFILES_ACTIVE` explicitly — for example `SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run` for development, `SPRING_PROFILES_ACTIVE=dev,local` to add local overrides (your `application-local.yml` is git-ignored, so `git pull` will not overwrite it), or `SPRING_PROFILES_ACTIVE=prod java -jar target/lift-simulator-0.57.6.jar` for production. This prevents a development profile from masking production configuration mistakes.
 
 OpenAPI/Swagger access is controlled by `security.openapi.public-access` (`SECURITY_OPENAPI_PUBLIC_ACCESS`). The checked-in base configuration and the code fallback both default to `false`, so `/api/v1/api-docs` and `/api/v1/swagger-ui.html` require ADMIN-role authentication unless an environment or profile override explicitly enables public access. The development template keeps `${SECURITY_OPENAPI_PUBLIC_ACCESS:true}` for local convenience; set `SECURITY_OPENAPI_PUBLIC_ACCESS=false` in any shared or production environment.
 

@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.6] - 2026-07-11
+
+### Changed
+- **CI pipeline deduplication and CodeQL**: The `backend` job now uploads the packaged JAR as a build artifact and the `e2e-playwright` job downloads it instead of rebuilding it (`mvn -Pfrontend package -DskipTests` no longer runs twice per pipeline run), removing the Maven/JDK-build overhead from the E2E job's setup while keeping the Java runtime needed to start the packaged application. The duplicated PostgreSQL schema-creation and packaged-JAR asset-verification script blocks are now shared scripts, `scripts/ci-create-test-schema.sh` and `scripts/ci-verify-jar-assets.sh`, called from both jobs instead of copy-pasted inline. Removed the redundant standalone `mvn clean compile` step in `backend`, since `mvn verify` already compiles. Added `.github/workflows/codeql.yml` running CodeQL static analysis for `java-kotlin` and `javascript-typescript` on pull requests to `main` and weekly. Updated `README.md` and `frontend/README.md` CI sections to match the new job shape.
+
 ## [0.57.5] - 2026-07-11
 
 ### Changed
