@@ -216,13 +216,16 @@ public class SimulationRunServiceTest {
     public void testCreateAndStartRun_ConfiguresRunStartsAndSubmitsExecution() throws Exception {
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1)).thenReturn(Optional.of(mockVersion));
+        java.util.concurrent.atomic.AtomicReference<SimulationRun> savedRunRef = new java.util.concurrent.atomic.AtomicReference<>();
         when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> {
             SimulationRun savedRun = invocation.getArgument(0);
             if (savedRun.getId() == null) {
                 savedRun.setId(42L);
             }
+            savedRunRef.set(savedRun);
             return savedRun;
         });
+        when(runRepository.findByIdWithDetails(42L)).thenAnswer(invocation -> Optional.of(savedRunRef.get()));
 
         SimulationRun result = runService.createAndStartRun(1L, 1, null, 12345L);
 
@@ -240,13 +243,16 @@ public class SimulationRunServiceTest {
     public void testCreateAndStartRun_SubmitsExecutionAfterTransactionCommit() throws Exception {
         when(liftSystemRepository.findById(1L)).thenReturn(Optional.of(mockLiftSystem));
         when(versionRepository.findByLiftSystemIdAndVersionNumber(1L, 1)).thenReturn(Optional.of(mockVersion));
+        java.util.concurrent.atomic.AtomicReference<SimulationRun> savedRunRef = new java.util.concurrent.atomic.AtomicReference<>();
         when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> {
             SimulationRun savedRun = invocation.getArgument(0);
             if (savedRun.getId() == null) {
                 savedRun.setId(42L);
             }
+            savedRunRef.set(savedRun);
             return savedRun;
         });
+        when(runRepository.findByIdWithDetails(42L)).thenAnswer(invocation -> Optional.of(savedRunRef.get()));
 
         TransactionSynchronizationManager.initSynchronization();
         try {
@@ -281,13 +287,16 @@ public class SimulationRunServiceTest {
             "{\"durationTicks\": 5000, \"passengerFlows\": []}",
             com.liftsimulator.admin.dto.ScenarioDefinitionDTO.class
         )).thenReturn(new com.liftsimulator.admin.dto.ScenarioDefinitionDTO(5000, List.of(), null));
+        java.util.concurrent.atomic.AtomicReference<SimulationRun> savedRunRef = new java.util.concurrent.atomic.AtomicReference<>();
         when(runRepository.save(any(SimulationRun.class))).thenAnswer(invocation -> {
             SimulationRun savedRun = invocation.getArgument(0);
             if (savedRun.getId() == null) {
                 savedRun.setId(42L);
             }
+            savedRunRef.set(savedRun);
             return savedRun;
         });
+        when(runRepository.findByIdWithDetails(42L)).thenAnswer(invocation -> Optional.of(savedRunRef.get()));
 
         SimulationRun result = runService.createAndStartRun(1L, 1, 5L, 12345L);
 

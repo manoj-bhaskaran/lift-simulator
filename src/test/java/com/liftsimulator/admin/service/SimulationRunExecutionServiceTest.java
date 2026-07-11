@@ -300,9 +300,7 @@ public class SimulationRunExecutionServiceTest {
         SimulationRun run = new SimulationRun();
         run.setId(9L);
         run.setStatus(SimulationRun.RunStatus.RUNNING);
-        when(lifecycleManager.getByIdWithDetails(9L)).thenReturn(run);
         when(lifecycleManager.failRun(9L, "boom")).thenThrow(new IllegalStateException("stale state"));
-
 
         Method failRunWithMessage = SimulationRunExecutionService.class.getDeclaredMethod(
                 "failRunWithMessage", Long.class, String.class, boolean.class);
@@ -451,6 +449,16 @@ public class SimulationRunExecutionServiceTest {
         // Now submit the overCapacity run — executor is full, should be rejected cleanly
         lenient().when(runRepository.findById((long) overCapacityRunId)).thenReturn(Optional.of(overCapacityRun));
         lenient().when(lifecycleManager.getByIdWithDetails((long) overCapacityRunId)).thenReturn(overCapacityRun);
+        lenient().when(lifecycleManager.startRun((long) overCapacityRunId)).thenAnswer(inv -> {
+            overCapacityRun.start();
+            return overCapacityRun;
+        });
+        lenient().when(lifecycleManager.failRun((long) overCapacityRunId, "Simulation queue is full; run rejected."))
+                .thenAnswer(inv -> {
+                    overCapacityRun.fail(inv.getArgument(1));
+                    storedOverCapacity.set(overCapacityRun);
+                    return overCapacityRun;
+                });
 
         Scenario scenario = new Scenario("s", SHORT_SCENARIO, version);
         overCapacityRun.setScenario(scenario);
