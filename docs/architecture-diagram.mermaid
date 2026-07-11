@@ -15,7 +15,7 @@ graph TD
 
         subgraph svc["Service Layer"]
             CFGSVC["Config & Scenario Services<br/>LiftSystem · Version · Scenario<br/>ConfigValidation · ScenarioValidation"]
-            RUNSVC["Run Orchestration<br/>SimulationRunService<br/>SimulationRunExecutionService (async)"]
+            RUNSVC["Run Orchestration<br/>SimulationRunService · SimulationRunExecutionService<br/>SimulationRunner · SimulationArtefactWriter"]
             SUPPORT["Support Services<br/>BatchInputGenerator · ArtefactService<br/>RuntimeConfigService"]
         end
 

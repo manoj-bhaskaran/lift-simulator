@@ -44,7 +44,7 @@ graph TD
 
         subgraph svc["Service Layer"]
             CFGSVC["Config & Scenario Services<br/>LiftSystem · Version · Scenario<br/>ConfigValidation · ScenarioValidation"]
-            RUNSVC["Run Orchestration<br/>SimulationRunService<br/>SimulationRunExecutionService (async)"]
+            RUNSVC["Run Orchestration<br/>SimulationRunService · SimulationRunExecutionService<br/>SimulationRunner · SimulationArtefactWriter"]
             SUPPORT["Support Services<br/>BatchInputGenerator · ArtefactService<br/>RuntimeConfigService"]
         end
 
@@ -118,8 +118,10 @@ Java 21 LTS).
   - *Config & scenario services* manage CRUD, the publish/archive workflow, and
     validation of configuration and scenario JSON.
   - *Run orchestration* — `SimulationRunService` manages run lifecycle state,
-    while `SimulationRunExecutionService` runs simulations asynchronously on a
-    thread pool, supports cancellation, and persists artefacts and KPIs.
+    while `SimulationRunExecutionService` owns asynchronous queueing/cancellation,
+    `SimulationRunner` performs validation, lifecycle updates, and engine ticking,
+    and `SimulationArtefactWriter` persists logs, snapshots, generated batch input,
+    and results/KPIs.
   - *Support services* — `BatchInputGenerator` turns scenarios into engine
     input, `ArtefactService` reads/writes run artefacts, and
     `RuntimeConfigService` backs published-configuration reads for the lightweight runtime API.
@@ -168,6 +170,8 @@ sequenceDiagram
     participant API as SimulationRunController
     participant Run as SimulationRunService
     participant Exec as SimulationRunExecutionService
+    participant Runner as SimulationRunner
+    participant Writer as SimulationArtefactWriter
     participant Gen as BatchInputGenerator
     participant Eng as SimulationEngine
     participant DB as PostgreSQL
@@ -177,12 +181,15 @@ sequenceDiagram
     API->>Run: create & start run
     Run->>DB: persist run (CREATED → RUNNING)
     Run-->>Exec: submit async (after commit)
-    Exec->>Gen: build engine input from scenario
-    Exec->>FS: write config.json / scenario.json / input.scenario
-    Exec->>Eng: run tick loop with chosen controller
-    Eng-->>Exec: per-tick state & completed requests
-    Exec->>FS: write run.log + results.json
-    Exec->>DB: update status (SUCCEEDED / FAILED) + KPIs
+    Exec->>Runner: execute run request
+    Runner->>Writer: write config/scenario snapshots and logs
+    Writer->>Gen: build engine input from scenario
+    Writer->>FS: write config.json / scenario.json / input.scenario
+    Runner->>Eng: run tick loop with chosen controller
+    Eng-->>Runner: per-tick state & completed requests
+    Runner->>Writer: write results.json
+    Writer->>FS: persist run.log + results.json
+    Runner->>DB: update status (SUCCEEDED / FAILED) + KPIs
     UI->>API: GET /simulation-runs/{id} (poll status)
     API-->>UI: status, KPIs, artefact links
 ```
