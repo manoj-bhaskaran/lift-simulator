@@ -16,6 +16,7 @@ This is the frontend admin application for the Lift Simulator system. It provide
 - Validating configuration JSON and displaying detailed validation errors
 - Managing simulation runs, including multi-select bulk cancellation for active runs and bulk deletion for completed runs
 - Monitoring system health
+- Running simulations through decomposed setup, run-status, and results panels shared with run detail views
 
 For the overall project setup (backend, database, and Quick Start), see the [root README](../README.md). Backend REST API conventions (auth, RBAC, rate limits, error shape) live in [docs/API.md](../docs/API.md), and the always-current endpoint reference is the generated Swagger UI at `/api/v1/swagger-ui.html`.
 

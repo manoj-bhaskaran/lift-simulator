@@ -8,23 +8,11 @@ import { simulationRunsApi } from '../api/simulationRunsApi';
 import ConfirmModal from '../components/ConfirmModal';
 import { handleApiError } from '../utils/errorHandlers';
 import { isTerminalRunStatus, useRunPolling } from '../hooks/useRunPolling';
-import { formatRunDuration, getRunStatusPillClass } from '../utils/statusUtils';
+import { formatRunDuration } from '../utils/statusUtils';
+import SimulationRunStatusCard from '../components/simulation-runs/SimulationRunStatusCard';
+import SimulationResultsPanel from '../components/simulation-runs/SimulationResultsPanel';
+import SimulatorRunSetup from '../components/simulation-runs/SimulatorRunSetup';
 import './Simulator.css';
-
-const kpiLabels = {
-  requestsTotal: 'Requests',
-  pickupRequestsServed: 'Pickup Requests Served',
-  pickupRequestsCancelled: 'Pickup Requests Cancelled',
-  passengersServed: 'Passengers Served',
-  passengersCancelled: 'Passengers Cancelled',
-  avgPickupWaitTicks: 'Avg Wait to Pickup (ticks)',
-  maxPickupWaitTicks: 'Max Wait to Pickup (ticks)',
-  idleTicks: 'Idle Ticks',
-  movingTicks: 'Moving Ticks',
-  doorTicks: 'Door Ticks',
-  pickupLegUtilisation: 'Pickup-leg Utilisation',
-  utilisation: 'Pickup-leg Utilisation',
-};
 
 function Simulator() {
   const [searchParams] = useSearchParams();
@@ -358,45 +346,6 @@ function Simulator() {
     [runInfo?.id, artefactDownloadUrl]
   );
 
-  const formatNumber = (value) => {
-    if (value == null || Number.isNaN(value)) {
-      return '—';
-    }
-    if (typeof value === 'number') {
-      return Number.isInteger(value) ? value.toString() : value.toFixed(2);
-    }
-    return String(value);
-  };
-
-  const formatKpiValue = (key, value) => {
-    if ((key === 'pickupLegUtilisation' || key === 'utilisation') && typeof value === 'number') {
-      return `${(value * 100).toFixed(1)}%`;
-    }
-    return formatNumber(value);
-  };
-
-  const getPickupLegUtilisation = (lift) => lift?.pickupLegUtilisation ?? lift?.utilisation;
-
-  const formatBytes = (bytes) => {
-    if (!bytes && bytes !== 0) {
-      return '—';
-    }
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let size = bytes;
-    let index = 0;
-    while (size >= 1024 && index < units.length - 1) {
-      size /= 1024;
-      index += 1;
-    }
-    return `${size.toFixed(1)} ${units[index]}`;
-  };
-
-  const runSummary = results?.results?.runSummary;
-  const kpis = results?.results?.kpis;
-  const perLift = results?.results?.perLift || [];
-  const perFloor = results?.results?.perFloor || [];
-  const inputArtefact = artefacts.find((item) => item.name === 'input.scenario');
-
   return (
     <div className="simulator">
       <div className="page-header">
@@ -416,187 +365,51 @@ function Simulator() {
         </div>
       </div>
 
-      <section className="simulator-card">
-        <h3>Run Setup</h3>
-        {loading ? (
-          <p>Loading options...</p>
-        ) : formError ? (
-          <p className="error">{formError}</p>
-        ) : (
-          <div className="run-setup-grid">
-            <label className="field">
-              <span>Lift System</span>
-              <select
-                value={selectedSystemId}
-                onChange={(event) => {
-                  setSelectedSystemId(event.target.value);
-                  setSelectedVersionNumber('');
-                }}
-              >
-                <option value="">Select a lift system</option>
-                {systems.map((system) => (
-                  <option key={system.id} value={system.id}>
-                    {system.displayName}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span>Published Version</span>
-              <select
-                value={selectedVersionNumber}
-                onChange={(event) => setSelectedVersionNumber(event.target.value)}
-                disabled={!selectedSystemId || publishedVersions.length === 0}
-              >
-                <option value="">Select a published version</option>
-                {publishedVersions.map((version) => (
-                  <option key={version.id} value={version.versionNumber}>
-                    Version {version.versionNumber}
-                  </option>
-                ))}
-              </select>
-              {!selectedSystemId && (
-                <small>Select a system to view published versions.</small>
-              )}
-              {selectedSystemId && publishedVersions.length === 0 && (
-                <small className="warning">
-                  No published versions available for this system.
-                </small>
-              )}
-            </label>
-
-            <label className="field">
-              <span>Scenario</span>
-              <select
-                value={selectedScenarioId}
-                onChange={(event) => setSelectedScenarioId(event.target.value)}
-                disabled={!selectedVersionNumber || filteredScenarios.length === 0}
-              >
-                <option value="">Select a scenario</option>
-                {filteredScenarios.map((scenario) => (
-                  <option key={scenario.id} value={scenario.id}>
-                    {scenario.name}
-                  </option>
-                ))}
-              </select>
-              {!selectedVersionNumber && (
-                <small>Select a version to view compatible scenarios.</small>
-              )}
-              {selectedVersionNumber && filteredScenarios.length === 0 && (
-                <small className="warning">
-                  No scenarios available for this version. Create one from the Scenarios page.
-                </small>
-              )}
-            </label>
-
-            <label className="field">
-              <span>Optional Seed</span>
-              <input
-                type="number"
-                value={seed}
-                onChange={(event) => setSeed(event.target.value)}
-                placeholder="Leave blank for random"
-              />
-            </label>
-
-            <div className="run-setup-actions">
-              <button
-                className="btn-primary"
-                onClick={handleStartRun}
-                disabled={
-                  isStarting ||
-                  (runInfo && !isTerminal) ||
-                  !selectedSystemId ||
-                  !selectedVersionNumber ||
-                  !selectedScenarioId
-                }
-              >
-                {isStarting ? 'Starting...' : (runInfo && !isTerminal) ? 'Run in Progress' : 'Start Run'}
-              </button>
-              {selectedSystem && selectedVersion && selectedScenario && (
-                <div className="selection-summary">
-                  <strong>Selected:</strong> {selectedSystem.displayName} · Version{' '}
-                  {selectedVersion.versionNumber} · {selectedScenario.name}
-                </div>
-              )}
-              {runInfo && !isTerminal && (
-                <small className="run-in-progress-hint">
-                  A simulation run is in progress. Wait for it to complete or cancel it to start a new run.
-                </small>
-              )}
-            </div>
-          </div>
-        )}
-      </section>
+      <SimulatorRunSetup
+        loading={loading}
+        formError={formError}
+        systems={systems}
+        publishedVersions={publishedVersions}
+        filteredScenarios={filteredScenarios}
+        selectedSystemId={selectedSystemId}
+        selectedVersionNumber={selectedVersionNumber}
+        selectedScenarioId={selectedScenarioId}
+        seed={seed}
+        isStarting={isStarting}
+        isRunActive={Boolean(runInfo && !isTerminal)}
+        selectedSystem={selectedSystem}
+        selectedVersion={selectedVersion}
+        selectedScenario={selectedScenario}
+        onSystemChange={(value) => {
+          setSelectedSystemId(value);
+          setSelectedVersionNumber('');
+        }}
+        onVersionChange={setSelectedVersionNumber}
+        onScenarioChange={setSelectedScenarioId}
+        onSeedChange={setSeed}
+        onStartRun={handleStartRun}
+      />
 
       {runInfo && (
-        <section className="simulator-card">
-          <div className="status-header">
-            <h3>Run Status</h3>
-            <div className="status-actions">
-              <span className={getRunStatusPillClass(runStatus)}>
-                {runStatus}
-              </span>
-              {(runStatus === 'RUNNING' || runStatus === 'CREATED') && (
-                <button
-                  className="btn-danger"
-                  type="button"
-                  onClick={() => setShowCancelModal(true)}
-                  disabled={isCancelling}
-                >
-                  {isCancelling ? 'Cancelling...' : 'Cancel Run'}
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="status-grid">
-            <div>
-              <span className="label">Run ID</span>
-              <p>{runInfo.id}</p>
-            </div>
-            <div>
-              <span className="label">Lift System</span>
-              <p>{selectedSystem?.displayName || runInfo.liftSystemId}</p>
-            </div>
-            <div>
-              <span className="label">Version</span>
-              <p>{selectedVersion ? `Version ${selectedVersion.versionNumber}` : runInfo.versionNumber}</p>
-            </div>
-            <div>
-              <span className="label">Scenario</span>
-              <p>{selectedScenario?.name || runInfo.scenarioId || '—'}</p>
-            </div>
-            <div>
-              <span className="label">Elapsed Time</span>
-              <p>{formatRunDuration(elapsedMs)}</p>
-            </div>
-            <div>
-              <span className="label">Seed</span>
-              <p>{runInfo.seed ?? '—'}</p>
-            </div>
-          </div>
-
-          {progressPercentage != null && (
-            <div className="progress-section">
-              <div className="progress-meta">
-                <span>
-                  {runInfo.currentTick ?? 0} / {runInfo.totalTicks} ticks
-                </span>
-                <span>{progressPercentage.toFixed(1)}%</span>
-              </div>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {runError && <p className="error">{runError}</p>}
-        </section>
+        <SimulationRunStatusCard
+          cardClassName="simulator-card"
+          runInfo={runInfo}
+          runStatus={runStatus}
+          isTerminal={isTerminal}
+          elapsedMs={elapsedMs}
+          progressPercentage={progressPercentage}
+          runError={runError}
+          onCancel={() => setShowCancelModal(true)}
+          isCancelling={isCancelling}
+          fields={[
+            { label: 'Run ID', value: runInfo.id },
+            { label: 'Lift System', value: selectedSystem?.displayName || runInfo.liftSystemId },
+            { label: 'Version', value: selectedVersion ? `Version ${selectedVersion.versionNumber}` : runInfo.versionNumber },
+            { label: 'Scenario', value: selectedScenario?.name || runInfo.scenarioId || '—' },
+            { label: 'Elapsed Time', value: formatRunDuration(elapsedMs) },
+            { label: 'Seed', value: runInfo.seed ?? '—' },
+          ]}
+        />
       )}
 
       <ConfirmModal
@@ -611,210 +424,19 @@ function Simulator() {
       />
 
       {isTerminal && runInfo && (
-        <section className="simulator-card">
-          <div className="results-header">
-            <h3>Results</h3>
-            <Link to={`/simulation-runs/${runInfo.id}`} className="btn-secondary btn-small">
-              View Full Details
-            </Link>
-          </div>
-          {resultsError && <p className="error">{resultsError}</p>}
-
-          {runStatus === 'FAILED' && (
-            <div className="result-banner error">
-              <strong>Simulation failed.</strong>
-              <p>{results?.errorMessage || runInfo.errorMessage || 'Unknown error.'}</p>
-            </div>
-          )}
-
-          {runStatus === 'CANCELLED' && (
-            <div className="result-banner warning">
-              <strong>Simulation was cancelled.</strong>
-            </div>
-          )}
-
-          {runStatus === 'SUCCEEDED' && results?.results && (
-            <>
-              <div className="result-banner success">
-                <strong>Simulation completed successfully.</strong>
-                {results.errorMessage && <p>{results.errorMessage}</p>}
-              </div>
-
-              <div className="kpi-grid">
-                {kpis &&
-                  Object.entries(kpis).map(([key, value]) => (
-                    <div key={key} className="kpi-card">
-                      <span>{kpiLabels[key] || key}</span>
-                      <strong>{formatKpiValue(key, value)}</strong>
-                    </div>
-                  ))}
-              </div>
-
-              <div className="results-section">
-                <h4>Run Summary</h4>
-                <div className="summary-grid">
-                  <div>
-                    <span className="label">Generated</span>
-                    <p>{runSummary?.generatedAt ? new Date(runSummary.generatedAt).toLocaleString() : '—'}</p>
-                  </div>
-                  <div>
-                    <span className="label">Ticks</span>
-                    <p>{runSummary?.ticks ?? '—'}</p>
-                  </div>
-                  <div>
-                    <span className="label">Duration</span>
-                    <p>{runSummary?.durationTicks ?? '—'} ticks</p>
-                  </div>
-                  <div>
-                    <span className="label">Seed</span>
-                    <p>{runSummary?.seed ?? runInfo.seed ?? '—'}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="results-section">
-                <h4>Per Lift</h4>
-                {perLift.length === 0 ? (
-                  <p>No lift metrics available.</p>
-                ) : (
-                  <div className="table-wrapper">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Lift</th>
-                          <th>Controller</th>
-                          <th>Parking</th>
-                          <th>Pickup-leg Utilisation</th>
-                          <th>Idle</th>
-                          <th>Moving</th>
-                          <th>Door</th>
-                          <th>Status Counts</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {perLift.map((lift) => (
-                          <tr key={lift.liftId}>
-                            <td>{lift.liftId}</td>
-                            <td>{lift.controllerStrategy || '—'}</td>
-                            <td>{lift.idleParkingMode || '—'}</td>
-                            <td>{formatKpiValue('pickupLegUtilisation', getPickupLegUtilisation(lift))}</td>
-                            <td>{formatNumber(lift.idleTicks)}</td>
-                            <td>{formatNumber(lift.movingTicks)}</td>
-                            <td>{formatNumber(lift.doorTicks)}</td>
-                            <td>
-                              {lift.statusCounts
-                                ? Object.entries(lift.statusCounts)
-                                    .map(([status, count]) => `${status}: ${count}`)
-                                    .join(', ')
-                                : '—'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-
-              <div className="results-section">
-                <h4>Per Floor</h4>
-                {perFloor.length === 0 ? (
-                  <p>No floor metrics available.</p>
-                ) : (
-                  <div className="table-wrapper">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Floor</th>
-                          <th>Origin Passengers</th>
-                          <th>Destination Passengers</th>
-                          <th>Lift Visits</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {perFloor.map((floor) => (
-                          <tr key={floor.floor}>
-                            <td>{floor.floor}</td>
-                            <td>{formatNumber(floor.originPassengers)}</td>
-                            <td>{formatNumber(floor.destinationPassengers)}</td>
-                            <td>{formatNumber(floor.liftVisits)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          {runStatus === 'SUCCEEDED' && !results?.results && (
-            <div className="result-banner warning">
-              <strong>Simulation completed, but results were unavailable.</strong>
-              <p>{results?.errorMessage || 'Results file could not be read.'}</p>
-            </div>
-          )}
-
-          <div className="results-section">
-            <h4>Artefacts</h4>
-            {artefacts.length === 0 ? (
-              <p>No artefacts available.</p>
-            ) : (
-              <div className="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Size</th>
-                      <th>Type</th>
-                      <th>Download</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {artefacts.map((artefact) => (
-                      <tr key={`${artefact.name}-${artefact.path}`}>
-                        <td>{artefact.name}</td>
-                        <td>{formatBytes(artefact.size)}</td>
-                        <td>{artefact.mimeType}</td>
-                        <td>
-                          <a
-                            className="link"
-                            href={artefactDownloadUrl(artefact.path)}
-                            onClick={(event) => handleArtefactDownload(event, artefact)}
-                          >
-                            Download
-                          </a>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          <div className="results-section reproduce-section">
-            <h4>Reproduce via CLI</h4>
-            <p>
-              Use the generated batch input file to reproduce this run with the
-              CLI simulator.
-            </p>
-            {inputArtefact ? (
-              <div className="reproduce-actions">
-                <a
-                  className="btn-secondary"
-                  href={artefactDownloadUrl(inputArtefact.path)}
-                  onClick={(event) => handleArtefactDownload(event, inputArtefact)}
-                >
-                  Download input.scenario
-                </a>
-                <code>lift-simulator --input {inputArtefact.path}</code>
-              </div>
-            ) : (
-              <p className="warning">Input file not available for this run.</p>
-            )}
-          </div>
-        </section>
+        <SimulationResultsPanel
+          cardClassName="simulator-card"
+          runInfo={runInfo}
+          runStatus={runStatus}
+          results={results}
+          artefacts={artefacts}
+          resultsError={resultsError}
+          artefactDownloadUrl={artefactDownloadUrl}
+          onArtefactDownload={handleArtefactDownload}
+          showFullDetailsLink
+          showMissingInputMessage
+          onlyShowReproduceOnSuccess={false}
+        />
       )}
     </div>
   );
