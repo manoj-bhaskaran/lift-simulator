@@ -9,6 +9,7 @@ import com.liftsimulator.domain.LiftRequest;
 import com.liftsimulator.domain.LiftState;
 import com.liftsimulator.domain.LiftStatus;
 import com.liftsimulator.domain.RequestState;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,6 +38,10 @@ public abstract class AbstractRequestManagingLiftController implements RequestMa
     private boolean parkingInProgress;
     protected boolean outOfService;
 
+    @SuppressFBWarnings(
+            value = "CT_CONSTRUCTOR_THROW",
+            justification = "Subclasses are controller strategies with no finalizers; there is no "
+                    + "sensitive state to expose via a finalizer attack.")
     protected AbstractRequestManagingLiftController(int homeFloor, int idleTimeoutTicks, IdleParkingMode idleParkingMode) {
         if (idleTimeoutTicks < 0) {
             throw new IllegalArgumentException("idleTimeoutTicks must be >= 0");
