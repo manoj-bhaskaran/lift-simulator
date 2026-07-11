@@ -6,11 +6,12 @@ import { simulationRunsApi } from '../api/simulationRunsApi';
 import AlertModal from '../components/AlertModal';
 import ConfirmModal from '../components/ConfirmModal';
 import { getApiErrorMessage, handleApiError, logApiError } from '../utils/errorHandlers';
+import { isTerminalRunStatus, useRunPolling } from '../hooks/useRunPolling';
+import { formatDate, formatRunDuration, getRunStatusBadgeClass } from '../utils/statusUtils';
 import './SimulationRuns.css';
 
 const statusOptions = ['ALL', 'SUCCEEDED', 'FAILED', 'RUNNING', 'CREATED', 'CANCELLED'];
 const activeStatuses = new Set(['RUNNING', 'CREATED']);
-const terminalStatuses = new Set(['SUCCEEDED', 'FAILED', 'CANCELLED']);
 
 /**
  * Simulation runs history page component.
@@ -115,26 +116,13 @@ function SimulationRuns() {
   );
 
   // Poll for updates when there are active runs
-  useEffect(() => {
-    if (!hasActiveRuns) return undefined;
-
-    const intervalId = setInterval(() => {
-      loadRuns(true);
-    }, 3000);
-
-    return () => clearInterval(intervalId);
-  }, [hasActiveRuns, loadRuns]);
+  useRunPolling(
+    useCallback(() => loadRuns(true), [loadRuns]),
+    { intervalMs: 3000, enabled: hasActiveRuns }
+  );
 
   // Keep `now` current so elapsed-time display refreshes for active runs
-  useEffect(() => {
-    if (!hasActiveRuns) return undefined;
-
-    const intervalId = setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-
-    return () => clearInterval(intervalId);
-  }, [hasActiveRuns]);
+  useRunPolling(() => setNow(Date.now()), { intervalMs: 1000, enabled: hasActiveRuns });
 
   useEffect(() => {
     setSelectedRunIds((currentIds) =>
@@ -151,7 +139,7 @@ function SimulationRuns() {
   const allVisibleSelected = runs.length > 0 && selectedRunIds.length === runs.length;
   const selectedCount = selectedRuns.length;
   const canBulkCancel = selectedCount > 0 && selectedRuns.every((run) => activeStatuses.has(run.status));
-  const canBulkDelete = selectedCount > 0 && selectedRuns.every((run) => terminalStatuses.has(run.status));
+  const canBulkDelete = selectedCount > 0 && selectedRuns.every((run) => isTerminalRunStatus(run.status));
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -161,18 +149,7 @@ function SimulationRuns() {
   }, [selectedSystemId, selectedStatus, setSearchParams]);
 
   /**
-   * Formats a date for display.
-   *
-   * @param {string|null} dateString - ISO date string
-   * @returns {string} Formatted date string
-   */
-  const formatDate = (dateString) => {
-    if (!dateString) return '—';
-    return new Date(dateString).toLocaleString();
-  };
-
-  /**
-   * Calculates duration between two dates.
+   * Calculates duration between two dates and formats it for display.
    *
    * @param {string|null} startDate - ISO start date string
    * @param {string|null} endDate - ISO end date string
@@ -182,14 +159,7 @@ function SimulationRuns() {
     if (!startDate) return '—';
     const start = new Date(startDate).getTime();
     const end = endDate ? new Date(endDate).getTime() : nowMs;
-    const durationMs = end - start;
-    const totalSeconds = Math.floor(durationMs / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
-    }
-    return `${seconds}s`;
+    return formatRunDuration(end - start);
   };
 
   /**
@@ -203,27 +173,6 @@ function SimulationRuns() {
     if (!totalTicks || totalTicks === 0 || currentTick == null) return '—';
     const percentage = (currentTick / totalTicks) * 100;
     return `${percentage.toFixed(1)}%`;
-  };
-
-  /**
-   * Get the appropriate status CSS class.
-   *
-   * @param {string} status - Run status
-   * @returns {string} CSS class name
-   */
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'SUCCEEDED':
-        return 'status-succeeded';
-      case 'FAILED':
-        return 'status-failed';
-      case 'RUNNING':
-        return 'status-running';
-      case 'CANCELLED':
-        return 'status-cancelled';
-      default:
-        return 'status-created';
-    }
   };
 
   const handleSystemChange = (event) => {
@@ -486,7 +435,7 @@ function SimulationRuns() {
                   <td>v{run.versionNumber}</td>
                   <td>{run.scenarioName || '—'}</td>
                   <td>
-                    <span className={`status-badge ${getStatusClass(run.status)}`}>
+                    <span className={getRunStatusBadgeClass(run.status)}>
                       {run.status}
                     </span>
                   </td>
@@ -519,7 +468,7 @@ function SimulationRuns() {
                       >
                         View
                       </Link>
-                      {terminalStatuses.has(run.status) && (
+                      {isTerminalRunStatus(run.status) && (
                         <button
                           type="button"
                           className="btn-small btn-danger"

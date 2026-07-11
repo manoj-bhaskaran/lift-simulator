@@ -93,13 +93,12 @@ describe('Simulator lifecycle', () => {
 
   it('starts a run, polls RUNNING -> SUCCEEDED, and renders results', async () => {
     simulationRunsApi.createRun.mockResolvedValue({ data: createdRun });
-    // Return the *same* RUNNING object reference for the first two polls (the
-    // component polls once immediately, then again on the 3s interval) so
-    // React bails out of re-rendering until the run actually turns terminal.
+    // The run-status hook polls immediately once a non-terminal run exists
+    // (call 1: RUNNING), then again on the 3s interval (call 2: SUCCEEDED).
     let pollCount = 0;
     simulationRunsApi.getRun.mockImplementation(() => {
       pollCount += 1;
-      return Promise.resolve({ data: pollCount < 3 ? runningRun : succeededRun });
+      return Promise.resolve({ data: pollCount < 2 ? runningRun : succeededRun });
     });
     simulationRunsApi.getResults.mockResolvedValue(resultsPayload);
 
