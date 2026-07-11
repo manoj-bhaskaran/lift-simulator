@@ -12,6 +12,7 @@ import com.liftsimulator.domain.LiftRequest;
 import com.liftsimulator.engine.ControllerFactory;
 import com.liftsimulator.engine.RequestManagingLiftController;
 import com.liftsimulator.engine.SimulationEngine;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -42,6 +43,10 @@ public class SimulationRunner {
     private final ObjectMapper objectMapper;
     private final SimulationArtefactWriter artefactWriter;
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Injected collaborators are Spring-managed singleton services/configuration objects."
+    )
     public SimulationRunner(RunLifecycleManager lifecycleManager,
                             ConfigValidationService configValidationService,
                             ScenarioValidationService scenarioValidationService,

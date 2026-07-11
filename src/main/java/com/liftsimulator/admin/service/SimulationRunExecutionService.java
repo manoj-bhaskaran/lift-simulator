@@ -1,7 +1,6 @@
 package com.liftsimulator.admin.service;
 
 import com.liftsimulator.admin.entity.SimulationRun;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,10 +33,6 @@ public class SimulationRunExecutionService {
     private final Map<Long, CancellationToken> cancellationTokens = new ConcurrentHashMap<>();
 
     @Autowired
-    @SuppressFBWarnings(
-        value = "EI_EXPOSE_REP2",
-        justification = "Injected dependencies and configuration managed by Spring."
-    )
     public SimulationRunExecutionService(
             RunLifecycleManager lifecycleManager,
             SimulationRunner simulationRunner,

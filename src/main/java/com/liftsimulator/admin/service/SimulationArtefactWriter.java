@@ -4,6 +4,7 @@ import com.liftsimulator.admin.dto.LiftConfigDTO;
 import com.liftsimulator.admin.dto.ScenarioDefinitionDTO;
 import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.service.metrics.RunMetrics;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -33,6 +34,10 @@ public class SimulationArtefactWriter {
     private final BatchInputGenerator batchInputGenerator;
     private final RunLifecycleManager lifecycleManager;
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Injected collaborators are Spring-managed singleton services/configuration objects."
+    )
     public SimulationArtefactWriter(ObjectMapper objectMapper,
                                     BatchInputGenerator batchInputGenerator,
                                     RunLifecycleManager lifecycleManager) {
