@@ -176,7 +176,7 @@ Dependabot is configured in `.github/dependabot.yml` to check Maven dependencies
 
 The backend is configured via YAML files under `src/main/resources/`:
 
-- `application.yml` — base defaults (application name `lift-config-service`, server port `8080`, actuator `health`/`info`, root log level `INFO` and `DEBUG` for `com.liftsimulator`, and Logback file `logs/application.log`, which produces `logs/application.log` and `logs/application-error.log`)
+- `application.yml` — base defaults (application name `lift-config-service`, server port `8080`, actuator `health`/`info`, root log level `INFO` and `DEBUG` for `com.liftsimulator`, and Logback file base `logs/application`, which produces `logs/application.log` and `logs/application-error.log`)
 - `application-dev.yml` — development secrets and database settings (copy from `application-dev.yml.template`)
 - `application-local.yml` — optional local-only overrides such as log paths or ports (copy from `application-local.yml.template`)
 
