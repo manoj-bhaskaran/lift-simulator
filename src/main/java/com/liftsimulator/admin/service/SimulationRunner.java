@@ -22,7 +22,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CancellationException;
+import java.util.function.BooleanSupplier;
+import java.util.function.LongConsumer;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -58,7 +59,7 @@ public class SimulationRunner {
         this.objectMapper = objectMapper;
         this.artefactWriter = artefactWriter;
     }
-    public void executeRun(RunExecutionRequest request, SimulationRunExecutionService.CancellationToken cancelToken) {
+    public void executeRun(RunExecutionRequest request, CancellationToken cancelToken) {
         boolean started = false;
 
         SimulationRun runEntity;
@@ -144,14 +145,21 @@ public class SimulationRunner {
             lifecycleManager.updateProgress(request.runId(), 0L);
             artefactWriter.log(logWriter, "Simulation started for run " + request.runId());
 
-            RunMetrics metrics;
-            try {
-                metrics = runSimulation(request.runId(), config, scenario, logWriter, cancelToken);
-            } catch (RunCancelledException ex) {
-                cancelRunSafely(request.runId(), logWriter, ex.getMessage());
-                artefactWriter.writeResults(request.runId(), runDir, ex.getConfig(), ex.getScenario(), ex.getMetrics(), "CANCELLED", ex.getMessage());
+            artefactWriter.log(logWriter, "Starting simulation for " + scenario.durationTicks() + " ticks.");
+            RunMetrics metrics = runTickLoop(
+                config,
+                scenario,
+                () -> cancelToken.isCancelled() || Thread.currentThread().isInterrupted(),
+                tick -> lifecycleManager.updateProgress(request.runId(), tick)
+            );
+
+            if (metrics.totalTicks() < scenario.durationTicks()) {
+                String message = "Run cancelled at tick " + metrics.totalTicks() + ".";
+                cancelRunSafely(request.runId(), logWriter, message);
+                artefactWriter.writeResults(request.runId(), runDir, config, scenario, metrics, "CANCELLED", message);
                 return;
             }
+            artefactWriter.log(logWriter, "Simulation completed at tick " + metrics.totalTicks());
 
             if (cancelToken.isCancelled() || getRunById(request.runId()).getStatus() == SimulationRun.RunStatus.CANCELLED) {
                 artefactWriter.log(logWriter, "Run cancelled for run " + request.runId());
@@ -173,11 +181,14 @@ public class SimulationRunner {
         }
     }
 
-    private RunMetrics runSimulation(Long runId,
-                                     LiftConfigDTO config,
-                                     ScenarioDefinitionDTO scenario,
-                                     BufferedWriter logWriter,
-                                     SimulationRunExecutionService.CancellationToken cancelToken) throws IOException {
+    /**
+     * Runs the deterministic tick loop with no repository or filesystem dependencies.
+     * Cancellation stops the loop early and returns whatever metrics were recorded so far.
+     */
+    static RunMetrics runTickLoop(LiftConfigDTO config,
+                                  ScenarioDefinitionDTO scenario,
+                                  BooleanSupplier cancelled,
+                                  LongConsumer progressCallback) {
         RequestManagingLiftController controller = (RequestManagingLiftController) ControllerFactory.createController(
             config.controllerStrategy(),
             config.homeFloor(),
@@ -196,13 +207,9 @@ public class SimulationRunner {
         Map<Integer, List<PassengerFlowDTO>> flowsByTick = groupFlowsByTick(scenario);
         RunMetrics metrics = new RunMetrics(config.minFloor(), config.maxFloor());
 
-        artefactWriter.log(logWriter, "Starting simulation for " + scenario.durationTicks() + " ticks.");
         for (int tick = 0; tick < scenario.durationTicks(); tick++) {
-            if (cancelToken.isCancelled() || Thread.currentThread().isInterrupted()) {
-                throw new RunCancelledException("Run cancelled at tick " + engine.getCurrentTick() + ".",
-                    metrics,
-                    config,
-                    scenario);
+            if (cancelled.getAsBoolean()) {
+                return metrics;
             }
             long currentTick = engine.getCurrentTick();
             List<PassengerFlowDTO> flows = flowsByTick.getOrDefault((int) currentTick, List.of());
@@ -235,17 +242,16 @@ public class SimulationRunner {
 
             long progressTick = tick + 1L;
             if (tick % PROGRESS_UPDATE_INTERVAL == 0) {
-                lifecycleManager.updateProgress(runId, progressTick);
+                progressCallback.accept(progressTick);
             }
         }
 
-        lifecycleManager.updateProgress(runId, (long) scenario.durationTicks());
-        artefactWriter.log(logWriter, "Simulation completed at tick " + engine.getCurrentTick());
+        progressCallback.accept((long) scenario.durationTicks());
         metrics.recordTerminalRequests(engine.getCurrentTick());
         return metrics;
     }
 
-    private Map<Integer, List<PassengerFlowDTO>> groupFlowsByTick(ScenarioDefinitionDTO scenario) {
+    private static Map<Integer, List<PassengerFlowDTO>> groupFlowsByTick(ScenarioDefinitionDTO scenario) {
         if (scenario.passengerFlows() == null || scenario.passengerFlows().isEmpty()) {
             return Collections.emptyMap();
         }
@@ -305,35 +311,6 @@ public class SimulationRunner {
 
     private String safeMessage(Exception ex) {
         return ex.getMessage() != null ? ex.getMessage() : "Unexpected simulation failure";
-    }
-
-    private static final class RunCancelledException extends CancellationException {
-        private static final long serialVersionUID = 1L;
-        private final transient RunMetrics metrics;
-        private final transient LiftConfigDTO config;
-        private final transient ScenarioDefinitionDTO scenario;
-
-        private RunCancelledException(String message,
-                                      RunMetrics metrics,
-                                      LiftConfigDTO config,
-                                      ScenarioDefinitionDTO scenario) {
-            super(message);
-            this.metrics = metrics;
-            this.config = config;
-            this.scenario = scenario;
-        }
-
-        private RunMetrics getMetrics() {
-            return metrics;
-        }
-
-        private LiftConfigDTO getConfig() {
-            return config;
-        }
-
-        private ScenarioDefinitionDTO getScenario() {
-            return scenario;
-        }
     }
 
     public record RunExecutionRequest(Long runId, String configJson, String scenarioJson, String scenarioName) {

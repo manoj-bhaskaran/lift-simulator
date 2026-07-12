@@ -114,14 +114,22 @@ public class SimulationRunExecutionServiceTest {
 
     @BeforeEach
     public void setUp() {
-        executionService = new SimulationRunExecutionService(
+        executionService = newExecutionService(2, 10);
+    }
+
+    private SimulationRunExecutionService newExecutionService(int maxConcurrentRuns, int queueCapacity) {
+        SimulationRunner simulationRunner = new SimulationRunner(
                 lifecycleManager,
                 configValidationService,
                 scenarioValidationService,
-                batchInputGenerator,
                 objectMapper,
-                2,
-                10
+                new SimulationArtefactWriter(objectMapper, batchInputGenerator, lifecycleManager)
+        );
+        return new SimulationRunExecutionService(
+                lifecycleManager,
+                simulationRunner,
+                maxConcurrentRuns,
+                queueCapacity
         );
     }
 
@@ -314,15 +322,7 @@ public class SimulationRunExecutionServiceTest {
     public void cancellingQueuedRunReleasesQueueSlot() throws Exception {
         // Pool=1, queue=1: one thread running, one slot queued.
         // Cancelling the queued run should free the slot immediately so a new submission succeeds.
-        SimulationRunExecutionService tightService = new SimulationRunExecutionService(
-                lifecycleManager,
-                configValidationService,
-                scenarioValidationService,
-                batchInputGenerator,
-                objectMapper,
-                1,
-                1
-        );
+        SimulationRunExecutionService tightService = newExecutionService(1, 1);
         try {
             java.lang.reflect.Field executorField =
                 SimulationRunExecutionService.class.getDeclaredField("executor");
@@ -374,15 +374,7 @@ public class SimulationRunExecutionServiceTest {
     @Test
     public void submissionsExceedingPoolPlusQueueAreRejectedWithFailedStatus() throws Exception {
         // Pool size=2, queue=10 → capacity=12. Submit 13 runs; the 13th must be rejected cleanly.
-        SimulationRunExecutionService tightService = new SimulationRunExecutionService(
-                lifecycleManager,
-                configValidationService,
-                scenarioValidationService,
-                batchInputGenerator,
-                objectMapper,
-                1,
-                1
-        );
+        SimulationRunExecutionService tightService = newExecutionService(1, 1);
         // Capacity = 1 thread + 1 queue slot = 2. A 3rd submission must be rejected.
         int overCapacityRunId = 99;
         SimulationRun overCapacityRun = new SimulationRun();
