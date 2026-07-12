@@ -14,7 +14,7 @@ This is the frontend admin application for the Lift Simulator system. It provide
 - Managing lift systems and configurations
 - Creating and publishing configuration versions
 - Validating configuration JSON and displaying detailed validation errors
-- Managing simulation runs, including multi-select bulk cancellation for active runs and bulk deletion for completed runs
+- Managing simulation runs through decomposed filter, table, pagination, and action-modal components, including multi-select bulk cancellation for active runs and bulk deletion for completed runs
 - Monitoring system health
 - Running simulations through decomposed setup, run-status, and results panels shared with run detail views
 - Maintaining scenarios and lift-system versions through decomposed page sections for easier UI maintenance

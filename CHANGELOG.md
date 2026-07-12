@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.15] - 2026-07-12
+
+### Changed
+- **Simulation runs page decomposition**: Split the simulation-runs filter bar, run table, list-state rendering, and confirmation modals into focused components, moved pagination controls to a shared component, and kept simulation-run polling, filtering, selection, and delete/cancel behaviour unchanged. Updated frontend documentation and package metadata for the 0.57.15 pre-MVP patch release.
+
 ## [0.57.14] - 2026-07-12
 
 ### Changed
