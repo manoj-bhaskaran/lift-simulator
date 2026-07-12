@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -383,6 +384,43 @@ public class ScenarioServiceTest {
 
         verify(scenarioRepository).findByIdForUpdate(30L);
         verify(runRepository).findByScenarioId(30L);
+        verify(scenarioRepository).delete(scenario);
+        verify(artefactService).deleteArtefacts(run);
+    }
+
+
+    @Test
+    public void deleteScenarioTreatsCascadeArtefactIoFailureAsBestEffort() throws Exception {
+        Scenario scenario = new Scenario("Morning rush", validScenario(), version);
+        scenario.setId(30L);
+        SimulationRun run = new SimulationRun(version.getLiftSystem(), version);
+        run.setId(88L);
+        run.setScenario(scenario);
+        run.setArtefactBasePath("/tmp/run-88");
+        when(scenarioRepository.findByIdForUpdate(30L)).thenReturn(Optional.of(scenario));
+        when(runRepository.findByScenarioId(30L)).thenReturn(List.of(run));
+        doThrow(new java.io.IOException("disk error")).when(artefactService).deleteArtefacts(run);
+
+        scenarioService.deleteScenario(30L);
+
+        verify(scenarioRepository).delete(scenario);
+        verify(artefactService).deleteArtefacts(run);
+    }
+
+    @Test
+    public void deleteScenarioTreatsCascadeArtefactRuntimeFailureAsBestEffort() throws Exception {
+        Scenario scenario = new Scenario("Morning rush", validScenario(), version);
+        scenario.setId(30L);
+        SimulationRun run = new SimulationRun(version.getLiftSystem(), version);
+        run.setId(88L);
+        run.setScenario(scenario);
+        run.setArtefactBasePath("/tmp/run-88");
+        when(scenarioRepository.findByIdForUpdate(30L)).thenReturn(Optional.of(scenario));
+        when(runRepository.findByScenarioId(30L)).thenReturn(List.of(run));
+        doThrow(new ArtefactStateException("not a directory")).when(artefactService).deleteArtefacts(run);
+
+        scenarioService.deleteScenario(30L);
+
         verify(scenarioRepository).delete(scenario);
         verify(artefactService).deleteArtefacts(run);
     }
