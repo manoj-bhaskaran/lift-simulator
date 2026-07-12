@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.10] - 2026-07-12
+
+### Changed
+- **Frontend page component decomposition**: Split the large scenario form and lift-system detail pages into focused React subcomponents for scenario basics, templates, JSON editing, simulation settings, validation results, lift-system headers/details, version creation, version filters, version cards, and pagination. Updated frontend documentation and package metadata for the 0.57.10 pre-MVP patch release.
+
 ## [0.57.9] - 2026-07-11
 
 ### Changed

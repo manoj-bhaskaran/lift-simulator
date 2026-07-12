@@ -1,15 +1,18 @@
 // @ts-check
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
+
 import { liftSystemsApi } from '../api/liftSystemsApi';
-import VersionActions from '../components/VersionActions';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 import EditSystemModal from '../components/EditSystemModal';
-import VersionConfigForm from '../components/VersionConfigForm';
+import CreateVersionForm from '../components/liftSystems/CreateVersionForm';
+import LiftSystemHeader from '../components/liftSystems/LiftSystemHeader';
+import LiftSystemInfoSection from '../components/liftSystems/LiftSystemInfoSection';
+import PaginationControls from '../components/liftSystems/PaginationControls';
+import VersionCard from '../components/liftSystems/VersionCard';
+import VersionsControls from '../components/liftSystems/VersionsControls';
 import { handleApiError } from '../utils/errorHandlers';
-import { getStatusBadgeClass } from '../utils/statusUtils';
-import { CONFIG_EXAMPLE_JSON, CONFIG_REQUIRED_FIELDS, CONFIG_SCHEMA_DOCS_URL, CONFIG_SCHEMA_HELP_TEXT } from '../utils/configSchemaHelp';
 import {
   getDefaultVersionFormData,
   configToFormData,
@@ -437,410 +440,90 @@ function LiftSystemDetail() {
 
   return (
     <div className="lift-system-detail">
-      <div className="detail-header">
-        <div>
-          <Link to="/systems" className="breadcrumb">← Back to Systems</Link>
-          <h2>{system.displayName}</h2>
-          <p className="system-key">{system.systemKey}</p>
-        </div>
-        <div className="header-actions">
-          <button onClick={() => setShowEditModal(true)} className="btn-secondary">Edit System</button>
-          <button onClick={handleDeleteSystem} className="btn-danger">Delete System</button>
-        </div>
-      </div>
-
-      <div className="detail-section">
-        <h3>System Information</h3>
-        <div className="info-grid">
-          <div className="info-item">
-            <label>Display Name</label>
-            <p>{system.displayName}</p>
-          </div>
-          <div className="info-item">
-            <label>System Key</label>
-            <p className="monospace">{system.systemKey}</p>
-          </div>
-          <div className="info-item">
-            <label>Description</label>
-            <p>{system.description || 'No description provided'}</p>
-          </div>
-          <div className="info-item">
-            <label>Created</label>
-            <p>{new Date(system.createdAt).toLocaleString()}</p>
-          </div>
-          <div className="info-item">
-            <label>Last Updated</label>
-            <p>{new Date(system.updatedAt).toLocaleString()}</p>
-          </div>
-        </div>
-      </div>
+      <LiftSystemHeader system={system} onEdit={() => setShowEditModal(true)} onDelete={handleDeleteSystem} />
+      <LiftSystemInfoSection system={system} />
 
       <div className="detail-section" id="versions">
         <div className="section-header">
           <h3>Versions ({filteredVersions.length} of {versions.length})</h3>
-          <button
-            onClick={toggleCreateVersion}
-            className="btn-primary"
-          >
+          <button onClick={toggleCreateVersion} className="btn-primary">
             {showCreateVersion ? 'Cancel' : 'Create New Version'}
           </button>
         </div>
 
         {showCreateVersion && (
-          <div className="create-version-form">
-            <div className="version-number-display">
-              <h4>Version {versions.length > 0 ? Math.max(...versions.map(v => v.versionNumber)) + 1 : 1}</h4>
-            </div>
-
-            <div className="editor-mode-toggle" role="group" aria-label="Configuration editor mode">
-              <button
-                type="button"
-                className={editorMode === 'guided' ? 'mode-btn active' : 'mode-btn'}
-                onClick={switchToGuidedMode}
-                aria-pressed={editorMode === 'guided'}
-              >
-                Guided Form
-              </button>
-              <button
-                type="button"
-                className={editorMode === 'json' ? 'mode-btn active' : 'mode-btn'}
-                onClick={switchToJsonMode}
-                aria-pressed={editorMode === 'json'}
-              >
-                Advanced (JSON)
-              </button>
-            </div>
-
-            {editorMode === 'guided' ? (
-              <>
-                <div className="config-label-row">
-                  <label>Version Configuration</label>
-                  <a href={CONFIG_SCHEMA_DOCS_URL} target="_blank" rel="noreferrer">
-                    View schema docs
-                  </a>
-                </div>
-                <p className="config-help-text">
-                  Fill in the parameters below. Switch to Advanced (JSON) to edit the raw configuration directly.
-                </p>
-                <VersionConfigForm
-                  value={versionFormData}
-                  errors={versionFormErrors}
-                  onChange={handleVersionFormChange}
-                />
-              </>
-            ) : (
-              <>
-                <div className="config-label-row">
-                  <label htmlFor="config">Configuration JSON</label>
-                  <a href={CONFIG_SCHEMA_DOCS_URL} target="_blank" rel="noreferrer">
-                    View schema docs
-                  </a>
-                </div>
-                <p id="config-help" className="config-help-text">{CONFIG_SCHEMA_HELP_TEXT}</p>
-                <details className="config-example-help">
-                  <summary>Show complete valid example</summary>
-                  <pre>{CONFIG_EXAMPLE_JSON}</pre>
-                </details>
-                <textarea
-                  id="config"
-                  value={newVersionConfig}
-                  onChange={handleNewVersionConfigChange}
-                  placeholder={CONFIG_EXAMPLE_JSON}
-                  rows="14"
-                  required
-                  aria-describedby="config-help config-required-fields"
-                />
-                <p id="config-required-fields" className="config-required-fields">
-                  Required fields: {CONFIG_REQUIRED_FIELDS.map((field) => `\`${field}\``).join(', ')}.
-                </p>
-              </>
-            )}
-            <div className="form-actions">
-              <button
-                type="button"
-                className="btn-primary"
-                disabled={creating || !createValidationResult?.valid}
-                onClick={handleCreateVersion}
-                title={
-                  createValidationResult?.valid
-                    ? 'Create a new version with this configuration'
-                    : 'Validate the configuration before creating'
-                }
-              >
-                {creating ? 'Creating...' : 'Create Version'}
-              </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={handleValidateCreateVersion}
-                disabled={validatingCreate}
-              >
-                {validatingCreate ? 'Validating...' : 'Validate'}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelCreateVersion}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-            </div>
-
-            {createValidationError && (
-              <div className="validation-error-banner">{createValidationError}</div>
-            )}
-
-            {createValidationResult && (
-              <div
-                className={
-                  createValidationResult.valid
-                    ? 'validation-success-banner'
-                    : 'validation-error-banner'
-                }
-              >
-                <strong>
-                  {createValidationResult.valid
-                    ? '✓ Configuration is valid'
-                    : '✗ Configuration has errors'}
-                </strong>
-
-                {createValidationResult.errors?.length > 0 && (
-                  <ul>
-                    {createValidationResult.errors.map((err, idx) => (
-                      <li key={idx}>
-                        <strong>{err.field}:</strong> {err.message}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {createValidationResult.warnings?.length > 0 && (
-                  <ul>
-                    {createValidationResult.warnings.map((warn, idx) => (
-                      <li key={idx}>
-                        <strong>{warn.field}:</strong> {warn.message}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-          </div>
+          <CreateVersionForm
+            versions={versions}
+            editorMode={editorMode}
+            switchToGuidedMode={switchToGuidedMode}
+            switchToJsonMode={switchToJsonMode}
+            versionFormData={versionFormData}
+            versionFormErrors={versionFormErrors}
+            handleVersionFormChange={handleVersionFormChange}
+            newVersionConfig={newVersionConfig}
+            handleNewVersionConfigChange={handleNewVersionConfigChange}
+            creating={creating}
+            createValidationResult={createValidationResult}
+            handleCreateVersion={handleCreateVersion}
+            validatingCreate={validatingCreate}
+            handleValidateCreateVersion={handleValidateCreateVersion}
+            handleCancelCreateVersion={handleCancelCreateVersion}
+            createValidationError={createValidationError}
+          />
         )}
 
         {versions.length === 0 ? (
-          <div className="empty-state">
-            <p>No versions yet. Create the first version to get started.</p>
-          </div>
+          <div className="empty-state"><p>No versions yet. Create the first version to get started.</p></div>
         ) : (
           <>
-            <div className="versions-controls">
-              <div className="controls-row">
-                <div className="control-group">
-                  <label htmlFor="versionSearch">Search Version:</label>
-                  <input
-                    id="versionSearch"
-                    type="text"
-                    placeholder="Search by version number..."
-                    value={versionSearch}
-                    onChange={(e) => setVersionSearch(e.target.value)}
-                    className="search-input"
-                  />
-                </div>
-
-                <div className="control-group">
-                  <label htmlFor="statusFilter">Filter by Status:</label>
-                  <select
-                    id="statusFilter"
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="filter-select"
-                  >
-                    <option value="ALL">All Statuses</option>
-                    <option value="PUBLISHED">Published</option>
-                    <option value="DRAFT">Draft</option>
-                    <option value="ARCHIVED">Archived</option>
-                  </select>
-                </div>
-
-                <div className="control-group">
-                  <label htmlFor="sortBy">Sort by:</label>
-                  <select
-                    id="sortBy"
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="sort-select"
-                  >
-                    <option value="versionNumber">Version Number</option>
-                    <option value="createdAt">Creation Date</option>
-                    <option value="status">Status</option>
-                  </select>
-                </div>
-
-                <div className="control-group">
-                  <label htmlFor="sortOrder">Order:</label>
-                  <select
-                    id="sortOrder"
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value)}
-                    className="sort-select"
-                  >
-                    <option value="desc">
-                      {sortBy === 'versionNumber' ? 'Descending' :
-                       sortBy === 'createdAt' ? 'Newest First' :
-                       'Published First'}
-                    </option>
-                    <option value="asc">
-                      {sortBy === 'versionNumber' ? 'Ascending' :
-                       sortBy === 'createdAt' ? 'Oldest First' :
-                       'Archived First'}
-                    </option>
-                  </select>
-                </div>
-
-                <div className="control-group">
-                  <label htmlFor="itemsPerPage">Items per page:</label>
-                  <select
-                    id="itemsPerPage"
-                    value={itemsPerPage}
-                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                    className="items-select"
-                  >
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+            <VersionsControls
+              versionSearch={versionSearch}
+              setVersionSearch={setVersionSearch}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              sortOrder={sortOrder}
+              setSortOrder={setSortOrder}
+              itemsPerPage={itemsPerPage}
+              setItemsPerPage={setItemsPerPage}
+            />
 
             {filteredVersions.length === 0 ? (
-              <div className="empty-state">
-                <p>No versions match your filters.</p>
-              </div>
+              <div className="empty-state"><p>No versions match your filters.</p></div>
             ) : (
               <>
                 <div className="versions-list">
                   {paginatedVersions.map((version) => (
-              <div key={version.id} className="version-card">
-                <div className="version-header">
-                  <div>
-                    <h4>Version {version.versionNumber}</h4>
-                    <span className={getStatusBadgeClass(version.status)}>
-                      {version.status}
-                    </span>
-                  </div>
-                  <VersionActions
-                    systemId={id}
-                    versionNumber={version.versionNumber}
-                    status={version.status}
-                    onPublish={handlePublishVersion}
-                    onRunSimulation={handleRunSimulation}
-                  />
+                    <VersionCard
+                      key={version.id}
+                      version={version}
+                      systemId={id}
+                      onPublish={handlePublishVersion}
+                      onRunSimulation={handleRunSimulation}
+                      formatVersionConfig={formatVersionConfig}
+                    />
+                  ))}
                 </div>
-                <div className="version-info">
-                  <div className="info-row">
-                    <span className="label">Created:</span>
-                    <span>{new Date(version.createdAt).toLocaleString()}</span>
-                  </div>
-                  {version.publishedAt && (
-                    <div className="info-row">
-                      <span className="label">Published:</span>
-                      <span>{new Date(version.publishedAt).toLocaleString()}</span>
-                    </div>
-                  )}
-                  <details className="config-details">
-                    <summary>View Configuration</summary>
-                    <pre className="config-preview">{formatVersionConfig(version.config)}</pre>
-                  </details>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {totalPages > 1 && (
-            <div className="pagination-controls">
-              <div className="pagination-info">
-                Showing {startIndex + 1}-{Math.min(endIndex, filteredVersions.length)} of {filteredVersions.length} versions
-              </div>
-              <div className="pagination-buttons">
-                <button
-                  onClick={() => handlePageChange(1)}
-                  disabled={currentPage === 1}
-                  className="page-btn"
-                  title="First page"
-                >
-                  &laquo;
-                </button>
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="page-btn"
-                  title="Previous page"
-                >
-                  &lsaquo;
-                </button>
-                {renderPageNumbers()}
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="page-btn"
-                  title="Next page"
-                >
-                  &rsaquo;
-                </button>
-                <button
-                  onClick={() => handlePageChange(totalPages)}
-                  disabled={currentPage === totalPages}
-                  className="page-btn"
-                  title="Last page"
-                >
-                  &raquo;
-                </button>
-              </div>
-            </div>
-          )}
-        </>
+                <PaginationControls
+                  totalPages={totalPages}
+                  currentPage={currentPage}
+                  startIndex={startIndex}
+                  endIndex={endIndex}
+                  totalItems={filteredVersions.length}
+                  onPageChange={handlePageChange}
+                  renderPageNumbers={renderPageNumbers}
+                />
+              </>
             )}
           </>
         )}
       </div>
 
-      <ConfirmModal
-        isOpen={showPublishConfirm}
-        onClose={() => setShowPublishConfirm(false)}
-        onConfirm={confirmPublish}
-        title="Publish Version"
-        message={`Are you sure you want to publish version ${versionToPublish}?`}
-        confirmText="Publish"
-        confirmStyle="primary"
-      />
-
-      <ConfirmModal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={confirmDelete}
-        title="Delete System"
-        message={`Are you sure you want to delete "${system?.displayName}"? This will delete all versions as well.`}
-        confirmText="Delete"
-        confirmStyle="danger"
-      />
-
-      <AlertModal
-        isOpen={!!alertMessage}
-        onClose={() => setAlertMessage(null)}
-        title="Error"
-        message={alertMessage}
-        type="error"
-      />
-
-      <EditSystemModal
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        onSubmit={handleEditSystem}
-        system={system}
-      />
+      <ConfirmModal isOpen={showPublishConfirm} onClose={() => setShowPublishConfirm(false)} onConfirm={confirmPublish} title="Publish Version" message={`Are you sure you want to publish version ${versionToPublish}?`} confirmText="Publish" confirmStyle="primary" />
+      <ConfirmModal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} onConfirm={confirmDelete} title="Delete System" message={`Are you sure you want to delete "${system?.displayName}"? This will delete all versions as well.`} confirmText="Delete" confirmStyle="danger" />
+      <AlertModal isOpen={!!alertMessage} onClose={() => setAlertMessage(null)} title="Error" message={alertMessage} type="error" />
+      <EditSystemModal isOpen={showEditModal} onClose={() => setShowEditModal(false)} onSubmit={handleEditSystem} system={system} />
     </div>
   );
 }
