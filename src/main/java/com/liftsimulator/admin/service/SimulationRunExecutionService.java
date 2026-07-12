@@ -9,8 +9,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,28 +46,6 @@ public class SimulationRunExecutionService {
             new ArrayBlockingQueue<>(queueCapacity),
             new SimulationRunnerThreadFactory(),
             new ThreadPoolExecutor.AbortPolicy()
-        );
-    }
-
-    public SimulationRunExecutionService(
-            RunLifecycleManager lifecycleManager,
-            ConfigValidationService configValidationService,
-            ScenarioValidationService scenarioValidationService,
-            BatchInputGenerator batchInputGenerator,
-            ObjectMapper objectMapper,
-            int maxConcurrentRuns,
-            int queueCapacity) {
-        this(
-            lifecycleManager,
-            new SimulationRunner(
-                lifecycleManager,
-                configValidationService,
-                scenarioValidationService,
-                objectMapper,
-                new SimulationArtefactWriter(objectMapper, batchInputGenerator, lifecycleManager)
-            ),
-            maxConcurrentRuns,
-            queueCapacity
         );
     }
 
@@ -166,18 +142,6 @@ public class SimulationRunExecutionService {
             lifecycleManager.markRunningRunFailedSafely(runId, message, ex);
         } catch (Exception ex) {
             logger.error("Failed to mark run {} as failed", runId, ex);
-        }
-    }
-
-    static final class CancellationToken {
-        private final AtomicBoolean cancelled = new AtomicBoolean(false);
-
-        void cancel() {
-            cancelled.set(true);
-        }
-
-        boolean isCancelled() {
-            return cancelled.get();
         }
     }
 

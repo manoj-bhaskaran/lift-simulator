@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.12] - 2026-07-12
+
+### Changed
+- **Simulation execution split completed**: `SimulationRunner`'s tick loop is now a pure, dependency-free static method (config + scenario + cancellation check + progress callback in, `RunMetrics` out), unit-tested directly via new `SimulationRunnerTest` and `SimulationArtefactWriterTest` covering deterministic KPIs, same-floor flow skipping, mid-run cancellation, and all three terminal artefact statuses. Removed `SimulationRunExecutionService`'s test-only convenience constructor (tests now build `SimulationRunner`/`SimulationArtefactWriter` collaborators directly), and promoted the internal `CancellationToken` to a top-level type so `SimulationRunner` no longer references `SimulationRunExecutionService`. No behaviour change. Updated package metadata for the 0.57.12 pre-MVP patch release.
+
 ## [0.57.11] - 2026-07-12
 
 ### Fixed
