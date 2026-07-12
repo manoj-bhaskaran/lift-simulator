@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.14] - 2026-07-12
+
+### Changed
+- **Workflow documentation split**: Split the oversized Workflows and Troubleshooting guide into focused workflow, configuration/schema, and troubleshooting documents. Added `docs/CONFIG-SCHEMA.md` for lift-configuration, scenario payload, and batch-input-generator reference material; restored `docs/TROUBLESHOOTING.md` as the single home for general setup and database diagnostics; refreshed inbound links in README, API, and frontend docs; and updated package metadata for the 0.57.14 pre-MVP patch release.
+
 ## [0.57.13] - 2026-07-12
 
 ### Changed

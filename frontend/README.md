@@ -290,7 +290,7 @@ The frontend integrates with the backend `/api/v1` endpoints (lift systems, vers
 - **Port already in use**: if port 3000 is busy, Vite tries the next available port — check the console output for the actual port.
 - **CORS errors**: the proxy configuration should prevent these locally; verify `vite.config.js` proxy settings, restart `npm run dev`, and clear the browser cache.
 
-For broader setup and database troubleshooting, see [docs/Workflows-and-Troubleshooting.md](../docs/Workflows-and-Troubleshooting.md).
+For broader setup and database troubleshooting, see [docs/TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md).
 
 ## Maintenance
 

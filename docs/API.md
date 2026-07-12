@@ -11,7 +11,7 @@ The complete endpoint reference is served by the running backend and is the auth
 
 Access is controlled by `security.openapi.public-access` (`SECURITY_OPENAPI_PUBLIC_ACCESS`). The checked-in base configuration and the code fallback both default to `false`, so both URLs require ADMIN-role HTTP Basic authentication unless an environment or profile override explicitly enables public access. The development template keeps `${SECURITY_OPENAPI_PUBLIC_ACCESS:true}` for local convenience; set `SECURITY_OPENAPI_PUBLIC_ACCESS=false` in any shared or production environment.
 
-For operational guidance that the generated spec does not capture — CLI/UI run workflows, artefact reproduction, the configuration and scenario schema reference, and simulation-run troubleshooting — see [Workflows and Troubleshooting](Workflows-and-Troubleshooting.md).
+For operational guidance that the generated spec does not capture — CLI/UI run workflows and artefact reproduction — see [Workflows and Troubleshooting](Workflows-and-Troubleshooting.md). For field-level configuration and scenario constraints, see [Configuration and Scenario Schema Reference](CONFIG-SCHEMA.md). For setup and runtime diagnostics, see [Troubleshooting](TROUBLESHOOTING.md).
 
 ## Base URL and Versioning
 
@@ -215,4 +215,4 @@ The same `valid` / `errors` / `warnings` shape is returned when validation runs 
 
 ## Schema Reference and Operational Details
 
-The lift-configuration and scenario schemas (field constraints, validation rules, the floor-range migration note, and the batch-input-generator format), the run-artefact directory layout, and the `results.json` schema are documented in [Workflows and Troubleshooting](Workflows-and-Troubleshooting.md#configuration-and-scenario-schema-reference). Step-by-step CLI usage, UI-driven run workflows, artefact reproduction, and troubleshooting live in the same guide.
+The lift-configuration and scenario schemas (field constraints, validation rules, the floor-range migration note, and the batch-input-generator format) are documented in [Configuration and Scenario Schema Reference](CONFIG-SCHEMA.md). The run-artefact directory layout, `results.json` schema, step-by-step CLI usage, UI-driven run workflows, and artefact reproduction live in [Workflows and Troubleshooting](Workflows-and-Troubleshooting.md). Setup and runtime diagnostics live in [Troubleshooting](TROUBLESHOOTING.md).
