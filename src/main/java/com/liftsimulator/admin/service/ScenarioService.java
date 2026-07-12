@@ -12,12 +12,13 @@ import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.ScenarioRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import tools.jackson.core.JacksonException;
@@ -30,6 +31,8 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 @Transactional(readOnly = true)
 public class ScenarioService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScenarioService.class);
 
     private static final int SCENARIO_NAME_MAX_LENGTH = 200;
     private static final String COPY_NAME_PREFIX = "Copy of ";
@@ -206,7 +209,8 @@ public class ScenarioService {
      * <p>The scenario row is write-locked before capturing associated runs so
      * concurrent run creation cannot insert a new child row after the capture
      * query but before the delete commits. This keeps post-commit artefact cleanup
-     * aligned with the database cascade.</p>
+     * aligned with the database cascade. Cleanup failures are logged and do not
+     * fail an already-committed cascade delete.</p>
      *
      * @param id scenario id
      */
@@ -258,10 +262,11 @@ public class ScenarioService {
         for (SimulationRun run : runs) {
             try {
                 artefactService.deleteArtefacts(run);
-            } catch (IOException e) {
-                throw new ArtefactDeletionException(
-                    "Failed to delete artefacts for simulation run " + run.getId()
-                        + ": " + e.getMessage(),
+            } catch (Exception e) {
+                LOGGER.warn(
+                    "Best-effort cascade artefact deletion failed for simulation run {} at {}",
+                    run.getId(),
+                    run.getArtefactBasePath(),
                     e
                 );
             }

@@ -4,6 +4,7 @@ import com.liftsimulator.admin.dto.CreateLiftSystemRequest;
 import com.liftsimulator.admin.dto.LiftSystemResponse;
 import com.liftsimulator.admin.dto.UpdateLiftSystemRequest;
 import com.liftsimulator.admin.entity.LiftSystem;
+import com.liftsimulator.admin.entity.SimulationRun;
 import com.liftsimulator.admin.repository.LiftSystemRepository;
 import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.ScenarioRepository;
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -195,6 +197,41 @@ public class LiftSystemServiceTest {
         verify(scenarioRepository).countByLiftSystemId(1L);
         verify(simulationRunRepository).countActiveRunsByLiftSystemId(1L);
         verify(liftSystemRepository).deleteById(1L);
+    }
+
+
+    @Test
+    public void testDeleteLiftSystem_ArtefactIoFailureIsBestEffort() throws Exception {
+        SimulationRun run = new SimulationRun(mockLiftSystem, null);
+        run.setId(88L);
+        run.setArtefactBasePath("/tmp/run-88");
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(scenarioRepository.countByLiftSystemId(1L)).thenReturn(0L);
+        when(simulationRunRepository.countActiveRunsByLiftSystemId(1L)).thenReturn(0L);
+        when(simulationRunRepository.findByLiftSystemIdOrderByCreatedAtDesc(1L)).thenReturn(List.of(run));
+        doThrow(new java.io.IOException("disk error")).when(artefactService).deleteArtefacts(run);
+
+        liftSystemService.deleteLiftSystem(1L);
+
+        verify(liftSystemRepository).deleteById(1L);
+        verify(artefactService).deleteArtefacts(run);
+    }
+
+    @Test
+    public void testDeleteLiftSystem_ArtefactRuntimeFailureIsBestEffort() throws Exception {
+        SimulationRun run = new SimulationRun(mockLiftSystem, null);
+        run.setId(88L);
+        run.setArtefactBasePath("/tmp/run-88");
+        when(liftSystemRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockLiftSystem));
+        when(scenarioRepository.countByLiftSystemId(1L)).thenReturn(0L);
+        when(simulationRunRepository.countActiveRunsByLiftSystemId(1L)).thenReturn(0L);
+        when(simulationRunRepository.findByLiftSystemIdOrderByCreatedAtDesc(1L)).thenReturn(List.of(run));
+        doThrow(new ArtefactStateException("not a directory")).when(artefactService).deleteArtefacts(run);
+
+        liftSystemService.deleteLiftSystem(1L);
+
+        verify(liftSystemRepository).deleteById(1L);
+        verify(artefactService).deleteArtefacts(run);
     }
 
     @Test

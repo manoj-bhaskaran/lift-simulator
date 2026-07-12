@@ -10,12 +10,13 @@ import com.liftsimulator.admin.repository.LiftSystemVersionRepository;
 import com.liftsimulator.admin.repository.ScenarioRepository;
 import com.liftsimulator.admin.repository.SimulationRunRepository;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,8 @@ import java.util.Map;
 @Service
 @Transactional(readOnly = true)
 public class LiftSystemService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LiftSystemService.class);
 
     private final LiftSystemRepository liftSystemRepository;
     private final LiftSystemVersionRepository liftSystemVersionRepository;
@@ -180,7 +183,8 @@ public class LiftSystemService {
     /**
      * Removes the on-disk artefacts of cascade-deleted runs once the surrounding
      * transaction commits, mirroring {@code SimulationRunService} so that a rollback
-     * never deletes files belonging to a surviving system.
+     * never deletes files belonging to a surviving system. Cleanup failures are
+     * logged and do not fail an already-committed cascade delete.
      *
      * @param runs the runs whose artefacts should be removed
      */
@@ -204,10 +208,11 @@ public class LiftSystemService {
         for (SimulationRun run : runs) {
             try {
                 artefactService.deleteArtefacts(run);
-            } catch (IOException e) {
-                throw new ArtefactDeletionException(
-                    "Failed to delete artefacts for simulation run " + run.getId()
-                        + ": " + e.getMessage(),
+            } catch (Exception e) {
+                LOGGER.warn(
+                    "Best-effort cascade artefact deletion failed for simulation run {} at {}",
+                    run.getId(),
+                    run.getArtefactBasePath(),
                     e
                 );
             }

@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.11] - 2026-07-12
+
+### Fixed
+- **Cascade artefact cleanup best-effort**: Scenario and lift-system cascade deletes now match completed-run deletion semantics by treating checked and unchecked artefact cleanup failures as best-effort post-commit work. Cleanup failures are logged with the run id and artefact path instead of surfacing an unreachable API error after the database delete has committed, and the obsolete `ArtefactDeletionException` handler/path has been retired. Updated README and package metadata for the 0.57.11 pre-MVP patch release.
+
 ## [0.57.10] - 2026-07-12
 
 ### Changed
