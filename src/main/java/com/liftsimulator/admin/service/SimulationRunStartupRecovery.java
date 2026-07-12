@@ -1,6 +1,5 @@
 package com.liftsimulator.admin.service;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -11,14 +10,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class SimulationRunStartupRecovery {
 
-    private final SimulationRunService simulationRunService;
+    private final RunLifecycleManager lifecycleManager;
 
-    @SuppressFBWarnings(
-            value = "EI_EXPOSE_REP2",
-            justification = "Spring-managed services are injected and treated as shared dependencies."
-    )
-    public SimulationRunStartupRecovery(SimulationRunService simulationRunService) {
-        this.simulationRunService = simulationRunService;
+    public SimulationRunStartupRecovery(RunLifecycleManager lifecycleManager) {
+        this.lifecycleManager = lifecycleManager;
     }
 
     /**
@@ -26,6 +21,6 @@ public class SimulationRunStartupRecovery {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void recoverOrphanedSimulationRuns() {
-        simulationRunService.recoverOrphanedRunsOnStartup();
+        lifecycleManager.recoverOrphanedRunsOnStartup();
     }
 }

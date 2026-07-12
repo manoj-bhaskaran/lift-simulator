@@ -185,7 +185,7 @@ When deploying to CI/CD:
 
 This fix complements:
 - [FK-CONSTRAINT-SCHEMA-FIX.md](FK-CONSTRAINT-SCHEMA-FIX.md) - Uses currentSchema parameter
-- [TESTING-SETUP.md](TESTING-SETUP.md) - Local development setup
+- [TESTING-SETUP.md](../TESTING-SETUP.md) - Local development setup
 - [GITHUB-CI-CD-FIX.md](GITHUB-CI-CD-FIX.md) - Overall CI/CD configuration
 
 ## References
