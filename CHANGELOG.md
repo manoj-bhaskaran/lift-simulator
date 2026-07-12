@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.13] - 2026-07-12
+
+### Changed
+- **Simulation-run lifecycle cleanup**: Removed the dead lifecycle-transition pass-through methods from `SimulationRunService` and wired startup recovery directly to `RunLifecycleManager`, keeping lifecycle ownership in the dedicated manager while preserving run creation, lookup, and deletion behavior. Retargeted duplicated lifecycle unit coverage to `RunLifecycleManager`, fixed the base runtime log file name to `logs/application.log` so it matches existing log ignore rules, tightened a CI whitespace gap, and repaired stale archive-relative documentation links. Updated README and package metadata for the 0.57.13 pre-MVP patch release.
+
 ## [0.57.12] - 2026-07-12
 
 ### Changed

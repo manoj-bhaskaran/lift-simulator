@@ -301,7 +301,7 @@ public class MyNewTest extends LocalIntegrationTest {
 
 3. **Documentation**: Refer to new guides for:
    - [INTEGRATION-TEST-CREDENTIAL-FIX.md](INTEGRATION-TEST-CREDENTIAL-FIX.md) - Technical details
-   - [TESTING-ARCHITECTURE-GUIDE.md](TESTING-ARCHITECTURE-GUIDE.md) - Usage and troubleshooting
+   - [TESTING-ARCHITECTURE-GUIDE.md](../TESTING-ARCHITECTURE-GUIDE.md) - Usage and troubleshooting
 
 ## References
 

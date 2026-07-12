@@ -12,11 +12,11 @@ public class SimulationRunStartupRecoveryTest {
 
     @Test
     public void testApplicationReadyEventTriggersRecovery() {
-        SimulationRunService runService = mock(SimulationRunService.class);
-        SimulationRunStartupRecovery recovery = new SimulationRunStartupRecovery(runService);
+        RunLifecycleManager lifecycleManager = mock(RunLifecycleManager.class);
+        SimulationRunStartupRecovery recovery = new SimulationRunStartupRecovery(lifecycleManager);
 
         recovery.recoverOrphanedSimulationRuns();
 
-        verify(runService).recoverOrphanedRunsOnStartup();
+        verify(lifecycleManager).recoverOrphanedRunsOnStartup();
     }
 }
