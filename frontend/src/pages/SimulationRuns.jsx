@@ -3,28 +3,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import { simulationRunsApi } from '../api/simulationRunsApi';
-import AlertModal from '../components/AlertModal';
-import ConfirmModal from '../components/ConfirmModal';
 import { getApiErrorMessage, handleApiError, logApiError } from '../utils/errorHandlers';
 import { isTerminalRunStatus, useRunPolling } from '../hooks/useRunPolling';
-import { formatDate, formatRunDuration, getRunStatusBadgeClass } from '../utils/statusUtils';
+import RunFilters from '../components/simulation-runs/RunFilters';
+import RunActionModals from '../components/simulation-runs/RunActionModals';
+import RunListContent from '../components/simulation-runs/RunListContent';
 import './SimulationRuns.css';
 
 const statusOptions = ['ALL', 'SUCCEEDED', 'FAILED', 'RUNNING', 'CREATED', 'CANCELLED'];
 const activeStatuses = new Set(['RUNNING', 'CREATED']);
 
-/**
- * Simulation runs history page component.
- * Displays a filterable list of all simulation runs with their status and key metrics.
- *
- * Features:
- * - Filter by lift system
- * - Filter by status
- * - View run details and results
- * - Navigate to view full results
- *
- * @returns {JSX.Element} The simulation runs page component
- */
 function SimulationRuns() {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
@@ -46,12 +34,8 @@ function SimulationRuns() {
   const [actionNotice, setActionNotice] = useState(null);
   const [now, setNow] = useState(() => Date.now());
 
-  const [selectedSystemId, setSelectedSystemId] = useState(
-    searchParams.get('systemId') || ''
-  );
-  const [selectedStatus, setSelectedStatus] = useState(
-    searchParams.get('status') || 'ALL'
-  );
+  const [selectedSystemId, setSelectedSystemId] = useState(searchParams.get('systemId') || '');
+  const [selectedStatus, setSelectedStatus] = useState(searchParams.get('status') || 'ALL');
 
   useEffect(() => {
     const loadSystems = async () => {
@@ -100,8 +84,6 @@ function SimulationRuns() {
     loadRuns(false);
   }, [loadRuns]);
 
-  // Surface a one-time notice passed via navigation state (e.g. after deleting a
-  // run from the detail page), then clear it so it does not reappear on refresh.
   useEffect(() => {
     if (location.state?.notice) {
       setActionNotice(location.state.notice);
@@ -109,19 +91,10 @@ function SimulationRuns() {
     }
   }, [location, navigate]);
 
-  // Check if any runs are active (RUNNING or CREATED) and need polling
-  const hasActiveRuns = useMemo(
-    () => runs.some((run) => activeStatuses.has(run.status)),
-    [runs]
-  );
+  const hasActiveRuns = useMemo(() => runs.some((run) => activeStatuses.has(run.status)), [runs]);
 
-  // Poll for updates when there are active runs
-  useRunPolling(
-    useCallback(() => loadRuns(true), [loadRuns]),
-    { intervalMs: 3000, enabled: hasActiveRuns }
-  );
+  useRunPolling(useCallback(() => loadRuns(true), [loadRuns]), { intervalMs: 3000, enabled: hasActiveRuns });
 
-  // Keep `now` current so elapsed-time display refreshes for active runs
   useRunPolling(() => setNow(Date.now()), { intervalMs: 1000, enabled: hasActiveRuns });
 
   useEffect(() => {
@@ -131,9 +104,7 @@ function SimulationRuns() {
   }, [runs]);
 
   const selectedRuns = useMemo(
-    () => selectedRunIds
-      .map((id) => runs.find((run) => run.id === id))
-      .filter(Boolean),
+    () => selectedRunIds.map((id) => runs.find((run) => run.id === id)).filter(Boolean),
     [selectedRunIds, runs]
   );
   const allVisibleSelected = runs.length > 0 && selectedRunIds.length === runs.length;
@@ -147,33 +118,6 @@ function SimulationRuns() {
     if (selectedStatus && selectedStatus !== 'ALL') params.set('status', selectedStatus);
     setSearchParams(params, { replace: true });
   }, [selectedSystemId, selectedStatus, setSearchParams]);
-
-  /**
-   * Calculates duration between two dates and formats it for display.
-   *
-   * @param {string|null} startDate - ISO start date string
-   * @param {string|null} endDate - ISO end date string
-   * @returns {string} Formatted duration string
-   */
-  const formatDuration = (startDate, endDate, nowMs = now) => {
-    if (!startDate) return '—';
-    const start = new Date(startDate).getTime();
-    const end = endDate ? new Date(endDate).getTime() : nowMs;
-    return formatRunDuration(end - start);
-  };
-
-  /**
-   * Calculates progress percentage.
-   *
-   * @param {number|null} currentTick - Current tick number
-   * @param {number|null} totalTicks - Total tick count
-   * @returns {string} Progress percentage string
-   */
-  const formatProgress = (currentTick, totalTicks) => {
-    if (!totalTicks || totalTicks === 0 || currentTick == null) return '—';
-    const percentage = (currentTick / totalTicks) * 100;
-    return `${percentage.toFixed(1)}%`;
-  };
 
   const handleSystemChange = (event) => {
     setCurrentPage(0);
@@ -196,11 +140,9 @@ function SimulationRuns() {
   };
 
   const handleToggleRunSelection = (runId) => {
-    setSelectedRunIds((currentIds) =>
-      currentIds.includes(runId)
-        ? currentIds.filter((id) => id !== runId)
-        : [...currentIds, runId]
-    );
+    setSelectedRunIds((currentIds) => (
+      currentIds.includes(runId) ? currentIds.filter((id) => id !== runId) : [...currentIds, runId]
+    ));
   };
 
   const handleToggleAllVisible = () => {
@@ -229,9 +171,6 @@ function SimulationRuns() {
       await simulationRunsApi.deleteRun(runId);
       setActionNotice(`Run #${runId} and its artefacts were deleted.`);
       setActionError(null);
-      // When the deleted run was the only row on a non-first page, that page no
-      // longer exists after removal, so step back a page to avoid landing on an
-      // out-of-range page that renders as an empty state.
       const emptiesCurrentPage = runs.length === 1 && currentPage > 0;
       const targetPage = emptiesCurrentPage ? currentPage - 1 : currentPage;
       await loadRuns(false, targetPage);
@@ -293,257 +232,61 @@ function SimulationRuns() {
       <div className="page-header">
         <div className="page-title">
           <h2>Simulation Runs</h2>
-          <p className="page-subtitle">
-            View history of all simulation runs and access their results.
-          </p>
+          <p className="page-subtitle">View history of all simulation runs and access their results.</p>
         </div>
         <div className="page-actions">
-          <Link to="/simulator" className="btn-primary">
-            New Simulation
-          </Link>
+          <Link to="/simulator" className="btn-primary">New Simulation</Link>
         </div>
       </div>
 
-      <div className="filters-section">
-        <div className="filter-group">
-          <label htmlFor="system-filter">Lift System</label>
-          <select
-            id="system-filter"
-            value={selectedSystemId}
-            onChange={handleSystemChange}
-          >
-            <option value="">All Systems</option>
-            {systems.map((system) => (
-              <option key={system.id} value={system.id}>
-                {system.displayName}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label htmlFor="status-filter">Status</label>
-          <select
-            id="status-filter"
-            value={selectedStatus}
-            onChange={handleStatusChange}
-          >
-            {statusOptions.map((status) => (
-              <option key={status} value={status}>
-                {status === 'ALL' ? 'All Statuses' : status}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {hasFilters && (
-          <button className="btn-link" onClick={handleClearFilters}>
-            Clear Filters
-          </button>
-        )}
-      </div>
-
-      {actionNotice && (
-        <p className="action-notice" role="status">
-          {actionNotice}
-        </p>
-      )}
-
-      {loading ? (
-        <p>Loading runs...</p>
-      ) : error ? (
-        <p className="error">{error}</p>
-      ) : runs.length === 0 ? (
-        <div className="empty-state">
-          <p>
-            {hasFilters
-              ? 'No simulation runs match your filters.'
-              : 'No simulation runs found. Run a simulation to see results here.'}
-          </p>
-          {hasFilters && (
-            <button className="btn-secondary" onClick={handleClearFilters}>
-              Clear Filters
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="runs-table-container">
-          {totalElements > 0 && (
-            <p className="pagination-summary">
-              Showing {currentPage * 20 + 1}–{Math.min((currentPage + 1) * 20, totalElements)} of {totalElements} runs
-            </p>
-          )}
-          <div className="bulk-actions" aria-live="polite">
-            <span>{selectedCount} selected</span>
-            <button
-              type="button"
-              className="btn-small btn-secondary"
-              onClick={() => handleRequestBulkAction('cancel')}
-              disabled={!canBulkCancel || isBulkProcessing}
-              title={selectedCount > 0 && !canBulkCancel ? 'Select only CREATED or RUNNING runs to cancel.' : undefined}
-            >
-              Cancel Selected
-            </button>
-            <button
-              type="button"
-              className="btn-small btn-danger"
-              onClick={() => handleRequestBulkAction('delete')}
-              disabled={!canBulkDelete || isBulkProcessing}
-              title={selectedCount > 0 && !canBulkDelete ? 'Select only completed runs to delete.' : undefined}
-            >
-              Delete Selected
-            </button>
-            {selectedCount > 0 && !(canBulkCancel || canBulkDelete) && (
-              <span className="bulk-actions-hint">Mixed states selected; choose only active or completed runs.</span>
-            )}
-          </div>
-          <table className="runs-table">
-            <thead>
-              <tr>
-                <th className="select-column">
-                  <input
-                    type="checkbox"
-                    aria-label="Select all visible runs"
-                    checked={allVisibleSelected}
-                    onChange={handleToggleAllVisible}
-                  />
-                </th>
-                <th>ID</th>
-                <th>System</th>
-                <th>Version</th>
-                <th>Scenario</th>
-                <th>Status</th>
-                <th>Progress</th>
-                <th>Duration</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {runs.map((run) => (
-                <tr key={run.id}>
-                  <td className="select-column">
-                    <input
-                      type="checkbox"
-                      aria-label={`Select run #${run.id}`}
-                      checked={selectedRunIds.includes(run.id)}
-                      onChange={() => handleToggleRunSelection(run.id)}
-                    />
-                  </td>
-                  <td className="run-id">#{run.id}</td>
-                  <td>{run.liftSystemName || `System ${run.liftSystemId}`}</td>
-                  <td>v{run.versionNumber}</td>
-                  <td>{run.scenarioName || '—'}</td>
-                  <td>
-                    <span className={getRunStatusBadgeClass(run.status)}>
-                      {run.status}
-                    </span>
-                  </td>
-                  <td>
-                    {run.status === 'RUNNING' ? (
-                      <div className="progress-cell">
-                        <span>{formatProgress(run.currentTick, run.totalTicks)}</span>
-                        <div className="mini-progress">
-                          <div
-                            className="mini-progress-fill"
-                            style={{
-                              width: `${run.totalTicks ? (run.currentTick / run.totalTicks) * 100 : 0}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ) : run.status === 'SUCCEEDED' || run.status === 'FAILED' ? (
-                      '100%'
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td>{formatDuration(run.startedAt, run.endedAt)}</td>
-                  <td>{formatDate(run.createdAt)}</td>
-                  <td>
-                    <div className="run-actions">
-                      <Link
-                        to={`/simulation-runs/${run.id}`}
-                        className="btn-small btn-secondary"
-                      >
-                        View
-                      </Link>
-                      {isTerminalRunStatus(run.status) && (
-                        <button
-                          type="button"
-                          className="btn-small btn-danger"
-                          onClick={() => handleRequestDelete(run)}
-                          disabled={isDeleting || isBulkProcessing}
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {totalPages > 1 && (
-            <div className="pagination-controls">
-              <button
-                className="btn-secondary"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 0}
-              >
-                ← Previous
-              </button>
-              <span className="pagination-info">
-                Page {currentPage + 1} of {totalPages}
-              </span>
-              <button
-                className="btn-secondary"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage >= totalPages - 1}
-              >
-                Next →
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      <ConfirmModal
-        isOpen={runToDelete !== null}
-        onClose={() => setRunToDelete(null)}
-        onConfirm={handleConfirmDelete}
-        title="Delete simulation run?"
-        message={
-          runToDelete
-            ? `This will permanently delete run #${runToDelete.id}, including its run history `
-              + 'and all stored artefacts (generated input, logs, and result files). '
-              + 'This action cannot be undone.'
-            : ''
-        }
-        confirmText="Delete run"
-        cancelText="Keep run"
-        confirmStyle="danger"
+      <RunFilters
+        systems={systems}
+        statusOptions={statusOptions}
+        selectedSystemId={selectedSystemId}
+        selectedStatus={selectedStatus}
+        hasFilters={hasFilters}
+        onSystemChange={handleSystemChange}
+        onStatusChange={handleStatusChange}
+        onClearFilters={handleClearFilters}
       />
 
-      <ConfirmModal
-        isOpen={bulkAction !== null}
-        onClose={() => setBulkAction(null)}
-        onConfirm={handleConfirmBulkAction}
-        title={bulkAction === 'cancel' ? 'Cancel selected runs?' : 'Delete selected runs?'}
-        message={bulkAction === 'cancel'
-          ? `This will request cancellation for ${selectedCount} selected active run${selectedCount === 1 ? '' : 's'}.`
-          : `This will permanently delete ${selectedCount} selected completed run${selectedCount === 1 ? '' : 's'}, including history and stored artefacts. This action cannot be undone.`}
-        confirmText={bulkAction === 'cancel' ? 'Cancel runs' : 'Delete runs'}
-        cancelText="Keep runs"
-        confirmStyle={bulkAction === 'delete' ? 'danger' : 'primary'}
+      {actionNotice && <p className="action-notice" role="status">{actionNotice}</p>}
+
+      <RunListContent
+        loading={loading}
+        error={error}
+        runs={runs}
+        hasFilters={hasFilters}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        selectedRunIds={selectedRunIds}
+        allVisibleSelected={allVisibleSelected}
+        selectedCount={selectedCount}
+        canBulkCancel={canBulkCancel}
+        canBulkDelete={canBulkDelete}
+        isDeleting={isDeleting}
+        isBulkProcessing={isBulkProcessing}
+        now={now}
+        onClearFilters={handleClearFilters}
+        onPageChange={handlePageChange}
+        onToggleRunSelection={handleToggleRunSelection}
+        onToggleAllVisible={handleToggleAllVisible}
+        onRequestBulkAction={handleRequestBulkAction}
+        onRequestDelete={handleRequestDelete}
       />
 
-      <AlertModal
-        isOpen={actionError !== null}
-        onClose={() => setActionError(null)}
-        title={actionErrorTitle}
-        message={actionError || ''}
-        type="error"
+      <RunActionModals
+        runToDelete={runToDelete}
+        bulkAction={bulkAction}
+        selectedCount={selectedCount}
+        actionError={actionError}
+        actionErrorTitle={actionErrorTitle}
+        onCloseDelete={() => setRunToDelete(null)}
+        onConfirmDelete={handleConfirmDelete}
+        onCloseBulkAction={() => setBulkAction(null)}
+        onConfirmBulkAction={handleConfirmBulkAction}
+        onCloseError={() => setActionError(null)}
       />
     </div>
   );

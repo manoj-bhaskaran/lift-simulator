@@ -9,7 +9,7 @@ import EditSystemModal from '../components/EditSystemModal';
 import CreateVersionForm from '../components/liftSystems/CreateVersionForm';
 import LiftSystemHeader from '../components/liftSystems/LiftSystemHeader';
 import LiftSystemInfoSection from '../components/liftSystems/LiftSystemInfoSection';
-import PaginationControls from '../components/liftSystems/PaginationControls';
+import PaginationControls from '../components/PaginationControls';
 import VersionCard from '../components/liftSystems/VersionCard';
 import VersionsControls from '../components/liftSystems/VersionsControls';
 import { handleApiError } from '../utils/errorHandlers';
