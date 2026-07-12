@@ -4,7 +4,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { scenariosApi } from '../api/scenariosApi';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import AlertModal from '../components/AlertModal';
-import PassengerFlowBuilder from '../components/PassengerFlowBuilder';
+import ScenarioBasicsSection from '../components/scenarios/ScenarioBasicsSection';
+import ScenarioJsonEditor from '../components/scenarios/ScenarioJsonEditor';
+import ScenarioSettingsSection from '../components/scenarios/ScenarioSettingsSection';
+import ScenarioTemplateSection from '../components/scenarios/ScenarioTemplateSection';
+import ScenarioValidationResults from '../components/scenarios/ScenarioValidationResults';
 import { handleApiError } from '../utils/errorHandlers';
 import './ScenarioForm.css';
 
@@ -542,304 +546,68 @@ function ScenarioForm() {
       </div>
 
       <form onSubmit={handleSubmit}>
-        {/* Scenario Name */}
-        <div className="form-section">
-          <div className="form-group">
-            <label htmlFor="scenarioName">
-              Scenario Name <span className="required">*</span>
-            </label>
-            <input
-              type="text"
-              id="scenarioName"
-              value={scenarioName}
-              onChange={(e) => {
-                setScenarioName(e.target.value);
-                if (formErrors.scenarioName) {
-                  setFormErrors(prev => ({ ...prev, scenarioName: '' }));
-                }
-              }}
-              placeholder="e.g., Morning Rush Hour"
-              className={formErrors.scenarioName ? 'error' : ''}
-            />
-            {formErrors.scenarioName && (
-              <span className="error-message">{formErrors.scenarioName}</span>
-            )}
-          </div>
+        <ScenarioBasicsSection
+          scenarioName={scenarioName}
+          setScenarioName={setScenarioName}
+          formErrors={formErrors}
+          setFormErrors={setFormErrors}
+          liftSystems={liftSystems}
+          selectedSystemId={selectedSystemId}
+          setSelectedSystemId={setSelectedSystemId}
+          versions={versions}
+          selectedVersionId={selectedVersionId}
+          setSelectedVersionId={setSelectedVersionId}
+          floorRange={floorRange}
+          parseVersionConfig={parseVersionConfig}
+        />
 
-          {/* Lift System Selection */}
-          <div className="form-group">
-            <label htmlFor="liftSystem">
-              Lift System <span className="required">*</span>
-            </label>
-            <select
-              id="liftSystem"
-              value={selectedSystemId}
-              onChange={(e) => {
-                setSelectedSystemId(e.target.value);
-                setSelectedVersionId('');
-                if (formErrors.liftSystem || formErrors.liftSystemVersion) {
-                  setFormErrors(prev => ({ ...prev, liftSystem: '', liftSystemVersion: '' }));
-                }
-              }}
-              className={formErrors.liftSystem ? 'error' : ''}
-            >
-              <option value="">-- Select Lift System --</option>
-              {liftSystems.map((system) => (
-                <option key={system.id} value={system.id}>
-                  {system.displayName}
-                </option>
-              ))}
-            </select>
-            {formErrors.liftSystem && (
-              <span className="error-message">{formErrors.liftSystem}</span>
-            )}
-            <p className="help-text">
-              Select the lift system this scenario will be designed for
-            </p>
-          </div>
-
-          {/* Version Selection */}
-          {selectedSystemId && (
-            <div className="form-group">
-              <label htmlFor="liftSystemVersion">
-                Version <span className="required">*</span>
-              </label>
-              <select
-                id="liftSystemVersion"
-                value={selectedVersionId}
-                onChange={(e) => {
-                  setSelectedVersionId(e.target.value);
-                  if (formErrors.liftSystemVersion) {
-                    setFormErrors(prev => ({ ...prev, liftSystemVersion: '' }));
-                  }
-                }}
-                className={formErrors.liftSystemVersion ? 'error' : ''}
-              >
-                <option value="">-- Select Version --</option>
-                {versions.map((version) => {
-                  const floorInfo = parseVersionConfig(version.config);
-                  return (
-                    <option key={version.id} value={version.id}>
-                      Version {version.versionNumber}
-                      {floorInfo ?
-                        ` (Floors ${floorInfo.minFloor} to ${floorInfo.maxFloor})` :
-                        ''
-                      }
-                    </option>
-                  );
-                })}
-              </select>
-              <p className="help-text">
-                Select the version to ensure floor ranges are validated correctly
-              </p>
-              {floorRange && (
-                <p className="help-text">
-                  <strong>Valid floor range: {floorRange.minFloor} to {floorRange.maxFloor}</strong>
-                </p>
-              )}
-              {formErrors.liftSystemVersion && (
-                <span className="error-message">{formErrors.liftSystemVersion}</span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Template Selection */}
         {!isEditMode && (
-          <div className="form-section">
-            <h3>Quick Start Templates</h3>
-            {floorRange && (
-              <p className="help-text" style={{ marginBottom: '1rem' }}>
-                Templates will be adapted to the selected floor range ({floorRange.minFloor} to {floorRange.maxFloor}).
-              </p>
-            )}
-            {!selectedVersionId && (
-              <p className="help-text" style={{ marginBottom: '1rem', color: '#e67e22' }}>
-                Select a lift system and version above to ensure templates use valid floor ranges.
-              </p>
-            )}
-            <div className="template-grid">
-              {Object.entries(SCENARIO_TEMPLATES).map(([key, template]) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={`template-card${selectedTemplateKey === key ? ' is-selected' : ''}`}
-                  onClick={() => applyTemplate(key)}
-                  aria-pressed={selectedTemplateKey === key}
-                >
-                  <div className="template-name">{template.name}</div>
-                  <div className="template-description">{template.description}</div>
-                </button>
-              ))}
-            </div>
-          </div>
+          <ScenarioTemplateSection
+            floorRange={floorRange}
+            selectedVersionId={selectedVersionId}
+            templates={SCENARIO_TEMPLATES}
+            selectedTemplateKey={selectedTemplateKey}
+            onApplyTemplate={applyTemplate}
+          />
         )}
 
-        {/* Advanced JSON Toggle */}
         <div className="form-section">
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={handleToggleAdvancedJson}
-          >
+          <button type="button" className="btn-secondary" onClick={handleToggleAdvancedJson}>
             {showAdvancedJson ? 'Switch to Form Mode' : 'Switch to Advanced JSON Mode'}
           </button>
         </div>
 
         {showAdvancedJson ? (
-          /* Advanced JSON Editor */
-          <div className="form-section">
-            <h3>Scenario JSON</h3>
-            <div className="form-group">
-              <textarea
-                value={jsonText}
-                onChange={(e) => {
-                  setJsonText(e.target.value);
-                  if (formErrors.durationTicks) {
-                    setFormErrors(prev => ({ ...prev, durationTicks: '' }));
-                  }
-                }}
-                rows={20}
-                className="json-editor"
-                placeholder="Enter scenario JSON..."
-              />
-              <p className="help-text">
-                Edit the scenario JSON directly. Valid fields: durationTicks, passengerFlows, seed (optional)
-              </p>
-              {formErrors.durationTicks && (
-                <span className="error-message">{formErrors.durationTicks}</span>
-              )}
-            </div>
-          </div>
+          <ScenarioJsonEditor
+            jsonText={jsonText}
+            setJsonText={setJsonText}
+            formErrors={formErrors}
+            setFormErrors={setFormErrors}
+          />
         ) : (
-          /* Form Mode */
-          <>
-            {/* Duration */}
-            <div className="form-section">
-              <h3>Simulation Settings</h3>
-              <div className="form-group">
-                <label htmlFor="durationTicks">
-                  Duration (ticks) <span className="required">*</span>
-                </label>
-                <input
-                  type="number"
-                  id="durationTicks"
-                  value={durationTicks}
-                  onChange={(e) => {
-                    setDurationTicks(e.target.value);
-                    if (formErrors.durationTicks) {
-                      setFormErrors(prev => ({ ...prev, durationTicks: '' }));
-                    }
-                  }}
-                  className={formErrors.durationTicks ? 'error' : ''}
-                  min="1"
-                  placeholder="e.g., 100"
-                />
-                {formErrors.durationTicks && (
-                  <span className="error-message">{formErrors.durationTicks}</span>
-                )}
-                <p className="help-text">
-                  How long the simulation will run (each tick represents one time unit)
-                </p>
-              </div>
-
-              {/* Seed */}
-              <div className="form-group">
-                <label htmlFor="useSeed" className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    id="useSeed"
-                    checked={useSeed}
-                    onChange={(e) => setUseSeed(e.target.checked)}
-                  />
-                  Use Random Seed (for reproducibility)
-                </label>
-              </div>
-
-              {useSeed && (
-                <div className="form-group">
-                  <label htmlFor="seed">Random Seed</label>
-                  <input
-                    type="number"
-                    id="seed"
-                    value={seed}
-                    onChange={(e) => setSeed(e.target.value)}
-                    min="0"
-                    placeholder="e.g., 42"
-                  />
-                  <p className="help-text">
-                    Optional seed for reproducible random behavior. Same seed = same simulation results.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Passenger Flows */}
-            <div className="form-section">
-              <h3>Passenger Flows</h3>
-              <PassengerFlowBuilder
-                flows={passengerFlows}
-                onChange={setPassengerFlows}
-                maxTick={parseInt(durationTicks, 10) || 100}
-                floorRange={floorRange}
-              />
-            </div>
-          </>
+          <ScenarioSettingsSection
+            durationTicks={durationTicks}
+            setDurationTicks={setDurationTicks}
+            useSeed={useSeed}
+            setUseSeed={setUseSeed}
+            seed={seed}
+            setSeed={setSeed}
+            passengerFlows={passengerFlows}
+            setPassengerFlows={setPassengerFlows}
+            floorRange={floorRange}
+            formErrors={formErrors}
+            setFormErrors={setFormErrors}
+          />
         )}
 
-        {/* Validation Results */}
-        {(validationErrors.length > 0 || validationWarnings.length > 0) && (
-          <div className="form-section">
-            <h3>Validation Results</h3>
-            {validationErrors.length > 0 && (
-              <div className="validation-errors">
-                <h4>Errors:</h4>
-                <ul>
-                  {validationErrors.map((error, index) => (
-                    <li key={index}>
-                      <strong>{error.field}:</strong> {error.message}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {validationWarnings.length > 0 && (
-              <div className="validation-warnings">
-                <h4>Warnings:</h4>
-                <ul>
-                  {validationWarnings.map((warning, index) => (
-                    <li key={index}>
-                      <strong>{warning.field}:</strong> {warning.message}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
+        <ScenarioValidationResults validationErrors={validationErrors} validationWarnings={validationWarnings} />
 
-        {/* Actions */}
         <div className="form-actions">
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => navigate('/scenarios')}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={handleValidate}
-            disabled={validating}
-          >
+          <button type="button" className="btn-secondary" onClick={() => navigate('/scenarios')}>Cancel</button>
+          <button type="button" className="btn-secondary" onClick={handleValidate} disabled={validating}>
             {validating ? 'Validating...' : 'Validate'}
           </button>
-          <button
-            type="submit"
-            className="btn-primary"
-            disabled={saving || validating}
-          >
+          <button type="submit" className="btn-primary" disabled={saving || validating}>
             {saving ? 'Saving...' : (isEditMode ? 'Update Scenario' : 'Create Scenario')}
           </button>
         </div>
