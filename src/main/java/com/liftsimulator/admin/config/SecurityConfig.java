@@ -1,138 +1,60 @@
 package com.liftsimulator.admin.config;
 
-import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
-import org.springframework.security.web.util.matcher.OrRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-
 /**
- * Spring Security configuration for the Lift Simulator application.
+ * Shared Spring Security infrastructure for the Lift Simulator application.
  *
- * <p>Configures authentication mechanisms:
+ * <p>Enables web security and the typed configuration properties, and contributes
+ * the beans reused across the per-chain configurations:
  * <ul>
- *   <li><strong>Admin APIs</strong> ({@code /api/v1/**} excluding runtime and simulation-runs):
- *       HTTP Basic authentication with environment-configured username and password.
- *       Role-based access control with ADMIN and VIEWER roles.</li>
- *   <li><strong>Runtime APIs</strong> ({@code /api/v1/runtime/**}): API key authentication via
- *       {@code X-API-Key} header for machine-to-machine communication.</li>
- *   <li><strong>Simulation Run APIs</strong> ({@code /api/v1/simulation-runs/**}): API key authentication
- *       via {@code X-API-Key} header for CLI tools and automation.</li>
+ *   <li>{@link AuthenticationEntryPoint} beans for HTTP Basic and API key failures</li>
+ *   <li>the shared {@link AccessDeniedHandler} and {@link PasswordEncoder}</li>
+ *   <li>the explicit {@link CorsConfigurationSource} used by every chain</li>
+ *   <li>the default (lowest-precedence) public/static-resource filter chain</li>
  * </ul>
  *
- * <p>Role-based access control (RBAC):
+ * <p>The authenticated chains live in dedicated configurations so each filter
+ * chain owns one concern:
  * <ul>
- *   <li><strong>ADMIN</strong>: Full access to all operations (read and write)</li>
- *   <li><strong>VIEWER</strong>: Read-only access (GET requests only)</li>
+ *   <li>{@link RuntimeApiSecurityConfig} — API-key chain (Order 1)</li>
+ *   <li>{@link OpenApiSecurityConfig} — Swagger/api-docs access (Order 2)</li>
+ *   <li>{@link AdminSecurityConfig} — Admin HTTP Basic and Actuator chains
+ *       (Order 3 and 4)</li>
+ *   <li>this class — public/static-resource chain (Order 5)</li>
  * </ul>
  *
- * <p>Authorization rules for Admin APIs:
- * <ul>
- *   <li>GET requests: Allowed for ADMIN and VIEWER roles</li>
- *   <li>POST, PUT, DELETE, PATCH requests: Restricted to ADMIN role only</li>
- *   <li>Unauthorized access returns HTTP 403 Forbidden</li>
- * </ul>
- *
- * <p>Public endpoints (no authentication required):
- * <ul>
- *   <li>{@code /api/v1/health} - Application health check</li>
- *   <li>{@code /api/v1/api-docs/**} and Swagger UI when {@code security.openapi.public-access}
- *       is explicitly enabled</li>
- *   <li>{@code /actuator/**} - Spring Boot Actuator endpoints (ADMIN role required)</li>
- *   <li>Static resources - Frontend assets</li>
- * </ul>
- *
- * <p>Security features:
- * <ul>
- *   <li>Stateless session management (no session cookies)</li>
- *   <li>CSRF policy configurable (disabled by default for stateless REST APIs)</li>
- *   <li>Custom error responses using {@link CustomAuthenticationEntryPoint}</li>
- *   <li>Custom access denied handler using {@link CustomAccessDeniedHandler}</li>
- *   <li>WWW-Authenticate header for HTTP Basic challenges (RFC 7235)</li>
- *   <li>Explicit CORS policy for frontend-backend interaction</li>
- *   <li>Explicit CSRF policy (disabled by default for stateless APIs)</li>
- * </ul>
- *
+ * @see AdminSecurityConfig
+ * @see RuntimeApiSecurityConfig
+ * @see OpenApiSecurityConfig
  * @see CustomAuthenticationEntryPoint
  * @see CustomAccessDeniedHandler
- * @see ApiKeyAuthenticationFilter
- * @see SecurityUsersProperties
  */
 @Configuration
 @EnableWebSecurity
+@EnableConfigurationProperties({ApiAuthProperties.class, SecurityProperties.class})
 public class SecurityConfig {
 
-    private static final String ADMIN_REALM = "Lift Simulator Admin";
-    private static final String[] OPEN_API_MATCHERS = {
-        "/api/v1/api-docs/**",
-        "/api/v1/swagger-ui/**",
-        "/api/v1/swagger-ui.html"
-    };
-    private static final String PLACEHOLDER_SECRET = "CHANGE_ME";
+    /** Realm advertised on HTTP Basic challenges for admin-protected endpoints. */
+    static final String ADMIN_REALM = "Lift Simulator Admin";
 
-    @Value("${security.admin.username:admin}")
-    private String adminUsername;
-
-    @Value("${security.admin.password:}")
-    private String adminPassword;
-
-    @Value("${api.auth.key:}")
-    private String apiKey;
-
-    @Value("${api.auth.header:X-API-Key}")
-    private String apiKeyHeader;
-
-    @Value("${security.openapi.public-access:false}")
-    private boolean openApiPublicAccess;
-
-    /**
-     * Initialize API key validation at startup.
-     * Ensures API key is configured before the application starts serving requests.
-     */
-    @PostConstruct
-    public void validateApiKey() {
-        if (isMissingOrPlaceholderSecret(apiKey)) {
-            throw new IllegalStateException(
-                "API key must be configured with a non-placeholder value. " +
-                "Set api.auth.key property or API_KEY environment variable. " +
-                "Example: export API_KEY=$(openssl rand -base64 32)");
-        }
-    }
-
-    private boolean isMissingOrPlaceholderSecret(String secret) {
-        return secret == null || secret.isBlank() || PLACEHOLDER_SECRET.equalsIgnoreCase(secret.trim());
-    }
-
-    private final SecurityUsersProperties securityUsersProperties;
     private final CorsProperties corsProperties;
     private final CsrfProperties csrfProperties;
 
@@ -142,12 +64,7 @@ public class SecurityConfig {
                     + "These properties objects are not modified externally and defensive copying "
                     + "would break Spring's dependency injection pattern."
     )
-    public SecurityConfig(SecurityUsersProperties securityUsersProperties,
-                          CorsProperties corsProperties,
-                          CsrfProperties csrfProperties) {
-        // Defensive copies are not needed for Spring-managed beans as they are singletons
-        // However, to satisfy SpotBugs, we'll assign them directly
-        this.securityUsersProperties = securityUsersProperties;
+    public SecurityConfig(CorsProperties corsProperties, CsrfProperties csrfProperties) {
         this.corsProperties = corsProperties;
         this.csrfProperties = csrfProperties;
     }
@@ -181,127 +98,25 @@ public class SecurityConfig {
     }
 
     /**
-     * Request matcher for API key protected endpoints.
-     * Matches runtime configuration and simulation run APIs.
-     */
-    private RequestMatcher apiKeyProtectedMatcher() {
-        PathPatternRequestMatcher.Builder matcherBuilder = PathPatternRequestMatcher.withDefaults();
-        return new OrRequestMatcher(
-            matcherBuilder.matcher("/api/v1/runtime/**"),
-            matcherBuilder.matcher("/api/v1/simulation-runs/**")
-        );
-    }
-
-    /**
-     * Security filter chain for API key protected endpoints.
-     * Covers runtime configuration and simulation execution APIs.
-     * Uses API key authentication via configurable header (api.auth.header, defaults to X-API-Key).
-     * Processed first (Order 1) to handle these requests before admin filter chain.
+     * Password encoder using BCrypt hashing algorithm.
+     * Used for encoding and verifying admin passwords.
      */
     @Bean
-    @Order(1)
-    public SecurityFilterChain apiKeySecurityFilterChain(HttpSecurity http) throws Exception {
-        AuthenticationEntryPoint entryPoint = apiKeyAuthenticationEntryPoint();
-
-        http
-            .securityMatcher(apiKeyProtectedMatcher())
-            .cors(Customizer.withDefaults())
-            .csrf(this::configureCsrf)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(exceptions -> exceptions
-                .authenticationEntryPoint(entryPoint))
-            .addFilterBefore(
-                new ApiKeyAuthenticationFilter(apiKeyHeader, apiKey, entryPoint),
-                UsernamePasswordAuthenticationFilter.class)
-            .authorizeHttpRequests(auth -> auth
-                .anyRequest().authenticated());
-
-        return http.build();
-    }
-
-    /**
-     * Security filter chain for Admin API endpoints.
-     * Uses HTTP Basic authentication with role-based access control.
-     *
-     * <p>Authorization rules:
-     * <ul>
-     *   <li>GET requests: Allowed for ADMIN and VIEWER roles</li>
-     *   <li>POST, PUT, DELETE, PATCH requests: Restricted to ADMIN role only</li>
-     * </ul>
-     *
-     * <p>Includes WWW-Authenticate header in 401 responses per RFC 7235.
-     * Processed second (Order 2) after API key filter chain.
-     */
-    @Bean
-    @Order(2)
-    public SecurityFilterChain adminApiSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .securityMatcher("/api/v1/**")
-            .cors(Customizer.withDefaults())
-            .csrf(this::configureCsrf)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(exceptions -> exceptions
-                .authenticationEntryPoint(adminAuthenticationEntryPoint())
-                .accessDeniedHandler(accessDeniedHandler()))
-            .httpBasic(httpBasic -> httpBasic
-                .realmName("Lift Simulator Admin")
-                .authenticationEntryPoint(adminAuthenticationEntryPoint()))
-            .authorizeHttpRequests(auth -> {
-                auth.requestMatchers("/api/v1/health").permitAll();
-                if (openApiPublicAccess) {
-                    auth.requestMatchers(OPEN_API_MATCHERS).permitAll();
-                } else {
-                    auth.requestMatchers(OPEN_API_MATCHERS).hasRole("ADMIN");
-                }
-                auth
-                    // Read operations allowed for both ADMIN and VIEWER roles
-                    .requestMatchers(HttpMethod.GET, "/api/v1/**").hasAnyRole("ADMIN", "VIEWER")
-                    // Write operations restricted to ADMIN role only
-                    .requestMatchers(HttpMethod.POST, "/api/v1/**").hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.PUT, "/api/v1/**").hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.DELETE, "/api/v1/**").hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.PATCH, "/api/v1/**").hasRole("ADMIN")
-                    .anyRequest().authenticated();
-            });
-
-        return http.build();
-    }
-
-    /**
-     * Security filter chain for Spring Boot Actuator endpoints.
-     * Requires ADMIN-role HTTP Basic authentication before exposing operational state.
-     */
-    @Bean
-    @Order(3)
-    public SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .securityMatcher("/actuator/**")
-            .cors(Customizer.withDefaults())
-            .csrf(this::configureCsrf)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(exceptions -> exceptions
-                .authenticationEntryPoint(adminAuthenticationEntryPoint())
-                .accessDeniedHandler(accessDeniedHandler()))
-            .httpBasic(httpBasic -> httpBasic
-                .realmName("Lift Simulator Admin")
-                .authenticationEntryPoint(adminAuthenticationEntryPoint()))
-            .authorizeHttpRequests(auth -> auth
-                .anyRequest().hasRole("ADMIN"));
-
-        return http.build();
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     /**
      * Security filter chain for public endpoints and static resources.
      * Permits unauthenticated access to static files and frontend routes.
-     * Processed last (Order 4) as the default filter chain.
+     * Processed last (Order 5) as the default filter chain.
      */
     @Bean
-    @Order(4)
+    @Order(5)
     public SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(Customizer.withDefaults())
-            .csrf(this::configureCsrf)
+            .csrf(csrf -> SecurityCsrfSupport.configure(csrf, csrfProperties))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/index.html", "/assets/**", "/favicon.ico").permitAll()
@@ -311,28 +126,6 @@ public class SecurityConfig {
                 .anyRequest().permitAll());
 
         return http.build();
-    }
-
-    /**
-     * Configures CSRF based on the explicit security.csrf configuration.
-     */
-    private void configureCsrf(
-            org.springframework.security.config.annotation.web.configurers.CsrfConfigurer<HttpSecurity> csrf) {
-        if (!csrfProperties.isEnabled()) {
-            csrf.disable();
-            return;
-        }
-
-        CookieCsrfTokenRepository tokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
-        PathPatternRequestMatcher.Builder matcherBuilder = PathPatternRequestMatcher.withDefaults();
-        RequestMatcher[] ignoredMatchers = csrfProperties.getIgnoredPaths().stream()
-            .map(matcherBuilder::matcher)
-            .toArray(RequestMatcher[]::new);
-
-        csrf.csrfTokenRepository(tokenRepository)
-            .csrfTokenRequestHandler(requestHandler)
-            .ignoringRequestMatchers(ignoredMatchers);
     }
 
     /**
@@ -351,85 +144,5 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
         return source;
-    }
-
-    /**
-     * Password encoder using BCrypt hashing algorithm.
-     * Used for encoding and verifying admin passwords.
-     */
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    /**
-     * In-memory user details service for authentication.
-     *
-     * <p>Supports two configuration modes:
-     * <ol>
-     *   <li><strong>Multi-user mode</strong> (via {@code security.users}): Configure multiple users
-     *       with different roles (ADMIN or VIEWER) for local development.</li>
-     *   <li><strong>Legacy single-user mode</strong> (via {@code security.admin.*}): Single admin user
-     *       with ADMIN role for backward compatibility.</li>
-     * </ol>
-     *
-     * <p>When {@code security.users} is configured, those users take precedence.
-     * Otherwise, falls back to the legacy single admin user configuration.
-     *
-     * <p>Fails startup if no users are configured to prevent insecure deployments.
-     *
-     * @return UserDetailsService with configured users
-     * @throws IllegalStateException if no users are configured
-     * @see SecurityUsersProperties
-     */
-    @Bean
-    public UserDetailsService userDetailsService() {
-        List<UserDetails> users = new ArrayList<>();
-        PasswordEncoder encoder = passwordEncoder();
-
-        // Check for multi-user configuration first
-        List<SecurityUsersProperties.UserProperties> configuredUsers = securityUsersProperties.getUsers();
-        if (!configuredUsers.isEmpty()) {
-            for (SecurityUsersProperties.UserProperties userProps : configuredUsers) {
-                if (userProps.getUsername() == null || userProps.getUsername().isBlank()) {
-                    throw new IllegalStateException("Username must be configured for each user in security.users");
-                }
-                if (isMissingOrPlaceholderSecret(userProps.getPassword())) {
-                    throw new IllegalStateException(
-                        "Password must be configured with a non-placeholder value for user: "
-                            + userProps.getUsername());
-                }
-                String role = userProps.getRole();
-                if (role == null || role.isBlank()) {
-                    role = "VIEWER"; // Default to least privilege
-                }
-                // Normalize role (remove ROLE_ prefix if present)
-                if (role.startsWith("ROLE_")) {
-                    role = role.substring(5);
-                }
-                UserDetails user = User.builder()
-                    .username(userProps.getUsername())
-                    .password(encoder.encode(userProps.getPassword()))
-                    .roles(role.toUpperCase(Locale.ROOT))
-                    .build();
-                users.add(user);
-            }
-        } else {
-            // Fall back to legacy single admin user configuration
-            if (isMissingOrPlaceholderSecret(adminPassword)) {
-                throw new IllegalStateException(
-                    "Admin password must be configured with a non-placeholder value. " +
-                    "Set security.admin.password property, ADMIN_PASSWORD environment variable, " +
-                    "or configure users via security.users.");
-            }
-            UserDetails admin = User.builder()
-                .username(adminUsername)
-                .password(encoder.encode(adminPassword))
-                .roles("ADMIN")
-                .build();
-            users.add(admin);
-        }
-
-        return new InMemoryUserDetailsManager(users);
     }
 }

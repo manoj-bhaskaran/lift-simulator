@@ -15,10 +15,12 @@
     <!--
         Spring Security's HttpSecurity.build() declares "throws Exception", so the
         SecurityFilterChain @Bean methods must propagate it. Narrowing the throws
-        clause is not possible, making this a framework-imposed false positive.
+        clause is not possible, making this a framework-imposed false positive. The
+        SecurityConfig class was split per filter chain, so the suppression covers
+        each configuration that declares a SecurityFilterChain bean.
     -->
     <Match>
-        <Class name="com.liftsimulator.admin.config.SecurityConfig"/>
+        <Class name="~com\.liftsimulator\.admin\.config\.(SecurityConfig|AdminSecurityConfig|RuntimeApiSecurityConfig|OpenApiSecurityConfig)"/>
         <Bug pattern="THROWS_METHOD_THROWS_CLAUSE_BASIC_EXCEPTION"/>
     </Match>
 </FindBugsFilter>

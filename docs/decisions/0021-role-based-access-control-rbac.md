@@ -73,7 +73,8 @@ The legacy single-user configuration (`security.admin.*`) remains supported for 
 
 ### Security Configuration
 
-The `SecurityConfig` class is updated to apply role-based authorization:
+The admin filter chain (`AdminSecurityConfig`, formerly part of `SecurityConfig`)
+applies role-based authorization:
 
 ```java
 .authorizeHttpRequests(auth -> auth
@@ -90,10 +91,11 @@ The `SecurityConfig` class is updated to apply role-based authorization:
 
 ### Key Classes
 
-1. **SecurityConfig** (`com.liftsimulator.admin.config.SecurityConfig`)
-   - Updated to support VIEWER and ADMIN roles
+1. **AdminSecurityConfig** (`com.liftsimulator.admin.config.AdminSecurityConfig`)
+   - Owns the admin HTTP Basic filter chain supporting VIEWER and ADMIN roles
    - Multi-user support via `SecurityUsersProperties`
-   - Backward compatible with legacy single-admin configuration
+   - Backward compatible with legacy single-admin configuration via
+     `SecurityProperties` (`security.admin.*`)
 
 2. **SecurityUsersProperties** (`com.liftsimulator.admin.config.SecurityUsersProperties`)
    - New configuration properties class for multi-user setup

@@ -17,7 +17,13 @@ public class SecurityConfigValidationTest {
     private final WebApplicationContextRunner contextRunner = new WebApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(WebMvcAutoConfiguration.class))
         .withUserConfiguration(
+            // SecurityConfig enables web security and registers ApiAuthProperties /
+            // SecurityProperties via @EnableConfigurationProperties; the split chains
+            // and the @Component-based properties are registered explicitly below.
             SecurityConfig.class,
+            AdminSecurityConfig.class,
+            RuntimeApiSecurityConfig.class,
+            OpenApiSecurityConfig.class,
             SecurityUsersProperties.class,
             CorsProperties.class,
             CsrfProperties.class

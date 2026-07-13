@@ -34,7 +34,7 @@ import java.util.Collections;
  * curl -H "X-API-Key: your-api-key" http://localhost:8080/api/runtime/systems/my-system/config
  * </pre>
  *
- * @see SecurityConfig
+ * @see RuntimeApiSecurityConfig
  */
 public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 

@@ -39,9 +39,11 @@ via `security.csrf.ignored-paths`.
 
 ### Security Configuration
 
-`SecurityConfig` now applies CORS and CSRF settings to all security filter chains. CORS settings
-are applied via a shared `CorsConfigurationSource`, and CSRF configuration is explicitly toggled
-based on `security.csrf.enabled`.
+Every security filter chain applies the same CORS and CSRF settings. CORS is applied via the
+shared `CorsConfigurationSource` bean in `SecurityConfig`, and CSRF is toggled through the shared
+`SecurityCsrfSupport` helper based on `security.csrf.enabled`, so the per-chain configurations
+(`AdminSecurityConfig`, `RuntimeApiSecurityConfig`, `OpenApiSecurityConfig`, and the public chain
+in `SecurityConfig`) stay consistent.
 
 ### Configuration Properties
 
