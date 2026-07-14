@@ -27,8 +27,10 @@ final class SecurityCsrfSupport {
         if (!csrfProperties.isEnabled()) {
             // Intentional: CSRF is disabled by default for the stateless REST APIs and is
             // toggled explicitly via security.csrf.enabled (see ADR-0022). This mirrors the
-            // pre-existing behaviour prior to the SecurityConfig split.
-            csrf.disable(); // codeql[java/spring-disabled-csrf-protection]
+            // pre-existing behaviour prior to the SecurityConfig split. The corresponding
+            // CodeQL "disabled Spring CSRF protection" query is filtered out as an accepted
+            // false positive in .github/codeql/codeql-config.yml.
+            csrf.disable();
             return;
         }
 
