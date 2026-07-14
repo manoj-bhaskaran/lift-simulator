@@ -27,7 +27,7 @@ import java.util.List;
  * configuration via {@code security.admin.username} and {@code security.admin.password}
  * is used as a fallback with ADMIN role.
  *
- * @see SecurityConfig
+ * @see AdminSecurityConfig
  */
 @Component
 @ConfigurationProperties(prefix = "security")

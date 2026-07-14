@@ -114,10 +114,15 @@ security.api-key=${API_KEY:}
 
 ### Key Classes
 
-1. **SecurityConfig** (`com.liftsimulator.admin.config.SecurityConfig`)
-   - Configures ordered `SecurityFilterChain` beans
-   - Defines `UserDetailsService` with in-memory admin user
-   - Uses `BCryptPasswordEncoder` for password hashing
+1. **Security configuration** (`com.liftsimulator.admin.config`)
+   - Ordered `SecurityFilterChain` beans are split one-per-chain across
+     `RuntimeApiSecurityConfig` (API-key), `OpenApiSecurityConfig`
+     (Swagger/`api-docs`), and `AdminSecurityConfig` (admin HTTP Basic and
+     Actuator); the slim `SecurityConfig` holds the shared CORS/CSRF, entry
+     point, `BCryptPasswordEncoder`, and public/static-resource beans
+   - `AdminSecurityConfig` defines the `UserDetailsService` with the in-memory
+     admin user; credentials and the API key are bound via the typed
+     `SecurityProperties` and `ApiAuthProperties` classes
 
 2. **ApiKeyAuthenticationFilter** (`com.liftsimulator.admin.config.ApiKeyAuthenticationFilter`)
    - Extracts and validates `X-API-Key` header

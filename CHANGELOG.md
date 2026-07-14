@@ -16,6 +16,11 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.16] - 2026-07-13
+
+### Changed
+- **SecurityConfig split per filter chain**: Broke the 435-line `SecurityConfig` into one configuration per security filter chain — `RuntimeApiSecurityConfig` (API-key chain), `OpenApiSecurityConfig` (Swagger/`api-docs` access), and `AdminSecurityConfig` (admin HTTP Basic and Actuator chains plus the in-memory `UserDetailsService`) — leaving a slim `SecurityConfig` that owns the shared CORS/CSRF, entry point, password encoder, and public/static-resource beans. Moved the remaining loose `@Value` fields into typed `@ConfigurationProperties` classes: `ApiAuthProperties` (`api.auth.*`, with the fail-fast API-key validation relocated beside it) and `SecurityProperties` (`security.admin.*` and `security.openapi.public-access`). Chain ordering, request matchers, and startup fail-fast validation for missing/placeholder API keys and admin passwords are unchanged; all existing security tests pass with only mechanical wiring updates. Updated SpotBugs exclusions, ADR references, and package metadata for the 0.57.16 pre-MVP patch release.
+
 ## [0.57.15] - 2026-07-12
 
 ### Changed

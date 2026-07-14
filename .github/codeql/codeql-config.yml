@@ -1,0 +1,13 @@
+name: "Lift Simulator CodeQL config"
+
+# Query filters applied on top of the default CodeQL query suites.
+query-filters:
+  # Exclude "Disabled Spring CSRF protection" (java/spring-disabled-csrf-protection).
+  #
+  # CSRF is disabled by design for the stateless REST APIs and is toggled explicitly
+  # via the `security.csrf.enabled` property (see docs/decisions/0022-explicit-cors-csrf-policy.md).
+  # The single `csrf.disable()` call lives in SecurityCsrfSupport and is exercised by
+  # SecurityConfigTest#csrfDisabled_AllowsStateChangingRequestWithoutToken. This alert is
+  # therefore a known, accepted false positive rather than a vulnerability.
+  - exclude:
+      id: java/spring-disabled-csrf-protection
