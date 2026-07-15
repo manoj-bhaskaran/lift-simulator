@@ -102,7 +102,6 @@ function ScenarioForm() {
   const [alertMessage, setAlertMessage] = useState(null);
   const [showAdvancedJson, setShowAdvancedJson] = useState(false);
   const [jsonText, setJsonText] = useState('');
-  const [selectedTemplateKey, setSelectedTemplateKey] = useState('');
 
   /**
    * Parses version config to extract floor range.
@@ -285,7 +284,6 @@ function ScenarioForm() {
     const template = SCENARIO_TEMPLATES[templateKey];
     if (!template) return;
 
-    setSelectedTemplateKey(templateKey);
     const json = template.scenarioJson;
     setDurationTicks(json.durationTicks);
 
@@ -566,7 +564,6 @@ function ScenarioForm() {
             floorRange={floorRange}
             selectedVersionId={selectedVersionId}
             templates={SCENARIO_TEMPLATES}
-            selectedTemplateKey={selectedTemplateKey}
             onApplyTemplate={applyTemplate}
           />
         )}

@@ -1,6 +1,13 @@
 // @ts-check
+import { useState } from 'react';
 
-function ScenarioTemplateSection({ floorRange, selectedVersionId, templates, selectedTemplateKey, onApplyTemplate }) {
+function ScenarioTemplateSection({ floorRange, selectedVersionId, templates, onApplyTemplate }) {
+  const [selectedTemplateKey, setSelectedTemplateKey] = useState('');
+
+  const handleApplyTemplate = (templateKey) => {
+    setSelectedTemplateKey(templateKey);
+    onApplyTemplate(templateKey);
+  };
   return (
     <div className="form-section">
       <h3>Quick Start Templates</h3>
@@ -8,7 +15,7 @@ function ScenarioTemplateSection({ floorRange, selectedVersionId, templates, sel
       {!selectedVersionId && <p className="help-text" style={{ marginBottom: '1rem', color: '#e67e22' }}>Select a lift system and version above to ensure templates use valid floor ranges.</p>}
       <div className="template-grid">
         {Object.entries(templates).map(([key, template]) => (
-          <button key={key} type="button" className={`template-card${selectedTemplateKey === key ? ' is-selected' : ''}`} onClick={() => onApplyTemplate(key)} aria-pressed={selectedTemplateKey === key}>
+          <button key={key} type="button" className={`template-card${selectedTemplateKey === key ? ' is-selected' : ''}`} onClick={() => handleApplyTemplate(key)} aria-pressed={selectedTemplateKey === key}>
             <div className="template-name">{template.name}</div>
             <div className="template-description">{template.description}</div>
           </button>
