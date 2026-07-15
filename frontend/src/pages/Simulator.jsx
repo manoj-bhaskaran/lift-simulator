@@ -1,6 +1,6 @@
 // @ts-check
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { liftSystemsApi } from '../api/liftSystemsApi';
 import { scenariosApi } from '../api/scenariosApi';
 import { authHeaders, normalizedApiBaseUrl } from '../api/client';
@@ -15,24 +15,14 @@ import SimulatorRunSetup from '../components/simulation-runs/SimulatorRunSetup';
 import './Simulator.css';
 
 function Simulator() {
-  const [searchParams] = useSearchParams();
   /** @type {import('../types/models').LiftSystem[]} */
   const [systems, setSystems] = useState([]);
-  const [versions, setVersions] = useState([]);
   const [scenarios, setScenarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formError, setFormError] = useState(null);
   const [runError, setRunError] = useState(null);
   const [resultsError, setResultsError] = useState(null);
 
-  const [selectedSystemId, setSelectedSystemId] = useState(
-    searchParams.get('systemId') || ''
-  );
-  const [selectedVersionNumber, setSelectedVersionNumber] = useState(
-    searchParams.get('versionNumber') || ''
-  );
-  const [selectedScenarioId, setSelectedScenarioId] = useState('');
-  const [seed, setSeed] = useState('');
   const [runInfo, setRunInfo] = useState(null);
   const [results, setResults] = useState(null);
   const [artefacts, setArtefacts] = useState([]);
@@ -40,7 +30,7 @@ function Simulator() {
   const [isStarting, setIsStarting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const hasSyncedFromParams = useRef(false);
+  const [runSelection, setRunSelection] = useState({});
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -63,117 +53,8 @@ function Simulator() {
     loadOptions();
   }, []);
 
-  useEffect(() => {
-    if (hasSyncedFromParams.current) {
-      return;
-    }
-
-    const incomingSystemId = searchParams.get('systemId');
-    const incomingVersionNumber = searchParams.get('versionNumber');
-
-    if (incomingSystemId) {
-      setSelectedSystemId(incomingSystemId);
-    }
-
-    if (incomingVersionNumber) {
-      setSelectedVersionNumber(incomingVersionNumber);
-    }
-
-    hasSyncedFromParams.current = true;
-  }, [searchParams]);
-
-  const loadVersions = useCallback(async () => {
-    if (!selectedSystemId) {
-      setVersions([]);
-      setSelectedVersionNumber('');
-      return;
-    }
-
-    try {
-      const response = await liftSystemsApi.getVersions(selectedSystemId);
-      setVersions(response.data);
-      setFormError(null);
-    } catch (err) {
-      handleApiError(err, setFormError, 'Failed to load versions');
-    }
-  }, [selectedSystemId]);
-
-  useEffect(() => {
-    loadVersions();
-  }, [loadVersions]);
-
-  const publishedVersions = useMemo(
-    () => versions.filter((version) => version.status === 'PUBLISHED'),
-    [versions]
-  );
-
-  useEffect(() => {
-    if (!publishedVersions.length) {
-      setSelectedVersionNumber('');
-      return;
-    }
-
-    if (selectedVersionNumber) {
-      const match = publishedVersions.find(
-        (version) => String(version.versionNumber) === String(selectedVersionNumber)
-      );
-      if (!match) {
-        setSelectedVersionNumber('');
-      }
-      return;
-    }
-
-    const querySystemId = searchParams.get('systemId');
-    const preferredVersionNumber = searchParams.get('versionNumber');
-    const queryMatchesSelectedSystem =
-      querySystemId && String(querySystemId) === String(selectedSystemId);
-    const resolvedVersion = queryMatchesSelectedSystem && preferredVersionNumber
-      ? publishedVersions.find(
-          (version) => String(version.versionNumber) === String(preferredVersionNumber)
-        )
-      : null;
-
-    if (resolvedVersion) {
-      setSelectedVersionNumber(String(resolvedVersion.versionNumber));
-    }
-  }, [publishedVersions, searchParams, selectedSystemId, selectedVersionNumber]);
-
-  const selectedSystem = systems.find(
-    (system) => String(system.id) === String(selectedSystemId)
-  );
-  const selectedVersion = publishedVersions.find(
-    (version) => String(version.versionNumber) === String(selectedVersionNumber)
-  );
-
-  // Filter scenarios to only show those belonging to the selected version
-  const filteredScenarios = useMemo(() => {
-    if (!selectedVersionNumber) {
-      return [];
-    }
-    return scenarios.filter(
-      (scenario) => selectedVersion && String(scenario.liftSystemVersionId) === String(selectedVersion.id)
-    );
-  }, [scenarios, selectedVersion, selectedVersionNumber]);
-
-  const selectedScenario = scenarios.find(
-    (scenario) => String(scenario.id) === String(selectedScenarioId)
-  );
-
   const runStatus = runInfo?.status;
   const isTerminal = isTerminalRunStatus(runStatus);
-
-  // Clear selected scenario when version changes if it's not compatible
-  useEffect(() => {
-    if (selectedScenarioId && selectedVersionNumber) {
-      const isScenarioCompatible = filteredScenarios.some(
-        (scenario) => String(scenario.id) === String(selectedScenarioId)
-      );
-      if (!isScenarioCompatible) {
-        setSelectedScenarioId('');
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVersionNumber, filteredScenarios]);
 
   useRunPolling(() => setNow(Date.now()), {
     intervalMs: 1000,
@@ -230,21 +111,11 @@ function Simulator() {
     loadArtefacts();
   }, [isTerminal, runInfo?.id, runStatus]);
 
-  const handleStartRun = async () => {
-    if (!selectedSystemId || !selectedVersionNumber || !selectedScenarioId) {
-      setFormError('Select a lift system, published version, and scenario to continue.');
-      return;
-    }
-
+  const handleStartRun = async (payload, selection) => {
     try {
       setIsStarting(true);
-      const payload = {
-        liftSystemId: Number(selectedSystemId),
-        versionNumber: Number(selectedVersionNumber),
-        scenarioId: Number(selectedScenarioId),
-        seed: seed ? Number(seed) : null,
-      };
       const response = await simulationRunsApi.createRun(payload);
+      setRunSelection(selection || {});
       setRunInfo(response.data);
       setResults(null);
       setArtefacts([]);
@@ -368,25 +239,11 @@ function Simulator() {
       <SimulatorRunSetup
         loading={loading}
         formError={formError}
+        setFormError={setFormError}
         systems={systems}
-        publishedVersions={publishedVersions}
-        filteredScenarios={filteredScenarios}
-        selectedSystemId={selectedSystemId}
-        selectedVersionNumber={selectedVersionNumber}
-        selectedScenarioId={selectedScenarioId}
-        seed={seed}
+        scenarios={scenarios}
         isStarting={isStarting}
         isRunActive={Boolean(runInfo && !isTerminal)}
-        selectedSystem={selectedSystem}
-        selectedVersion={selectedVersion}
-        selectedScenario={selectedScenario}
-        onSystemChange={(value) => {
-          setSelectedSystemId(value);
-          setSelectedVersionNumber('');
-        }}
-        onVersionChange={setSelectedVersionNumber}
-        onScenarioChange={setSelectedScenarioId}
-        onSeedChange={setSeed}
         onStartRun={handleStartRun}
       />
 
@@ -403,9 +260,9 @@ function Simulator() {
           isCancelling={isCancelling}
           fields={[
             { label: 'Run ID', value: runInfo.id },
-            { label: 'Lift System', value: selectedSystem?.displayName || runInfo.liftSystemId },
-            { label: 'Version', value: selectedVersion ? `Version ${selectedVersion.versionNumber}` : runInfo.versionNumber },
-            { label: 'Scenario', value: selectedScenario?.name || runInfo.scenarioId || '—' },
+            { label: 'Lift System', value: runSelection.selectedSystem?.displayName || runInfo.liftSystemId },
+            { label: 'Version', value: runSelection.selectedVersion ? `Version ${runSelection.selectedVersion.versionNumber}` : runInfo.versionNumber },
+            { label: 'Scenario', value: runSelection.selectedScenario?.name || runInfo.scenarioId || '—' },
             { label: 'Elapsed Time', value: formatRunDuration(elapsedMs) },
             { label: 'Seed', value: runInfo.seed ?? '—' },
           ]}

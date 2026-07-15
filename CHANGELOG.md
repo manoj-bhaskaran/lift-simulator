@@ -16,6 +16,10 @@ summary is kept under [Earlier history](#earlier-history).
 
 ## [Unreleased]
 
+## [0.57.17] - 2026-07-14
+
+- **Frontend state ownership refactor**: Pushed simulator run setup selection state into `SimulatorRunSetup`, moved scenario template selection state into `ScenarioTemplateSection`, and extracted lift-system version filtering/sorting/pagination state into `useVersionListControls` so the decomposed components own more local UI state without visual or behavioural changes. Updated README and frontend documentation for the 0.57.17 pre-MVP patch release.
+
 ## [0.57.16] - 2026-07-13
 
 ### Changed

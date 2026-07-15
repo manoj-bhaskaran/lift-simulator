@@ -13,6 +13,7 @@ import PaginationControls from '../components/PaginationControls';
 import VersionCard from '../components/liftSystems/VersionCard';
 import VersionsControls from '../components/liftSystems/VersionsControls';
 import { handleApiError } from '../utils/errorHandlers';
+import { useVersionListControls } from '../hooks/useVersionListControls.jsx';
 import {
   getDefaultVersionFormData,
   configToFormData,
@@ -80,14 +81,6 @@ function LiftSystemDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
-
-  // Pagination, sorting, and filtering states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [sortBy, setSortBy] = useState('versionNumber');
-  const [sortOrder, setSortOrder] = useState('desc');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [versionSearch, setVersionSearch] = useState('');
 
   /**
    * Loads system metadata and all versions from the API.
@@ -330,100 +323,8 @@ function LiftSystemDetail() {
     }
   };
 
-  /**
-   * Filters and sorts versions based on current filter/sort state.
-   * Applies status filter, version number search, and sorting criteria.
-   *
-   * @returns {Array<Object>} Filtered and sorted array of versions
-   */
-  const getFilteredAndSortedVersions = () => {
-    let filtered = [...versions];
-
-    // Apply status filter
-    if (statusFilter !== 'ALL') {
-      filtered = filtered.filter((v) => v.status === statusFilter);
-    }
-
-    // Apply version number search
-    if (versionSearch.trim()) {
-      const searchTerm = versionSearch.trim();
-      filtered = filtered.filter((v) =>
-        v.versionNumber.toString() === searchTerm
-      );
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let comparison = 0;
-
-      if (sortBy === 'versionNumber') {
-        comparison = a.versionNumber - b.versionNumber;
-      } else if (sortBy === 'createdAt') {
-        comparison = new Date(a.createdAt) - new Date(b.createdAt);
-      } else if (sortBy === 'status') {
-        const statusOrder = { ARCHIVED: 1, DRAFT: 2, PUBLISHED: 3 };
-        comparison = statusOrder[a.status] - statusOrder[b.status];
-      }
-
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
-
-    return filtered;
-  };
-
-  const filteredVersions = getFilteredAndSortedVersions();
-  const totalPages = Math.ceil(filteredVersions.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedVersions = filteredVersions.slice(startIndex, endIndex);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [statusFilter, versionSearch, sortBy, sortOrder, itemsPerPage]);
-
-  /**
-   * Handles pagination page changes.
-   * Only updates if the new page is within valid range.
-   *
-   * @param {number} newPage - Target page number (1-indexed)
-   */
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
-    }
-  };
-
-  /**
-   * Renders pagination number buttons with smart windowing.
-   * Shows up to 5 page numbers centered around current page.
-   *
-   * @returns {Array<JSX.Element>} Array of page number button elements
-   */
-  const renderPageNumbers = () => {
-    const pages = [];
-    const maxPagesToShow = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
-
-    if (endPage - startPage < maxPagesToShow - 1) {
-      startPage = Math.max(1, endPage - maxPagesToShow + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => handlePageChange(i)}
-          className={`page-number ${i === currentPage ? 'active' : ''}`}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    return pages;
-  };
+  const { controls: versionControls, filteredVersions, paginatedVersions, pagination } = useVersionListControls(versions);
+  const { totalPages, currentPage, startIndex, endIndex, handlePageChange, renderPageNumbers } = pagination;
 
   if (loading) {
     return <div className="lift-system-detail"><p>Loading...</p></div>;
@@ -476,18 +377,7 @@ function LiftSystemDetail() {
           <div className="empty-state"><p>No versions yet. Create the first version to get started.</p></div>
         ) : (
           <>
-            <VersionsControls
-              versionSearch={versionSearch}
-              setVersionSearch={setVersionSearch}
-              statusFilter={statusFilter}
-              setStatusFilter={setStatusFilter}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              sortOrder={sortOrder}
-              setSortOrder={setSortOrder}
-              itemsPerPage={itemsPerPage}
-              setItemsPerPage={setItemsPerPage}
-            />
+            <VersionsControls {...versionControls} />
 
             {filteredVersions.length === 0 ? (
               <div className="empty-state"><p>No versions match your filters.</p></div>
