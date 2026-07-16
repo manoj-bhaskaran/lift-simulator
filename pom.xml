@@ -239,7 +239,7 @@
                                 <rule>
                                     <element>PACKAGE</element>
                                     <includes>
-                                        <include>com/liftsimulator/engine</include>
+                                        <include>com.liftsimulator.engine</include>
                                     </includes>
                                     <limits>
                                         <limit>
@@ -252,7 +252,7 @@
                                 <rule>
                                     <element>PACKAGE</element>
                                     <includes>
-                                        <include>com/liftsimulator/domain</include>
+                                        <include>com.liftsimulator.domain</include>
                                     </includes>
                                     <limits>
                                         <limit>
@@ -265,7 +265,7 @@
                                 <rule>
                                     <element>PACKAGE</element>
                                     <includes>
-                                        <include>com/liftsimulator/admin/service</include>
+                                        <include>com.liftsimulator.admin.service</include>
                                     </includes>
                                     <limits>
                                         <limit>
@@ -278,7 +278,7 @@
                                 <rule>
                                     <element>PACKAGE</element>
                                     <includes>
-                                        <include>com/liftsimulator/scenario</include>
+                                        <include>com.liftsimulator.scenario</include>
                                     </includes>
                                     <limits>
                                         <limit>
