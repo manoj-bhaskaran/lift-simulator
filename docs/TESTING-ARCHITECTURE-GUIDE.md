@@ -126,6 +126,23 @@ mvn clean test -Dtest="LiftSystemControllerTest"
     SPRING_DATASOURCE_PASSWORD: liftpassword
 ```
 
+
+## JaCoCo Coverage Gate
+
+`mvn verify` runs the JaCoCo `check` goal after the test suite and fails the build when production business-logic coverage drops below the configured line-coverage floors. Generated or low-signal wiring packages remain excluded from the gate (`Application`/`Main` entry points, Spring `config`, DTOs, entities, repositories, and `package-info`).
+
+The gate intentionally combines focused package rules with a bundle backstop:
+
+| Scope | Line coverage floor | Why it is gated |
+| --- | ---: | --- |
+| `com.liftsimulator.engine` | 75% | Core lift simulation state transitions and controller behaviour should not be masked by unrelated package coverage. |
+| `com.liftsimulator.domain` | 80% | Domain objects encode request and lift invariants that are cheap and valuable to test directly. |
+| `com.liftsimulator.admin.service` | 55% | Admin orchestration, artefact handling, and simulation-run services contain most backend business workflows. |
+| `com.liftsimulator.scenario` | 60% | Scenario parsing and execution support deterministic regression coverage for CLI and simulation flows. |
+| Bundle | 50% | Backstop to prevent overall production business-logic coverage from drifting down outside the named package floors. |
+
+When the check fails, Maven reports the violated JaCoCo rule and package. Open `target/site/jacoco/index.html`, drill into the package named in the failure, and prefer adding focused tests for uncovered branches or edge cases over lowering the threshold. Thresholds should move upward only after measuring a green `mvn verify` run and leaving a small buffer below the measured baseline.
+
 ## Property Resolution Order (Spring Boot)
 
 1. **Environment Variables** (Highest priority in CI/CD)
